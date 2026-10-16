@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sprite Viewer</title>
+  <style>
+    body { margin: 0; background: #222; color: #ccc; font: 12px monospace; }
+    canvas { display: block; image-rendering: pixelated; }
+    p { padding: 8px 12px; margin: 0; }
+  </style>
+</head>
+<body>
+  <p>Every animation frame of every character (3x zoom). Red line = floor, red dot = anchor. Edit js/render/poses.js or js/config/characters.js and refresh.</p>
+  <canvas id="c"></canvas>
+  <script src="../js/core/namespace.js"></script>
+  <script src="../js/core/util.js"></script>
+  <script src="../js/core/font.js"></script>
+  <script src="../js/config/game.js"></script>
+  <script src="../js/config/characters.js"></script>
+  <script src="../js/render/poses.js"></script>
+  <script src="../js/render/procedural-sprite.js"></script>
+  <script src="../js/render/sheet-sprite.js"></script>
+  <script src="../js/render/sprites.js"></script>
+  <script>
+    const ZOOM = 3, CELL_W = 120, CELL_H = 130;
+    const anims = Object.entries(RF.ANIMATIONS);
+    const cols = anims.reduce((n, [, f]) => n + f, 0);
+    const cv = document.getElementById('c');
+    cv.width = (cols * CELL_W + 60) * ZOOM;
+    cv.height = (RF.CHARACTERS.length * CELL_H + 10) * ZOOM;
+    cv.style.width = cv.width + 'px';
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.scale(ZOOM, ZOOM);
+    function draw() {
+      ctx.fillStyle = '#333';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      RF.CHARACTERS.forEach((def, row) => {
+        const sprite = RF.createSprite(def);
+        let col = 0;
+        const y = row * CELL_H + 110;
+        for (const [anim, n] of anims) {
+          for (let f = 0; f < n; f++) {
+            const x = col * CELL_W + 60;
+            ctx.fillStyle = (col % 2) ? '#3a3a3a' : '#404040';
+            ctx.fillRect(x - CELL_W / 2, row * CELL_H, CELL_W, CELL_H);
+            ctx.fillStyle = '#a33';
+            ctx.fillRect(x - CELL_W / 2, y, CELL_W, 1);
+            sprite.draw(ctx, anim, f, x, y, 1);
+            ctx.fillRect(x, y, 1, 1);
+            RF.font.drawText(ctx, anim + ' ' + f, x, row * CELL_H + 4, { align: 'center', color: '#bbb' });
+            col++;
+          }
+        }
+      });
+    }
+    draw();
+    setTimeout(draw, 500); // redraw once sheets have had time to load
+  </script>
+</body>
+</html>

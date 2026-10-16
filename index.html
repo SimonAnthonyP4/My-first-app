@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Retro Fighter</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game" width="384" height="224"></canvas>
+  <div id="help">
+    <span><b>P1</b> A/D move · W jump · F light · G heavy · H block</span>
+    <span><b>P2</b> ←/→ move · ↑ jump · Num1 (or ,) light · Num2 (or .) heavy · Num3 (or /) block</span>
+    <span>Esc pause · Enter rematch · ` hitboxes</span>
+  </div>
+
+  <!-- Plain scripts (no modules) so the game runs straight from the file system. Order matters. -->
+  <script src="js/core/namespace.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/font.js"></script>
+  <script src="js/core/input.js"></script>
+
+  <script src="js/config/game.js"></script>
+  <script src="js/config/controls.js"></script>
+  <script src="js/config/moves.js"></script>
+  <script src="js/config/characters.js"></script>
+
+  <script src="js/render/poses.js"></script>
+  <script src="js/render/procedural-sprite.js"></script>
+  <script src="js/render/sheet-sprite.js"></script>
+  <script src="js/render/sprites.js"></script>
+
+  <script src="js/stages/registry.js"></script>
+  <script src="js/stages/cafeteria.js"></script>
+
+  <script src="js/game/effects.js"></script>
+  <script src="js/game/fighter.js"></script>
+  <script src="js/game/hud.js"></script>
+  <script src="js/game/fight-scene.js"></script>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
