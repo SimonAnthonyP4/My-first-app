@@ -15,6 +15,8 @@
 //         pixel art from the palette. Swap to a sprite sheet later with
 //         { type: 'sheet', src: 'assets/sprites/<id>.png', ... } (see README).
 //
+// special: id of this character's one special move in specials.js.
+//
 // Health is NOT per character: every fighter has RF.CONFIG.MAX_HEALTH.
 // The two fighters below are prototype placeholders; the real roster of 8
 // comes in milestone 6.
@@ -26,6 +28,7 @@ RF.CHARACTERS = [
     placeholder: true,
     origin: 'TBD',
     bio: 'Placeholder tank for the prototype.',
+    special: 'seismicSlam',   // see specials.js
     stats: {
       walkSpeed: 1.5,
       jumpPower: 7.6,
@@ -52,6 +55,7 @@ RF.CHARACTERS = [
     placeholder: true,
     origin: 'TBD',
     bio: 'Placeholder light fighter for the prototype.',
+    special: 'venomSpit',
     stats: {
       walkSpeed: 2.4,
       jumpPower: 8.6,

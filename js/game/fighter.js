@@ -27,6 +27,9 @@
       this.sprite = RF.createSprite(def);
       this.moves = {};
       for (const k in RF.MOVES) this.moves[k] = buildMove(RF.MOVES[k], def);
+      this.special = RF.SPECIALS[def.special];
+      this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
+      this.scene = null; // set by FightScene
       this.reset(0, 1);
     }
 
@@ -43,6 +46,11 @@
       this.airAttackUsed = false;
       this.stun = 0;
       this.walkTime = 0;
+      this.specialData = {};
+      this.lastBlockPress = -Infinity;
+      this.blockPressEligible = false;
+      this.blockPressAge = Infinity;
+      this.state = null;
       this.setState('idle');
     }
 
@@ -61,6 +69,7 @@
 
     update(input, opp, canAct, bounds) {
       this.stateTime++;
+      this.trackBlockPress(input);
       switch (this.state) {
         case 'idle':
         case 'walk':
@@ -77,6 +86,9 @@
         case 'attack':
           if (this.stateTime >= this.move.total) this.setState(this.grounded ? 'idle' : 'jump');
           break;
+        case 'special':
+          this.specialKind.update(this, this.scene);
+          break;
         case 'hitstun':
         case 'blockstun':
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
@@ -84,6 +96,40 @@
         // 'ko' and 'victory' have no control
       }
       this.physics(bounds);
+    }
+
+    // Perfect-block bookkeeping: how long ago block was pressed, and whether
+    // that press counts (mashing block faster than the cooldown doesn't).
+    trackBlockPress(input) {
+      const lp = input.lastPress('block');
+      if (lp !== this.lastBlockPress) {
+        this.blockPressEligible = lp - this.lastBlockPress >= RF.CONFIG.PERFECT_BLOCK_COOLDOWN;
+        this.lastBlockPress = lp;
+      }
+      this.blockPressAge = input.kb.frame - lp;
+    }
+
+    isPerfectBlockAgainst(attacker) {
+      return this.state === 'block' && this.isBlockingAgainst(attacker) &&
+        this.blockPressEligible && this.blockPressAge <= RF.CONFIG.PERFECT_BLOCK_WINDOW;
+    }
+
+    startSpecial() {
+      this.move = null;
+      this.specialData = {};
+      this.faceOpponent(this.scene.opponentOf(this));
+      this.state = null;
+      this.setState('special');
+      this.specialKind.start(this, this.scene);
+    }
+
+    // Knocked off balance by an opponent's perfect block.
+    stagger(frames) {
+      this.move = null;
+      this.vx = 0;
+      this.stun = frames;
+      this.state = null;
+      this.setState('hitstun');
     }
 
     groundControl(input, opp) {
@@ -150,6 +196,8 @@
         this.vx = 0;
       } else if (this.state === 'hitstun') {
         this.vx = 0;
+      } else if (this.state === 'special' && this.specialKind.onLand) {
+        this.specialKind.onLand(this, this.scene);
       }
     }
 
@@ -208,7 +256,8 @@
         this.state = null;
         this.setState('hitstun');
         this.pushVx = dir * move.pushback;
-        if (!this.grounded) { this.vy = 3; this.vx = dir * 1.5; }
+        if (move.launch) { this.vy = move.launch; this.vx = dir * 2; }
+        else if (!this.grounded) { this.vy = 3; this.vx = dir * 1.5; }
       }
       this.health = Math.max(0, this.health - dmg);
       if (this.health <= 0) this.knockOut(dir);
@@ -234,6 +283,7 @@
         case 'block':
         case 'blockstun': return ['block', 0];
         case 'hitstun': return ['hit', 0];
+        case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
         case 'victory': return ['victory', Math.floor(this.stateTime / 15) % 2];
         default: return ['idle', Math.floor(this.stateTime / 20) % 2];

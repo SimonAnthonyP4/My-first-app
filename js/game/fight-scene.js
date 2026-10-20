@@ -16,6 +16,8 @@
       this.stageDef = RF.getStage(opts.stage);
       this.stage = new RF.StageRenderer(this.stageDef);
       this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1)];
+      for (const f of this.fighters) f.scene = this;
+      this.projectiles = [];
       this.inputs = [
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
         new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
@@ -41,6 +43,8 @@
       this.timer = RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS;
       this.hitstop = 0;
       this.shake = 0;
+      this.flash = 0;
+      this.projectiles = [];
       this.effects.clear();
       this.hud.reset();
       this.setPhase('intro');
@@ -64,6 +68,7 @@
       this.hud.update(this.fighters);
       this.effects.update();
       if (this.shake > 0) this.shake--;
+      if (this.flash > 0) this.flash--;
       if (this.hitstop > 0) { this.hitstop--; return; }
 
       switch (this.phase) {
@@ -96,6 +101,7 @@
       a.update(this.inputs[0], b, canAct, bounds);
       b.update(this.inputs[1], a, canAct, bounds);
       this.separate(a, b, bounds);
+      this.updateProjectiles(bounds);
 
       if (this.phase === 'fight') {
         this.checkHits();
@@ -126,24 +132,108 @@
       }
     }
 
+    opponentOf(f) {
+      return this.fighters[0] === f ? this.fighters[1] : this.fighters[0];
+    }
+
     checkHits() {
       // Collect first so simultaneous hits trade properly.
       const hits = [];
-      for (const [att, def] of [[this.fighters[0], this.fighters[1]], [this.fighters[1], this.fighters[0]]]) {
+      for (const att of this.fighters) {
+        const def = this.opponentOf(att);
         const hb = att.getHitbox(), hurt = def.getHurtbox();
         if (hb && hurt && rectsOverlap(hb, hurt)) hits.push([att, def, hb, hurt]);
       }
       for (const [att, def, hb, hurt] of hits) {
         att.moveHasHit = true;
-        const move = att.move;
-        const blocked = def.receiveHit(att, move);
-        // Pushing someone into the wall pushes the attacker back instead.
-        if (def.atWall(this.stageDef.bounds)) att.pushVx = -att.facing * move.pushback * 0.7;
         const ex = (Math.max(hb.x, hurt.x) + Math.min(hb.x + hb.w, hurt.x + hurt.w)) / 2;
         const ey = (Math.max(hb.y, hurt.y) + Math.min(hb.y + hb.h, hurt.y + hurt.h)) / 2;
-        this.effects.spawn(blocked ? 'block' : att.moveKind === 'heavy' ? 'heavy' : 'hit', ex, ey);
-        this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
-        if (!blocked && att.moveKind === 'heavy') this.shake = 6;
+        this.applyHit(att, def, att.move, att.moveKind === 'heavy' ? 'heavy' : 'hit', ex, ey);
+      }
+    }
+
+    // Every source of damage (normals, specials, projectiles) goes through
+    // here. Returns 'perfect', 'block' or 'hit'.
+    applyHit(att, def, move, spark, ex, ey) {
+      if (this.phase !== 'fight' || def.isKO) return null;
+      const bounds = this.stageDef.bounds;
+
+      if (def.isPerfectBlockAgainst(att)) {
+        this.effects.spawn('perfect', ex, ey);
+        this.effects.spawnText('PERFECT!', def.x, def.body.height + 14, '#8ff0ff');
+        this.effects.spawnText(def.special.name.toUpperCase() + '!', def.x, def.body.height + 4, '#ffd030', 12);
+        this.hitstop = Math.max(this.hitstop, 14);
+        this.flash = 6;
+        if (!att.isKO && att.state !== 'special') att.stagger(RF.CONFIG.PERFECT_BLOCK_STAGGER);
+        def.startSpecial();
+        return 'perfect';
+      }
+
+      const blocked = def.receiveHit(att, move);
+      // Pushing someone into the wall pushes the attacker back instead.
+      if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
+      this.effects.spawn(blocked ? 'block' : spark, ex, ey);
+      this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
+      if (!blocked && (spark === 'heavy' || move.special)) this.shake = Math.max(this.shake, 6);
+      return blocked ? 'block' : 'hit';
+    }
+
+    spawnProjectile(f, s) {
+      const size = s.size * f.body.scale;
+      this.projectiles.push({
+        owner: f, cfg: s, move: RF.specialMove(f, s),
+        x: f.x + f.facing * f.body.width * 0.7, y: f.y + f.body.height * s.height - size / 2,
+        vx: f.facing * s.speed, w: size, h: size * 0.75, t: 0,
+      });
+    }
+
+    updateProjectiles(bounds) {
+      for (const p of this.projectiles) {
+        p.x += p.vx;
+        p.t++;
+        if (p.x < bounds.left - 20 || p.x > bounds.right + 20) p.dead = true;
+      }
+      // Two projectiles meeting cancel each other out.
+      for (const p of this.projectiles) for (const q of this.projectiles) {
+        if (p !== q && p.owner !== q.owner && !p.dead && !q.dead && rectsOverlap(this.projBox(p), this.projBox(q))) {
+          p.dead = q.dead = true;
+          this.effects.spawn('hit', (p.x + q.x) / 2, p.y + p.h / 2);
+        }
+      }
+      if (this.phase === 'fight') {
+        for (const p of this.projectiles) {
+          if (p.dead) continue;
+          const target = this.opponentOf(p.owner);
+          const hurt = target.getHurtbox();
+          if (hurt && rectsOverlap(this.projBox(p), hurt)) {
+            p.dead = true;
+            this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
+          }
+        }
+      }
+      this.projectiles = this.projectiles.filter((p) => !p.dead);
+    }
+
+    projBox(p) { return { x: p.x - p.w / 2, y: p.y, w: p.w, h: p.h }; }
+
+    drawProjectiles(ctx, floorY) {
+      for (const p of this.projectiles) {
+        const [c0, c1, c2] = p.cfg.colors;
+        const x = Math.round(p.x), y = Math.round(floorY - p.y - p.h / 2);
+        const dir = Math.sign(p.vx);
+        for (let i = 1; i <= 4; i++) { // trail
+          ctx.fillStyle = c2;
+          const r = Math.max(1, Math.round(p.h / 2 - i * 1.5));
+          ctx.fillRect(x - dir * i * 5 - r, y - r + ((p.t + i) % 3) - 1, r * 2, r * 2);
+        }
+        const rw = Math.round(p.w / 2), rh = Math.round(p.h / 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x - rw - 1, y - rh, rw * 2 + 2, rh * 2);
+        ctx.fillRect(x - rw, y - rh - 1, rw * 2, rh * 2 + 2);
+        ctx.fillStyle = c1;
+        ctx.fillRect(x - rw, y - rh, rw * 2, rh * 2);
+        ctx.fillStyle = c0;
+        ctx.fillRect(x - rw + 2 + (dir > 0 ? 2 : 0), y - rh + 1, Math.max(2, rw - 1), Math.max(2, rh - 1));
       }
     }
 
@@ -179,10 +269,15 @@
       // Whoever is attacking is drawn in front.
       const order = [...this.fighters].sort((p, q) => (p.state === 'attack') - (q.state === 'attack'));
       for (const f of order) f.draw(ctx, floorY);
+      this.drawProjectiles(ctx, floorY);
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
       ctx.restore();
 
+      if (this.flash) {
+        ctx.fillStyle = `rgba(200,240,255,${this.flash * 0.06})`;
+        ctx.fillRect(0, 0, W, H);
+      }
       this.hud.draw(ctx, this);
       this.drawAnnouncements(ctx, W, H);
 
@@ -217,6 +312,7 @@
         ctx.strokeStyle = color;
         ctx.strokeRect(Math.round(r.x) + 0.5, Math.round(floorY - r.y - r.h) + 0.5, Math.round(r.w), Math.round(r.h));
       };
+      for (const p of this.projectiles) rect(this.projBox(p), '#ff3030');
       for (const f of this.fighters) {
         rect(f.getHurtbox(), '#40ff40');
         if (f.state === 'attack' && f.attackPhase() === 'active') {

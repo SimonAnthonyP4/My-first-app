@@ -22,6 +22,11 @@
     kb: new RF.Keyboard(),
     scene: null,
     setScene(scene) { this.scene = scene; },
+    manualStep: false, // automated tests set this and call game.step() themselves
+    step() {
+      this.scene.update();
+      this.kb.tick();
+    },
   };
   RF.game = game;
 
@@ -37,8 +42,7 @@
     acc += Math.min(now - last, 250); // avoid a huge catch-up after the tab was hidden
     last = now;
     while (acc >= STEP) {
-      game.scene.update();
-      game.kb.tick();
+      if (!game.manualStep) game.step();
       acc -= STEP;
     }
     game.scene.render(ctx);

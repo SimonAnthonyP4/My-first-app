@@ -35,7 +35,24 @@ You can rebind keys in `js/config/controls.js`. Some cheap keyboards can't
 register many keys held at once ("ghosting"). If moves drop when you both
 mash, try the other P2 key set.
 
-## Current state: milestone 1 + 2 (playable prototype)
+## Perfect block → special move
+
+Tap block **just before** an attack lands (within 8 frames, about 0.13 s) to
+pull off a **perfect block**. You take no damage, the attacker staggers, and
+your character automatically unleashes their special move:
+
+| Fighter | Special | What it does |
+|---------|---------|--------------|
+| Bruiser | **Seismic Slam** | Leaps at the opponent and pounds the floor. The shockwave launches them. |
+| Viper   | **Venom Spit**   | Spits a glob of venom across the screen. |
+
+Holding block the whole time is a normal block (chip damage, no special), and
+mashing block doesn't count. A press only qualifies if it comes at least half a
+second after your previous one. Perfect-blocking a projectile works too. The
+timing window, mash cooldown and stagger length are in `js/config/game.js`;
+each special's numbers are in `js/config/specials.js`.
+
+## Features so far
 
 - One stage: **Hell Cafeteria**
 - Two placeholder fighters: **Bruiser** (tank) vs **Viper** (light)
@@ -44,6 +61,7 @@ mash, try the other P2 key set.
 - Hitstun, blockstun, pushback, hit-stop and sparks so hits feel solid
 - Health bars at the top, the same size for everyone
 - 99-second rounds, K.O. or time-out, best of three. A draw round scores for nobody and is replayed.
+- Perfect block → special move (see above)
 
 ## Project layout
 
@@ -56,6 +74,7 @@ js/
     game.js                global rules: health, round time, gravity, chip damage…
     controls.js            key bindings
     moves.js               base frame data for light / heavy attacks
+    specials.js            special move numbers
     characters.js          ROSTER + ALL PER-CHARACTER STATS  <- balance here
   render/
     poses.js               animation list + placeholder poses
@@ -69,7 +88,8 @@ js/
     fighter.js             fighter state machine, physics, hit reactions
     fight-scene.js         round / match flow, collisions, hit detection
     hud.js                 health bars, timer, round markers
-    effects.js             hit sparks
+    effects.js             hit sparks, floating text
+    special-kinds.js       special move behaviours (projectile, slam, ...)
   main.js                  game loop
 tools/sprite-viewer.html   preview every animation frame of every fighter
 ```
@@ -111,7 +131,7 @@ sprite: {
 
 Each row needs these frame counts: idle 2, walk 4, jump 1,
 light 3 (startup / hit / recovery), heavy 3, block 1, hit 1,
-ko 2 (falling / lying), victory 2. Hitboxes come from `body`/`moves.js`, not
+ko 2 (falling / lying), victory 2, special 3 (wind-up / thrust / floor slam). Hitboxes come from `body`/`moves.js`, not
 the art, so you may need to retune them after a swap. The `` ` `` key shows them.
 
 ## Adding a stage
@@ -123,7 +143,7 @@ drawing code, then add a `<script>` tag for it in `index.html`.
 
 1. ~~Project setup + README~~
 2. ~~Playable prototype~~
-3. Perfect-block special move system
+3. ~~Perfect-block special move system~~
 4. Main menu + character select
 5. Second stage (abandoned NYC street)
 6. Full 8-character roster

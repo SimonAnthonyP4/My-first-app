@@ -14,4 +14,10 @@ RF.CONFIG = {
   JUMP_FORWARD_FACTOR: 1.1,
   CHIP_DAMAGE: 0.1,       // fraction of damage that still gets through a block
   INPUT_BUFFER: 6,        // frames an attack press is remembered
+
+  // Perfect block: press block no more than this many frames before a hit
+  // lands to trigger your special move (8 frames = ~0.13 s).
+  PERFECT_BLOCK_WINDOW: 8,
+  PERFECT_BLOCK_COOLDOWN: 30, // presses closer together than this don't count (no mashing)
+  PERFECT_BLOCK_STAGGER: 40,  // frames the attacker is stunned after being perfect-blocked
 };

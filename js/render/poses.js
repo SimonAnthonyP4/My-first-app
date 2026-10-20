@@ -2,8 +2,11 @@
 // exactly these animations with these frame counts (see README).
 //   light/heavy frames: 0 = startup, 1 = active (hitting), 2 = recovery
 //   ko frames:          0 = falling, 1 = lying on the floor
+//   special frames:     0 = wind-up, 1 = thrust forward (projectiles, rushes),
+//                       2 = slam into the floor
 RF.ANIMATIONS = {
   idle: 2, walk: 4, jump: 1, light: 3, heavy: 3, block: 1, hit: 1, ko: 2, victory: 2,
+  special: 3,
 };
 
 // Poses for the procedural placeholder sprites, drawn facing right.
@@ -50,6 +53,11 @@ RF.ANIMATIONS = {
     ko: [
       P({ lean: -55, fThigh: 50, fShin: 20, bThigh: 30, bShin: 0, fUpper: -80, fFore: -60, bUpper: -100, bFore: -80 }),
       P({ lean: -90, hipX: 18, fThigh: 85, fShin: 90, bThigh: 80, bShin: 95, fUpper: -95, fFore: -100, bUpper: -60, bFore: -95 }),
+    ],
+    special: [
+      P({ lean: -10, fUpper: -40, fFore: 50, bUpper: -50, bFore: 30, bThigh: -28, bShin: -10, fThigh: 30, fShin: 0 }),
+      P({ lean: 18, fUpper: 88, fFore: 92, bUpper: 78, bFore: 96, bThigh: -38, bShin: -22, fThigh: 42, fShin: 2 }),
+      P({ lean: 40, fUpper: 30, fFore: 10, bUpper: 20, bFore: 5, bThigh: -45, bShin: -70, fThigh: 80, fShin: -5 }),
     ],
     victory: [
       P({ lean: 0, fUpper: 170, fFore: 178, bUpper: 30, bFore: -40, bThigh: -14, fThigh: 14, fShin: 0, bShin: 0 }),
