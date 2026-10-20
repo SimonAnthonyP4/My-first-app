@@ -10,7 +10,7 @@
 RF.SPECIALS = {
   seismicSlam: {
     name: 'Seismic Slam',
-    description: 'Leaps at the opponent and pounds the floor. The shockwave launches anyone standing nearby.',
+    description: 'Leaps at the opponent and pounds the floor. The shockwave launches them.',
     kind: 'slam',
     startup: 8,          // crouch before the leap
     leapPower: 7,        // jump speed

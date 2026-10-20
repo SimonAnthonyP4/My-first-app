@@ -56,7 +56,7 @@
       });
 
       const secs = Math.max(0, Math.ceil(scene.timer / RF.CONFIG.FPS));
-      T(ctx, String(secs).padStart(2, '0'), W / 2, BAR_Y - 3, {
+      T(ctx, Number.isFinite(secs) ? String(secs).padStart(2, '0') : '--', W / 2, BAR_Y - 3, {
         scale: 2, align: 'center', outline: '#000',
         color: secs <= 10 ? '#ff4040' : '#ffffff',
       });

@@ -30,12 +30,7 @@
   };
   RF.game = game;
 
-  // Prototype: jump straight into a match. Menus come in milestone 4.
-  game.setScene(new RF.FightScene(game, {
-    p1: RF.getCharacter('bruiser'),
-    p2: RF.getCharacter('viper'),
-    stage: 'cafeteria',
-  }));
+  game.setScene(new RF.TitleScene(game));
 
   let last = performance.now(), acc = 0;
   function loop(now) {

@@ -6,6 +6,7 @@ RF.CONTROLS = {
     left: ['KeyA'],
     right: ['KeyD'],
     up: ['KeyW'],
+    down: ['KeyS'],        // menus only (no crouch yet)
     light: ['KeyF'],
     heavy: ['KeyG'],
     block: ['KeyH'],
@@ -14,6 +15,7 @@ RF.CONTROLS = {
     left: ['ArrowLeft'],
     right: ['ArrowRight'],
     up: ['ArrowUp'],
+    down: ['ArrowDown'],
     // Numpad for full keyboards, , . / as a laptop-friendly alternative.
     light: ['Numpad1', 'Comma'],
     heavy: ['Numpad2', 'Period'],

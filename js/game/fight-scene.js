@@ -15,7 +15,7 @@
       this.opts = opts;
       this.stageDef = RF.getStage(opts.stage);
       this.stage = new RF.StageRenderer(this.stageDef);
-      this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1)];
+      this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1, opts.p2Alt)];
       for (const f of this.fighters) f.scene = this;
       this.projectiles = [];
       this.inputs = [
@@ -26,13 +26,27 @@
       this.hud = new RF.HUD();
       this.frame = 0;
       this.paused = false;
-      this.showHitboxes = false;
+      this.showHitboxes = RF.CONFIG.SHOW_HITBOXES;
+      const toSelect = () => game.setScene(new RF.SelectScene(game, opts));
+      const toTitle = () => game.setScene(new RF.TitleScene(game));
+      this.pauseMenu = new RF.ListMenu([
+        { label: 'RESUME', onSelect: () => { this.paused = false; } },
+        { label: 'RESTART MATCH', onSelect: () => { this.paused = false; this.startMatch(); } },
+        { label: 'CHARACTER SELECT', onSelect: toSelect },
+        { label: 'MAIN MENU', onSelect: toTitle },
+      ]);
+      this.endMenu = new RF.ListMenu([
+        { label: 'REMATCH', onSelect: () => this.startMatch() },
+        { label: 'CHARACTER SELECT', onSelect: toSelect },
+        { label: 'MAIN MENU', onSelect: toTitle },
+      ]);
       this.startMatch();
     }
 
     startMatch() {
       this.wins = [0, 0];
       this.round = 1;
+      if (this.endMenu) this.endMenu.index = 0;
       this.startRound();
     }
 
@@ -40,7 +54,7 @@
       const b = this.stageDef.bounds, mid = (b.left + b.right) / 2;
       this.fighters[0].reset(mid - START_GAP, 1);
       this.fighters[1].reset(mid + START_GAP, -1);
-      this.timer = RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS;
+      this.timer = RF.CONFIG.ROUND_TIME ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
       this.hitstop = 0;
       this.shake = 0;
       this.flash = 0;
@@ -60,8 +74,12 @@
     update() {
       const kb = this.game.kb;
       if (kb.justPressed('Backquote')) this.showHitboxes = !this.showHitboxes;
-      if (kb.justPressed('Escape', 'KeyP') && this.phase !== 'matchOver') this.paused = !this.paused;
-      if (this.paused) return;
+      if (kb.justPressed('Escape', 'KeyP') && this.phase !== 'matchOver') {
+        this.paused = !this.paused;
+        this.pauseMenu.index = 0;
+        return;
+      }
+      if (this.paused) return this.pauseMenu.update(kb);
 
       this.frame++;
       this.phaseTime++;
@@ -76,7 +94,7 @@
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
           break;
         case 'fight':
-          if (--this.timer <= 0) this.endRound('time');
+          if (--this.timer <= 0) this.endRound('time'); // Infinity never runs out
           break;
         case 'roundOver':
           // Brief slow-motion right after the round ends.
@@ -91,7 +109,8 @@
           }
           break;
         case 'matchOver':
-          if (kb.justPressed('Enter', 'NumpadEnter')) this.startMatch();
+          // Short delay so players still mashing attacks don't pick an option by accident.
+          if (this.phaseTime > 60) this.endMenu.update(kb);
           break;
       }
 
@@ -284,14 +303,19 @@
       if (this.paused) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 0, W, H);
-        T(ctx, 'PAUSED', W / 2, 90, { scale: 3, align: 'center', color: BIG, outline: '#000' });
-        T(ctx, 'ESC TO RESUME', W / 2, 124, { align: 'center', color: '#ccc', outline: '#000' });
+        T(ctx, 'PAUSED', W / 2, 60, { scale: 3, align: 'center', color: BIG, outline: '#000' });
+        this.pauseMenu.draw(ctx, W / 2, 100, this.frame + this.pauseMenu.index, { spacing: 16 });
       }
     }
 
     drawAnnouncements(ctx, W) {
+      const band = (y, h) => {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0, y, W, h);
+      };
+      if (this.phase === 'intro' || this.phase === 'roundOver') band(70, 64);
+      else if (this.phase === 'matchOver') band(60, 120);
       const big = (text, y = 80, scale = 4) => T(ctx, text, W / 2, y, { scale, align: 'center', color: BIG, outline: '#200000' });
-      const small = (text, y) => T(ctx, text, W / 2, y, { scale: 1, align: 'center', color: '#fff', outline: '#000' });
       if (this.phase === 'intro') {
         if (this.phaseTime < 65) big('ROUND ' + this.round);
         else big('FIGHT!', 76, 5);
@@ -302,7 +326,7 @@
         const w = this.wins[0] > this.wins[1] ? 0 : 1;
         big(this.fighters[w].def.name + ' WINS', 70, 3);
         T(ctx, 'PLAYER ' + (w + 1) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
-        if (Math.floor(this.frame / 30) % 2 === 0) small('PRESS ENTER FOR A REMATCH', 124);
+        if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
       }
     }
 

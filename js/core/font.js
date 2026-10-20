@@ -50,6 +50,10 @@
     '+': '00000 00100 00100 11111 00100 00100 00000',
     '=': '00000 00000 11111 00000 11111 00000 00000',
     '$': '00100 01111 10100 01110 00101 11110 00100',
+    '<': '00010 00100 01000 10000 01000 00100 00010',
+    '>': '01000 00100 00010 00001 00010 00100 01000',
+    '&': '01100 10010 10100 01000 10101 10010 01101',
+    '*': '00000 10101 01110 11111 01110 10101 00000',
     ' ': '00000 00000 00000 00000 00000 00000 00000',
   };
   const W = 5, H = 7;
@@ -105,5 +109,18 @@
     ctx.drawImage(r.canvas, Math.round(x - r.pad), Math.round(y - r.pad));
   }
 
-  RF.font = { drawText, textWidth, GLYPH_HEIGHT: H };
+  // Split text into lines of at most maxChars characters, breaking on spaces.
+  function wrap(text, maxChars) {
+    const lines = [];
+    let line = '';
+    for (const word of String(text).split(/\s+/)) {
+      if (!word) continue;
+      if (line && (line + ' ' + word).length > maxChars) { lines.push(line); line = word; }
+      else line = line ? line + ' ' + word : word;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  RF.font = { drawText, textWidth, wrap, GLYPH_HEIGHT: H };
 })();

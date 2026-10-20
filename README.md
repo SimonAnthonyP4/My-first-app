@@ -27,9 +27,10 @@ python3 -m http.server 8000
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 
-- `Esc` / `P`: pause
-- `Enter`: rematch after a match ends
-- `` ` `` (backtick): show hitboxes (green = body, red = attack), for balancing
+- **Menus:** `W`/`S` or `↑`/`↓` to move, `Enter` (or a light attack) to pick, `Esc` to go back
+- **Character select:** each player moves their own cursor and presses their light attack to lock in, or block to cancel
+- `Esc` / `P` in a fight: pause menu (resume, restart, character select, main menu)
+- `` ` `` (backtick) in a fight: show hitboxes (green = body, red = attack), for balancing
 
 You can rebind keys in `js/config/controls.js`. Some cheap keyboards can't
 register many keys held at once ("ghosting"). If moves drop when you both
@@ -62,6 +63,13 @@ each special's numbers are in `js/config/specials.js`.
 - Health bars at the top, the same size for everyone
 - 99-second rounds, K.O. or time-out, best of three. A draw round scores for nobody and is replayed.
 - Perfect block → special move (see above)
+- Main menu (Fight Now, How to Play, Settings, Credits)
+- Character select with 8 slots (6 marked "coming soon" until the roster lands)
+  showing each fighter's bio, origin, stats and special. Picking the same
+  fighter twice gives P2 an alternate costume.
+- VS splash screen, pause menu, end-of-match menu (rematch / character select / main menu)
+- Settings: round time, match length (best of 1/3/5), perfect-block difficulty,
+  hitboxes. They're saved in your browser.
 
 ## Project layout
 
@@ -69,7 +77,7 @@ each special's numbers are in `js/config/specials.js`.
 index.html                 entry point (script load order lives here)
 css/style.css
 js/
-  core/                    namespace, helpers, pixel font, keyboard input
+  core/                    namespace, helpers, pixel font, keyboard input, saved settings
   config/
     game.js                global rules: health, round time, gravity, chip damage…
     controls.js            key bindings
@@ -90,6 +98,7 @@ js/
     hud.js                 health bars, timer, round markers
     effects.js             hit sparks, floating text
     special-kinds.js       special move behaviours (projectile, slam, ...)
+  scenes/                  title menu, settings, how-to-play/credits, character select, VS screen
   main.js                  game loop
 tools/sprite-viewer.html   preview every animation frame of every fighter
 ```
@@ -134,6 +143,10 @@ light 3 (startup / hit / recovery), heavy 3, block 1, hit 1,
 ko 2 (falling / lying), victory 2, special 3 (wind-up / thrust / floor slam). Hitboxes come from `body`/`moves.js`, not
 the art, so you may need to retune them after a swap. The `` ` `` key shows them.
 
+## Renaming the game
+
+The title on the main menu and the credits are at the top of `js/config/game.js`.
+
 ## Adding a stage
 
 Copy `js/stages/cafeteria.js` to a new file, change the `id`/`name` and the
@@ -144,7 +157,7 @@ drawing code, then add a `<script>` tag for it in `index.html`.
 1. ~~Project setup + README~~
 2. ~~Playable prototype~~
 3. ~~Perfect-block special move system~~
-4. Main menu + character select
+4. ~~Main menu + character select~~
 5. Second stage (abandoned NYC street)
 6. Full 8-character roster
 7. Polish: sound, hit effects, balance pass
