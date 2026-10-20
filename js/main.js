@@ -10,7 +10,7 @@
   function resize() {
     const help = document.getElementById('help');
     const availH = window.innerHeight - (help ? help.offsetHeight : 0);
-    let scale = Math.min(window.innerWidth / WIDTH, availH / HEIGHT);
+    let scale = Math.min((window.innerWidth - 32) / WIDTH, availH / HEIGHT); // 32 = side gutters
     if (scale >= 2) scale = Math.floor(scale); // whole-number scaling keeps pixels crisp
     canvas.style.width = Math.floor(WIDTH * scale) + 'px';
     canvas.style.height = Math.floor(HEIGHT * scale) + 'px';
