@@ -248,6 +248,7 @@
   RF.registerStage({
     id: 'cafeteria',
     name: 'Hell Cafeteria',
+    music: 'cafeteria',
     floorY: 204,
     bounds: { left: 10, right: 374 },
     drawStatic,

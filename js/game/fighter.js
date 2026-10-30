@@ -184,6 +184,7 @@
       else this.vx = 0;
       this.state = null; // force a fresh state even when chaining attacks
       this.setState('attack');
+      RF.audio.sfx('whoosh');
       this.crouching = !!this.move.crouch;
     }
 

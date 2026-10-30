@@ -4,10 +4,12 @@
 
   class TitleScene {
     constructor(game) {
+      RF.audio.playSong('menu');
       this.game = game;
       this.t = 0;
       this.menu = new RF.ListMenu([
         { label: 'FIGHT NOW', onSelect: () => game.setScene(new RF.SelectScene(game)) },
+        { label: 'VS CPU', onSelect: () => game.setScene(new RF.SelectScene(game, { cpu: true })) },
         { label: 'HOW TO PLAY', onSelect: () => game.setScene(new RF.InfoScene(game, 'howto')) },
         { label: 'SETTINGS', onSelect: () => game.setScene(new RF.SettingsScene(game)) },
         { label: 'CREDITS', onSelect: () => game.setScene(new RF.InfoScene(game, 'credits')) },
@@ -26,7 +28,7 @@
       const drop = Math.max(0, 40 - this.t) * 2;
       T(ctx, RF.CONFIG.TITLE, W / 2, 34 - drop, { scale: 4, align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
       T(ctx, 'A FIGHT TO THE DEATH... AT LUNCH', W / 2, 70, { align: 'center', color: '#c04030', outline: '#000' });
-      this.menu.draw(ctx, W / 2, 104, this.t, { spacing: 18, scale: 1 });
+      this.menu.draw(ctx, W / 2, 98, this.t, { spacing: 17, scale: 1 });
       T(ctx, 'W/S OR ARROWS TO MOVE - ENTER OR LIGHT ATTACK TO SELECT', W / 2, 208, { align: 'center', color: '#806860', outline: '#000' });
     }
   }

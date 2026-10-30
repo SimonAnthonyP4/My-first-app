@@ -46,6 +46,7 @@
 
   class InfoScene {
     constructor(game, page) {
+      RF.audio.playSong('menu');
       this.game = game;
       this.page = PAGES[page];
       this.t = 0;

@@ -4,6 +4,7 @@
 
   class SettingsScene {
     constructor(game) {
+      RF.audio.playSong('menu');
       this.game = game;
       this.t = 0;
       const back = () => game.setScene(new RF.TitleScene(game));
@@ -25,16 +26,19 @@
       const W = RF.CONFIG.WIDTH;
       RF.drawMenuBackdrop(ctx, this.t, 0.75);
       RF.drawTitle(ctx, 'SETTINGS', 18);
-      RF.drawPanel(ctx, 40, 46, W - 80, 128);
+      RF.drawPanel(ctx, 40, 40, W - 80, 150);
       const items = this.menu.items;
-      this.menu.draw(ctx, W / 2 + 10, 60, this.t, { spacing: 18 });
+      this.menu.draw(ctx, W / 2 + 10, 47, this.t, { spacing: 15 });
       const hint = {
         ROUND_TIME: 'HOW LONG EACH ROUND LASTS',
         ROUNDS_TO_WIN: 'ROUNDS NEEDED TO WIN THE MATCH',
         PERFECT_BLOCK_WINDOW: 'HOW TIGHT THE PERFECT BLOCK TIMING IS',
+        MUSIC_VOLUME: 'BACKGROUND MUSIC VOLUME (M MUTES ALL SOUND)',
+        SFX_VOLUME: 'HITS, BLOCKS AND MENU SOUNDS',
+        CPU_LEVEL: 'HOW TOUGH THE VS CPU OPPONENT IS',
         SHOW_HITBOXES: 'DRAW ATTACK AND BODY BOXES FOR BALANCE TESTING',
       }[(items[this.menu.index].setting || {}).id];
-      if (hint) T(ctx, hint, W / 2, 186, { align: 'center', color: '#a08878', outline: '#000' });
+      if (hint) T(ctx, hint, W / 2, 196, { align: 'center', color: '#a08878', outline: '#000' });
       T(ctx, 'LEFT/RIGHT TO CHANGE - ESC TO GO BACK', W / 2, 208, { align: 'center', color: '#806860', outline: '#000' });
     }
   }

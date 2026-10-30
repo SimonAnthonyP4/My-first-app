@@ -3,6 +3,7 @@
 //
 // A stage definition:
 //   id, name           identifiers
+//   music              song id from config/music.js
 //   floorY             screen y of the floor the fighters stand on
 //   bounds             { left, right } x limits for fighters
 //   drawStatic(ctx, w, h)    paints everything that never moves (baked once)

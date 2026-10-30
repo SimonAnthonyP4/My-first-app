@@ -18,6 +18,7 @@
 
   class SelectScene {
     constructor(game, prev) {
+      RF.audio.playSong('menu');
       this.game = game;
       this.t = 0;
       // Fill up to 8 slots; empty ones are "coming soon" until the full roster lands.
@@ -25,6 +26,9 @@
       for (let i = 0; i < Math.max(SLOTS, RF.CHARACTERS.length); i++) this.slots.push(RF.CHARACTERS[i] || null);
       const idx = (def, fallback) => (def ? Math.max(0, this.slots.findIndex((d) => d && d.id === def.id)) : fallback);
       this.cursor = [idx(prev && prev.p1, 0), idx(prev && prev.p2, 1)];
+      this.cpu = !!(prev && prev.cpu);
+      this.stage = prev && prev.stage;
+      this.labels = this.cpu ? ['P1', 'CPU'] : ['P1', 'P2'];
       this.ready = [false, false];
       this.readyTime = 0;
       this.inputs = [RF.CONTROLS.p1, RF.CONTROLS.p2];
@@ -43,22 +47,8 @@
       if (kb.justPressed('Escape') && !this.ready[0] && !this.ready[1]) {
         return this.game.setScene(new RF.TitleScene(this.game));
       }
-      for (let p = 0; p < 2; p++) {
-        const m = this.inputs[p];
-        const pressed = (a) => kb.justPressed(...m[a]);
-        if (this.ready[p]) {
-          if (pressed('block')) this.ready[p] = false;
-          continue;
-        }
-        let c = this.cursor[p];
-        const n = this.slots.length, rows = Math.ceil(n / COLS);
-        if (pressed('left')) c = (c % COLS === 0) ? c + COLS - 1 : c - 1;
-        if (pressed('right')) c = (c % COLS === COLS - 1) ? c - COLS + 1 : c + 1;
-        if (pressed('up')) c = (c - COLS + rows * COLS) % (rows * COLS);
-        if (pressed('down')) c = (c + COLS) % (rows * COLS);
-        this.cursor[p] = Math.min(c, n - 1);
-        if (pressed('light') && this.slots[this.cursor[p]]) this.ready[p] = true;
-      }
+      if (this.cpu) this.updateCpuMode(kb);
+      else for (let p = 0; p < 2; p++) this.updateCursor(p, (act) => kb.justPressed(...this.inputs[p][act]));
       if (this.ready[0] && this.ready[1]) {
         if (++this.readyTime > 45) this.startFight();
       } else {
@@ -66,9 +56,38 @@
       }
     }
 
+    // VS CPU: player 1 picks their own fighter first, then the CPU's.
+    // Block steps back one pick.
+    updateCpuMode(kb) {
+      const pressed = (act) => kb.justPressed(...this.inputs[0][act]);
+      if (!this.ready[0]) return this.updateCursor(0, pressed);
+      if (!this.ready[1]) {
+        if (pressed('block')) { this.ready[0] = false; return; }
+        return this.updateCursor(1, pressed);
+      }
+      if (pressed('block')) this.ready[1] = false;
+    }
+
+    updateCursor(p, pressed) {
+      if (this.ready[p]) {
+        if (pressed('block')) this.ready[p] = false;
+        return;
+      }
+      let c = this.cursor[p];
+      const n = this.slots.length, rows = Math.ceil(n / COLS);
+      if (pressed('left')) c = (c % COLS === 0) ? c + COLS - 1 : c - 1;
+      if (pressed('right')) c = (c % COLS === COLS - 1) ? c - COLS + 1 : c + 1;
+      if (pressed('up')) c = (c - COLS + rows * COLS) % (rows * COLS);
+      if (pressed('down')) c = (c + COLS) % (rows * COLS);
+      const moved = Math.min(c, n - 1) !== this.cursor[p];
+      this.cursor[p] = Math.min(c, n - 1);
+      if (moved) RF.audio.sfx('move');
+      if (pressed('light') && this.slots[this.cursor[p]]) { this.ready[p] = true; RF.audio.sfx('select'); }
+    }
+
     startFight() {
       const p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
-      this.game.setScene(new RF.VersusScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, stage: RF.STAGES[0].id }));
+      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: this.cpu, stage: this.stage }));
     }
 
     render(ctx) {
@@ -103,7 +122,7 @@
         ctx.strokeStyle = this.ready[p] ? '#ffd030' : PCOL[p];
         ctx.lineWidth = 2;
         ctx.strokeRect(x + o, y + o, SLOT - o * 2, SLOT - o * 2);
-        T(ctx, 'P' + (p + 1), p === 0 ? x + 1 : x + SLOT - 1, y + SLOT - 9, { align: p === 0 ? 'left' : 'right', color: PCOL[p], outline: '#000' });
+        T(ctx, this.labels[p], p === 0 ? x + 1 : x + SLOT - 1, y + SLOT - 9, { align: p === 0 ? 'left' : 'right', color: PCOL[p], outline: '#000' });
       }
       ctx.lineWidth = 1;
 
@@ -126,7 +145,8 @@
 
       for (let p = 0; p < 2; p++) this.drawInfo(ctx, p);
 
-      const hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT = SELECT - BLOCK = CANCEL - ESC = MENU';
+      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT = SELECT - BLOCK = CANCEL - ESC = MENU';
+      if (this.cpu && this.ready[0] && !this.ready[1]) hint = 'NOW PICK YOUR CPU OPPONENT';
       T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });
     }
 

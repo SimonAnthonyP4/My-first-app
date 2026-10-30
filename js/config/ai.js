@@ -1,0 +1,13 @@
+// CPU opponent difficulty levels (picked in Settings). All chances are 0..1.
+//   reaction       frames before the CPU reacts to an incoming attack
+//   blockChance    chance it tries to block an attack it sees coming
+//   perfectChance  chance that block is timed as a PERFECT block (-> its special)
+//   aggression     chance per frame to attack when the opponent is in range
+//   punish         chance to hit back when the opponent is open (missed attack, stunned)
+//   jumpChance     chance to jump in instead of walking when far away
+//   idle           max frames it stands around thinking
+RF.AI_LEVELS = {
+  easy: { reaction: 24, blockChance: 0.25, perfectChance: 0.03, aggression: 0.025, punish: 0.2, jumpChance: 0.05, idle: 40 },
+  normal: { reaction: 14, blockChance: 0.5, perfectChance: 0.12, aggression: 0.05, punish: 0.5, jumpChance: 0.1, idle: 25 },
+  hard: { reaction: 7, blockChance: 0.8, perfectChance: 0.35, aggression: 0.09, punish: 0.9, jumpChance: 0.15, idle: 12 },
+};

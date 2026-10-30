@@ -11,7 +11,7 @@
   <div id="help">
     <span><b>P1</b> A/D move · W jump · S crouch · F light · G heavy · H block</span>
     <span><b>P2</b> ←/→ move · ↑ jump · ↓ crouch · Num1 (or ,) light · Num2 (or .) heavy · Num3 (or /) block</span>
-    <span>Menus: W/S or ↑/↓ + Enter · Esc pause/back · ` hitboxes</span>
+    <span>Menus: W/S or ↑/↓ + Enter · Esc pause/back · M mute · ` hitboxes</span>
   </div>
 
   <!-- Plain scripts (no modules) so the game runs straight from the file system. Order matters. -->
@@ -25,7 +25,10 @@
   <script src="js/config/moves.js"></script>
   <script src="js/config/specials.js"></script>
   <script src="js/config/characters.js"></script>
+  <script src="js/config/ai.js"></script>
+  <script src="js/config/music.js"></script>
   <script src="js/core/settings.js"></script>
+  <script src="js/core/audio.js"></script>
 
   <script src="js/render/poses.js"></script>
   <script src="js/render/procedural-sprite.js"></script>
@@ -34,10 +37,12 @@
 
   <script src="js/stages/registry.js"></script>
   <script src="js/stages/cafeteria.js"></script>
+  <script src="js/stages/nyc-street.js"></script>
 
   <script src="js/game/effects.js"></script>
   <script src="js/game/special-kinds.js"></script>
   <script src="js/game/fighter.js"></script>
+  <script src="js/game/ai.js"></script>
   <script src="js/game/hud.js"></script>
   <script src="js/game/fight-scene.js"></script>
 
@@ -46,6 +51,7 @@
   <script src="js/scenes/settings-scene.js"></script>
   <script src="js/scenes/info-scene.js"></script>
   <script src="js/scenes/select-scene.js"></script>
+  <script src="js/scenes/stage-select-scene.js"></script>
   <script src="js/scenes/versus-scene.js"></script>
 
   <script src="js/main.js"></script>

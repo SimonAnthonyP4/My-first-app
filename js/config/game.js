@@ -29,5 +29,8 @@ RF.CONFIG = {
   PERFECT_BLOCK_COOLDOWN: 30, // presses closer together than this don't count (no mashing)
   PERFECT_BLOCK_STAGGER: 40,  // frames the attacker is stunned after being perfect-blocked
 
+  MUSIC_VOLUME: 0.7,      // 0..1
+  SFX_VOLUME: 0.8,        // 0..1
+  CPU_LEVEL: 'normal',    // easy / normal / hard (see ai.js)
   SHOW_HITBOXES: false,
 };

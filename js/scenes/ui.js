@@ -26,13 +26,18 @@
 
     update(kb) {
       const n = this.items.length;
+      const before = this.index;
       if (RF.menuPressed(kb, 'up')) this.index = (this.index - 1 + n) % n;
       if (RF.menuPressed(kb, 'down')) this.index = (this.index + 1) % n;
+      if (this.index !== before) RF.audio.sfx('move');
       const item = this.items[this.index];
       if (item.setting) {
-        if (RF.menuPressed(kb, 'left')) RF.settings.cycle(item.setting, -1);
-        if (RF.menuPressed(kb, 'right') || RF.menuPressed(kb, 'confirm')) RF.settings.cycle(item.setting, 1);
+        const left = RF.menuPressed(kb, 'left'), right = RF.menuPressed(kb, 'right') || RF.menuPressed(kb, 'confirm');
+        if (left) RF.settings.cycle(item.setting, -1);
+        if (right) RF.settings.cycle(item.setting, 1);
+        if (left || right) RF.audio.sfx('move');
       } else if (RF.menuPressed(kb, 'confirm') && item.onSelect) {
+        RF.audio.sfx('select');
         item.onSelect();
       }
     }

@@ -41,7 +41,7 @@
         this.sprites[p].draw(ctx, 'idle', Math.floor(this.t / 20) % 2, 0, 0, p === 0 ? 1 : -1);
         ctx.restore();
         T(ctx, defs[p].name, x, 196, { scale: 2, align: 'center', color: '#fff', outline: '#000' });
-        T(ctx, 'PLAYER ' + (p + 1), x, 214, { align: 'center', color: p === 0 ? '#ff6050' : '#60a0ff', outline: '#000' });
+        T(ctx, p === 1 && this.opts.cpu ? 'CPU' : 'PLAYER ' + (p + 1), x, 214, { align: 'center', color: p === 0 ? '#ff6050' : '#60a0ff', outline: '#000' });
       }
       if (this.t > 18) {
         const pop = Math.max(0, 28 - this.t);

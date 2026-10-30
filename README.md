@@ -23,10 +23,14 @@ python3 -m http.server 8000
 |------------|----------------------|------------------------------|
 | Move       | `A` / `D`            | `←` / `→`                    |
 | Jump       | `W`                  | `↑`                          |
+| Crouch     | `S`                  | `↓`                          |
 | Light      | `F`                  | `Numpad 1` (or `,`)          |
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 
+- **Crouch attacks:** crouch + light = quick low jab, crouch + heavy = sweep (knocks down)
+- **Blocking high/low:** sweeps must be blocked crouching (down + block); jump attacks must be blocked standing
+- `M`: mute / unmute all sound
 - **Menus:** `W`/`S` or `↑`/`↓` to move, `Enter` (or a light attack) to pick, `Esc` to go back
 - **Character select:** each player moves their own cursor and presses their light attack to lock in, or block to cancel
 - `Esc` / `P` in a fight: pause menu (resume, restart, character select, main menu)
@@ -63,13 +67,20 @@ each special's numbers are in `js/config/specials.js`.
 - Health bars at the top, the same size for everyone
 - 99-second rounds, K.O. or time-out, best of three. A draw round scores for nobody and is replayed.
 - Perfect block → special move (see above)
-- Main menu (Fight Now, How to Play, Settings, Credits)
+- Main menu (Fight Now, VS CPU, How to Play, Settings, Credits)
+- **VS CPU**: play alone against a computer opponent (Easy / Normal / Hard in Settings).
+  The CPU plays by the same rules, including perfect blocks.
+- Two stages, **Hell Cafeteria** and **Abandoned NYC Street**, plus a stage select screen (or Random)
+- Crouching, crouch jab, sweep, high/low blocking
+- Time out: whoever has more health wins the round (exactly equal = replayed)
+- Background music per stage and for the menus, plus sound effects, all generated
+  live by a small chiptune synth (no audio files). Volume in Settings.
 - Character select with 8 slots (6 marked "coming soon" until the roster lands)
   showing each fighter's bio, origin, stats and special. Picking the same
   fighter twice gives P2 an alternate costume.
 - VS splash screen, pause menu, end-of-match menu (rematch / character select / main menu)
 - Settings: round time, match length (best of 1/3/5), perfect-block difficulty,
-  hitboxes. They're saved in your browser.
+  CPU difficulty, music and sound volume, hitboxes. They're saved in your browser.
 
 ## Project layout
 
@@ -77,12 +88,14 @@ each special's numbers are in `js/config/specials.js`.
 index.html                 entry point (script load order lives here)
 css/style.css
 js/
-  core/                    namespace, helpers, pixel font, keyboard input, saved settings
+  core/                    namespace, helpers, pixel font, keyboard input, saved settings, audio synth
   config/
     game.js                global rules: health, round time, gravity, chip damage…
     controls.js            key bindings
     moves.js               base frame data for light / heavy attacks
     specials.js            special move numbers
+    ai.js                  CPU difficulty levels
+    music.js               the songs, written as note patterns
     characters.js          ROSTER + ALL PER-CHARACTER STATS  <- balance here
   render/
     poses.js               animation list + placeholder poses
@@ -92,13 +105,15 @@ js/
   stages/
     registry.js            stage system
     cafeteria.js           Stage 1
+    nyc-street.js          Stage 2
   game/
     fighter.js             fighter state machine, physics, hit reactions
     fight-scene.js         round / match flow, collisions, hit detection
     hud.js                 health bars, timer, round markers
     effects.js             hit sparks, floating text
     special-kinds.js       special move behaviours (projectile, slam, ...)
-  scenes/                  title menu, settings, how-to-play/credits, character select, VS screen
+    ai.js                  the CPU opponent
+  scenes/                  title menu, settings, how-to-play/credits, character select, stage select, VS screen
   main.js                  game loop
 tools/sprite-viewer.html   preview every animation frame of every fighter
 ```
@@ -140,7 +155,8 @@ sprite: {
 
 Each row needs these frame counts: idle 2, walk 4, jump 1,
 light 3 (startup / hit / recovery), heavy 3, block 1, hit 1,
-ko 2 (falling / lying), victory 2, special 3 (wind-up / thrust / floor slam). Hitboxes come from `body`/`moves.js`, not
+ko 2 (falling / lying), victory 2, special 3 (wind-up / thrust / floor slam),
+crouch 1, crouchBlock 1, lowLight 3, lowHeavy 3. Hitboxes come from `body`/`moves.js`, not
 the art, so you may need to retune them after a swap. The `` ` `` key shows them.
 
 ## Renaming the game
@@ -149,8 +165,15 @@ The title on the main menu and the credits are at the top of `js/config/game.js`
 
 ## Adding a stage
 
-Copy `js/stages/cafeteria.js` to a new file, change the `id`/`name` and the
-drawing code, then add a `<script>` tag for it in `index.html`.
+Copy `js/stages/nyc-street.js` to a new file, change the `id`/`name`/`music` and
+the drawing code, then add a `<script>` tag for it in `index.html`. It shows up
+on the stage select screen automatically.
+
+## Changing the music
+
+Songs live in `js/config/music.js` as note patterns (one bar = 16 steps, e.g.
+`'A4 - - C5 . . E5 -'`). Edit the notes or tempo, or add a song and point a
+stage's `music` at it.
 
 ## Roadmap
 
@@ -158,6 +181,6 @@ drawing code, then add a `<script>` tag for it in `index.html`.
 2. ~~Playable prototype~~
 3. ~~Perfect-block special move system~~
 4. ~~Main menu + character select~~
-5. Second stage (abandoned NYC street)
+5. ~~Second stage (abandoned NYC street)~~ + crouching, VS CPU, music
 6. Full 8-character roster
 7. Polish: sound, hit effects, balance pass

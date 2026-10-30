@@ -15,12 +15,13 @@
       this.opts = opts;
       this.stageDef = RF.getStage(opts.stage);
       this.stage = new RF.StageRenderer(this.stageDef);
+      RF.audio.playSong(this.stageDef.music);
       this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1, opts.p2Alt)];
       for (const f of this.fighters) f.scene = this;
       this.projectiles = [];
       this.inputs = [
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
-        new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
+        opts.cpu ? new RF.AIInput(game.kb, this, 1) : new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
       ];
       this.effects = new RF.Effects();
       this.hud = new RF.HUD();
@@ -91,6 +92,8 @@
 
       switch (this.phase) {
         case 'intro':
+          if (this.phaseTime === 1) RF.audio.sfx('gong');
+          if (this.phaseTime === 65) RF.audio.sfx('fight');
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
           break;
         case 'fight':
@@ -117,6 +120,7 @@
       const canAct = this.phase === 'fight';
       const [a, b] = this.fighters;
       const bounds = this.stageDef.bounds;
+      for (const input of this.inputs) if (input.think) input.think();
       a.update(this.inputs[0], b, canAct, bounds);
       b.update(this.inputs[1], a, canAct, bounds);
       this.separate(a, b, bounds);
@@ -183,6 +187,7 @@
         this.effects.spawnText(def.special.name.toUpperCase() + '!', def.x, def.body.height + 4, '#ffd030', 12);
         this.hitstop = Math.max(this.hitstop, 14);
         this.flash = 6;
+        RF.audio.sfx('perfect');
         if (!att.isKO && att.state !== 'special') att.stagger(RF.CONFIG.PERFECT_BLOCK_STAGGER);
         def.startSpecial();
         return 'perfect';
@@ -192,12 +197,14 @@
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? 'block' : spark, ex, ey);
+      RF.audio.sfx(blocked ? 'block' : spark === 'heavy' || move.special ? 'heavy' : 'hit');
       this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
       if (!blocked && (spark === 'heavy' || move.special)) this.shake = Math.max(this.shake, 6);
       return blocked ? 'block' : 'hit';
     }
 
     spawnProjectile(f, s) {
+      RF.audio.sfx('special');
       const size = s.size * f.body.scale;
       this.projectiles.push({
         owner: f, cfg: s, move: RF.specialMove(f, s),
@@ -260,6 +267,7 @@
       const [a, b] = this.fighters;
       let winner = null;
       if (reason === 'ko') {
+        RF.audio.sfx('ko');
         if (a.isKO && b.isKO) this.banner = 'DOUBLE K.O.';
         else { winner = a.isKO ? 1 : 0; this.banner = 'K.O.'; }
       } else {
@@ -325,7 +333,7 @@
       } else if (this.phase === 'matchOver') {
         const w = this.wins[0] > this.wins[1] ? 0 : 1;
         big(this.fighters[w].def.name + ' WINS', 70, 3);
-        T(ctx, 'PLAYER ' + (w + 1) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
+        T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
         if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
       }
     }

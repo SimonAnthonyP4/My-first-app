@@ -23,7 +23,12 @@
     scene: null,
     setScene(scene) { this.scene = scene; },
     manualStep: false, // automated tests set this and call game.step() themselves
+    toast: null,
     step() {
+      if (this.kb.justPressed('KeyM')) {
+        this.toast = { text: RF.audio.toggleMute() ? 'SOUND OFF' : 'SOUND ON', t: 90 };
+      }
+      if (this.toast && --this.toast.t <= 0) this.toast = null;
       this.scene.update();
       this.kb.tick();
     },
@@ -41,6 +46,10 @@
       acc -= STEP;
     }
     game.scene.render(ctx);
+    if (game.toast) {
+      RF.font.drawText(ctx, game.toast.text, WIDTH - 6, HEIGHT - 12, { align: 'right', color: '#ffd030', outline: '#000' });
+    }
+    RF.audio.update();
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);

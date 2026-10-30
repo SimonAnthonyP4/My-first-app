@@ -17,6 +17,18 @@
       options: [[12, 'EASY'], [8, 'NORMAL'], [5, 'HARD']],
     },
     {
+      id: 'CPU_LEVEL', label: 'CPU DIFFICULTY',
+      options: [['easy', 'EASY'], ['normal', 'NORMAL'], ['hard', 'HARD']],
+    },
+    {
+      id: 'MUSIC_VOLUME', label: 'MUSIC',
+      options: [[0, 'OFF'], [0.35, 'LOW'], [0.7, 'MEDIUM'], [1, 'HIGH']],
+    },
+    {
+      id: 'SFX_VOLUME', label: 'SOUND EFFECTS',
+      options: [[0, 'OFF'], [0.4, 'LOW'], [0.8, 'MEDIUM'], [1, 'HIGH']],
+    },
+    {
       id: 'SHOW_HITBOXES', label: 'SHOW HITBOXES',
       options: [[false, 'OFF'], [true, 'ON']],
     },
@@ -45,6 +57,7 @@
     const n = s.options.length;
     RF.CONFIG[s.id] = s.options[((i < 0 ? 0 : i) + dir + n) % n][0];
     save();
+    if (RF.audio) RF.audio.applyVolumes();
   }
 
   function valueLabel(s) {
@@ -55,6 +68,7 @@
   function reset() {
     Object.assign(RF.CONFIG, defaults);
     save();
+    if (RF.audio) RF.audio.applyVolumes();
   }
 
   RF.settings = { load, save, cycle, valueLabel, reset };
