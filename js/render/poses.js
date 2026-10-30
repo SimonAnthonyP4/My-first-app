@@ -2,11 +2,12 @@
 // exactly these animations with these frame counts (see README).
 //   light/heavy frames: 0 = startup, 1 = active (hitting), 2 = recovery
 //   ko frames:          0 = falling, 1 = lying on the floor
+//   lowLight/lowHeavy:  crouching attacks, same 3 phases as light/heavy
 //   special frames:     0 = wind-up, 1 = thrust forward (projectiles, rushes),
 //                       2 = slam into the floor
 RF.ANIMATIONS = {
   idle: 2, walk: 4, jump: 1, light: 3, heavy: 3, block: 1, hit: 1, ko: 2, victory: 2,
-  special: 3,
+  special: 3, crouch: 1, crouchBlock: 1, lowLight: 3, lowHeavy: 3,
 };
 
 // Poses for the procedural placeholder sprites, drawn facing right.
@@ -19,6 +20,8 @@ RF.ANIMATIONS = {
   const stance = { bThigh: -18, bShin: -6, fThigh: 24, fShin: 2 };
 
   const P = (o) => Object.assign({ lean: 8 }, stance, guard, o);
+  const crouchLegs = { bThigh: 35, bShin: -70, fThigh: 85, fShin: -8 };
+  const C = (o) => P(Object.assign({ lean: 18 }, crouchLegs, o));
 
   RF.POSES = {
     idle: [
@@ -58,6 +61,18 @@ RF.ANIMATIONS = {
       P({ lean: -10, fUpper: -40, fFore: 50, bUpper: -50, bFore: 30, bThigh: -28, bShin: -10, fThigh: 30, fShin: 0 }),
       P({ lean: 18, fUpper: 88, fFore: 92, bUpper: 78, bFore: 96, bThigh: -38, bShin: -22, fThigh: 42, fShin: 2 }),
       P({ lean: 40, fUpper: 30, fFore: 10, bUpper: 20, bFore: 5, bThigh: -45, bShin: -70, fThigh: 80, fShin: -5 }),
+    ],
+    crouch: [C({})],
+    crouchBlock: [C({ lean: 4, fUpper: 70, fFore: 170, bUpper: 55, bFore: 175 })],
+    lowLight: [
+      C({ fUpper: 0, fFore: 110 }),
+      C({ lean: 24, fUpper: 86, fFore: 88, bUpper: 15, bFore: 150 }),
+      C({ fUpper: 50, fFore: 120 }),
+    ],
+    lowHeavy: [
+      C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 70, fShin: -40, bUpper: -15, bFore: -5 }),
+      C({ lean: 40, bThigh: 80, bShin: -95, fThigh: 82, fShin: 90, bUpper: -20, bFore: -10, fUpper: 40, fFore: 130 }),
+      C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 78, fShin: 30, bUpper: -15, bFore: -5 }),
     ],
     victory: [
       P({ lean: 0, fUpper: 170, fFore: 178, bUpper: 30, bFore: -40, bThigh: -14, fThigh: 14, fShin: 0, bShin: 0 }),

@@ -6,7 +6,7 @@ RF.CONTROLS = {
     left: ['KeyA'],
     right: ['KeyD'],
     up: ['KeyW'],
-    down: ['KeyS'],        // menus only (no crouch yet)
+    down: ['KeyS'],
     light: ['KeyF'],
     heavy: ['KeyG'],
     block: ['KeyH'],

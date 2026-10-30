@@ -11,6 +11,12 @@
 // damage is multiplied by the attacker's `damage` stat and then reduced by
 // the defender's `damageReduction`.
 //
+// level: 'mid' (default) can be blocked standing or crouching; 'low' must be
+// blocked crouching. Jump attacks are 'overhead' and must be blocked standing.
+// crouch: true = performed while crouching (down + attack).
+// anim: which animation to show (defaults to the move's own name).
+// launch: pops the victim into the air (knockdown).
+//
 // hitbox is relative to the attacker's feet, facing right, before the
 // character's body scale: x = distance in front of centre, y = height above
 // the floor, w/h = size.
@@ -28,5 +34,40 @@ RF.MOVES = {
     hitstun: 22, blockstun: 14,
     pushback: 5.5, hitstop: 6,
     hitbox: { x: 12, y: 36, w: 40, h: 18 },
+  },
+  // Jump attacks: angled down so they can hit crouching opponents.
+  airLight: {
+    startup: 4, active: 6, recovery: 6,
+    damage: 5,
+    hitstun: 14, blockstun: 9,
+    pushback: 2.5, hitstop: 3,
+    anim: 'light',
+    hitbox: { x: 6, y: 14, w: 26, h: 24 },
+  },
+  airHeavy: {
+    startup: 7, active: 6, recovery: 10,
+    damage: 10,
+    hitstun: 20, blockstun: 12,
+    pushback: 4.5, hitstop: 6,
+    anim: 'heavy',
+    hitbox: { x: 4, y: -6, w: 38, h: 30 },
+  },
+  // Crouching jab: fast, hits mid, ducks under standing jabs.
+  lowLight: {
+    startup: 5, active: 3, recovery: 9,
+    damage: 4,
+    hitstun: 13, blockstun: 8,
+    pushback: 3, hitstop: 3,
+    crouch: true,
+    hitbox: { x: 12, y: 28, w: 26, h: 12 },
+  },
+  // Sweep: hits low (crouch-block it!) and knocks the victim off their feet.
+  lowHeavy: {
+    startup: 11, active: 4, recovery: 22,
+    damage: 9,
+    hitstun: 26, blockstun: 14,
+    pushback: 4, hitstop: 6,
+    crouch: true, level: 'low', launch: 3.5,
+    hitbox: { x: 8, y: 0, w: 46, h: 12 },
   },
 };

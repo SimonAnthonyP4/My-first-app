@@ -167,7 +167,7 @@
         att.moveHasHit = true;
         const ex = (Math.max(hb.x, hurt.x) + Math.min(hb.x + hb.w, hurt.x + hurt.w)) / 2;
         const ey = (Math.max(hb.y, hurt.y) + Math.min(hb.y + hb.h, hurt.y + hurt.h)) / 2;
-        this.applyHit(att, def, att.move, att.moveKind === 'heavy' ? 'heavy' : 'hit', ex, ey);
+        this.applyHit(att, def, att.move, /heavy/i.test(att.moveKind) ? 'heavy' : 'hit', ex, ey);
       }
     }
 
@@ -177,7 +177,7 @@
       if (this.phase !== 'fight' || def.isKO) return null;
       const bounds = this.stageDef.bounds;
 
-      if (def.isPerfectBlockAgainst(att)) {
+      if (def.isPerfectBlockAgainst(att, move)) {
         this.effects.spawn('perfect', ex, ey);
         this.effects.spawnText('PERFECT!', def.x, def.body.height + 14, '#8ff0ff');
         this.effects.spawnText(def.special.name.toUpperCase() + '!', def.x, def.body.height + 4, '#ffd030', 12);

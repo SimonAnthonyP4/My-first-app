@@ -19,6 +19,7 @@ RF.CONFIG = {
   GRAVITY: 0.45,
   BACKWALK_FACTOR: 0.8,   // walking away from the opponent is a bit slower
   JUMP_FORWARD_FACTOR: 1.1,
+  CROUCH_HEIGHT: 0.62,    // crouching hurtbox height, as a fraction of standing height
   CHIP_DAMAGE: 0.1,       // fraction of damage that still gets through a block
   INPUT_BUFFER: 6,        // frames an attack press is remembered
 

@@ -47,6 +47,7 @@
       this.airAttackUsed = false;
       this.stun = 0;
       this.walkTime = 0;
+      this.crouching = false;
       this.specialData = {};
       this.lastBlockPress = -Infinity;
       this.blockPressEligible = false;
@@ -59,6 +60,8 @@
       if (this.state === state) return;
       this.state = state;
       this.stateTime = 0;
+      // Only these states can be done low; everything else stands you up.
+      if (!['crouch', 'block', 'blockstun', 'attack'].includes(state)) this.crouching = false;
     }
 
     get grounded() { return this.y <= 0; }
@@ -74,14 +77,16 @@
       switch (this.state) {
         case 'idle':
         case 'walk':
+        case 'crouch':
         case 'block':
           if (canAct) this.groundControl(input, opp);
           else { this.vx = 0; this.setState('idle'); }
           break;
         case 'jump':
+          this.crouching = false;
           if (canAct && !this.airAttackUsed) {
-            if (input.pressed('light')) { input.consume('light'); this.startAttack('light'); }
-            else if (input.pressed('heavy')) { input.consume('heavy'); this.startAttack('heavy'); }
+            if (input.pressed('light')) { input.consume('light'); this.startAttack('airLight'); }
+            else if (input.pressed('heavy')) { input.consume('heavy'); this.startAttack('airHeavy'); }
           }
           break;
         case 'attack':
@@ -110,8 +115,8 @@
       this.blockPressAge = input.kb.frame - lp;
     }
 
-    isPerfectBlockAgainst(attacker) {
-      return this.state === 'block' && this.isBlockingAgainst(attacker) &&
+    isPerfectBlockAgainst(attacker, move) {
+      return this.state === 'block' && this.isBlockingAgainst(attacker, move) &&
         this.blockPressEligible && this.blockPressAge <= RF.CONFIG.PERFECT_BLOCK_WINDOW;
     }
 
@@ -135,13 +140,22 @@
 
     groundControl(input, opp) {
       this.faceOpponent(opp);
-      if (input.pressed('light')) { input.consume('light'); return this.startAttack('light'); }
-      if (input.pressed('heavy')) { input.consume('heavy'); return this.startAttack('heavy'); }
+      const down = input.held('down');
+      if (input.pressed('light')) { input.consume('light'); return this.startAttack(down ? 'lowLight' : 'light'); }
+      if (input.pressed('heavy')) { input.consume('heavy'); return this.startAttack(down ? 'lowHeavy' : 'heavy'); }
       if (input.held('block')) {
         this.setState('block');
+        this.crouching = down; // down + block = crouch block (stops lows, not jump-ins)
         this.vx = 0;
         return;
       }
+      if (down) {
+        this.setState('crouch');
+        this.crouching = true;
+        this.vx = 0;
+        return;
+      }
+      this.crouching = false;
       const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
       if (input.held('up')) {
         this.setState('jump');
@@ -170,6 +184,7 @@
       else this.vx = 0;
       this.state = null; // force a fresh state even when chaining attacks
       this.setState('attack');
+      this.crouching = !!this.move.crouch;
     }
 
     physics(bounds) {
@@ -233,18 +248,29 @@
 
     getHurtbox() {
       if (this.isKO) return null;
-      return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h: this.body.height };
+      const h = this.crouching && this.grounded ? this.body.height * RF.CONFIG.CROUCH_HEIGHT : this.body.height;
+      return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h };
     }
 
-    isBlockingAgainst(attacker) {
-      return (this.state === 'block' || this.state === 'blockstun') && this.grounded &&
-        this.facing === (sign(attacker.x - this.x) || this.facing);
+    // 'low' attacks need a crouch block; jump-ins ('overhead') need a standing one.
+    static attackLevel(attacker, move) {
+      if (move.level) return move.level;
+      return attacker.state === 'attack' && attacker.attackAirborne ? 'overhead' : 'mid';
+    }
+
+    isBlockingAgainst(attacker, move) {
+      if (!((this.state === 'block' || this.state === 'blockstun') && this.grounded)) return false;
+      if (this.facing !== (sign(attacker.x - this.x) || this.facing)) return false;
+      const level = Fighter.attackLevel(attacker, move);
+      if (level === 'low' && !this.crouching) return false;
+      if (level === 'overhead' && this.crouching) return false;
+      return true;
     }
 
     // Returns true if the hit was blocked.
     receiveHit(attacker, move) {
       const dir = sign(this.x - attacker.x) || attacker.facing;
-      const blocked = this.isBlockingAgainst(attacker);
+      const blocked = this.isBlockingAgainst(attacker, move);
       let dmg = move.damage * (1 - this.stats.damageReduction);
       if (blocked) {
         dmg *= RF.CONFIG.CHIP_DAMAGE;
@@ -279,10 +305,11 @@
         case 'jump': return ['jump', 0];
         case 'attack': {
           const ph = this.attackPhase();
-          return [this.moveKind, ph === 'startup' ? 0 : ph === 'active' ? 1 : 2];
+          return [this.move.anim || this.moveKind, ph === 'startup' ? 0 : ph === 'active' ? 1 : 2];
         }
+        case 'crouch': return ['crouch', 0];
         case 'block':
-        case 'blockstun': return ['block', 0];
+        case 'blockstun': return [this.crouching ? 'crouchBlock' : 'block', 0];
         case 'hitstun': return ['hit', 0];
         case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
