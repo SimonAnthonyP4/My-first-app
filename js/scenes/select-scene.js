@@ -31,7 +31,17 @@
       this.labels = this.cpu ? ['P1', 'CPU'] : ['P1', 'P2'];
       this.ready = [false, false];
       this.readyTime = 0;
-      this.inputs = [RF.CONTROLS.p1, RF.CONTROLS.p2];
+      // Light attack picks, block cancels. Enter/Space also pick and Backspace
+      // cancels (Enter for P1, numpad Enter for P2). In VS CPU mode the single
+      // player can use either side's keys.
+      const C = RF.CONTROLS;
+      const withMenuKeys = (m, confirm, back) => Object.assign({}, m, { light: [...m.light, ...confirm], block: [...m.block, ...back] });
+      const both = {};
+      for (const a in C.p1) both[a] = [...C.p1[a], ...C.p2[a]];
+      this.inputs = this.cpu
+        ? [withMenuKeys(both, ['Enter', 'NumpadEnter', 'Space'], ['Backspace'])]
+        : [withMenuKeys(C.p1, ['Enter', 'Space'], ['Backspace']), withMenuKeys(C.p2, ['NumpadEnter'], [])];
+      this.notice = [0, 0]; // frames left to show "coming soon" after picking an empty slot
       this.sprites = new Map();
     }
 
@@ -44,6 +54,7 @@
     update() {
       const kb = this.game.kb;
       this.t++;
+      this.notice = this.notice.map((n) => Math.max(0, n - 1));
       if (kb.justPressed('Escape') && !this.ready[0] && !this.ready[1]) {
         return this.game.setScene(new RF.TitleScene(this.game));
       }
@@ -82,7 +93,10 @@
       const moved = Math.min(c, n - 1) !== this.cursor[p];
       this.cursor[p] = Math.min(c, n - 1);
       if (moved) RF.audio.sfx('move');
-      if (pressed('light') && this.slots[this.cursor[p]]) { this.ready[p] = true; RF.audio.sfx('select'); }
+      if (pressed('light')) {
+        if (this.slots[this.cursor[p]]) { this.ready[p] = true; this.notice[p] = 0; RF.audio.sfx('select'); }
+        else { this.notice[p] = 90; RF.audio.sfx('block'); }
+      }
     }
 
     startFight() {
@@ -145,8 +159,9 @@
 
       for (let p = 0; p < 2; p++) this.drawInfo(ctx, p);
 
-      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT = SELECT - BLOCK = CANCEL - ESC = MENU';
-      if (this.cpu && this.ready[0] && !this.ready[1]) hint = 'NOW PICK YOUR CPU OPPONENT';
+      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'F/ENTER OR LIGHT = SELECT - H/BLOCK = CANCEL - ESC = MENU';
+      if (this.cpu && this.ready[0] && !this.ready[1]) hint = 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
+      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK BRUISER OR VIPER';
       T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });
     }
 
