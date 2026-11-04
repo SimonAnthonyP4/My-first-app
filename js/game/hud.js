@@ -4,6 +4,9 @@
 (function () {
   const BAR_W = 150, BAR_H = 9, BAR_Y = 12, MARGIN = 14;
   const T = (...a) => RF.font.drawText(...a);
+  // Combo announcer: the bigger the combo, the louder the praise.
+  const PRAISE = [[12, 'TERRAMANIA!!'], [9, 'INSANE!'], [7, 'SAVAGE!'], [5, 'BRUTAL!'], [3, 'NICE!']];
+  const METER_W = 96, METER_H = 5;
 
   class HUD {
     constructor() { this.trail = [1, 1]; }
@@ -62,12 +65,29 @@
       // Combo counter under the attacker's health bar.
       const c = scene.comboText;
       if (c && (c.t > 15 || c.t % 4 < 2)) {
-        const pop = c.t > 62 ? 1 : 0;
-        T(ctx, c.hits + ' HITS!', c.side === 0 ? MARGIN : W - MARGIN, 40 - pop, {
-          scale: 2, align: c.side === 0 ? 'left' : 'right', outline: '#200000',
+        const pop = c.t > 62 ? 1 : 0, cx = c.side === 0 ? MARGIN : W - MARGIN, align = c.side === 0 ? 'left' : 'right';
+        T(ctx, c.hits + ' HITS!', cx, 40 - pop, {
+          scale: 2, align, outline: '#200000',
           color: ['#fff8c0', '#fff070', '#ffd030', '#ffa020', '#ff7010', '#e04010', '#a02008'],
         });
+        const praise = PRAISE.find(([n]) => c.hits >= n);
+        if (c.air) T(ctx, 'AIR COMBO', cx, 57, { align, color: '#8ff0ff', outline: '#000' });
+        if (praise) T(ctx, praise[1], cx, c.air ? 66 : 57, { align, outline: '#000', color: c.hits >= 9 ? (scene.frame % 6 < 3 ? '#ff4040' : '#ffd030') : '#ff9a40' });
       }
+
+      // Super meters along the bottom.
+      const H = RF.CONFIG.HEIGHT, MAX = RF.CONFIG.SUPER_MAX;
+      scene.fighters.forEach((f, i) => {
+        const x = i === 0 ? MARGIN : W - MARGIN - METER_W, y = H - 10;
+        const full = f.meter >= MAX, w = Math.round(METER_W * f.meter / MAX);
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 2, y - 2, METER_W + 4, METER_H + 4);
+        ctx.fillStyle = '#1a2440'; ctx.fillRect(x, y, METER_W, METER_H);
+        ctx.fillStyle = full ? (scene.frame % 10 < 5 ? '#ffffff' : '#ffd030') : '#3a9aff';
+        ctx.fillRect(i === 0 ? x : x + METER_W - w, y, w, METER_H);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(i === 0 ? x : x + METER_W - w, y, w, 1);
+        const label = full ? 'SUPER! LIGHT+HEAVY' : 'SUPER';
+        T(ctx, label, i === 0 ? x : x + METER_W, y - 10, { align: i === 0 ? 'left' : 'right', color: full ? '#ffd030' : '#8ab0e0', outline: '#000' });
+      });
 
       const secs = Math.max(0, Math.ceil(scene.timer / RF.CONFIG.FPS));
       T(ctx, Number.isFinite(secs) ? String(secs).padStart(2, '0') : '--', W / 2, BAR_Y - 3, {

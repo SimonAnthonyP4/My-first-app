@@ -11,6 +11,7 @@
   const PAGES = {
     howto: {
       title: 'HOW TO PLAY',
+      next: 'combos',
       draw(ctx, W) {
         RF.drawPanel(ctx, 12, 34, W - 24, 98);
         const rows = [['MOVE', 'left'], ['JUMP', 'up'], ['CROUCH', 'down'], ['LIGHT ATTACK', 'light'], ['HEAVY ATTACK', 'heavy'], ['BLOCK (HOLD)', 'block'], ['THROW (UP CLOSE)', 'throw']];
@@ -30,6 +31,26 @@
         T(ctx, 'HIGH/LOW AND THROWS', W / 2, 172, { align: 'center', color: '#ffb060', outline: '#000' });
         RF.font.wrap('SWEEPS: CROUCH-BLOCK. JUMP-INS: BLOCK STANDING. THROWS BEAT BLOCKING - PRESS THROW WHEN GRABBED TO BREAK FREE.', 58)
           .forEach((line, i) => T(ctx, line, W / 2, 182 + i * 8, { align: 'center', color: '#e8e0d8', outline: '#000' }));
+      },
+    },
+    combos: {
+      title: 'COMBOS AND SUPERS',
+      draw(ctx, W) {
+        const rows = [
+          ['COMBOS', '#ffd030', 'LIGHT ATTACKS THAT HIT CAN CHAIN INTO MORE ATTACKS: LIGHT, LIGHT, HEAVY.'],
+          ['LAUNCHER', '#ff9a40', 'UP + HEAVY: AN UPPERCUT THAT POPS THEM INTO THE AIR. HOLD UP AS IT HITS TO JUMP AFTER THEM.'],
+          ['AIR COMBOS', '#8ff0ff', 'IN THE AIR, CHAIN LIGHT, LIGHT, HEAVY. THE AIR HEAVY SPIKES THEM INTO A FLOOR BOUNCE - HIT THEM AGAIN!'],
+          ['SUPER', '#ffd030', 'HIT AND GET HIT TO FILL THE METER. WHEN FULL, PRESS LIGHT + HEAVY TOGETHER (EVEN TO END A COMBO) FOR A POWERED-UP SPECIAL.'],
+          ['DASH', '#c0ff80', 'DOUBLE-TAP FORWARD TO DASH IN, BACK TO SLIP AWAY (BRIEFLY UNTOUCHABLE).'],
+          ['COUNTER!', '#ff6050', 'HIT THEM WHILE THEY ARE STARTING AN ATTACK FOR EXTRA DAMAGE AND STUN.'],
+        ];
+        RF.drawPanel(ctx, 12, 34, W - 24, 170);
+        let y = 40;
+        for (const [title, col, text] of rows) {
+          T(ctx, title, 20, y, { color: col, outline: '#000' });
+          RF.font.wrap(text, 46).forEach((line, i) => T(ctx, line, 92, y + i * 8, { color: '#e8e0d8', outline: '#000' }));
+          y += Math.max(1, RF.font.wrap(text, 46).length) * 8 + 6;
+        }
       },
     },
     credits: {
@@ -54,7 +75,8 @@
 
     update() {
       this.t++;
-      if (RF.menuPressed(this.game.kb, 'back') || RF.menuPressed(this.game.kb, 'confirm')) {
+      if (RF.menuPressed(this.game.kb, 'confirm') && this.page.next) this.game.setScene(new InfoScene(this.game, this.page.next));
+      else if (RF.menuPressed(this.game.kb, 'back') || RF.menuPressed(this.game.kb, 'confirm')) {
         this.game.setScene(new RF.TitleScene(this.game));
       }
     }
@@ -65,7 +87,7 @@
       RF.drawTitle(ctx, this.page.title, 16);
       this.page.draw(ctx, W);
       if (Math.floor(this.t / 30) % 2 === 0) {
-        T(ctx, 'PRESS ENTER OR ESC TO GO BACK', W / 2, 210, { align: 'center', color: '#a08878', outline: '#000' });
+        T(ctx, this.page.next ? 'ENTER: COMBOS AND SUPERS   ESC: BACK' : 'PRESS ENTER OR ESC TO GO BACK', W / 2, 210, { align: 'center', color: '#a08878', outline: '#000' });
       }
     }
   }

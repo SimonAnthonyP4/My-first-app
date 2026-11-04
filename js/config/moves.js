@@ -20,6 +20,8 @@
 //   fields as a projectile special in specials.js) instead of using its hitbox.
 // launch: pops the victim into the air (knockdown).
 // knockback: how hard a clean hit shoves the victim back (pushback is used when blocked).
+// launcher: true = hold UP after it connects to jump after the victim (air combo).
+// launchVx: sideways speed of a launched victim (default 2).
 //
 // hitbox is relative to the attacker's feet, facing right, before the
 // character's body scale: x = distance in front of centre, y = height above
@@ -44,6 +46,7 @@ RF.MOVES = {
   airLight: {
     startup: 4, active: 6, recovery: 6,
     damage: 5,
+    cancel: true,                 // air combos: chain into more air attacks
     hitstun: 14, blockstun: 9,
     pushback: 2.5, hitstop: 3,
     anim: 'light',
@@ -56,6 +59,17 @@ RF.MOVES = {
     pushback: 4.5, knockback: 8, hitstop: 6,
     anim: 'heavy',
     hitbox: { x: 4, y: -6, w: 38, h: 30 },
+  },
+  // Launcher (UP + HEAVY): an uppercut that pops the opponent high into the air.
+  // Hold UP as it connects to jump after them for an air combo.
+  launcher: {
+    startup: 9, active: 4, recovery: 22,
+    damage: 7,
+    hitstun: 34, blockstun: 12,
+    pushback: 2, hitstop: 8,
+    launch: 7.6, launchVx: 0.7, launcher: true,
+    anim: 'uppercut',
+    hitbox: { x: 4, y: 30, w: 34, h: 60 },
   },
   // Crouching jab: fast, hits mid, ducks under standing jabs.
   lowLight: {

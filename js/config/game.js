@@ -33,6 +33,23 @@ RF.CONFIG = {
   COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block
   INPUT_BUFFER: 6,        // frames an attack press is remembered
 
+  // Air combos: a launcher (UP + HEAVY) pops the opponent up; hold UP to jump after
+  // them and chain air attacks. Air heavy on an airborne opponent spikes them into a
+  // floor bounce.
+  LAUNCH_JUMP: 8.6,       // how high you jump after a launcher
+  JUGGLE_GRAVITY: 0.42,   // juggled fighters fall a bit slower (floatier air combos)
+  JUGGLE_LIMIT: 8,        // after this many hits in the air they fall out of the combo
+  MAX_AIR_CHAIN: 4,       // air attacks that connect can be chained this many times
+  DASH_WINDOW: 12,        // double-tap a direction within this many frames to dash
+  COUNTER_DAMAGE: 1.25,   // hitting someone during their attack's startup = COUNTER!
+
+  // Super meter: fills as you hit and get hit. When full, press LIGHT + HEAVY together
+  // (also works to cancel a light attack that connected) for a powered-up special.
+  SUPER_MAX: 100,
+  SUPER_DAMAGE: 1.6,      // a super special does this much more damage
+  SUPER_INPUT_WINDOW: 5,  // frames between the two presses
+  METER_GAIN: { light: 1.35 }, // light fighters build super meter faster (default 1)
+
   // Perfect block: press block no more than this many frames before a hit
   // lands to trigger your special move (8 frames = ~0.13 s).
   PERFECT_BLOCK_WINDOW: 8,

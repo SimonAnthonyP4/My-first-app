@@ -77,8 +77,38 @@
         }
       }
 
-      if (!ACTIONABLE.includes(me.state)) return;
       const dist = Math.abs(opp.x - me.x);
+
+      // Combos: keep pressing while the hits are landing.
+      if (me.state === 'attack' && me.moveHasHit) {
+        if (this.comboGo === undefined || me.stateTime === 1) this.comboGo = Math.random() < L.combo;
+        if (this.comboGo) {
+          if (me.move.launcher) { this.holding.add('up'); return; }               // chase them into the air
+          if (me.canCancel() && me.stateTime >= me.move.startup + 1) {
+            if (me.attackAirborne) this.tap(me.chain < 2 ? 'light' : 'heavy');
+            else if (me.meter >= RF.CONFIG.SUPER_MAX && Math.random() < 0.5) { this.tap('light'); this.tap('heavy'); }
+            else if (me.chain < 1) this.tap('light');
+            else if (Math.random() < 0.5) { this.holding.add('up'); this.tap('heavy'); } // launcher
+            else this.tap('heavy');
+          }
+        }
+        return;
+      }
+      if (me.state !== 'attack') this.comboGo = undefined;
+      // Air combo: after jumping after a launched opponent, start swinging when they're close.
+      if (me.state === 'jump' && me.airCombo && !me.airAttackUsed) {
+        if (Math.abs(opp.y - me.y) < 30 && dist < 50) this.tap('light');
+        return;
+      }
+
+      if (!ACTIONABLE.includes(me.state)) return;
+
+      // Super: full meter and close enough to land it.
+      if (me.grounded && me.meter >= RF.CONFIG.SUPER_MAX && dist < 170 && !opp.isKO &&
+          Math.random() < L.superChance * (opp.state === 'hitstun' || (opp.state === 'attack' && opp.attackPhase() === 'recovery') ? 6 : 1)) {
+        this.tap('light'); this.tap('heavy');
+        return;
+      }
       const reach = (m) => (me.moves[m].projectile ? 220 : me.moves[m].hitbox.x + me.moves[m].hitbox.w + opp.body.width / 2);
 
       // 2. Jump-in: kick on the way down.
@@ -107,6 +137,7 @@
       if (dist <= reach('heavy') && Math.random() < L.aggression) {
         const r = Math.random();
         if (r < 0.35 && dist < reach('light')) this.tap('light');
+        else if (r < 0.43 && dist < reach('launcher')) { this.holding.add('up'); this.tap('heavy'); } // launcher
         else if (r < 0.55) this.tap('heavy');
         else if (r < 0.75 && dist < reach('lowLight')) { this.holding.add('down'); this.tap('light'); }
         else { this.holding.add('down'); this.tap('heavy'); }
@@ -117,7 +148,9 @@
       if (!this.plan || now >= this.plan.until) {
         const r = Math.random(), rnd = (n) => Math.floor(Math.random() * n);
         if (dist > reach('heavy') + 30) {
-          this.plan = r < L.jumpChance ? { jump: true, dir: toward, until: now + 2 } : { dir: toward, until: now + 10 + rnd(30) };
+          if (r < L.jumpChance) this.plan = { jump: true, dir: toward, until: now + 2 };
+          else if (r < L.jumpChance + L.dashChance && me.grounded) { this.plan = { dashTap: now + 2, dir: 0, until: now + 20 }; this.tap(key(toward)); this.dashKey = key(toward); }
+          else this.plan = { dir: toward, until: now + 10 + rnd(30) };
         } else if (r < 0.1 + L.blockChance * 0.3) {
           // Guard in advance: jabs are too fast to block on reaction alone.
           this.plan = { guard: true, low: Math.random() < 0.4, until: now + 15 + rnd(25) };
@@ -127,6 +160,7 @@
         else if (r < 0.5) this.plan = { dir: 0, until: now + 5 + rnd(L.idle) };
         else this.plan = { dir: toward, until: now + 8 + rnd(20) };
       }
+      if (this.plan.dashTap === now) this.tap(this.dashKey);
       if (this.plan.guard) { this.holding.add('block'); if (this.plan.low) this.holding.add('down'); }
       if (this.plan.jump) this.holding.add('up');
       if (this.plan.dir) this.holding.add(key(this.plan.dir));

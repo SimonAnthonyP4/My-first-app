@@ -9,8 +9,9 @@
   const { clamp } = RF.util;
 
   // Converts special config into the move format used by scene.applyHit.
+  // A super (full meter, LIGHT + HEAVY) powers the special up.
   RF.specialMove = (f, s) => ({
-    damage: s.damage * f.stats.damage,
+    damage: s.damage * f.stats.damage * (f.superActive ? RF.CONFIG.SUPER_DAMAGE : 1),
     hitstun: s.hitstun, blockstun: s.blockstun, pushback: s.pushback, hitstop: s.hitstop,
     launch: s.launch || 0,
     special: true,

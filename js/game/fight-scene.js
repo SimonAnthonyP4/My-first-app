@@ -8,6 +8,7 @@
   const INTRO_FRAMES = 110;      // "ROUND n" ... "FIGHT!"
   const ROUND_OVER_FRAMES = 200; // K.O. / TIME banner + victory pose
   const START_GAP = 70;          // each fighter starts this far from the centre
+  const SUPER_FREEZE = 46;       // frames the world freezes for a super's cut-in
 
   class FightScene {
     constructor(game, opts) {
@@ -48,6 +49,7 @@
       this.wins = [0, 0];
       this.round = 1;
       this.toastyShown = false;
+      for (const f of this.fighters) f.meter = 0;
       if (this.endMenu) this.endMenu.index = 0;
       this.startRound();
     }
@@ -61,6 +63,7 @@
       this.shake = 0;
       this.flash = 0;
       this.comboText = null;
+      this.superFreeze = null;   // the dramatic pause before a super
       this.finisher = null;      // the finisher being performed, if any
       this.finishVictim = null;  // who is dazed waiting to be finished
       this.finishOffered = false;
@@ -98,6 +101,11 @@
       if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
       if (this.toasty && ++this.toasty.t > 70) this.toasty = null;
       for (const f of this.fighters) f.tickVisuals();
+      if (this.superFreeze) {
+        // Everything stops while the super cut-in plays.
+        if (++this.superFreeze.t >= SUPER_FREEZE) this.superFreeze = null;
+        return;
+      }
       if (this.hitstop > 0) { this.hitstop--; return; }
 
       switch (this.phase) {
@@ -182,7 +190,13 @@
       }
     }
 
-    // ---- throws ----
+    // ---- supers ----
+
+    startSuperFreeze(f) {
+      this.superFreeze = { f, t: 0 };
+      this.projectiles = this.projectiles.filter((p) => p.owner === f);
+      RF.audio.sfx('super');
+    }
 
     // ---- FINISH THEM! ----
 
@@ -235,6 +249,7 @@
     // Damage dealt during a throw. Pass `fling` ({vx, vy}) to let go of the victim.
     throwHit(att, def, base, fling) {
       const dmg = base * att.stats.damage * (1 - def.stats.damageReduction);
+      att.gainMeter(base * 0.5); def.gainMeter(base * 0.3);
       if (this.phase === 'fight') def.health = Math.max(0, def.health - dmg);
       def.flash = 3;
       this.hitstop = Math.max(this.hitstop, fling ? 8 : 4);
@@ -291,6 +306,7 @@
       const bounds = this.stageDef.bounds;
 
       if (def.isPerfectBlockAgainst(att, move)) {
+        def.gainMeter(15);
         this.effects.spawn('perfect', ex, ey);
         this.effects.spawnText('PERFECT!', def.x, def.body.height + 14, '#8ff0ff');
         this.effects.spawnText(def.special.name.toUpperCase() + '!', def.x, def.body.height + 4, '#ffd030', 12);
@@ -303,6 +319,19 @@
       }
 
       const blocked = def.receiveHit(att, move);
+      // Super meter: dealing damage fills it fastest, taking it fills it too.
+      att.gainMeter(move.damage * (blocked ? 0.3 : 0.75));
+      def.gainMeter(move.damage * (blocked ? 0.2 : 0.45));
+      if (def.counterHit) {
+        this.effects.spawnText('COUNTER!', def.x, def.body.height + 16, '#ff4040');
+        this.hitstop += 4;
+        RF.audio.sfx('counter');
+      }
+      // Air combo: landing an air hit keeps you floating alongside them.
+      if (!blocked && att.state === 'attack' && att.attackAirborne && !def.grounded) {
+        att.vy = Math.max(att.vy, def.y > 85 ? 0.5 : 2.2);
+        att.vx = (def.x - att.x) / 12;
+      }
       if (!blocked && !this.firstHit) {
         this.firstHit = true;
         this.effects.spawnText('FIRST HIT!', att.x, att.body.height + 20, '#ff6050');
@@ -313,7 +342,12 @@
         this.toasty = { t: 0 };
         RF.audio.sfx('toasty');
       }
-      if (!blocked && def.combo >= 2) this.comboText = { side: att.side, hits: def.combo, t: 70 };
+      if (!blocked && def.combo >= 2) {
+        const prev = this.comboText && this.comboText.side === att.side ? this.comboText : null;
+        const air = def.juggle >= 2 || !!(prev && prev.air);
+        this.comboText = { side: att.side, hits: def.combo, t: 70, air: air && def.combo >= 3 };
+        if ([5, 8, 12].includes(def.combo)) RF.audio.sfx('ready');
+      }
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
@@ -448,6 +482,10 @@
       ctx.save();
       if (this.shake) ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake * 0.5));
       this.stage.draw(ctx, this.frame);
+      if (this.superFreeze) { // the world goes dark around the super
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(-10, -10, W + 20, H + 20);
+      }
       for (const f of this.fighters) if (f.state !== 'finished') f.drawShadow(ctx, floorY);
       // Whoever is attacking is drawn in front.
       const order = [...this.fighters].sort((p, q) => (p.state === 'attack') - (q.state === 'attack'));
@@ -472,6 +510,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       this.hud.draw(ctx, this);
+      if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
       if (this.toasty) this.drawToasty(ctx, W, H);
       this.drawAnnouncements(ctx, W, H);
 
@@ -509,6 +548,33 @@
         big(this.fighters[w].def.name + ' WINS', 70, 3);
         T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
         if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
+      }
+    }
+
+    // The super cut-in: a band slashes across the screen with the fighter and their move.
+    drawSuperCutIn(ctx, W) {
+      const { f, t } = this.superFreeze;
+      const u = Math.min(1, t / 8), out = t > SUPER_FREEZE - 8 ? (SUPER_FREEZE - t) / 8 : 1;
+      const h = Math.round(64 * Math.min(u, out)), y = 112 - h / 2, fromLeft = f.side === 0;
+      ctx.fillStyle = '#000'; ctx.fillRect(0, y - 2, W, h + 4);
+      ctx.fillStyle = '#7a1008'; ctx.fillRect(0, y, W, h);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, y, W, h); ctx.clip();
+      for (let i = -2; i < 14; i++) { // speed streaks
+        const sx = ((i * 40 + t * 14 * (fromLeft ? 1 : -1)) % (W + 80) + W + 80) % (W + 80) - 40;
+        ctx.fillStyle = i % 2 ? '#c02010' : '#e85010';
+        ctx.beginPath(); ctx.moveTo(sx, y + h); ctx.lineTo(sx + 16, y + h); ctx.lineTo(sx + 40, y); ctx.lineTo(sx + 24, y); ctx.fill();
+      }
+      // the fighter, big
+      const px = fromLeft ? 70 - (1 - u) * 80 : W - 70 + (1 - u) * 80;
+      ctx.translate(Math.round(px), Math.round(y + 6 + f.body.height * 1.3)); // head and shoulders in the band
+      ctx.scale(1.3, 1.3);
+      f.sprite.draw(ctx, 'special', 1, 0, 0, fromLeft ? 1 : -1);
+      ctx.restore();
+      if (h > 40) {
+        const tx = fromLeft ? W - 20 : 20, align = fromLeft ? 'right' : 'left';
+        T(ctx, 'SUPER!', tx, y + 10, { scale: 3, align, color: BIG, outline: '#200000' });
+        T(ctx, f.special.name.toUpperCase(), tx, y + 40, { scale: 1, align, color: '#fff', outline: '#000' });
       }
     }
 

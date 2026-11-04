@@ -8,7 +8,7 @@
 //                       2 = slam into the floor
 RF.ANIMATIONS = {
   idle: 2, walk: 4, jump: 1, light: 3, heavy: 3, block: 1, hit: 1, ko: 2, victory: 2,
-  special: 3, crouch: 1, crouchBlock: 1, lowLight: 3, lowHeavy: 3, throw: 3,
+  special: 3, crouch: 1, crouchBlock: 1, lowLight: 3, lowHeavy: 3, throw: 3, uppercut: 3,
 };
 
 // Poses for the procedural placeholder sprites, drawn facing right.
@@ -74,6 +74,11 @@ RF.ANIMATIONS = {
       C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 70, fShin: -40, bUpper: -15, bFore: -5 }),
       C({ lean: 40, bThigh: 80, bShin: -95, fThigh: 82, fShin: 90, bUpper: -20, bFore: -10, fUpper: 40, fFore: 130 }),
       C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 78, fShin: 30, bUpper: -15, bFore: -5 }),
+    ],
+    uppercut: [
+      C({ lean: 24, fUpper: 10, fFore: 60 }),
+      P({ lean: -14, fUpper: 172, fFore: 178, bUpper: 20, bFore: 140, fThigh: 60, fShin: -50, bThigh: -10, bShin: 0 }),
+      P({ lean: -6, fUpper: 150, fFore: 170 }),
     ],
     throw: [
       P({ lean: 12, fUpper: 78, fFore: 92, bUpper: 70, bFore: 98 }),

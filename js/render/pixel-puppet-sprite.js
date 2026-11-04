@@ -77,6 +77,11 @@
       F({ arm: 'up', backArm: 'up', head: [-1, 0] }),
       F({ arm: 'forwardShort', backArm: 'low', head: [2, 1], torso: [1, 1] }),
     ],
+    uppercut: [
+      F({ crouch: true, arm: 'back' }),
+      F({ arm: 'up', legs: 'chamber', head: [2, -4], torso: [1, -4] }),
+      F({ arm: 'up', head: [1, -1], torso: [0, -1] }),
+    ],
     crouch: [F({ crouch: true })],
     crouchBlock: [F({ crouch: true, arm: 'block' })],
     lowLight: [

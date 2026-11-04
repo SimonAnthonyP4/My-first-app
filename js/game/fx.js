@@ -5,6 +5,19 @@
   const E = () => RF.electric;
 
   RF.MOVE_FX = {
+    // Super specials: the fighter burns with golden energy.
+    superAura(f, ctx, floorY, frame) {
+      const h = f.body.height, baseY = floorY - f.y;
+      for (let i = 0; i < 16; i++) {
+        const life = (frame * 1.6 + i * 13) % 30, u = life / 30;
+        const x = f.x + (RF.util.hash(i * 7.7) - 0.5) * f.body.width * 1.8;
+        const y = baseY - u * (h + 20) + 4;
+        ctx.fillStyle = i % 3 === 0 ? `rgba(255,255,220,${1 - u})` : `rgba(255,${150 + (i % 4) * 25},20,${0.8 * (1 - u)})`;
+        const sz = 2 + (i % 3);
+        ctx.fillRect(Math.round(x), Math.round(y), sz, sz + 2);
+      }
+    },
+
     // King Sirven: a golden crown that never leaves his head, and royal sparkles.
     royalAura(f, ctx, floorY, frame, layer) {
       const sp = f.def.sprite, U = sp.scale;

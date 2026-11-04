@@ -28,6 +28,34 @@ python3 -m http.server 8000
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 | Throw      | `T` (up close)       | `Numpad 4` (or `L`)          |
+| Launcher   | `W` + `G`            | `↑` + `Numpad 2` (or `.`)    |
+| Super      | `F` + `G` together (meter full) | light + heavy together |
+| Dash       | double-tap `A` / `D` | double-tap `←` / `→`         |
+
+### Combos, air combos and supers
+
+- **Ground combos:** light attacks that connect cancel into another attack (up to 3 in a
+  row): light, light, heavy, or end the string with a launcher.
+- **Launcher (UP + HEAVY):** an uppercut that pops the opponent into the air. Keep holding
+  UP as it hits and you jump after them.
+- **Air combos:** in the air, air light attacks chain into each other and finish with an
+  air heavy (light, light, heavy). An air heavy on a juggled opponent **spikes** them into the
+  floor and they **BOUNCE** back up, so you can land and hit them again. After 8 air hits they
+  fall out (no infinite juggles). The combo counter shows **AIR COMBO** and praise
+  (NICE! BRUTAL! SAVAGE! INSANE! TERRAMANIA!!).
+- **Super meter** (bottom of the screen): fills as you deal and take damage, and from perfect
+  blocks; light fighters fill it 35% faster. When it's full, press **LIGHT + HEAVY together**
+  for a **Super**: the screen freezes, a cut-in flashes your fighter, and your special fires
+  powered up (1.6x damage) wreathed in golden fire. You can also cancel a light attack that
+  hit into your super, so combos can end in one. The meter carries over between rounds.
+- **Dash:** double-tap forward to dash in (you can attack or throw out of it), double-tap back
+  to backdash (untouchable for the first few frames).
+- **COUNTER!:** hit someone while their attack (or grab) is still starting up for 25% extra
+  damage and extra stun.
+- Jumps now take 3 frames to leave the ground; pressing heavy during them gives the launcher.
+- The CPU uses all of it (strength depends on difficulty). Every number is in
+  `js/config/game.js` (`LAUNCH_JUMP`, `JUGGLE_LIMIT`, `SUPER_DAMAGE`, `METER_GAIN`, ...),
+  `js/config/moves.js` (`launcher`) and `js/config/ai.js`.
 
 - **Health:** Mr. Dabalsa starts at **200%**; King Sirven at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
   else (Viper, Jauregui, El Escobedo, Lady Landa) at **100%**. The number is shown on each health bar, and the bars are the
