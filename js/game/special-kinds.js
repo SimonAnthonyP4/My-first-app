@@ -30,6 +30,52 @@
       },
     },
 
+    // Something huge falls from the sky onto where the opponent is standing.
+    drop: {
+      start(f) { f.vx = 0; f.specialData.targetX = null; f.specialData.impact = false; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (t === s.startup) { d.targetX = scene.opponentOf(f).x; RF.audio.sfx('whoosh'); }
+        if (t === s.startup + s.fall) {
+          d.impact = true;
+          scene.shake = 12;
+          RF.audio.sfx('heavy');
+          scene.effects.spawn('dust', d.targetX - s.width / 2, 1);
+          scene.effects.spawn('dust', d.targetX + s.width / 2, 1);
+          const opp = scene.opponentOf(f), hurt = opp.getHurtbox();
+          const box = { x: d.targetX - s.width / 2, y: 0, w: s.width, h: s.height };
+          if (hurt && RF.util.rectsOverlap(box, hurt)) scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', opp.x, 30);
+        }
+        if (t >= s.startup + s.fall + s.recovery) f.setState('idle');
+      },
+      anim(f) {
+        const s = f.special, t = f.stateTime;
+        return ['throw', t < s.startup + s.fall ? 1 : 2]; // points to the sky, then brings it down
+      },
+      draw(f, ctx, floorY) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (d.targetX == null) return;
+        const p = Math.min(1, (t - s.startup) / s.fall);
+        const x = Math.round(d.targetX), bottom = Math.round(-20 + (floorY + 20) * p * p);
+        const w = s.width;
+        // Shadow growing on the floor
+        ctx.fillStyle = `rgba(0,0,0,${0.15 + p * 0.35})`;
+        ctx.beginPath(); ctx.ellipse(x, floorY + 1, (w / 2) * (0.4 + p * 0.6), 3, 0, 0, Math.PI * 2); ctx.fill();
+        if (t > s.startup + s.fall + 14) {
+          // Stamped onto the floor
+          RF.font.drawText(ctx, s.label, x, floorY - 4, { align: 'center', color: '#c01818' });
+          return;
+        }
+        // The giant rubber stamp: wooden handle, red rubber block with the word on it
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 7, bottom - 52, 14, 30); ctx.fillRect(x - 13, bottom - 60, 26, 10);
+        ctx.fillStyle = '#7a4a22'; ctx.fillRect(x - 6, bottom - 51, 12, 29); ctx.fillRect(x - 12, bottom - 59, 24, 8);
+        ctx.fillStyle = '#111'; ctx.fillRect(x - w / 2 - 1, bottom - 23, w + 2, 24);
+        ctx.fillStyle = '#5a5a60'; ctx.fillRect(x - w / 2, bottom - 22, w, 8);
+        ctx.fillStyle = '#c01818'; ctx.fillRect(x - w / 2, bottom - 14, w, 14);
+        RF.font.drawText(ctx, s.label, x, bottom - 12, { align: 'center', color: '#ffffff' });
+      },
+    },
+
     // A volley of projectiles thrown one after another at different heights.
     volley: {
       start(f) { f.vx = 0; },

@@ -21,6 +21,7 @@
 //     hideWhenPosed: ['ruler']   // palette names hidden while an arm is posed (props in hand)
 //     weapon: { color, length }  // something held in the posed hand (e.g. a ruler)
 //     sleeveColor, sleeveShade   // colour of added sleeves
+//     poses: { walk: [...] }     // replace any animation's frame recipes (e.g. a hobbling walk)
 //   Any palette name starting with 'pants' or 'shoes' counts as legs.
 //   }
 (function () {
@@ -122,7 +123,8 @@
 
       this.frames = {};
       for (const anim in RF.ANIMATIONS) {
-        this.frames[anim] = PUPPET_POSES[anim].map((p) => (p.rotate ? this.bakeLying() : this.bake(p)));
+        const recipes = (s.poses && s.poses[anim]) || PUPPET_POSES[anim];
+        this.frames[anim] = recipes.map((p) => (p.rotate ? this.bakeLying() : this.bake(p)));
       }
     }
 

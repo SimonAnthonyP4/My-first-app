@@ -171,6 +171,17 @@
           this.tone('square', 500, t, 0.16, 0.09, null, 1500);
           this.tone('square', 700, t + 0.17, 0.2, 0.09, null, 1800);
           break;
+        case 'bell': // a deep, ringing church-bell DONG
+          this.tone('sine', 98, t, 2.2, 0.35, null, 96);
+          this.tone('sine', 196, t, 1.6, 0.18, null, 194);
+          this.tone('sine', 294, t, 1.0, 0.1);
+          this.tone('triangle', 466, t, 0.5, 0.06);
+          this.noiseBurst(t, 0.08, 0.3, 'lowpass', 800);
+          break;
+        case 'firework':
+          this.tone('sine', 1800, t, 0.35, 0.05, null, 500); // whistle up
+          this.noiseBurst(t + 0.35, 0.4, 0.3, 'lowpass', 1600); // boom
+          break;
         case 'grab':
           this.noiseBurst(t, 0.06, 0.3, 'lowpass', 700);
           this.tone('square', 160, t, 0.08, 0.12, null, 110);

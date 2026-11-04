@@ -64,7 +64,87 @@
     }
   }
 
+  // Tricorn hat, for founding-father moments.
+  function tricorn(ctx, x, y, facing) {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x - 15, y + 2, 30, 6);
+    ctx.fillRect(x - 10, y - 4, 20, 7);
+    ctx.fillRect(x - 17, y, 5, 4); ctx.fillRect(x + 12, y, 5, 4); // upturned corners
+    ctx.fillStyle = '#c8a040';
+    ctx.fillRect(x - 15, y + 7, 30, 1);
+    ctx.fillStyle = '#e8e0d0'; ctx.fillRect(x + facing * 8 - 1, y - 2, 3, 3); // cockade
+  }
+
+  // Red, white and blue fireworks bursts.
+  function fireworks(ctx, t, bursts) {
+    const colors = ['#ff3a2a', '#ffffff', '#4a7aff'];
+    for (const [t0, x, y, ci] of bursts) {
+      const a = t - t0;
+      if (a < 0 || a > 30) continue;
+      if (a < 6) { ctx.fillStyle = '#ffe0a0'; ctx.fillRect(x, y + (6 - a) * 8, 2, 4); continue; } // rocket
+      const r = (a - 6) * 2.2, fade = a > 22 && a % 2;
+      if (fade) continue;
+      for (let i = 0; i < 14; i++) {
+        const ang = (i / 14) * Math.PI * 2;
+        ctx.fillStyle = colors[(ci + i) % 3];
+        ctx.fillRect(Math.round(x + Math.cos(ang) * r), Math.round(y + Math.sin(ang) * r + (a - 6) * 0.3), 2, 2);
+      }
+    }
+  }
+
   RF.FINISHERS = {
+    // Dr. Astuto: tricorn on, the Liberty Bell drops on them, it cracks, fireworks. 1776!
+    libertyBell: {
+      name: 'Liberty Bell',
+      duration: 210,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 44 ? ['throw', 1] : t < 150 ? ['idle', 0] : ['victory', Math.floor(t / 15) % 2];
+        if (t === 4) scene.effects.spawnText('GIVE ME LIBERTY!', att.x, att.body.height + 22, '#ffffff');
+        if (t === 22) RF.audio.sfx('whoosh');
+        if (t === 42) { RF.audio.sfx('bell'); scene.shake = 18; scene.flash = 6; for (let i = -2; i <= 2; i++) scene.effects.spawn('dust', vic.x + i * 12, 1); }
+        if (t === 70) { RF.audio.sfx('heavy'); scene.shake = 6; }  // the famous crack
+        if (t === 76) RF.audio.sfx('bell');
+        if (t >= 90 && t < 190 && t % 18 === 0) RF.audio.sfx('firework');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 42) drawPose(vic, ctx, vic.x, floorY, ['hit', 0]); // then they're under the bell
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        const W = RF.CONFIG.WIDTH;
+        tricorn(ctx, Math.round(att.x + att.facing * 8), Math.round(floorY - att.body.height - 4), att.facing);
+        if (t < 20) return;
+        // The bell: falls, then sits over the victim, cracked.
+        const p = Math.min(1, (t - 20) / 22);
+        const x = Math.round(vic.x), bottom = Math.round(-30 + (floorY + 30) * p * p);
+        ctx.fillStyle = `rgba(0,0,0,${0.2 + p * 0.3})`;
+        ctx.beginPath(); ctx.ellipse(x, floorY + 1, 26 * (0.4 + p * 0.6), 3, 0, 0, Math.PI * 2); ctx.fill();
+        const sway = t > 42 && t < 90 ? Math.round(Math.sin((t - 42) / 4) * (1 - (t - 42) / 48) * 2) : 0;
+        ctx.save();
+        ctx.translate(x + sway, bottom);
+        ctx.fillStyle = '#4a2a10'; ctx.fillRect(-20, -66, 40, 8);  // wooden yoke
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.moveTo(-15, -58); ctx.lineTo(15, -58); ctx.lineTo(19, -30); ctx.lineTo(27, -4); ctx.lineTo(27, 0); ctx.lineTo(-27, 0); ctx.lineTo(-27, -4); ctx.lineTo(-19, -30); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#9a6a2a';
+        ctx.beginPath(); ctx.moveTo(-14, -57); ctx.lineTo(14, -57); ctx.lineTo(18, -30); ctx.lineTo(25, -5); ctx.lineTo(-25, -5); ctx.lineTo(-18, -30); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#c8924a'; ctx.fillRect(-10, -54, 4, 44);     // shine
+        ctx.fillStyle = '#6a4418'; ctx.fillRect(-26, -6, 52, 3);       // lip
+        ctx.fillStyle = '#6a4418'; ctx.fillRect(-16, -48, 32, 2);      // inscription band
+        if (t >= 70) {                                                // THE CRACK
+          ctx.fillStyle = '#1a0e04';
+          [[2, -30], [4, -26], [3, -22], [6, -18], [5, -14], [7, -10], [6, -6]].forEach(([cx, cy]) => ctx.fillRect(cx, cy, 2, 4));
+        }
+        ctx.restore();
+        if (t >= 90) {
+          fireworks(ctx, t, [[90, 70, 50, 0], [104, 300, 40, 1], [118, 180, 30, 2], [130, 110, 70, 1], [144, 260, 60, 0], [158, 190, 45, 1], [170, 60, 35, 2], [178, 320, 55, 0]]);
+        }
+        if (t >= 120) {
+          RF.font.drawText(ctx, '1776', W / 2, 92, { scale: 4, align: 'center', outline: '#000',
+            color: ['#ff3a2a', '#ff3a2a', '#ffffff', '#ffffff', '#ffffff', '#4a7aff', '#4a7aff'] });
+        }
+      },
+    },
+
+
     // Jauregui: slaps a giant red F on them, then erases them from existence.
     failingGrade: {
       name: 'Final Grade: F',

@@ -37,6 +37,20 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  veto: {
+    name: 'VETO',
+    description: 'Strikes it down: a giant VETO stamp slams down from the sky onto the opponent.',
+    kind: 'drop',
+    label: 'VETO',
+    startup: 10,         // points to the sky
+    fall: 20,            // frames the stamp takes to fall (it lands where they WERE standing)
+    recovery: 22,
+    width: 44,           // how wide it hits
+    height: 70,          // how tall its hit area is
+    damage: 17,
+    hitstun: 30, blockstun: 16, pushback: 3, hitstop: 10,
+    launch: 3,
+  },
   popQuiz: {
     name: 'Pop Quiz',
     description: 'Hurls a volley of five math symbols at every height. Pencils down!',

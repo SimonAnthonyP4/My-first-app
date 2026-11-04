@@ -69,6 +69,74 @@
       },
     },
 
+    // Dr. Astuto: victim on one pan of a giant balance scale, the AP GOV book
+    // dropped on the other, victim catapulted sky-high and back down.
+    balance: {
+      scaleX(att) { return att.x + att.facing * 46; },
+      update(att, def, t, scene) {
+        const T = att.throwCfg, k = RF.THROW_KINDS.balance, sx = k.scaleX(att);
+        const nearPan = sx - att.facing * 28;
+        if (t < 8) { hold(att, def); def.thrownPose = ['hit', 0]; return false; }
+        if (t < 16) { // set them on the near pan
+          const u = (t - 8) / 8;
+          def.x = def.x + (nearPan - def.x) * u;
+          def.y = 18 * u;
+          def.thrownPose = ['hit', 0];
+          return false;
+        }
+        if (t < 28) { def.x = nearPan; def.y = 18; return false; } // the book falls onto the far pan
+        if (t === 28) {
+          RF.audio.sfx('heavy');
+          scene.shake = 8;
+          scene.throwHit(att, def, 0);
+          def.flash = 0;
+        }
+        if (t < 58) { // catapulted!
+          const u = (t - 28) / 30;
+          def.y = 18 + Math.sin(u * Math.PI) * 120;
+          def.x = nearPan + att.facing * u * 10;
+          def.thrownPose = ['ko', 0];
+          if (t === 30) scene.throwHit(att, def, T.launchDamage);
+          return false;
+        }
+        if (t === 58) {
+          def.y = 0;
+          scene.shake = 14;
+          scene.effects.spawn('dust', def.x, 1);
+          scene.effects.spawn('shock', def.x, 4);
+          scene.throwHit(att, def, T.landDamage, { vx: att.facing * 2, vy: 2 });
+        }
+        return t >= 72;
+      },
+      anim(att, t) { return t < 16 ? ['throw', 0] : t < 28 ? ['throw', 1] : ['throw', 2]; },
+      draw(att, def, ctx, floorY) {
+        const t = att.stateTime;
+        if (t < 8 || t > 66) return;
+        const k = RF.THROW_KINDS.balance, sx = Math.round(k.scaleX(att)), f = att.facing;
+        const tilt = t < 28 ? 0 : 0.35;            // far side sinks once the book lands
+        const cy = floorY - 48;                     // beam pivot
+        // post and base
+        ctx.fillStyle = '#111'; ctx.fillRect(sx - 3, cy, 6, floorY - cy); ctx.fillRect(sx - 14, floorY - 4, 28, 4);
+        ctx.fillStyle = '#c8a040'; ctx.fillRect(sx - 2, cy, 4, floorY - cy); ctx.fillRect(sx - 13, floorY - 3, 26, 2);
+        // beam
+        const ex = Math.cos(tilt) * 30, ey = Math.sin(tilt) * 30;
+        const far = [sx + f * ex, cy + ey], near = [sx - f * ex, cy - ey];
+        RF.electric.line(ctx, near[0], near[1], far[0], far[1], 4, '#111');
+        RF.electric.line(ctx, near[0], near[1], far[0], far[1], 2, '#e0b850');
+        // pans hanging from each end
+        for (const [px, py] of [near, far]) {
+          ctx.fillStyle = '#8a7030'; ctx.fillRect(Math.round(px), Math.round(py), 1, 12);
+          ctx.fillStyle = '#111'; ctx.fillRect(Math.round(px) - 12, Math.round(py) + 12, 24, 4);
+          ctx.fillStyle = '#e0b850'; ctx.fillRect(Math.round(px) - 11, Math.round(py) + 12, 22, 2);
+        }
+        // the textbook falling onto (then sitting on) the far pan
+        const by = t < 28 ? (far[1] + 4) * ((t - 16) / 12) : far[1] + 4;
+        RF.PROJECTILE_ART.textbook(ctx, Math.round(far[0]), Math.round(by), 0, f);
+        RF.font.drawText(ctx, 'CHECKS', sx - 30, cy - 26, { color: '#ffffff', outline: '#000' });
+        RF.font.drawText(ctx, 'BALANCES', sx + 2, cy - 18, { color: '#ffffff', outline: '#000' });
+      },
+    },
+
     // Jauregui: plot them on a bell curve, pelt them with data points, throw the outlier out.
     stats: {
       update(att, def, t, scene) {

@@ -38,6 +38,26 @@
     },
   };
 
+  // Custom-drawn projectiles (a projectile config with art: '<name>').
+  RF.PROJECTILE_ART = {
+    // Dr. Astuto's AP GOV textbook, tumbling end over end.
+    textbook(ctx, x, y, t, dir) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.round(t / 3) * (Math.PI / 4) * dir);
+      ctx.fillStyle = '#111'; ctx.fillRect(-8, -10, 16, 20);                       // outline
+      ctx.fillStyle = '#e8dcc0'; ctx.fillRect(-7, -9, 14, 18);                     // pages
+      ctx.fillStyle = '#8a2418'; ctx.fillRect(-6, -9, 13, 8);                      // APUSH (red)
+      ctx.fillStyle = '#26304a'; ctx.fillRect(-6, 0, 13, 9);                       // AP GOV (navy)
+      ctx.fillStyle = '#e8dcc0'; ctx.fillRect(-4, -6, 8, 1); ctx.fillRect(-4, 3, 8, 1);  // title lines
+      ctx.fillRect(-2, 5, 1, 3); ctx.fillRect(0, 5, 1, 3); ctx.fillRect(2, 5, 1, 3);      // columns
+      ctx.restore();
+      // motion streaks
+      ctx.fillStyle = 'rgba(232,220,192,0.35)';
+      for (let i = 1; i <= 3; i++) ctx.fillRect(Math.round(x - dir * (8 + i * 5)), Math.round(y - 4 + i * 2), 4, 1);
+    },
+  };
+
   RF.BLOCK_FX = {
     // A crackling half-dome of electricity in front of him. Flares up when hit.
     electricShield(f, ctx, floorY, frame) {

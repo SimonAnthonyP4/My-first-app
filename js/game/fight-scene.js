@@ -366,6 +366,10 @@
         const [c0, c1, c2] = p.cfg.colors;
         const x = Math.round(p.x), y = Math.round(floorY - p.y - p.h / 2);
         const dir = Math.sign(p.vx);
+        if (p.cfg.art && RF.PROJECTILE_ART[p.cfg.art]) {
+          RF.PROJECTILE_ART[p.cfg.art](ctx, x, y, p.t, dir);
+          continue;
+        }
         if (p.glyph) {
           // A spinning chalk-white math symbol with a dusty trail.
           for (let i = 1; i <= 5; i++) {

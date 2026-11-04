@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  checksAndBalances: {
+    name: 'Checks and Balances',
+    description: 'Puts the opponent on a giant balance scale and drops his textbook on the other side.',
+    kind: 'balance',
+    launchDamage: 3,
+    landDamage: 14,
+  },
   outlierRemoval: {
     name: 'Outlier Removal',
     description: 'Plots the opponent on a bell curve, marks them as an outlier and throws them off the chart.',
