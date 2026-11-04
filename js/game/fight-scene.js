@@ -452,6 +452,7 @@
       // Whoever is attacking is drawn in front.
       const order = [...this.fighters].sort((p, q) => (p.state === 'attack') - (q.state === 'attack'));
       const fin = this.finisher;
+      if (fin && fin.kind.drawBack) fin.kind.drawBack(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
       for (const f of order) {
         if (fin && f === fin.vic) fin.kind.drawVictim(f, ctx, floorY, fin.t, this.frame, fin.att);
         else f.draw(ctx, floorY);

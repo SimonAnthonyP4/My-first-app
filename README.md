@@ -29,14 +29,15 @@ python3 -m http.server 8000
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 | Throw      | `T` (up close)       | `Numpad 4` (or `L`)          |
 
-- **Health:** Mr. Dabalsa starts at **200%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
+- **Health:** Mr. Dabalsa starts at **200%**; King Sirven at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
   else (Viper, Jauregui, El Escobedo, Lady Landa) at **100%**. The number is shown on each health bar, and the bars are the
   same size for everyone (`HEALTH_BY_ARCHETYPE` in `js/config/game.js`).
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
   block is a crackling electric shield. A character's moves can be overridden with
   `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
 - **FINISH THEM!** The blow that wins the match leaves the loser dazed for 5 seconds.
-  Walk up and press **throw** to do your finisher: Mr. Dabalsa's **Exit, Pursued by a Bear**
+  Walk up and press **throw** to do your finisher: King Sirven's **Royal Decree** (trumpets, a
+  decree that you are EXPELLED, a trapdoor, and he takes his golden throne), Mr. Dabalsa's **Exit, Pursued by a Bear**
   (curtains, a bear chases them off stage, THE END, applause), Lady Landa's **Specimen Jar** (shrunk and
   sealed in a jar for her collection), El Escobedo's **Havana Classic** (builds a
   1950s classic car and drives it into them: DALE!), Dr. Astuto's **Liberty Bell** (tricorn hat,
@@ -50,7 +51,8 @@ python3 -m http.server 8000
 - **Throws:** press throw right next to the opponent to grab them. Throws can't be
   blocked, but a missed grab leaves you open, and the victim can break free by
   pressing throw right as they're grabbed ("BREAK!"). Each fighter has their own throw:
-  Bruiser's **Lunch Line Slam** (overhead slam), Jauregui's **Outlier Removal** (bell curve),
+  Bruiser's **Lunch Line Slam** (overhead slam), King Sirven's **Permanent Record** (written up,
+  slammed shut in the folder twice, EXPELLED), Jauregui's **Outlier Removal** (bell curve),
   Dr. Astuto's **Checks and Balances** (catapulted off a balance scale),
   El Escobedo's **Robotic Arm** (giant claw, power drill, hurled), Lady Landa's
   **Angry Lecture** (screams you across the room), Mr. Dabalsa's **Shall I Compare Thee**
@@ -94,6 +96,7 @@ your character automatically unleashes their special move:
 | El Escobedo | **Sentry Turret** | Deploys a mini auto-turret that fires a burst of four shots. |
 | Lady Landa | **Serpent Strike** | The snake in her jar grows huge and lunges across the screen to bite. |
 | Mr. Dabalsa | **Iambic Pentameter** | Five rhythmic stomps (da-DUM) send shockwaves along the floor; the fifth is huge. |
+| King Sirven | **Attention Students** | A giant PA speaker drops from the ceiling and blasts the whole screen. Nowhere to run. |
 
 Holding block the whole time is a normal block (chip damage, no special), and
 mashing block doesn't count. A press only qualifies if it comes at least half a
@@ -222,6 +225,16 @@ biggest, strongest and slowest fighter. Every hit he lands shakes the screen
 heavy brings the Shakespeare book down like a hammer, and he blocks with the
 Complete Works. Calm throughout: he opens with "ALL THE WORLD'S A STAGE." and
 wins with "PARTING IS SUCH SWEET SORROW." (`quote` / `winQuote`).
+
+## King Sirven
+
+The principal (boss, **125% health**, from The Principal's Office). He wears a golden
+crown at all times, with royal sparkles around him (`aura: 'royalAura'`). His light is a
+backhand slap, his heavy hands out a pink DETENTION slip that flies across the room and
+leaves you stunned for longer, and he blocks with a gold royal shield ("DETENTION!").
+Perfect block → **Attention Students**: the PA speaker comes down and the blast hits you
+anywhere on screen. Throw: **Permanent Record**. Finisher: **Royal Decree**. Opens with
+"THIS IS YOUR PRINCIPAL SPEAKING." and wins with "SEE YOU IN MY OFFICE."
 
 ## Adding a character drawn in Piskel
 

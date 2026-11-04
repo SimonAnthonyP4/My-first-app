@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  permanentRecord: {
+    name: 'Permanent Record',
+    description: 'Opens their permanent record, writes something terrible, slams it shut on them twice and kicks them out.',
+    kind: 'record',
+    slamDamage: 4,
+    finisherDamage: 8,
+  },
   shallICompareThee: {
     name: 'Shall I Compare Thee',
     description: 'Calmly recites a sonnet... then smashes the opponent into the floor, side to side, again and again.',

@@ -37,6 +37,17 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  paBlast: {
+    name: 'Attention Students',
+    description: 'A giant PA speaker drops from the ceiling and blasts the whole screen. Nowhere to run.',
+    kind: 'screenWave',
+    startup: 16,         // speaker comes down
+    delay: 10,           // then the blast hits, wherever they are
+    recovery: 26,
+    damage: 15,
+    hitstun: 34, blockstun: 16, pushback: 5, hitstop: 10,
+    launch: 3,
+  },
   iambicPentameter: {
     name: 'Iambic Pentameter',
     description: 'Five rhythmic stomps send shockwaves along the floor. The fifth is huge.',

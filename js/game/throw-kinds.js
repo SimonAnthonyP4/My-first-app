@@ -69,6 +69,47 @@
       },
     },
 
+    // King Sirven: their permanent record, opened, written in, slammed shut on them.
+    record: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, t >= 8 && t < 40 ? (t % 4 < 2 ? 1 : -1) : 0); // trembling
+        def.thrownPose = ['hit', 0];
+        if (t >= 10 && t < 38 && t % 6 === 0) RF.audio.sfx('scribble');
+        if (t === 40 || t === 54) {
+          RF.audio.sfx('heavy'); scene.shake = 8;
+          scene.effects.spawn('hit', def.x, 40);
+          scene.throwHit(att, def, T.slamDamage);
+        }
+        if (t === 68) {
+          scene.shake = 12;
+          scene.effects.spawnText('EXPELLED!', def.x, def.body.height + 10, '#ff4040');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 });
+        }
+        return t >= 82;
+      },
+      anim(att, t) { return t < 8 ? ['throw', 0] : t < 40 ? ['light', (t >> 2) % 2 ? 1 : 2] : t < 66 ? ['throw', 2] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 8 || t >= 68) return;
+        const cx = Math.round(def.x), top = Math.round(floorY - def.body.height - 10), h = def.body.height + 6;
+        // folder halves: wide open, then slammed shut over the victim (twice)
+        const closed = (t >= 40 && t < 46) || (t >= 54 && t < 60);
+        const open = closed ? 2 : t < 40 ? 30 : 18;
+        for (const side of [-1, 1]) {
+          const x = side < 0 ? cx - open - 22 : cx + open;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 1, top - 1, 24, h + 2);
+          ctx.fillStyle = '#e8c878'; ctx.fillRect(x, top, 22, h);
+          ctx.fillStyle = '#c8a050'; ctx.fillRect(x, top, 22, 4);
+        }
+        if (t < 40) { // his pen scribbling on the open page
+          const px = cx + open + 6 + ((frame * 3) % 12), py = top + 16 + ((frame >> 1) % 5) * 6;
+          ctx.fillStyle = '#c01818'; ctx.fillRect(Math.round(px), Math.round(py), 6, 1);
+          ctx.fillStyle = '#111'; ctx.fillRect(Math.round(px) + 5, Math.round(py) - 6, 2, 7);
+        }
+      },
+    },
+
     // Mr. Dabalsa: a calm line of poetry, then smashes them into the floor side to side.
     smash: {
       update(att, def, t, scene) {

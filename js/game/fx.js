@@ -5,6 +5,40 @@
   const E = () => RF.electric;
 
   RF.MOVE_FX = {
+    // King Sirven: a golden crown that never leaves his head, and royal sparkles.
+    royalAura(f, ctx, floorY, frame, layer) {
+      const sp = f.def.sprite, U = sp.scale;
+      const baseY = floorY - f.y;
+      if (layer === 'back') {
+        for (let i = 0; i < 6; i++) {
+          const life = (frame * 0.6 + i * 23) % 50, u = life / 50;
+          if (u > 0.8) continue;
+          const x = f.x + (RF.util.hash(i * 5.1) - 0.5) * f.body.width * 1.5, y = baseY - 10 - u * f.body.height;
+          ctx.fillStyle = i % 2 ? '#ffe680' : '#ffffff';
+          ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+          if (frame % 20 < 10) { ctx.fillRect(Math.round(x) - 1, Math.round(y), 3, 1); ctx.fillRect(Math.round(x), Math.round(y) - 1, 1, 3); }
+        }
+        return;
+      }
+      if (f.isKO || f.state === 'thrown' || f.state === 'finished') return;
+      // crown on the top of his head
+      // follow the head as the puppet animates
+      const [anim, fr] = f.animFrame();
+      const recipes = (sp.poses && sp.poses[anim]) || RF.PUPPET_POSES[anim] || [{}];
+      const rc = recipes[Math.min(fr, recipes.length - 1)] || {};
+      if (rc.rotate) return;
+      const [hx, hy] = rc.head || [0, 0];
+      const [cc, cr] = sp.crownAt;
+      const cx = Math.round(f.x + f.facing * ((cc + 0.5 - sp.footCol) * U + hx));
+      const cy = Math.round(baseY - (sp.grid.length - cr) * U + hy + (rc.crouch ? sp.crouchDrop * U : 0));
+      ctx.fillStyle = '#111'; ctx.fillRect(cx - 8, cy - 9, 16, 10);
+      ctx.fillStyle = '#e8b420'; ctx.fillRect(cx - 7, cy - 4, 14, 4);                    // band
+      ctx.fillRect(cx - 7, cy - 8, 3, 4); ctx.fillRect(cx - 1, cy - 9, 3, 5); ctx.fillRect(cx + 4, cy - 8, 3, 4); // points
+      ctx.fillStyle = '#fff2a0'; ctx.fillRect(cx - 6, cy - 4, 12, 1);
+      ctx.fillStyle = '#d02030'; ctx.fillRect(cx - 1, cy - 3, 2, 2);                     // ruby
+      ctx.fillStyle = '#2a6ae0'; ctx.fillRect(cx - 5, cy - 3, 1, 1); ctx.fillRect(cx + 4, cy - 3, 1, 1);
+    },
+
     // Lady Landa's aura: dark purple smoke rising off her, red glow from her eyes.
     // Called twice per frame: layer 'back' (smoke, behind her) and 'front' (eye glow).
     darkAura(f, ctx, floorY, frame, layer) {
@@ -132,6 +166,17 @@
     }
   };
 
+  // King Sirven's pink DETENTION slip, fluttering as it flies.
+  RF.PROJECTILE_ART.detentionSlip = function (ctx, x, y, t, dir) {
+    const tilt = Math.round(Math.sin(t / 3) * 2);
+    ctx.fillStyle = '#111'; ctx.fillRect(x - 13, y - 7 + tilt, 26, 14);
+    ctx.fillStyle = '#ff9ac8'; ctx.fillRect(x - 12, y - 6 + tilt, 24, 12);
+    ctx.fillStyle = '#d0507a'; ctx.fillRect(x - 12, y - 6 + tilt, 24, 2);
+    RF.font.drawText(ctx, 'DETENTION', x, y - 3 + tilt, { align: 'center', color: '#5a0a2a' });
+    ctx.fillStyle = 'rgba(255,154,200,0.35)';
+    for (let i = 1; i <= 3; i++) ctx.fillRect(Math.round(x - dir * (14 + i * 5)), Math.round(y - 2 + i), 4, 1);
+  };
+
   RF.PROJECTILE_ART.voidOrb = function (ctx, x, y, t, dir) {
     // Lady Landa's purple energy blast: swirling violet orb with a black core.
     const g = ctx.createRadialGradient(x, y, 0, x, y, 16);
@@ -165,6 +210,22 @@
   }
 
   RF.BLOCK_FX = {
+    // King Sirven: a gold royal shield with his crown crest.
+    royalShield(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const w = 24, h = Math.round(g.hurt.h * 0.5);
+      const x = Math.round(g.front + f.facing * 6 - w / 2), y = Math.round(g.mid - h / 2 - 8);
+      ctx.fillStyle = '#111';
+      ctx.beginPath(); ctx.moveTo(x - 1, y - 1); ctx.lineTo(x + w + 1, y - 1); ctx.lineTo(x + w + 1, y + h * 0.6); ctx.lineTo(x + w / 2, y + h + 2); ctx.lineTo(x - 1, y + h * 0.6); ctx.fill();
+      ctx.fillStyle = g.strength > 0.3 ? '#fff2a0' : '#e8b420';
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h * 0.6); ctx.lineTo(x + w / 2, y + h); ctx.lineTo(x, y + h * 0.6); ctx.fill();
+      ctx.fillStyle = '#7a1020'; ctx.fillRect(x + 3, y + 3, w - 6, Math.round(h * 0.45));      // royal red field
+      ctx.fillStyle = '#e8b420';                                                              // crown crest
+      ctx.fillRect(x + w / 2 - 6, y + 10, 12, 3); ctx.fillRect(x + w / 2 - 6, y + 6, 2, 4); ctx.fillRect(x + w / 2 - 1, y + 5, 2, 5); ctx.fillRect(x + w / 2 + 4, y + 6, 2, 4);
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'DETENTION!', x + w / 2, y - 12, { align: 'center', color: '#ff9ac8', outline: '#000' });
+    },
+
     // Mr. Dabalsa: the Complete Works of Shakespeare, held open as a shield.
     bookGuard(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

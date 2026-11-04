@@ -30,6 +30,44 @@
       },
     },
 
+    // A giant PA speaker drops from the ceiling and blasts the whole screen.
+    screenWave: {
+      start(f) { f.vx = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime;
+        if (t === s.startup) RF.audio.sfx('pa');
+        if (t === s.startup + s.delay) {
+          scene.shake = 14; scene.flash = 4;
+          const opp = scene.opponentOf(f);
+          if (opp.getHurtbox()) scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', opp.x, opp.body.height / 2);
+        }
+        if (t >= s.startup + s.delay + s.recovery) f.setState('idle');
+      },
+      anim(f) { return ['throw', f.stateTime < f.special.startup ? 1 : 2]; }, // points to the ceiling
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, W = RF.CONFIG.WIDTH;
+        if (t < 4) return;
+        const drop = Math.min(1, (t - 4) / 12), sx = W / 2, sy = Math.round(-30 + 64 * drop);
+        // the speaker horn hanging from the ceiling
+        ctx.fillStyle = '#111'; ctx.fillRect(sx - 1, 0, 3, sy - 10);
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(sx - 8, sy - 12); ctx.lineTo(sx + 8, sy - 12); ctx.lineTo(sx + 22, sy + 8); ctx.lineTo(sx - 22, sy + 8); ctx.fill();
+        ctx.fillStyle = '#9aa0a8'; ctx.beginPath(); ctx.moveTo(sx - 7, sy - 11); ctx.lineTo(sx + 7, sy - 11); ctx.lineTo(sx + 20, sy + 7); ctx.lineTo(sx - 20, sy + 7); ctx.fill();
+        ctx.fillStyle = '#2a2a30'; ctx.fillRect(sx - 18, sy + 5, 36, 3);
+        if (t >= s.startup) {
+          const a = t - s.startup;
+          for (let i = 0; i < 6; i++) { // sound waves rolling over the entire screen
+            const r = (a * 9 + i * 34) % 260;
+            ctx.strokeStyle = `rgba(255,230,140,${Math.max(0, 0.7 - r / 300)})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.ellipse(sx, sy + 8, r, r * 0.7, 0, 0, Math.PI); ctx.stroke();
+          }
+          ctx.lineWidth = 1;
+          if (a < s.delay + 30) RF.font.drawText(ctx, 'ATTENTION STUDENTS!', W / 2, sy + 18, { scale: 2, align: 'center', outline: '#000',
+            color: ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#ff9a10', '#ff7000', '#e04000'] });
+        }
+      },
+    },
+
     // Deploys a little auto-turret in front that fires a burst of shots.
     turret: {
       start(f) { f.vx = 0; },

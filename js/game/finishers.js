@@ -7,6 +7,7 @@
 //   update(att, vic, t, scene)               poses/moves the fighters, sounds, shakes
 //   drawVictim(vic, ctx, floorY, t, frame)    draws the victim (replaces their sprite)
 //   drawFx(att, vic, ctx, floorY, t, frame)   optional extra effects on top
+//   drawBack(att, vic, ctx, floorY, t, frame) optional effects behind the fighters
 (function () {
   const el = () => RF.electric;
 
@@ -181,7 +182,83 @@
     ctx.fillStyle = '#c8a040'; ctx.fillRect(0, 10, W, 2);
   }
 
+  // A golden throne (drawn behind the king).
+  function throne(ctx, x, floorY, rise) {
+    const h = Math.round(70 * rise);
+    if (h <= 0) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, RF.CONFIG.WIDTH, floorY); ctx.clip();
+    const top = floorY - h;
+    ctx.fillStyle = '#111'; ctx.fillRect(x - 21, top - 1, 42, h + 1);
+    ctx.fillStyle = '#c8961e'; ctx.fillRect(x - 20, top, 40, h);
+    ctx.fillStyle = '#8a1424'; ctx.fillRect(x - 14, top + 8, 28, h - 30);           // red velvet back
+    ctx.fillStyle = '#e8b420'; ctx.fillRect(x - 20, top, 40, 4); ctx.fillRect(x - 24, floorY - 26, 48, 6); // trim + seat
+    ctx.fillRect(x - 3, top - 6, 6, 6);                                             // finial
+    ctx.restore();
+  }
+
   RF.FINISHERS = {
+    // King Sirven: a royal decree, a trapdoor, and he takes his throne.
+    royalDecree: {
+      name: 'Royal Decree',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 40 ? ['throw', 1] : t < 150 ? ['idle', 0] : t < 175 ? ['throw', 2] : ['crouch', 0]; // sits on his throne
+        if (t === 4) RF.audio.sfx('fanfare');
+        if (t === 34) RF.audio.sfx('paper');
+        if (t === 110) { RF.audio.sfx('block'); scene.shake = 6; }   // trapdoor bolt
+        if (t === 112) RF.audio.sfx('ko');
+        if (t === 190) RF.audio.sfx('fanfare');
+      },
+      drawVictim(vic, ctx, floorY, t, frame) {
+        if (t < 112) return drawPose(vic, ctx, vic.x + (t > 60 ? (t % 4 < 2 ? 1 : -1) : 0), floorY, ['hit', 0]);
+        // falls through the trapdoor into darkness
+        const fall = (t - 112) * (t - 112) * 0.25;
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, floorY - 140, RF.CONFIG.WIDTH, 140); ctx.clip(); // hidden once below the floor
+        drawPose(vic, ctx, vic.x, floorY + fall, ['ko', 0]);
+        ctx.restore();
+      },
+      drawBack(att, vic, ctx, floorY, t) {
+        const dir = Math.sign(vic.x - att.x) || 1;
+        throne(ctx, att.x - dir * 4, floorY, Math.min(1, Math.max(0, (t - 140) / 20)));
+      },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const W = RF.CONFIG.WIDTH;
+        // heralds' trumpets
+        if (t < 40) {
+          for (const side of [-1, 1]) {
+            const tx = W / 2 + side * 120, ty = 84;
+            ctx.fillStyle = '#e8b420'; ctx.fillRect(tx - 14, ty, 28, 3); ctx.fillRect(side > 0 ? tx - 18 : tx + 12, ty - 4, 6, 11); // horn + bell
+            ctx.fillStyle = '#8a1424'; ctx.fillRect(tx - 6, ty + 3, 12, 8);   // banner
+            ctx.fillStyle = '#e8b420'; ctx.fillRect(tx - 2, ty + 5, 4, 3);
+          }
+        }
+        // the decree
+        if (t >= 30 && t < 120) {
+          const u = Math.min(1, (t - 30) / 10), h = Math.round(44 * u);
+          ctx.fillStyle = '#111'; ctx.fillRect(W / 2 - 71, 30, 142, h + 2);
+          ctx.fillStyle = '#efe0b8'; ctx.fillRect(W / 2 - 70, 31, 140, h);
+          ctx.fillStyle = '#8a6a30'; ctx.fillRect(W / 2 - 74, 29, 148, 3); ctx.fillRect(W / 2 - 74, 31 + h, 148, 3);
+          if (u >= 1) {
+            RF.font.drawText(ctx, 'ROYAL DECREE', W / 2, 36, { align: 'center', color: '#6a1010' });
+            RF.font.drawText(ctx, 'YOU ARE HEREBY', W / 2, 50, { align: 'center', color: '#3a2a10' });
+            RF.font.drawText(ctx, 'EXPELLED!', W / 2, 60, { align: 'center', color: '#c01818' });
+            ctx.fillStyle = '#c01818'; ctx.beginPath(); ctx.arc(W / 2 + 54, 64, 5, 0, Math.PI * 2); ctx.fill(); // wax seal
+          }
+        }
+        // the trapdoor under the victim
+        if (t >= 106 && t < 150) {
+          const x = Math.round(vic.x);
+          ctx.fillStyle = '#000'; ctx.fillRect(x - 18, floorY - 1, 36, 6);
+          ctx.fillStyle = '#4a3420'; ctx.fillRect(x - 22, floorY - 2, 4, 3); ctx.fillRect(x + 18, floorY - 2, 4, 3); // hinged doors
+        }
+        if (t >= 150 && t < 205) RF.font.drawText(ctx, 'LONG LIVE THE KING', W / 2, 70, { scale: 2, align: 'center', outline: '#000',
+          color: ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#e8b420', '#c8961e', '#8a6a10'] });
+      },
+    },
+
+
     // Mr. Dabalsa: the most famous stage direction in Shakespeare.
     exitBear: {
       name: 'Exit, Pursued by a Bear',

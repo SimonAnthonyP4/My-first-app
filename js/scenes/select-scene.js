@@ -3,10 +3,10 @@
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384;
-  const SLOTS = 8, COLS = 4, SLOT = 40, GAP = 4;
+  const SLOTS = 10, COLS = 5, SLOT = 34, GAP = 3; // 5 x 2 grid
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
   const PCOL = ['#ff4a3a', '#4a8aff'];
-  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'] };
+  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'] };
 
   // Stat bars normalised to 0..1 for display only.
   const STAT_BARS = [
@@ -143,7 +143,7 @@
       // Big previews either side of the grid
       for (let p = 0; p < 2; p++) {
         const def = this.slots[this.cursor[p]];
-        const x = p === 0 ? 52 : W - 52;
+        const x = p === 0 ? 44 : W - 44;
         if (!def) {
           T(ctx, '?', x, 50, { scale: 4, align: 'center', color: '#3a2018' });
           continue;
@@ -173,8 +173,8 @@
       if (!def) {
         T(ctx, '???', L, y + 6, { scale: 2, color: '#6a4a40', outline: '#000' });
         T(ctx, 'COMING SOON', L, y + 26, { color: '#a08878', outline: '#000' });
-        T(ctx, 'THE FULL ROSTER OF 8 ARRIVES', L, y + 40, { color: '#806860', outline: '#000' });
-        T(ctx, 'IN MILESTONE 6.', L, y + 49, { color: '#806860', outline: '#000' });
+        T(ctx, 'MORE TEACHERS ARE', L, y + 40, { color: '#806860', outline: '#000' });
+        T(ctx, 'ON THE WAY...', L, y + 49, { color: '#806860', outline: '#000' });
         return;
       }
       const [arch0] = ARCH[def.archetype] || [def.archetype.toUpperCase()];

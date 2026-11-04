@@ -217,6 +217,20 @@
         case 'paper':
           this.noiseBurst(t, 0.18, 0.25, 'bandpass', 2600);
           break;
+        case 'fanfare': // royal trumpets: da-da-da-DAAA
+          [[523, 0], [523, 0.12], [523, 0.24], [784, 0.36]].forEach(([f, d], i) => {
+            this.tone('sawtooth', f, t + d, i === 3 ? 0.6 : 0.1, 0.1);
+            this.tone('square', f * 1.5, t + d, i === 3 ? 0.6 : 0.1, 0.04);
+          });
+          break;
+        case 'pa': // PA chime, then a blast of feedback
+          this.tone('sine', 784, t, 0.25, 0.15); this.tone('sine', 523, t + 0.25, 0.3, 0.15);
+          this.tone('square', 1800, t + 0.55, 0.4, 0.06, null, 2400);
+          this.noiseBurst(t + 0.55, 0.45, 0.25, 'bandpass', 1200);
+          break;
+        case 'scribble':
+          this.noiseBurst(t, 0.08, 0.15, 'bandpass', 3500);
+          break;
         case 'boom': // a deep, chest-rattling impact
           this.tone('sine', 70, t, 0.45, 0.6, null, 28);
           this.noiseBurst(t, 0.3, 0.35, 'lowpass', 350);
