@@ -217,6 +217,21 @@
         case 'paper':
           this.noiseBurst(t, 0.18, 0.25, 'bandpass', 2600);
           break;
+        case 'boom': // a deep, chest-rattling impact
+          this.tone('sine', 70, t, 0.45, 0.6, null, 28);
+          this.noiseBurst(t, 0.3, 0.35, 'lowpass', 350);
+          break;
+        case 'stomp':
+          this.tone('sine', 55, t, 0.25, 0.4, null, 30);
+          this.noiseBurst(t, 0.12, 0.15, 'lowpass', 250);
+          break;
+        case 'applause':
+          for (let i = 0; i < 14; i++) this.noiseBurst(t + i * 0.07 + Math.random() * 0.03, 0.06, 0.12, 'bandpass', 1500 + Math.random() * 1500);
+          break;
+        case 'roar':
+          this.tone('sawtooth', 140, t, 0.7, 0.14, null, 70);
+          this.noiseBurst(t, 0.7, 0.25, 'lowpass', 700);
+          break;
         case 'hiss':
           this.noiseBurst(t, 0.45, 0.22, 'highpass', 4500);
           break;

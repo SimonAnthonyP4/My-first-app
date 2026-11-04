@@ -146,7 +146,100 @@
     }
   }
 
+  // A brown bear, mid-charge (facing right).
+  function bear(ctx, x, floorY, facing, frame) {
+    ctx.save();
+    ctx.translate(Math.round(x), floorY);
+    ctx.scale(facing * 1.6, 1.6); // a big bear
+    const leg = frame % 8 < 4 ? 2 : -2;
+    ctx.fillStyle = '#111'; ctx.fillRect(-22, -32, 44, 22); ctx.fillRect(14, -36, 16, 16);
+    ctx.fillStyle = '#6a4224'; ctx.fillRect(-21, -31, 42, 20);                 // body
+    ctx.fillStyle = '#5a3418'; ctx.fillRect(-21, -18, 42, 6);
+    ctx.fillStyle = '#6a4224'; ctx.fillRect(15, -35, 14, 14);                  // head
+    ctx.fillStyle = '#8a6a44'; ctx.fillRect(25, -29, 6, 6);                    // snout
+    ctx.fillStyle = '#111'; ctx.fillRect(29, -29, 2, 2); ctx.fillRect(22, -33, 2, 2); // nose, eye
+    ctx.fillStyle = '#5a3418'; ctx.fillRect(15, -38, 4, 4); ctx.fillRect(23, -38, 4, 4); // ears
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(26, -24, 1, 2); ctx.fillRect(29, -24, 1, 2); // teeth
+    ctx.fillStyle = '#4a2a10';                                                  // legs
+    ctx.fillRect(-18 + leg, -11, 7, 11); ctx.fillRect(-8 - leg, -11, 7, 11);
+    ctx.fillRect(6 + leg, -11, 7, 11); ctx.fillRect(14 - leg, -11, 7, 11);
+    ctx.restore();
+  }
+
+  // Red theatre curtains. open: 0 = closed, 1 = fully open.
+  function curtains(ctx, open) {
+    const W = RF.CONFIG.WIDTH, H = RF.CONFIG.HEIGHT, half = W / 2;
+    const w = Math.round(half * (1 - open));
+    for (const [x0, dir] of [[0, 1], [W, -1]]) {
+      const x = dir > 0 ? x0 : x0 - w;
+      ctx.fillStyle = '#7a0a14'; ctx.fillRect(x, 0, w, H);
+      ctx.fillStyle = '#9a1a24';
+      for (let i = 0; i < w; i += 12) ctx.fillRect(x + i, 0, 4, H);              // folds
+      ctx.fillStyle = '#c8a040'; ctx.fillRect(x, H - 10, w, 2);                  // gold trim
+    }
+    ctx.fillStyle = '#5a0a10'; ctx.fillRect(0, 0, W, 10);                         // valance
+    ctx.fillStyle = '#c8a040'; ctx.fillRect(0, 10, W, 2);
+  }
+
   RF.FINISHERS = {
+    // Mr. Dabalsa: the most famous stage direction in Shakespeare.
+    exitBear: {
+      name: 'Exit, Pursued by a Bear',
+      duration: 230,
+      update(att, vic, t, scene) {
+        // Calm throughout; takes a bow at the curtain call.
+        att.finisherAnim = t < 190 ? ['idle', Math.floor(t / 20) % 2] : t < 215 ? ['throw', 2] : ['victory', Math.floor(t / 15) % 2];
+        if (t === 2) RF.audio.sfx('gong');
+        if (t === 40) RF.audio.sfx('roar');
+        if (t === 90) RF.audio.sfx('roar');
+        if (t === 175) RF.audio.sfx('applause');
+        if (t === 195) RF.audio.sfx('applause');
+        if (t === 205) RF.audio.sfx('applause');
+        if (t === 150) scene.effects.spawnText('THE END.', att.x, att.body.height + 16, '#e8dcc0');
+      },
+      bearX(att, vic, t) {
+        const dir = Math.sign(vic.x - att.x) || 1, W = RF.CONFIG.WIDTH;
+        const start = dir > 0 ? -60 : W + 60; // the bear comes on from behind him
+        return start + dir * Math.max(0, t - 40) * 4.2;
+      },
+      vicX(att, vic, t) {
+        const dir = Math.sign(vic.x - att.x) || 1;
+        return vic.x + dir * Math.max(0, t - 60) * 3.6; // runs for their life
+      },
+      drawVictim(vic, ctx, floorY, t, frame, att) {
+        const x = this.vicX(att, vic, t);
+        if (x < -40 || x > RF.CONFIG.WIDTH + 40) return;
+        const dir = Math.sign(vic.x - att.x) || 1;
+        const anim = t < 60 ? ['hit', 0] : ['walk', Math.floor(frame / 3) % 4];
+        vic.sprite.draw(ctx, anim[0], anim[1], x, floorY, dir); // facing away: fleeing
+      },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const W = RF.CONFIG.WIDTH, dir = Math.sign(vic.x - att.x) || 1;
+        // Spotlight on the stage
+        if (t < 150) {
+          const g = ctx.createRadialGradient(W / 2, floorY - 40, 10, W / 2, floorY - 40, 160);
+          g.addColorStop(0, 'rgba(255,240,200,0.10)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, W, RF.CONFIG.HEIGHT);
+        }
+        // The stage direction, in a script typeface-ish box
+        if (t > 10 && t < 150) {
+          ctx.fillStyle = 'rgba(232,220,192,0.92)'; ctx.fillRect(W / 2 - 104, 34, 208, 16);
+          ctx.fillStyle = '#111'; ctx.fillRect(W / 2 - 104, 50, 208, 1);
+          RF.font.drawText(ctx, 'EXIT, PURSUED BY A BEAR.', W / 2, 39, { align: 'center', color: '#3a1010' });
+        }
+        if (t >= 40 && t < 160) bear(ctx, this.bearX(att, vic, t), floorY, dir, frame);
+        // Curtains: open at the start, close on THE END, reopen for his curtain call.
+        let open = 1;
+        if (t < 12) open = t / 12;
+        else if (t >= 150 && t < 170) open = 1 - (t - 150) / 20;
+        else if (t >= 170 && t < 190) open = 0;
+        else if (t >= 190 && t < 210) open = (t - 190) / 20;
+        if (open < 1) curtains(ctx, open);
+        if (t >= 170) RF.font.drawText(ctx, 'THE END', W / 2, 60, { scale: 4, align: 'center', color: '#c8a040', outline: '#2a0000' });
+      },
+    },
+
+
     // Lady Landa: shrinks them into a specimen jar for her collection.
     specimenJar: {
       name: 'Specimen Jar',

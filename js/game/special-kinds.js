@@ -123,7 +123,11 @@
       update(f, scene) {
         const s = f.special, t = f.stateTime;
         for (let i = 0; i < s.heights.length; i++) {
-          if (t === s.startup + i * s.interval) scene.spawnProjectile(f, Object.assign({}, s, { height: s.heights[i] }));
+          if (t === s.startup + i * s.interval) {
+            scene.spawnProjectile(f, Object.assign({}, s, { height: s.heights[i], size: (s.sizes && s.sizes[i]) || s.size }));
+            if (s.callouts) scene.effects.spawnText(s.callouts[i], f.x, f.body.height + 8 + (i % 2) * 8, '#e8dcc0');
+            if (s.stompShake) { scene.shake = Math.max(scene.shake, s.stompShake + i * 2); RF.audio.sfx('stomp'); scene.effects.spawn('dust', f.x + f.facing * 10, 1); }
+          }
         }
         if (t >= s.startup + s.heights.length * s.interval + s.recovery) f.setState('idle');
       },

@@ -103,10 +103,14 @@
       switch (this.phase) {
         case 'intro':
           if (this.phaseTime === 1) RF.audio.sfx('gong');
+
           if (this.phaseTime === 65) RF.audio.sfx('fight');
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
           break;
         case 'fight':
+          if (this.phaseTime === 1 && this.round === 1) { // opening line, once the banners clear
+            for (const f of this.fighters) if (f.def.quote) this.effects.spawnText(f.def.quote, f.x, f.body.height + 12, '#e8dcc0');
+          }
           if (--this.timer <= 0) this.endRound('time'); // Infinity never runs out
           break;
         case 'finish':
@@ -125,6 +129,7 @@
           if (this.phaseTime === 70 && this.roundWinner !== null) {
             const w = this.fighters[this.roundWinner];
             if (!w.isKO) { w.vx = 0; w.state = null; w.setState('victory'); }
+            if (w.def.winQuote && w.state === 'victory') this.effects.spawnText(w.def.winQuote, w.x, w.body.height + 12, '#e8dcc0');
           }
           if (this.phaseTime >= ROUND_OVER_FRAMES) {
             if (this.wins.some((n) => n >= RF.CONFIG.ROUNDS_TO_WIN)) this.setPhase('matchOver');
@@ -313,6 +318,16 @@
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
       if (!blocked && move.knockback && def.grounded) this.effects.spawn('dust', def.x, 1); // skid
+      // Hulk-strength fighters: every hit they land is a seismic event.
+      const imp = att.def.impact;
+      if (imp) {
+        this.shake = Math.max(this.shake, blocked ? Math.round(imp.shake / 2) : imp.shake);
+        if (!blocked) {
+          this.hitstop += imp.hitstop;
+          this.effects.spawn('shock', ex, Math.max(4, ey - 10));
+          RF.audio.sfx('boom');
+        }
+      }
       if (move.fx === 'lightning' && !blocked) { this.flash = Math.max(this.flash, 3); this.effects.spawn('zap', ex, ey + 8); }
       RF.audio.sfx(blocked ? (def.def.blockSound || (def.def.blockFx ? 'shield' : 'block')) : spark === 'heavy' || move.special ? 'heavy' : 'hit');
       this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
@@ -367,7 +382,7 @@
         const x = Math.round(p.x), y = Math.round(floorY - p.y - p.h / 2);
         const dir = Math.sign(p.vx);
         if (p.cfg.art && RF.PROJECTILE_ART[p.cfg.art]) {
-          RF.PROJECTILE_ART[p.cfg.art](ctx, x, y, p.t, dir);
+          RF.PROJECTILE_ART[p.cfg.art](ctx, x, y, p.t, dir, p);
           continue;
         }
         if (p.glyph) {

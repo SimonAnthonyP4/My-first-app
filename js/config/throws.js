@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  shallICompareThee: {
+    name: 'Shall I Compare Thee',
+    description: 'Calmly recites a sonnet... then smashes the opponent into the floor, side to side, again and again.',
+    kind: 'smash',
+    slams: 4,
+    damagePerSlam: 4,
+    finisherDamage: 6,
+  },
   angryLecture: {
     name: 'Angry Lecture',
     description: 'Grabs the opponent and screams in their face until the yelling blasts them across the room.',

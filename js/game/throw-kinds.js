@@ -69,6 +69,43 @@
       },
     },
 
+    // Mr. Dabalsa: a calm line of poetry, then smashes them into the floor side to side.
+    smash: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, start = 40, beat = 14, end = start + T.slams * beat;
+        if (t === 6) scene.effects.spawnText('SHALL I COMPARE THEE', att.x, att.body.height + 16, '#e8dcc0');
+        if (t === 22) scene.effects.spawnText('TO A SUMMER\'S DAY?', att.x, att.body.height + 6, '#e8dcc0');
+        if (t < start) { hold(att, def); def.thrownPose = ['hit', 0]; return false; }
+        if (t < end) {
+          // Swing over his head from one side to the other, slamming down each time.
+          const i = Math.floor((t - start) / beat), u = ((t - start) % beat) / beat;
+          const from = i % 2 ? -1 : 1, to = -from;
+          const side = from + (to - from) * u;
+          def.x = att.x + att.facing * side * 34;
+          def.y = Math.sin(u * Math.PI) * (att.body.height - 10);
+          def.thrownPose = ['ko', u > 0.3 && u < 0.7 ? 1 : 0];
+          if ((t - start) % beat === beat - 1) {
+            def.y = 0;
+            scene.shake = 12;
+            scene.effects.spawn('dust', def.x, 1);
+            scene.effects.spawn('shock', def.x, 4);
+            RF.audio.sfx('boom');
+            scene.throwHit(att, def, T.damagePerSlam);
+          }
+          return false;
+        }
+        if (t === end) {
+          scene.shake = 16;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 6 });
+        }
+        return t >= end + 16;
+      },
+      anim(att, t) {
+        if (t < 40) return ['throw', 0];
+        return ['throw', ((t - 40) % 14) < 8 ? 1 : 2]; // lift, slam, lift, slam
+      },
+    },
+
     // Lady Landa: screams in their face. Shockwaves, giant words, then the yell blasts them away.
     scream: {
       update(att, def, t, scene) {

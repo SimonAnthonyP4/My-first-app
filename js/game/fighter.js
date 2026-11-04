@@ -31,7 +31,7 @@
         const own = def.moves && def.moves[k];
         this.moves[k] = buildMove(own ? Object.assign({}, RF.MOVES[k], own) : RF.MOVES[k], def);
       }
-      this.maxHealth = (RF.CONFIG.HEALTH_BY_ARCHETYPE || {})[def.archetype] || RF.CONFIG.MAX_HEALTH;
+      this.maxHealth = def.health || (RF.CONFIG.HEALTH_BY_ARCHETYPE || {})[def.archetype] || RF.CONFIG.MAX_HEALTH;
       this.special = RF.SPECIALS[def.special];
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
       this.throwCfg = RF.THROWS[def.throw];
@@ -219,6 +219,13 @@
         this.setState('walk');
         this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR);
         this.walkTime += forward ? 1 : -1;
+        // Heavy footsteps (Mr. Dabalsa): every other step shakes the floor.
+        const stepLen = Math.round(16 / this.stats.walkSpeed) * 2;
+        if (this.def.stomp && this.scene && Math.abs(this.walkTime) % stepLen === 1) {
+          this.scene.shake = Math.max(this.scene.shake, this.def.stomp);
+          this.scene.effects.spawn('dust', this.x + this.facing * 8, 1);
+          RF.audio.sfx('stomp');
+        }
       } else {
         this.setState('idle');
         this.vx = 0;

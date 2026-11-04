@@ -118,6 +118,20 @@
     },
   };
 
+  // A rolling shockwave along the floor (Mr. Dabalsa's stomps). Bigger shots = bigger waves.
+  RF.PROJECTILE_ART.shockwave = function (ctx, x, y, t, dir, p) {
+    const s = p ? p.w / 12 : 1, floor = y + (p ? p.h / 2 : 6);
+    for (let i = 0; i < 3; i++) {
+      const h = Math.round((10 + i * 4) * s), w = Math.round((5 + i * 3) * s);
+      ctx.fillStyle = ['rgba(255,240,200,0.9)', 'rgba(200,160,110,0.7)', 'rgba(120,90,60,0.5)'][i];
+      ctx.fillRect(Math.round(x - dir * i * 4 * s - w / 2), Math.round(floor - h), w, h);
+    }
+    for (let i = 0; i < 4; i++) { // flying debris
+      ctx.fillStyle = '#8a6a4a';
+      ctx.fillRect(Math.round(x - dir * (6 + i * 5)), Math.round(floor - 6 - ((t * 3 + i * 7) % 14) * s), 2, 2);
+    }
+  };
+
   RF.PROJECTILE_ART.voidOrb = function (ctx, x, y, t, dir) {
     // Lady Landa's purple energy blast: swirling violet orb with a black core.
     const g = ctx.createRadialGradient(x, y, 0, x, y, 16);
@@ -151,6 +165,27 @@
   }
 
   RF.BLOCK_FX = {
+    // Mr. Dabalsa: the Complete Works of Shakespeare, held open as a shield.
+    bookGuard(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const flap = g.strength > 0 ? Math.round(Math.sin(frame * 1.3) * 3) : 0;
+      const w = 30, h = Math.round(g.hurt.h * 0.45);
+      const x = Math.round(g.front + f.facing * 6 - w / 2), y = Math.round(g.mid - h / 2 - 14);
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+      ctx.fillStyle = '#6c201c'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);         // cover
+      ctx.fillStyle = '#f0e6cc'; ctx.fillRect(x + 1, y + 1 + flap, w / 2 - 2, h - 2); // left page
+      ctx.fillStyle = '#e6dabc'; ctx.fillRect(x + w / 2 + 1, y + 1 - flap, w / 2 - 2, h - 2); // right page
+      ctx.fillStyle = '#3a1a10'; ctx.fillRect(x + w / 2 - 1, y, 2, h);             // spine
+      ctx.fillStyle = 'rgba(60,30,20,0.55)';
+      for (let i = 0; i < Math.floor((h - 6) / 4); i++) {                          // lines of verse
+        ctx.fillRect(x + 3, y + 4 + i * 4 + flap, w / 2 - 6 - (i % 3) * 2, 1);
+        ctx.fillRect(x + w / 2 + 3, y + 4 + i * 4 - flap, w / 2 - 6 - ((i + 1) % 3) * 2, 1);
+      }
+      ctx.fillStyle = '#eb9128'; ctx.fillRect(x - 1, y - 1, w + 2, 1); ctx.fillRect(x - 1, y + h, w + 2, 1); // gilt edges
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'ALAS!', x + w / 2, y - 12, { align: 'center', color: '#e8dcc0', outline: '#000' });
+    },
+
     // Bruiser: a dented steel cafeteria tray held up as a shield. Clang!
     lunchTray(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

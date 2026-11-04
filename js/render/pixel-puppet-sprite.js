@@ -37,6 +37,7 @@
     up: [[1, 0], [2, 0], [3, 0], [4, 0], [4, -1], [4, -2], [4, -3], [4, -4], [4, -5], [4, -6]],
     flail: [[-1, 0], [-2, -1], [-3, -2], [-4, -3]],
     low: [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3]],
+    slam: [[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5]], // swinging down hard
   };
 
   // Frame recipes for every animation. Offsets are in game pixels.
@@ -154,7 +155,16 @@
         const [sc, sr] = s.shoulder;
         const dx = torsoOff[0] + extra[0], dy = torsoOff[1] + extra[1];
         // Held weapon (e.g. a ruler) sticks out of the hand, continuing the arm's direction.
-        if (s.weapon && !dark) {
+        if (s.weapon && s.weapon.kind === 'book' && !dark) {
+          // A big book gripped in the hand (Mr. Dabalsa's Shakespeare).
+          const [hx, hy] = cells[cells.length - 1], w = s.weapon;
+          const bx = ox + (sc + hx * k + k / 2) * U + dx - (w.w * U) / 2, by = oy + (sr + hy * k + k / 2) * U + dy - (w.h * U) / 2;
+          ctx.fillStyle = '#111'; ctx.fillRect(Math.round(bx - U), Math.round(by - U), (w.w + 2) * U, (w.h + 2) * U);
+          ctx.fillStyle = w.color; ctx.fillRect(Math.round(bx), Math.round(by), w.w * U, w.h * U);
+          ctx.fillStyle = w.trim; ctx.fillRect(Math.round(bx + U), Math.round(by + U), (w.w - 2) * U, U);
+          ctx.fillRect(Math.round(bx + U), Math.round(by + (w.h - 2) * U), (w.w - 2) * U, U);
+          ctx.fillRect(Math.round(bx + (w.w / 2 - 1) * U), Math.round(by + (w.h / 2 - 2) * U), 3 * U, 4 * U); // the Bard's face
+        } else if (s.weapon && !dark) {
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
           const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
           const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2;
