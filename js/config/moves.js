@@ -16,6 +16,8 @@
 // crouch: true = performed while crouching (down + attack).
 // cancel: true = once it connects, you can cancel its recovery into another attack (combos).
 // anim: which animation to show (defaults to the move's own name).
+// projectile: { ... } throws a projectile when the move becomes active (same
+//   fields as a projectile special in specials.js) instead of using its hitbox.
 // launch: pops the victim into the air (knockdown).
 // knockback: how hard a clean hit shoves the victim back (pushback is used when blocked).
 //

@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  outlierRemoval: {
+    name: 'Outlier Removal',
+    description: 'Plots the opponent on a bell curve, marks them as an outlier and throws them off the chart.',
+    kind: 'stats',
+    ticks: 3,
+    damagePerTick: 2,
+    finisherDamage: 8,
+  },
   defibrillator: {
     name: 'Defibrillator',
     description: 'Grabs the opponent and pumps electricity through them, then blasts them away.',

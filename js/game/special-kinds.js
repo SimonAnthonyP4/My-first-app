@@ -30,6 +30,23 @@
       },
     },
 
+    // A volley of projectiles thrown one after another at different heights.
+    volley: {
+      start(f) { f.vx = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime;
+        for (let i = 0; i < s.heights.length; i++) {
+          if (t === s.startup + i * s.interval) scene.spawnProjectile(f, Object.assign({}, s, { height: s.heights[i] }));
+        }
+        if (t >= s.startup + s.heights.length * s.interval + s.recovery) f.setState('idle');
+      },
+      anim(f) {
+        const s = f.special, t = f.stateTime;
+        if (t < s.startup) return ['special', 0];
+        return ['special', Math.floor((t - s.startup) / s.interval) % 2 ? 1 : 2];
+      },
+    },
+
     // A bolt of electricity fired straight ahead from the hands.
     beam: {
       start(f) { f.vx = 0; f.specialData.len = 0; },

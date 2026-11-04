@@ -321,12 +321,14 @@
     }
 
     spawnProjectile(f, s) {
-      RF.audio.sfx('special');
+      RF.audio.sfx(s.sound || 'special');
       const size = s.size * f.body.scale;
+      this.glyphCount = (this.glyphCount || 0) + 1;
       this.projectiles.push({
         owner: f, cfg: s, move: RF.specialMove(f, s),
         x: f.x + f.facing * f.body.width * 0.7, y: f.y + f.body.height * s.height - size / 2,
         vx: f.facing * s.speed, w: size, h: size * 0.75, t: 0,
+        glyph: s.glyphs ? s.glyphs[this.glyphCount % s.glyphs.length] : null, // math-symbol projectiles
       });
     }
 
@@ -364,6 +366,19 @@
         const [c0, c1, c2] = p.cfg.colors;
         const x = Math.round(p.x), y = Math.round(floorY - p.y - p.h / 2);
         const dir = Math.sign(p.vx);
+        if (p.glyph) {
+          // A spinning chalk-white math symbol with a dusty trail.
+          for (let i = 1; i <= 5; i++) {
+            ctx.fillStyle = `rgba(230,230,210,${0.5 - i * 0.08})`;
+            ctx.fillRect(x - dir * i * 4, y + Math.round(Math.sin((p.t + i) * 0.8) * 2), 2, 2);
+          }
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(Math.round(p.t / 3) * (Math.PI / 8) * dir); // chunky, stepped spin
+          RF.font.drawText(ctx, p.glyph, 0, -7, { scale: 2, align: 'center', color: [c0, c0, c0, c1, c1, c1, c2], outline: '#101010' });
+          ctx.restore();
+          continue;
+        }
         for (let i = 1; i <= 4; i++) { // trail
           ctx.fillStyle = c2;
           const r = Math.max(1, Math.round(p.h / 2 - i * 1.5));

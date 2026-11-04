@@ -55,7 +55,67 @@
     L(ctx, x + 7 * s, neck + 2, x + 12 * s, neck - 6 * s, 2, bone);
   }
 
+  // Chalk dust puff.
+  function chalk(ctx, x, y, frame, n = 6) {
+    for (let i = 0; i < n; i++) {
+      const a = RF.util.hash(i * 3.7 + Math.floor(frame / 3)) * Math.PI * 2, r = 2 + RF.util.hash(i + frame) * 6;
+      ctx.fillStyle = 'rgba(240,240,230,0.7)';
+      ctx.fillRect(Math.round(x + Math.cos(a) * r), Math.round(y + Math.sin(a) * r), 2, 2);
+    }
+  }
+
   RF.FINISHERS = {
+    // Jauregui: slaps a giant red F on them, then erases them from existence.
+    failingGrade: {
+      name: 'Final Grade: F',
+      duration: 180,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 18 ? ['throw', 1] : t < 30 ? ['throw', 2] : t < 140 ? ['block', 0] : ['victory', Math.floor(t / 15) % 2];
+        if (t === 22) { RF.audio.sfx('heavy'); scene.shake = 10; scene.flash = 3; } // STAMP
+        if (t === 40) RF.audio.sfx('gong');
+        if (t >= 50 && t < 130 && t % 10 === 0) RF.audio.sfx('whoosh'); // erasing
+        if (t === 132) RF.audio.sfx('ko');
+      },
+      drawVictim(vic, ctx, floorY, t, frame) {
+        const H = vic.body.height, top = floorY - H - 6;
+        // Erased from the top down, starting once the grade is in.
+        const erased = t < 50 ? 0 : Math.min(1, (t - 50) / 80);
+        const cut = top + (H + 8) * erased;
+        if (erased < 1) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, cut, RF.CONFIG.WIDTH, floorY + 10 - cut);
+          ctx.clip();
+          drawPose(vic, ctx, vic.x, floorY, ['hit', 0]);
+          ctx.restore();
+          if (erased > 0) {
+            // The eraser rubbing along the cut line, chalk dust flying
+            const ex = vic.x + Math.sin(t / 2) * 10;
+            ctx.fillStyle = '#d8c8a0'; ctx.fillRect(Math.round(ex) - 9, Math.round(cut) - 5, 18, 6);
+            ctx.fillStyle = '#4a3a2a'; ctx.fillRect(Math.round(ex) - 9, Math.round(cut) - 8, 18, 3);
+            chalk(ctx, ex, cut, frame, 8);
+          }
+        }
+        // The grade: a big red F stamped on them, left behind on the floor.
+        if (t >= 22) {
+          const s = t < 26 ? 6 - (t - 22) : 4;
+          const fy = erased >= 1 ? floorY - 30 : floorY - H * 0.65;
+          RF.font.drawText(ctx, 'F', vic.x, fy - s * 3, { scale: s, align: 'center', color: '#d01010', outline: '#ffffff' });
+          if (t > 40) RF.font.drawText(ctx, erased >= 1 ? 'ABOLISHED' : 'SEE ME AFTER CLASS', vic.x, fy - s * 3 - 12, { align: 'center', color: '#ffffff', outline: '#000' });
+        }
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 8 || t >= 22) return;
+        // The graded paper flying from her hand to the victim
+        const p = (t - 8) / 14;
+        const x = att.x + (vic.x - att.x) * p, y = floorY - 70 + Math.sin(p * Math.PI) * -12;
+        ctx.fillStyle = '#000'; ctx.fillRect(Math.round(x) - 7, Math.round(y) - 9, 14, 18);
+        ctx.fillStyle = '#f4f0e0'; ctx.fillRect(Math.round(x) - 6, Math.round(y) - 8, 12, 16);
+        ctx.fillStyle = '#d01010'; ctx.fillRect(Math.round(x) - 3, Math.round(y) - 6, 2, 8); ctx.fillRect(Math.round(x) - 3, Math.round(y) - 6, 6, 2); ctx.fillRect(Math.round(x) - 3, Math.round(y) - 2, 4, 2);
+      },
+    },
+
+
     // Dr. Weissenberg: fried until you can see the skeleton, then a pile of ash.
     overcharge: {
       name: 'Overcharge',

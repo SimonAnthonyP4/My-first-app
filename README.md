@@ -36,7 +36,8 @@ python3 -m http.server 8000
   block is a crackling electric shield. A character's moves can be overridden with
   `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
 - **FINISH THEM!** The blow that wins the match leaves the loser dazed for 5 seconds.
-  Walk up and press **throw** to do your finisher: Dr. Weissenberg's **Overcharge**
+  Walk up and press **throw** to do your finisher: Jauregui's **Final Grade: F** (a red F,
+  then erased from existence), Dr. Weissenberg's **Overcharge**
   (x-ray skeleton, then a pile of ash), Bruiser's **Pile Driver** (head-first into the
   floor) or Viper's **Venom Melt** (a puddle of goo). Hit them normally or wait, and
   it's a plain K.O. (`js/game/finishers.js`, `finisher:` in `characters.js`)
@@ -45,7 +46,7 @@ python3 -m http.server 8000
 - **Throws:** press throw right next to the opponent to grab them. Throws can't be
   blocked, but a missed grab leaves you open, and the victim can break free by
   pressing throw right as they're grabbed ("BREAK!"). Each fighter has their own throw:
-  Bruiser's **Lunch Line Slam** (overhead slam), Viper's **Snake Bite** (three knees and
+  Bruiser's **Lunch Line Slam** (overhead slam), Jauregui's **Outlier Removal** (bell curve), Viper's **Snake Bite** (three knees and
   a kick), Dr. Weissenberg's **Defibrillator** (electrocution). Numbers are in
   `js/config/throws.js`, animations in `js/game/throw-kinds.js`.
 - **Heavy hits knock the opponent back** with a skid (`knockback` in `moves.js`).
@@ -76,6 +77,7 @@ your character automatically unleashes their special move:
 | Bruiser | **Seismic Slam** | Leaps at the opponent and pounds the floor. The shockwave launches them. |
 | Viper   | **Venom Spit**   | Spits a glob of venom across the screen. |
 | Dr. Weissenberg | **Tesla Surge** | Fires a bolt of electricity from his hands straight across the screen. |
+| Jauregui | **Pop Quiz** | Hurls a volley of five math symbols at every height. |
 
 Holding block the whole time is a normal block (chip damage, no special), and
 mashing block doesn't count. A press only qualifies if it comes at least half a
@@ -167,6 +169,13 @@ Everything per-character is in `js/config/characters.js`:
 
 Base attack damage and frame data are in `js/config/moves.js`. Global rules
 (max health, round time, chip damage) are in `js/config/game.js`.
+
+## Jauregui
+
+The math teacher (light fighter, from Math Dept, Room 314). Her light attacks
+are ruler smacks with extra reach; her heavy throws a spinning math symbol
+(Σ π √ ∞ ÷ ± Δ ∫) across the screen. Drawn as one front-facing frame and
+animated as a fine-detail pixel puppet (`limbScale`, `hideWhenPosed`, `weapon`).
 
 ## Adding a character drawn in Piskel
 

@@ -69,6 +69,55 @@
       },
     },
 
+    // Jauregui: plot them on a bell curve, pelt them with data points, throw the outlier out.
+    stats: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, finish = 14 + T.ticks * 9;
+        hold(att, def, t > 10 ? 6 : 0);
+        def.thrownPose = ['hit', 0];
+        for (let i = 0; i < T.ticks; i++) {
+          if (t === 14 + i * 9) {
+            scene.effects.spawn('hit', def.x + (Math.random() - 0.5) * 10, 30 + Math.random() * 40);
+            scene.throwHit(att, def, T.damagePerTick);
+          }
+        }
+        if (t === finish) {
+          scene.effects.spawnText('P < 0.05: REJECTED!', def.x, def.body.height + 18, '#ff6050');
+          scene.shake = 6;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 5, vy: 5 });
+        }
+        return t >= finish + 16;
+      },
+      anim(att, t) { return t < 10 ? ['throw', 0] : t < 14 + att.throwCfg.ticks * 9 ? ['throw', 1] : ['throw', 2]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 14 + att.throwCfg.ticks * 9;
+        if (t < 6 || t > finish + 2) return;
+        // Bell curve chart behind the victim; they're the dot way out on the tail.
+        const grow = Math.min(1, (t - 6) / 8);
+        const cx = att.x + att.facing * 10, base = floorY - 96, w = 90 * grow, h = 34 * grow;
+        ctx.fillStyle = 'rgba(10,20,30,0.75)';
+        ctx.fillRect(Math.round(cx - w / 2 - 4), Math.round(base - h - 6), Math.round(w + 8), Math.round(h + 12));
+        ctx.fillStyle = '#c8d8e8';
+        ctx.fillRect(Math.round(cx - w / 2), base, Math.round(w), 1); // x axis
+        for (let i = 0; i <= w; i++) {
+          const u = (i / Math.max(1, w)) * 6 - 3, y = Math.exp(-u * u / 2) * h;
+          ctx.fillStyle = Math.abs(u) > 2 ? '#ff6050' : '#9fe8ff'; // the tails are red
+          ctx.fillRect(Math.round(cx - w / 2 + i), Math.round(base - y), 1, 2);
+        }
+        if (grow >= 1) {
+          RF.font.drawText(ctx, 'OUTLIER', cx + att.facing * 30, base - 30, { align: 'center', color: '#ff6050', outline: '#000' });
+          const dx = cx + att.facing * 42;
+          ctx.fillStyle = '#ff2a1a'; ctx.fillRect(Math.round(dx) - 2, base - 4, 4, 4);
+          // data points raining down on the victim
+          for (let i = 0; i < 6; i++) {
+            const fy = ((frame * 3 + i * 23) % 60);
+            ctx.fillStyle = i % 2 ? '#9fe8ff' : '#ffffff';
+            ctx.fillRect(Math.round(def.x - 10 + i * 4), Math.round(base + 4 + fy), 2, 2);
+          }
+        }
+      },
+    },
+
     // Dr. Weissenberg: grab and electrocute, then blast away.
     shock: {
       update(att, def, t, scene) {

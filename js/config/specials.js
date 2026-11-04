@@ -37,6 +37,22 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  popQuiz: {
+    name: 'Pop Quiz',
+    description: 'Hurls a volley of five math symbols at every height. Pencils down!',
+    kind: 'volley',
+    startup: 10,
+    interval: 6,         // frames between throws
+    recovery: 18,
+    heights: [0.75, 0.45, 0.9, 0.25, 0.6], // throw heights, as a fraction of her height
+    speed: 5,
+    size: 12,
+    damage: 5,           // per symbol
+    hitstun: 18, blockstun: 10, pushback: 2.5, hitstop: 4,
+    glyphs: ['Σ', 'Π', '√', '∞', '÷', '±', 'Δ', '∫'],
+    colors: ['#ffffff', '#fff2a0', '#c8b060'],
+    sound: 'whoosh',
+  },
   venomSpit: {
     name: 'Venom Spit',
     description: 'Spits a glob of venom that streaks across the screen.',

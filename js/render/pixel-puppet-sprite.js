@@ -15,6 +15,13 @@
 //     sideHand: [[col, row], ...]// hand pixels in the drawing (hidden when an arm is posed)
 //     footCol                    // column the fighter stands on (anchor)
 //     crouchDrop                 // art pixels the body sinks when crouching
+//   Optional, for finer art (Jauregui):
+//     limbScale: 3               // added arms/legs are drawn in blocks this many art pixels big
+//     crouchSquash: true         // squash the legs when crouching instead of folding them
+//     hideWhenPosed: ['ruler']   // palette names hidden while an arm is posed (props in hand)
+//     weapon: { color, length }  // something held in the posed hand (e.g. a ruler)
+//     sleeveColor, sleeveShade   // colour of added sleeves
+//   Any palette name starting with 'pants' or 'shoes' counts as legs.
 //   }
 (function () {
   const { shade, makeCanvas } = RF.util;
@@ -88,21 +95,27 @@
       this.s = s;
       this.U = s.scale;
       // Split the drawing into parts.
+      this.k = s.limbScale || 1;
       this.cells = { head: [], torso: [], legs: [] };
       const hand = new Set((s.sideHand || []).map(([c, r]) => c + ',' + r));
+      const hide = new Set(s.hideWhenPosed || []);
+      this.minCol = Infinity;
       s.grid.forEach((row, r) => {
         [...row].forEach((ch, c) => {
           if (ch === '.' || ch === ' ') return;
-          const color = s.palette[s.legend[ch]];
-          const cell = { c, r, color, hand: hand.has(c + ',' + r) };
-          if (r < s.neckRow) this.cells.head.push(cell);
-          else if (r >= s.waistRow && ['pants', 'shoes'].includes(s.legend[ch])) this.cells.legs.push(cell);
+          const name = s.legend[ch];
+          const color = s.palette[name];
+          const cell = { c, r, color, hand: hand.has(c + ',' + r), prop: hide.has(name), shoe: /^shoes/.test(name) };
+          this.minCol = Math.min(this.minCol, c);
+          const isLeg = /^(pants|shoes)/.test(name);
+          if (r < s.neckRow && !cell.prop) this.cells.head.push(cell);
+          else if (r >= s.waistRow && isLeg) this.cells.legs.push(cell);
           else this.cells.torso.push(cell);
         });
       });
       this.rows = s.grid.length;
       this.cols = Math.max(...s.grid.map((r) => r.length));
-      this.sleeve = shade(s.palette[s.sleeveColor || 'coat'], -0.28);
+      this.sleeve = shade(s.palette[s.sleeveColor || 'coat'], s.sleeveShade == null ? -0.28 : s.sleeveShade);
       this.handColor = s.palette.skin;
       this.pantsColor = s.palette.pants;
       this.shoeColor = s.palette.shoes;
@@ -115,14 +128,19 @@
 
     // Draw one frame recipe to a canvas.
     bake(p) {
-      const U = this.U, s = this.s;
-      const W = (this.cols + MARGIN_X + EXTRA_W) * U, H = (this.rows + MARGIN_TOP + EXTRA_H) * U;
+      const U = this.U, s = this.s, k = this.k;
+      const W = (this.cols + (MARGIN_X + EXTRA_W) * k) * U, H = (this.rows + (MARGIN_TOP + EXTRA_H) * k) * U;
       const [canvas, ctx] = makeCanvas(W, H);
-      const ox = MARGIN_X * U, oy = MARGIN_TOP * U;
+      const ox = MARGIN_X * k * U, oy = MARGIN_TOP * k * U;
       const drop = p.crouch ? (s.crouchDrop || 5) * U : 0;
-      const put = (c, r, color, dx = 0, dy = 0) => {
+      // put: one art pixel (h = optional height in game pixels); blk: a k x k limb block.
+      const put = (c, r, color, dx = 0, dy = 0, h = U) => {
         ctx.fillStyle = color;
-        ctx.fillRect(ox + c * U + dx, oy + r * U + dy, U, U);
+        ctx.fillRect(Math.round(ox + c * U + dx), Math.round(oy + r * U + dy), U, h);
+      };
+      const blk = (c, r, color, dx = 0, dy = 0) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.round(ox + c * U + dx), Math.round(oy + r * U + dy), U * k, U * k);
       };
       const off = (k) => p[k] || [0, 0];
       const torsoOff = [off('torso')[0], off('torso')[1] + drop];
@@ -133,24 +151,36 @@
         const cells = ARMS[name];
         const [sc, sr] = s.shoulder;
         const dx = torsoOff[0] + extra[0], dy = torsoOff[1] + extra[1];
+        // Held weapon (e.g. a ruler) sticks out of the hand, continuing the arm's direction.
+        if (s.weapon && !dark) {
+          const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
+          const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
+          const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2;
+          ctx.fillStyle = s.weapon.color;
+          for (let i = 0; i < s.weapon.length; i++) {
+            const wx = cx0 + dirX * i - (dirY ? 1 : 0), wy = cy0 + dirY * i - (dirX ? 1 : 0);
+            ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * (dirY ? 2 : 1), U * (dirX ? 2 : 1));
+          }
+        }
         cells.forEach(([cx, cy], i) => {
           const isHand = i === cells.length - 1;
           let col = isHand ? this.handColor : this.sleeve;
           if (dark) col = shade(col, -0.3);
-          put(sc + cx, sr + cy, col, dx, dy);
+          blk(sc + cx * k, sr + cy * k, col, dx, dy);
         });
       };
 
       // Back arm, legs, body, head, front arm.
       drawArm(p.backArm, true, p.armOff || [0, 0]);
-      this.drawLegs(p, put, drop, false);
+      this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;
       for (const cell of this.cells.torso) {
+        if (cell.prop && posedArm) continue; // the prop moves to the posed hand
         const color = cell.hand && posedArm ? s.palette[s.legend[s.coatChar || 'W']] : cell.color;
         put(cell.c, cell.r, color, torsoOff[0], torsoOff[1]);
       }
       for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
-      this.drawLegs(p, put, drop, true); // a kicking leg goes in front of the body
+      this.drawLegs(p, put, blk, drop, true); // a kicking leg goes in front of the body
       drawArm(p.arm, false, p.armOff || [0, 0]);
 
       return { canvas, anchorX: Math.round(ox + s.footCol * U), anchorY: oy + this.rows * U };
@@ -158,28 +188,29 @@
 
     // Called twice: front=false for everything behind the body, front=true for
     // a leg that kicks out in front of it.
-    drawLegs(p, put, drop, front) {
-      const s = this.s, legs = this.cells.legs, wr = s.waistRow;
+    drawLegs(p, put, blk, drop, front) {
+      const s = this.s, legs = this.cells.legs, wr = s.waistRow, k = this.k, U = this.U;
       const dark = (c) => shade(c, -0.3);
       const mode = p.crouch && !p.legs ? 'crouch' : p.legs || 'stand';
       const lo = p.legsOff || [0, 0];
       const hip = legs.filter((c) => c.r === wr);
       const pants = this.pantsColor, shoes = this.shoeColor;
-      const [hc, hr] = [s.footCol + 1, wr]; // front hip (art pixels)
+      const [hc, hr] = [s.footCol + k, wr]; // front hip (art pixels)
+      const B = (dx, dy, color) => blk(hc + dx * k, hr + dy * k, color); // limb block relative to the hip
 
       const kicking = ['sweep', 'chamber', 'kick'].includes(mode);
       if (front && !kicking) return;
       if (front) {
         if (mode === 'sweep') {
-          const row = this.rows - 1;
-          for (let i = 1; i <= 6; i++) put(hc + i, row, pants);
-          put(hc + 7, row, shoes); put(hc + 7, row - 1, shoes);
+          const row = this.rows - k;
+          for (let i = 1; i <= 6; i++) blk(hc + i * k, row, pants);
+          blk(hc + 7 * k, row, shoes); blk(hc + 7 * k, row - k, shoes);
         } else if (mode === 'chamber') {
-          [[1, -1], [2, -2], [2, -1], [3, -1], [3, 0], [3, 1], [3, 2]].forEach(([dx, dy]) => put(hc + dx, hr + dy, pants));
-          put(hc + 3, hr + 3, shoes); put(hc + 4, hr + 3, shoes);
+          [[1, -1], [2, -2], [2, -1], [3, -1], [3, 0], [3, 1], [3, 2]].forEach(([dx, dy]) => B(dx, dy, pants));
+          B(3, 3, shoes); B(4, 3, shoes);
         } else {
-          for (let i = 0; i < 5; i++) { put(hc + 1 + i, hr - 1 - i, pants); put(hc + 1 + i, hr - i, pants); }
-          put(hc + 6, hr - 6, shoes); put(hc + 6, hr - 5, shoes); put(hc + 7, hr - 6, shoes);
+          for (let i = 0; i < 5; i++) { B(1 + i, -1 - i, pants); B(1 + i, -i, pants); }
+          B(6, -6, shoes); B(6, -5, shoes); B(7, -6, shoes);
         }
         return;
       }
@@ -191,15 +222,26 @@
           }
           for (const c of legs) put(c.c, c.r, c.color, lo[0] + (c.r === wr ? 0 : p.stride), lo[1]);
           break;
-        case 'tuck': // knees pulled up for a jump
-          for (const c of legs) {
-            if (c.r > wr + 2) continue;
-            put(c.c, c.r, c.color, lo[0], lo[1]);
-          }
-          for (const c of legs) if (c.color === shoes) put(c.c + 1, c.r - 3, c.color, lo[0], lo[1]);
+        case 'tuck': { // knees pulled up for a jump: thighs, then the shoes tucked up under them
+          const keep = wr + 2 * k, shoes = legs.filter((c) => c.shoe);
+          for (const c of legs) if (c.r <= keep) put(c.c, c.r, c.color, lo[0], lo[1]);
+          const shoeTop = Math.min(...shoes.map((c) => c.r));
+          const lift = Math.max(3 * k, shoeTop - keep - 1);
+          for (const c of shoes) put(c.c + k, c.r - lift, c.color, lo[0], lo[1]);
           break;
+        }
         case 'crouch':
         case 'sweep': {
+          if (s.crouchSquash) {
+            // Squash the legs into the space left under the sunken body; knees forward a little.
+            const legH = this.rows - wr, f = (legH - drop / U) / legH;
+            for (const c of legs) {
+              const nr = wr + drop / U + (c.r - wr) * f;
+              const knee = Math.round(Math.sin(((c.r - wr) / legH) * Math.PI) * k);
+              put(c.c + knee, nr, c.color, 0, 0, Math.ceil(U * f) + 1);
+            }
+            break;
+          }
           // Hips sink onto the shoes; knees poke forward.
           for (const c of hip) put(c.c, c.r, c.color, 0, drop);
           for (const c of hip) put(c.c + 1, c.r, c.color, 0, drop);
@@ -218,11 +260,11 @@
     // KO: the standing pose turned on its back, head away from the opponent.
     bakeLying() {
       const stand = this.bake({});
-      const U = this.U;
+      const U = this.U, k = this.k;
       const len = this.rows * U, thick = (this.cols + 2) * U;
       const [canvas, ctx] = makeCanvas(len + 12, thick + 4);
-      const backEdge = (MARGIN_X + 1) * U;               // x of the figure's back in the stand canvas
-      const midY = MARGIN_TOP * U + len / 2;             // vertical middle of the figure
+      const backEdge = (MARGIN_X * k + this.minCol + 1) * U; // x of the figure's back in the stand canvas
+      const midY = MARGIN_TOP * k * U + len / 2;             // vertical middle of the figure
       ctx.translate(Math.round((len + 12) / 2), thick + 3);
       ctx.rotate(-Math.PI / 2);
       ctx.drawImage(stand.canvas, -backEdge, -midY);

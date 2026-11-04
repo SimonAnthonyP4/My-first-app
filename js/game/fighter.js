@@ -105,6 +105,7 @@
           break;
         case 'attack':
           if (this.move.fx && this.stateTime === this.move.startup) RF.audio.sfx('bolt');
+          if (this.move.projectile && this.stateTime === this.move.startup) this.scene.spawnProjectile(this, this.move.projectile);
           if (canAct && this.canCancel()) {
             // Combo: a light attack that connected can be cancelled straight into the next attack.
             const down = input.held('down');

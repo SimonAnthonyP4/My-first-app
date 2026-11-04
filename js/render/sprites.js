@@ -30,10 +30,10 @@ RF.drawBakedFrame = function (ctx, f, x, y, facing, tint) {
 
 // Alternate costume for mirror matches: same fighter, clothes hue-shifted.
 RF.altCostume = function (def) {
-  const KEEP = ['skin', 'eyes', 'outline'];
+  const KEEP = /^(skin|eyes|outline|rulerHand)/; // skin tones etc. keep their colour
   const pal = Object.assign({}, def.sprite.palette);
   for (const k in pal) {
-    if (pal[k] && !KEEP.includes(k)) pal[k] = RF.util.hueShift(pal[k], 150);
+    if (pal[k] && !KEEP.test(k)) pal[k] = RF.util.hueShift(pal[k], 150);
   }
   return Object.assign({}, def, { sprite: Object.assign({}, def.sprite, { palette: pal }) });
 };

@@ -79,7 +79,7 @@
 
       if (!ACTIONABLE.includes(me.state)) return;
       const dist = Math.abs(opp.x - me.x);
-      const reach = (m) => me.moves[m].hitbox.x + me.moves[m].hitbox.w + opp.body.width / 2;
+      const reach = (m) => (me.moves[m].projectile ? 220 : me.moves[m].hitbox.x + me.moves[m].hitbox.w + opp.body.width / 2);
 
       // 2. Jump-in: kick on the way down.
       if (me.state === 'jump') {
