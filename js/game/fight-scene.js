@@ -172,6 +172,8 @@
       }
       for (const [att, def, hb, hurt] of hits) {
         att.moveHasHit = true;
+        // Ranged effects (lightning) stop at the opponent's body.
+        att.fxHitDist = att.facing > 0 ? hurt.x - att.x + 2 : att.x - (hurt.x + hurt.w) + 2;
         const ex = (Math.max(hb.x, hurt.x) + Math.min(hb.x + hb.w, hurt.x + hurt.w)) / 2;
         const ey = (Math.max(hb.y, hurt.y) + Math.min(hb.y + hb.h, hurt.y + hurt.h)) / 2;
         this.applyHit(att, def, att.move, /heavy/i.test(att.moveKind) ? 'heavy' : 'hit', ex, ey);
@@ -200,8 +202,9 @@
       if (!blocked && def.combo >= 2) this.comboText = { side: att.side, hits: def.combo, t: 70 };
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
-      this.effects.spawn(blocked ? 'block' : spark, ex, ey);
-      RF.audio.sfx(blocked ? 'block' : spark === 'heavy' || move.special ? 'heavy' : 'hit');
+      this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
+      if (move.fx === 'lightning' && !blocked) { this.flash = Math.max(this.flash, 3); this.effects.spawn('zap', ex, ey + 8); }
+      RF.audio.sfx(blocked ? (def.def.blockFx ? 'shield' : 'block') : spark === 'heavy' || move.special ? 'heavy' : 'hit');
       this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
       if (!blocked && (spark === 'heavy' || move.special)) this.shake = Math.max(this.shake, 6);
       return blocked ? 'block' : 'hit';

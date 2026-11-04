@@ -27,7 +27,11 @@
       this.body = def.body;
       this.sprite = RF.createSprite(def);
       this.moves = {};
-      for (const k in RF.MOVES) this.moves[k] = buildMove(RF.MOVES[k], def);
+      for (const k in RF.MOVES) {
+        const own = def.moves && def.moves[k];
+        this.moves[k] = buildMove(own ? Object.assign({}, RF.MOVES[k], own) : RF.MOVES[k], def);
+      }
+      this.maxHealth = (RF.CONFIG.HEALTH_BY_ARCHETYPE || {})[def.archetype] || RF.CONFIG.MAX_HEALTH;
       this.special = RF.SPECIALS[def.special];
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
       this.scene = null; // set by FightScene
@@ -39,7 +43,7 @@
       this.vx = 0; this.vy = 0;
       this.pushVx = 0;
       this.facing = facing;
-      this.health = RF.CONFIG.MAX_HEALTH;
+      this.health = this.maxHealth;
       this.move = null;
       this.moveKind = null;
       this.moveHasHit = false;
@@ -51,6 +55,8 @@
       this.chain = 0;     // attacks cancelled into in the current string
       this.combo = 0;     // hits taken in a row without recovering
       this.flash = 0;     // frames left of the white hit flash
+      this.shieldHit = 0; // frames left of a block effect flaring up
+      this.fxHitDist = null; // how far a ranged move's effect reached (it stops at its target)
       this.specialData = {};
       this.lastBlockPress = -Infinity;
       this.blockPressEligible = false;
@@ -93,6 +99,7 @@
           }
           break;
         case 'attack':
+          if (this.move.fx && this.stateTime === this.move.startup) RF.audio.sfx('bolt');
           if (canAct && this.canCancel()) {
             // Combo: a light attack that connected can be cancelled straight into the next attack.
             const down = input.held('down');
@@ -192,6 +199,7 @@
 
     startAttack(kind, chained = false) {
       this.chain = chained ? this.chain + 1 : 0;
+      this.fxHitDist = null;
       this.move = this.moves[kind];
       this.moveKind = kind;
       this.moveHasHit = false;
@@ -295,6 +303,7 @@
       let dmg = move.damage * (1 - this.stats.damageReduction);
       if (blocked) {
         dmg *= RF.CONFIG.CHIP_DAMAGE;
+        this.shieldHit = 12;
         this.stun = move.blockstun;
         this.state = null;
         this.setState('blockstun');
@@ -346,6 +355,7 @@
     // Purely visual timers; run even during hit-stop.
     tickVisuals() {
       if (this.flash > 0) this.flash--;
+      if (this.shieldHit > 0) this.shieldHit--;
     }
 
     draw(ctx, floorY) {
@@ -354,6 +364,9 @@
       // Shudder while frozen in hit-stop, like a real impact.
       if (this.scene && this.scene.hitstop > 0 && this.state === 'hitstun') x += this.scene.frame % 2 ? 1.5 : -1.5;
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
+      const t = this.scene ? this.scene.frame : 0;
+      if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);
+      if ((this.state === 'block' || this.state === 'blockstun') && this.def.blockFx) RF.BLOCK_FX[this.def.blockFx](this, ctx, floorY, t);
     }
 
     drawShadow(ctx, floorY) {

@@ -28,6 +28,12 @@ python3 -m http.server 8000
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 
+- **Health:** tanks (Bruiser, Dr. Weissenberg) start at **175%** health, light
+  fighters at **100%**. The number is shown on each health bar, and the bars are the
+  same size for everyone (`HEALTH_BY_ARCHETYPE` in `js/config/game.js`).
+- **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
+  block is a crackling electric shield. A character's moves can be overridden with
+  `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
 - **Combos:** a light attack that connects can be cancelled straight into another
   attack (up to 3 in a row), e.g. light, light, heavy. Each extra hit in a combo
   does a little less damage.
@@ -107,6 +113,7 @@ js/
     procedural-sprite.js   generates the placeholder pixel fighters
     sheet-sprite.js        draws real sprite-sheet art (for later)
     sprites.js             picks the renderer per character
+    electric.js            lightning / electric shield drawing
   stages/
     registry.js            stage system
     cafeteria.js           Stage 1
@@ -116,6 +123,7 @@ js/
     fight-scene.js         round / match flow, collisions, hit detection
     hud.js                 health bars, timer, round markers
     effects.js             hit sparks, floating text
+    fx.js                  character effects (lightning heavy, electric shield)
     special-kinds.js       special move behaviours (projectile, slam, ...)
     ai.js                  the CPU opponent
   scenes/                  title menu, settings, how-to-play/credits, character select, stage select, VS screen

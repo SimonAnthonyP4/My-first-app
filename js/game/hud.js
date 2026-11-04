@@ -1,5 +1,6 @@
 // Health bars, timer, names and round-win markers. Both bars are always the
-// same size: health is a percentage of RF.CONFIG.MAX_HEALTH for everyone.
+// same size and fill relative to each fighter's own starting health; the number
+// on the bar shows health as a percentage (tanks start at 175%).
 (function () {
   const BAR_W = 150, BAR_H = 9, BAR_Y = 12, MARGIN = 14;
   const T = (...a) => RF.font.drawText(...a);
@@ -11,7 +12,7 @@
 
     update(fighters) {
       fighters.forEach((f, i) => {
-        const pct = f.health / RF.CONFIG.MAX_HEALTH;
+        const pct = f.health / f.maxHealth;
         // Red "damage trail" catches up with the yellow bar after a moment.
         if (this.trail[i] > pct) this.trail[i] = Math.max(pct, this.trail[i] - 0.006);
         else this.trail[i] = pct;
@@ -21,7 +22,7 @@
     draw(ctx, scene) {
       const W = RF.CONFIG.WIDTH;
       scene.fighters.forEach((f, i) => {
-        const pct = f.health / RF.CONFIG.MAX_HEALTH;
+        const pct = f.health / f.maxHealth;
         const x = i === 0 ? MARGIN : W - MARGIN - BAR_W;
         // Player 1's bar drains toward the left edge, player 2's toward the right.
         const fillW = (p) => Math.round(BAR_W * p);
@@ -42,6 +43,9 @@
         ctx.fillRect(fillX(pct), BAR_Y, fillW(pct), 2);
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.fillRect(fillX(pct), BAR_Y + BAR_H - 2, fillW(pct), 2);
+        // Health percentage on the outer end of the bar
+        const label = Math.ceil(f.health) + '%';
+        T(ctx, label, i === 0 ? x + 3 : x + BAR_W - 3, BAR_Y + 1, { align: i === 0 ? 'left' : 'right', color: '#ffffff', outline: '#000' });
 
         // Name + round wins
         const nameOpts = { color: '#ffffff', outline: '#000', align: i === 0 ? 'left' : 'right' };

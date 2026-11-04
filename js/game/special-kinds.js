@@ -16,23 +16,6 @@
     special: true,
   });
 
-  // Pixel-crisp jagged line, re-randomised every couple of frames.
-  function bolt(ctx, x0, y0, x1, seed, amp, w, color) {
-    ctx.fillStyle = color;
-    const dir = Math.sign(x1 - x0) || 1, len = Math.abs(x1 - x0);
-    let px = x0, py = y0;
-    for (let d = 0; d < len; d += 6) {
-      const nx = x0 + dir * Math.min(len, d + 6);
-      const ny = y0 + (d + 6 >= len ? 0 : Math.round((RF.util.hash(seed + d * 0.37) - 0.5) * amp * 2));
-      const steps = Math.max(Math.abs(nx - px), Math.abs(ny - py));
-      for (let i = 0; i <= steps; i++) {
-        const t = steps ? i / steps : 0;
-        ctx.fillRect(Math.round(px + (nx - px) * t - w / 2), Math.round(py + (ny - py) * t - w / 2), w, w);
-      }
-      px = nx; py = ny;
-    }
-  }
-
   RF.SPECIAL_KINDS = {
     projectile: {
       start(f) { f.vx = 0; },
@@ -73,26 +56,27 @@
         return ['special', f.stateTime < s.startup ? 0 : 1];
       },
       draw(f, ctx, floorY, frame) {
-        const s = f.special, t = f.stateTime;
+        const s = f.special, t = f.stateTime, el = RF.electric;
         const hx = Math.round(f.x + f.facing * s.handX), hy = Math.round(floorY - f.y - s.handY);
+        const seed = Math.floor(frame / 2) * 13.7;
         if (t < s.startup) {
-          // Charging: sparks crackle around his hands and body.
-          for (let i = 0; i < 6; i++) {
-            const a = RF.util.hash(frame * 3.1 + i) * Math.PI * 2, r = 4 + RF.util.hash(frame + i * 7) * 14;
-            ctx.fillStyle = i % 2 ? s.colors[1] : s.colors[0];
-            ctx.fillRect(Math.round(f.x + Math.cos(a) * r), Math.round(hy - 8 + Math.sin(a) * r), 2, 2);
-          }
+          // Charging: electricity gathers around his whole body, then his hands.
+          const p = t / s.startup;
+          el.crackle(ctx, f.x, hy - 6, 18 - p * 6, seed, 4);
+          el.glow(ctx, hx, hy, 8 + p * 14, 0.3 + p * 0.5);
           return;
         }
         if (t < s.startup + s.active) {
-          const seed = Math.floor(frame / 2) * 13.7;
           const x1 = hx + f.facing * f.specialData.len;
-          bolt(ctx, hx, hy, x1, seed, 6, 5, 'rgba(58,140,255,0.55)');
-          bolt(ctx, hx, hy, x1, seed, 6, 3, s.colors[1]);
-          bolt(ctx, hx, hy, x1, seed, 6, 1, s.colors[0]);
-          bolt(ctx, hx, hy, x1, seed + 50, 9, 1, s.colors[1]); // a stray second arc
-          ctx.fillStyle = s.colors[0];
-          ctx.fillRect(hx - 3, hy - 3, 6, 6); // glowing hands
+          // Full-power surge: a thick forked main bolt, two wild side arcs, blinding ends.
+          ctx.fillStyle = 'rgba(90,170,255,0.18)';
+          ctx.fillRect(Math.min(hx, x1), floorY - 4, Math.abs(x1 - hx), 5);
+          el.glow(ctx, hx, hy, 24, 0.85);
+          el.bolt(ctx, [hx, hy], [x1, hy], { seed, amp: 9, thick: 1.8, forks: 7 });
+          el.bolt(ctx, [hx, hy], [x1, hy - 4], { seed: seed + 40, amp: 14, thick: 0.5, forks: 2 });
+          el.bolt(ctx, [hx, hy], [x1, hy + 4], { seed: seed + 80, amp: 14, thick: 0.5, forks: 2 });
+          el.glow(ctx, x1, hy, 20, 0.9);
+          el.crackle(ctx, x1, hy, 12, seed + 3, 4);
         }
       },
     },

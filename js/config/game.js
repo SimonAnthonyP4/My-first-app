@@ -12,7 +12,8 @@ RF.CONFIG = {
   HEIGHT: 224,
   FPS: 60,                // the simulation runs at a fixed 60 updates per second
 
-  MAX_HEALTH: 100,        // identical for every character
+  MAX_HEALTH: 100,        // starting health (the health bar shows it as a percentage)
+  HEALTH_BY_ARCHETYPE: { tank: 175, light: 100 }, // tanks start at 175%. Bars stay the same size.
   ROUNDS_TO_WIN: 2,       // best of three
   ROUND_TIME: 99,         // seconds per round (0 = no time limit)
 

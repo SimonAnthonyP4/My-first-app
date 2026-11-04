@@ -17,7 +17,13 @@
 //
 // special: id of this character's one special move in specials.js.
 //
-// Health is NOT per character: every fighter has RF.CONFIG.MAX_HEALTH.
+// Health depends on archetype (RF.CONFIG.HEALTH_BY_ARCHETYPE): tanks start at
+// 175%, light fighters at 100%. Health bars are the same size for everyone.
+//
+// Optional per-character extras:
+//   moves:    { heavy: {...} } replaces/overrides that move from moves.js
+//   blockFx:  name of a block effect in game/fx.js (e.g. 'electricShield')
+//   blockSpark: spark effect shown when an attack is blocked
 // The two fighters below are prototype placeholders; the real roster of 8
 // comes in milestone 6.
 RF.CHARACTERS = [
@@ -78,17 +84,32 @@ RF.CHARACTERS = [
   {
     id: 'weissenberg',
     name: 'Dr. Weissenberg',
-    archetype: 'light',
+    archetype: 'tank',
     origin: 'Science Lab, Room 13',
     bio: 'A lab accident turned this teacher into a human battery.',
     special: 'teslaSurge',
     stats: {
-      walkSpeed: 2.1,
-      jumpPower: 11.0,
-      damage: 0.95,
-      damageReduction: -0.05,
-      attackSpeed: 1.15,
+      walkSpeed: 1.7,
+      jumpPower: 10.6,
+      damage: 1.1,
+      damageReduction: 0.15,
+      attackSpeed: 0.9,
     },
+    // His heavy is a ranged lightning bolt instead of a kick.
+    moves: {
+      heavy: {
+        startup: 12, active: 8, recovery: 20,
+        damage: 10,
+        hitstun: 24, blockstun: 14,
+        pushback: 5, hitstop: 8,
+        anim: 'special',            // arms thrust forward instead of a kick
+        fx: 'lightning',            // drawn by game/fx.js
+        fxHand: [20, 44],           // where the bolt leaves his hands (x ahead, y up)
+        hitbox: { x: 18, y: 36, w: 110, h: 16 },
+      },
+    },
+    blockFx: 'electricShield',
+    blockSpark: 'zap',
     body: { scale: 1.0, bulk: 1.0, width: 26, height: 72, crouchHeight: 0.78 },
     // Hand-drawn in Piskel (one standing frame), animated as a pixel puppet.
     sprite: {
