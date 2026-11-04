@@ -59,6 +59,7 @@
       this.hitstop = 0;
       this.shake = 0;
       this.flash = 0;
+      this.comboText = null;
       this.projectiles = [];
       this.effects.clear();
       this.hud.reset();
@@ -88,6 +89,8 @@
       this.effects.update();
       if (this.shake > 0) this.shake--;
       if (this.flash > 0) this.flash--;
+      if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
+      for (const f of this.fighters) f.tickVisuals();
       if (this.hitstop > 0) { this.hitstop--; return; }
 
       switch (this.phase) {
@@ -194,6 +197,7 @@
       }
 
       const blocked = def.receiveHit(att, move);
+      if (!blocked && def.combo >= 2) this.comboText = { side: att.side, hits: def.combo, t: 70 };
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? 'block' : spark, ex, ey);

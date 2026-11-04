@@ -13,7 +13,7 @@ RF.SPECIALS = {
     description: 'Leaps at the opponent and pounds the floor. The shockwave launches them.',
     kind: 'slam',
     startup: 8,          // crouch before the leap
-    leapPower: 7,        // jump speed
+    leapPower: 8.5,      // jump speed
     maxLeapSpeed: 4.5,   // max horizontal speed while leaping at the opponent
     recovery: 24,        // frames stuck after landing
     radius: 48,          // shockwave reaches this far either side of the landing spot

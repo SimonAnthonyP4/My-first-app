@@ -39,8 +39,12 @@
 
   let last = performance.now(), acc = 0;
   function loop(now) {
-    acc += Math.min(now - last, 250); // avoid a huge catch-up after the tab was hidden
+    let dt = Math.min(now - last, 250); // avoid a huge catch-up after the tab was hidden
     last = now;
+    // Frame times jitter by a millisecond or two; treating "about one frame" as
+    // exactly one frame stops the occasional doubled/skipped update (judder).
+    if (Math.abs(dt - STEP) < 2) dt = STEP;
+    acc += dt;
     while (acc >= STEP) {
       if (!game.manualStep) game.step();
       acc -= STEP;

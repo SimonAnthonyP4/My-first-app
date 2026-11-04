@@ -224,9 +224,9 @@
       return { canvas, anchorX: Math.round((len + 12) / 2), anchorY: thick + 4 };
     }
 
-    draw(ctx, anim, frame, x, y, facing) {
+    draw(ctx, anim, frame, x, y, facing, tint) {
       const list = this.frames[anim] || this.frames.idle;
-      RF.drawBakedFrame(ctx, list[frame % list.length], x, y, facing);
+      RF.drawBakedFrame(ctx, list[frame % list.length], x, y, facing, tint);
     }
   }
 

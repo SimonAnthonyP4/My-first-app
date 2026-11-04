@@ -31,7 +31,7 @@ RF.CHARACTERS = [
     special: 'seismicSlam',   // see specials.js
     stats: {
       walkSpeed: 1.5,
-      jumpPower: 7.6,
+      jumpPower: 10.4,
       damage: 1.2,
       damageReduction: 0.2,
       attackSpeed: 0.8,
@@ -58,7 +58,7 @@ RF.CHARACTERS = [
     special: 'venomSpit',
     stats: {
       walkSpeed: 2.4,
-      jumpPower: 8.6,
+      jumpPower: 11.4,
       damage: 0.9,
       damageReduction: -0.1,
       attackSpeed: 1.3,
@@ -84,7 +84,7 @@ RF.CHARACTERS = [
     special: 'teslaSurge',
     stats: {
       walkSpeed: 2.1,
-      jumpPower: 8.2,
+      jumpPower: 11.0,
       damage: 0.95,
       damageReduction: -0.05,
       attackSpeed: 1.15,

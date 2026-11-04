@@ -14,30 +14,59 @@
   // Bass riff helper: x = root, o = root an octave up.
   const riff = (shape, low, high) => shape.split(' ').map((t) => (t === 'x' ? low : t === 'o' ? high : t)).join(' ');
   const PUMP = 'x . o x . x o . x . o x . x o x';
+  const DRIVE = 'x x o x x o x x o x x o x x o x'; // relentless 16ths
 
   RF.MUSIC = {
-    // Main menu / character select: driving A minor.
+    // Main menu / character select: dark, pounding arcade techno in E minor.
+    // 8 bars: Em Em C D | Em Em C B.
     menu: {
-      bpm: 132,
+      bpm: 142,
       tracks: {
         bass: {
-          wave: 'triangle', volume: 0.32,
+          wave: 'sawtooth', volume: 0.1,
           bars: [
-            riff(PUMP, 'A1', 'A2'), riff(PUMP, 'A1', 'A2'),
-            riff(PUMP, 'F1', 'F2'), riff(PUMP, 'G1', 'G2'),
+            riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'C2', 'C3'), riff(DRIVE, 'D2', 'D3'),
+            riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'C2', 'C3'), riff(DRIVE, 'B1', 'B2'),
+          ],
+        },
+        sub: {
+          wave: 'triangle', volume: 0.3,
+          bars: [
+            'E1 - - - E1 - - - E1 - - - E1 - - -', 'E1 - - - E1 - - - E1 - - - E1 - - -',
+            'C2 - - - C2 - - - C2 - - - C2 - - -', 'D2 - - - D2 - - - D2 - - - D2 - - -',
+            'E1 - - - E1 - - - E1 - - - E1 - - -', 'E1 - - - E1 - - - E1 - - - E1 - - -',
+            'C2 - - - C2 - - - C2 - - - C2 - - -', 'B1 - - - B1 - - - B1 - - - B1 - - -',
           ],
         },
         lead: {
-          wave: 'square', volume: 0.08,
+          wave: 'sawtooth', volume: 0.055,
           bars: [
-            'A4 - - C5 - - E5 - - - D5 - C5 - B4 -',
-            'C5 - - - A4 - - - E4 - - - A4 - B4 -',
-            'C5 - - F5 - - E5 - - - D5 - C5 - A4 -',
-            'B4 - - - G4 - - - B4 - D5 - E5 - - -',
+            'E4 . E4 . G4 . E4 . B4 . A4 . G4 . F#4 .',
+            'E4 . E4 . G4 . E4 . D5 . B4 . G4 . A4 .',
+            'C5 . C5 . E5 . C5 . G5 . F#5 . E5 . D5 .',
+            'D5 . D5 . F#5 . D5 . A5 - - - F#5 . D5 .',
+            'E5 . E5 . B4 . E5 . G5 . F#5 . E5 . B4 .',
+            'E5 . E5 . B4 . E5 . A5 . G5 . F#5 . G5 .',
+            'C5 . E5 . G5 . C6 - - B5 . G5 . E5 . .',
+            'B4 . D#5 . F#5 . B5 - - - A5 . F#5 . D#5 .',
+          ],
+        },
+        stab: {
+          wave: 'square', volume: 0.045,
+          bars: [
+            '. . B3 . . . B3 . . . B3 . . . B3 .', '. . B3 . . . B3 . . . B3 . . . B3 .',
+            '. . G3 . . . G3 . . . G3 . . . G3 .', '. . A3 . . . A3 . . . A3 . . . A3 .',
+            '. . B3 . . . B3 . . . B3 . . . B3 .', '. . B3 . . . B3 . . . B3 . . . B3 .',
+            '. . G3 . . . G3 . . . G3 . . . G3 .', '. . F#3 . . . F#3 . . . F#3 . . . F#3 .',
           ],
         },
         drums: {
-          bars: ['k . h . s . h . k k h . s . h h', 'k . h . s . h k . k h . s . s s'],
+          bars: [
+            'k . h . k+s . h . k . h . k+s . h h',
+            'k . h . k+s . h . k . h . k+s . h h',
+            'k . h . k+s . h . k . h . k+s . h h',
+            'k . h . k+s . h . k . k . s s s s',
+          ],
         },
       },
     },

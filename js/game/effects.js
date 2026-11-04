@@ -6,6 +6,7 @@
     block: { life: 10, colors: ['#ffffff', '#a8e0ff', '#4a90ff', '#2040a0'], rays: 6, len: 10 },
     perfect: { life: 24, colors: ['#ffffff', '#c8f8ff', '#8ff0ff', '#40b0ff', '#2060c0'], rays: 16, len: 34 },
     zap: { life: 14, colors: ['#ffffff', '#9ff0ff', '#3a8cff', '#1a3a8a'], rays: 5, len: 16 },
+    dust: { life: 12, colors: ['#d8ccb8', '#a89880', '#6a5c4c'], rays: 6, len: 10 },
     shock: { life: 18, colors: ['#fff0c0', '#d8a060', '#8a5a30', '#4a3020'], rays: 7, len: 26 },
   };
 

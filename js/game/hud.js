@@ -55,6 +55,16 @@
         }
       });
 
+      // Combo counter under the attacker's health bar.
+      const c = scene.comboText;
+      if (c && (c.t > 15 || c.t % 4 < 2)) {
+        const pop = c.t > 62 ? 1 : 0;
+        T(ctx, c.hits + ' HITS!', c.side === 0 ? MARGIN : W - MARGIN, 40 - pop, {
+          scale: 2, align: c.side === 0 ? 'left' : 'right', outline: '#200000',
+          color: ['#fff8c0', '#fff070', '#ffd030', '#ffa020', '#ff7010', '#e04010', '#a02008'],
+        });
+      }
+
       const secs = Math.max(0, Math.ceil(scene.timer / RF.CONFIG.FPS));
       T(ctx, Number.isFinite(secs) ? String(secs).padStart(2, '0') : '--', W / 2, BAR_Y - 3, {
         scale: 2, align: 'center', outline: '#000',

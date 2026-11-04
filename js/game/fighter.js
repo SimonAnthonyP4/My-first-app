@@ -48,6 +48,9 @@
       this.stun = 0;
       this.walkTime = 0;
       this.crouching = false;
+      this.chain = 0;     // attacks cancelled into in the current string
+      this.combo = 0;     // hits taken in a row without recovering
+      this.flash = 0;     // frames left of the white hit flash
       this.specialData = {};
       this.lastBlockPress = -Infinity;
       this.blockPressEligible = false;
@@ -90,6 +93,12 @@
           }
           break;
         case 'attack':
+          if (canAct && this.canCancel()) {
+            // Combo: a light attack that connected can be cancelled straight into the next attack.
+            const down = input.held('down');
+            if (input.pressed('light')) { input.consume('light'); this.startAttack(down ? 'lowLight' : 'light', true); break; }
+            if (input.pressed('heavy')) { input.consume('heavy'); this.startAttack(down ? 'lowHeavy' : 'heavy', true); break; }
+          }
           if (this.stateTime >= this.move.total) this.setState(this.grounded ? 'idle' : 'jump');
           break;
         case 'special':
@@ -131,6 +140,7 @@
 
     // Knocked off balance by an opponent's perfect block.
     stagger(frames) {
+      this.combo = 0;
       this.move = null;
       this.vx = 0;
       this.stun = frames;
@@ -160,7 +170,7 @@
       if (input.held('up')) {
         this.setState('jump');
         this.vy = this.stats.jumpPower;
-        this.vx = dir * this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR;
+        this.vx = dir * Math.max(this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR, RF.CONFIG.JUMP_MIN_SPEED);
         this.airAttackUsed = false;
         return;
       }
@@ -175,7 +185,13 @@
       }
     }
 
-    startAttack(kind) {
+    canCancel() {
+      return this.move.cancel && this.moveHasHit && !this.attackAirborne &&
+        this.chain < RF.CONFIG.MAX_CHAIN && this.stateTime >= this.move.startup;
+    }
+
+    startAttack(kind, chained = false) {
+      this.chain = chained ? this.chain + 1 : 0;
       this.move = this.moves[kind];
       this.moveKind = kind;
       this.moveHasHit = false;
@@ -211,8 +227,10 @@
       if (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne)) {
         this.setState('idle');
         this.vx = 0;
+        if (this.scene) this.scene.effects.spawn('dust', this.x, 1);
       } else if (this.state === 'hitstun') {
         this.vx = 0;
+        if (this.scene) this.scene.effects.spawn('dust', this.x, 1);
       } else if (this.state === 'special' && this.specialKind.onLand) {
         this.specialKind.onLand(this, this.scene);
       }
@@ -273,6 +291,7 @@
     receiveHit(attacker, move) {
       const dir = sign(this.x - attacker.x) || attacker.facing;
       const blocked = this.isBlockingAgainst(attacker, move);
+      const wasStunned = this.state === 'hitstun';
       let dmg = move.damage * (1 - this.stats.damageReduction);
       if (blocked) {
         dmg *= RF.CONFIG.CHIP_DAMAGE;
@@ -281,6 +300,10 @@
         this.setState('blockstun');
         this.pushVx = dir * move.pushback * 0.8;
       } else {
+        // Combo damage scaling: each extra hit before recovering does a bit less.
+        this.combo = wasStunned ? this.combo + 1 : 1;
+        dmg *= Math.max(RF.CONFIG.COMBO_MIN_SCALE, 1 - RF.CONFIG.COMBO_SCALING * (this.combo - 1));
+        this.flash = 4;
         this.stun = move.hitstun;
         this.state = null;
         this.setState('hitstun');
@@ -303,7 +326,7 @@
 
     animFrame() {
       switch (this.state) {
-        case 'walk': return ['walk', Math.floor(Math.abs(this.walkTime) / 7) % 4];
+        case 'walk': return ['walk', Math.floor(Math.abs(this.walkTime) / Math.round(16 / this.stats.walkSpeed)) % 4];
         case 'jump': return ['jump', 0];
         case 'attack': {
           const ph = this.attackPhase();
@@ -320,9 +343,17 @@
       }
     }
 
+    // Purely visual timers; run even during hit-stop.
+    tickVisuals() {
+      if (this.flash > 0) this.flash--;
+    }
+
     draw(ctx, floorY) {
       const [anim, frame] = this.animFrame();
-      this.sprite.draw(ctx, anim, frame, this.x, floorY - this.y, this.facing);
+      let x = this.x;
+      // Shudder while frozen in hit-stop, like a real impact.
+      if (this.scene && this.scene.hitstop > 0 && this.state === 'hitstun') x += this.scene.frame % 2 ? 1.5 : -1.5;
+      this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
     }
 
     drawShadow(ctx, floorY) {

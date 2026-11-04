@@ -16,11 +16,15 @@ RF.CONFIG = {
   ROUNDS_TO_WIN: 2,       // best of three
   ROUND_TIME: 99,         // seconds per round (0 = no time limit)
 
-  GRAVITY: 0.45,
+  GRAVITY: 0.55,
   BACKWALK_FACTOR: 0.8,   // walking away from the opponent is a bit slower
   JUMP_FORWARD_FACTOR: 1.1,
+  JUMP_MIN_SPEED: 2.6,    // forward jumps travel at least this fast, so everyone can jump over the opponent
   CROUCH_HEIGHT: 0.62,    // crouching hurtbox height, as a fraction of standing height
-  CHIP_DAMAGE: 0.1,       // fraction of damage that still gets through a block
+  CHIP_DAMAGE: 0.1,
+  MAX_CHAIN: 3,           // light attacks that connect can be cancelled into another attack this many times
+  COMBO_SCALING: 0.1,     // each extra hit in a combo does 10% less damage...
+  COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block
   INPUT_BUFFER: 6,        // frames an attack press is remembered
 
   // Perfect block: press block no more than this many frames before a hit

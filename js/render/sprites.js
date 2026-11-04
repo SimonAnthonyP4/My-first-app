@@ -1,8 +1,20 @@
 // Draw a pre-baked frame ({ canvas, anchorX, anchorY }) with its anchor at
 // (x, y), mirrored when facing left.
-RF.drawBakedFrame = function (ctx, f, x, y, facing) {
+RF.drawBakedFrame = function (ctx, f, x, y, facing, tint) {
   x = Math.round(x);
   y = Math.round(y);
+  if (tint === 'white') {
+    // White silhouette for hit flashes, made once per frame and reused.
+    if (!f.white) {
+      const [c, cx] = RF.util.makeCanvas(f.canvas.width, f.canvas.height);
+      cx.drawImage(f.canvas, 0, 0);
+      cx.globalCompositeOperation = 'source-in';
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(0, 0, c.width, c.height);
+      f.white = c;
+    }
+    f = { canvas: f.white, anchorX: f.anchorX, anchorY: f.anchorY };
+  }
   if (facing >= 0) {
     ctx.drawImage(f.canvas, x - f.anchorX, y - f.anchorY);
   } else {

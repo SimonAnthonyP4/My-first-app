@@ -23,11 +23,11 @@
       this.img.src = cfg.src;
     }
 
-    draw(ctx, anim, frame, x, y, facing) {
+    draw(ctx, anim, frame, x, y, facing, tint) {
       const c = this.cfg;
       const a = c.animations[anim];
       if (!this.ready || !a) {
-        if (this.fallback) this.fallback.draw(ctx, anim, frame, x, y, facing);
+        if (this.fallback) this.fallback.draw(ctx, anim, frame, x, y, facing, tint);
         return;
       }
       const count = a.frames || RF.ANIMATIONS[anim];

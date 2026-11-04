@@ -14,6 +14,7 @@
 // level: 'mid' (default) can be blocked standing or crouching; 'low' must be
 // blocked crouching. Jump attacks are 'overhead' and must be blocked standing.
 // crouch: true = performed while crouching (down + attack).
+// cancel: true = once it connects, you can cancel its recovery into another attack (combos).
 // anim: which animation to show (defaults to the move's own name).
 // launch: pops the victim into the air (knockdown).
 //
@@ -24,6 +25,7 @@ RF.MOVES = {
   light: {
     startup: 5, active: 3, recovery: 9,
     damage: 5,
+    cancel: true,
     hitstun: 14, blockstun: 9,
     pushback: 3, hitstop: 3,
     hitbox: { x: 12, y: 52, w: 28, h: 13 },
@@ -58,7 +60,7 @@ RF.MOVES = {
     damage: 4,
     hitstun: 13, blockstun: 8,
     pushback: 3, hitstop: 3,
-    crouch: true,
+    crouch: true, cancel: true,
     hitbox: { x: 12, y: 28, w: 26, h: 12 },
   },
   // Sweep: hits low (crouch-block it!) and knocks the victim off their feet.

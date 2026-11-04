@@ -28,6 +28,10 @@ python3 -m http.server 8000
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 
+- **Combos:** a light attack that connects can be cancelled straight into another
+  attack (up to 3 in a row), e.g. light, light, heavy. Each extra hit in a combo
+  does a little less damage.
+- **Jumping over:** everyone can jump clean over their opponent.
 - **Crouch attacks:** crouch + light = quick low jab, crouch + heavy = sweep (knocks down)
 - **Blocking high/low:** sweeps must be blocked crouching (down + block); jump attacks must be blocked standing
 - `M`: mute / unmute all sound
