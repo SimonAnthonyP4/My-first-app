@@ -10,6 +10,7 @@ RF.CONTROLS = {
     light: ['KeyF'],
     heavy: ['KeyG'],
     block: ['KeyH'],
+    throw: ['KeyT'],
   },
   p2: {
     left: ['ArrowLeft'],
@@ -20,5 +21,6 @@ RF.CONTROLS = {
     light: ['Numpad1', 'Comma'],
     heavy: ['Numpad2', 'Period'],
     block: ['Numpad3', 'Slash'],
+    throw: ['Numpad4', 'KeyL'],
   },
 };

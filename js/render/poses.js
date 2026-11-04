@@ -3,11 +3,12 @@
 //   light/heavy frames: 0 = startup, 1 = active (hitting), 2 = recovery
 //   ko frames:          0 = falling, 1 = lying on the floor
 //   lowLight/lowHeavy:  crouching attacks, same 3 phases as light/heavy
+//   throw frames:       0 = grabbing (arms out), 1 = lifting (arms up), 2 = slamming down
 //   special frames:     0 = wind-up, 1 = thrust forward (projectiles, rushes),
 //                       2 = slam into the floor
 RF.ANIMATIONS = {
   idle: 2, walk: 4, jump: 1, light: 3, heavy: 3, block: 1, hit: 1, ko: 2, victory: 2,
-  special: 3, crouch: 1, crouchBlock: 1, lowLight: 3, lowHeavy: 3,
+  special: 3, crouch: 1, crouchBlock: 1, lowLight: 3, lowHeavy: 3, throw: 3,
 };
 
 // Poses for the procedural placeholder sprites, drawn facing right.
@@ -73,6 +74,11 @@ RF.ANIMATIONS = {
       C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 70, fShin: -40, bUpper: -15, bFore: -5 }),
       C({ lean: 40, bThigh: 80, bShin: -95, fThigh: 82, fShin: 90, bUpper: -20, bFore: -10, fUpper: 40, fFore: 130 }),
       C({ lean: 30, bThigh: 70, bShin: -90, fThigh: 78, fShin: 30, bUpper: -15, bFore: -5 }),
+    ],
+    throw: [
+      P({ lean: 12, fUpper: 78, fFore: 92, bUpper: 70, bFore: 98 }),
+      P({ lean: -12, fUpper: 165, fFore: 178, bUpper: 160, bFore: 172, bThigh: -24, fThigh: 26 }),
+      P({ lean: 30, fUpper: 40, fFore: 20, bUpper: 30, bFore: 15, fThigh: 50, fShin: -10 }),
     ],
     victory: [
       P({ lean: 0, fUpper: 170, fFore: 178, bUpper: 30, bFore: -40, bThigh: -14, fThigh: 14, fShin: 0, bShin: 0 }),

@@ -6,8 +6,10 @@
 //   punish         chance to hit back when the opponent is open (missed attack, stunned)
 //   jumpChance     chance to jump in instead of walking when far away
 //   idle           max frames it stands around thinking
+//   throwChance    chance per frame to throw when right next to the opponent
+//   breakChance    chance it breaks out of your throws
 RF.AI_LEVELS = {
-  easy: { reaction: 24, blockChance: 0.25, perfectChance: 0.03, aggression: 0.025, punish: 0.2, jumpChance: 0.05, idle: 40 },
-  normal: { reaction: 14, blockChance: 0.5, perfectChance: 0.12, aggression: 0.05, punish: 0.5, jumpChance: 0.1, idle: 25 },
-  hard: { reaction: 7, blockChance: 0.8, perfectChance: 0.35, aggression: 0.09, punish: 0.9, jumpChance: 0.15, idle: 12 },
+  easy: { reaction: 24, blockChance: 0.25, perfectChance: 0.03, aggression: 0.025, punish: 0.2, jumpChance: 0.05, idle: 40, throwChance: 0.01, breakChance: 0.05 },
+  normal: { reaction: 14, blockChance: 0.5, perfectChance: 0.12, aggression: 0.05, punish: 0.5, jumpChance: 0.1, idle: 25, throwChance: 0.02, breakChance: 0.25 },
+  hard: { reaction: 7, blockChance: 0.8, perfectChance: 0.35, aggression: 0.09, punish: 0.9, jumpChance: 0.15, idle: 12, throwChance: 0.035, breakChance: 0.5 },
 };

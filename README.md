@@ -27,6 +27,7 @@ python3 -m http.server 8000
 | Light      | `F`                  | `Numpad 1` (or `,`)          |
 | Heavy      | `G`                  | `Numpad 2` (or `.`)          |
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
+| Throw      | `T` (up close)       | `Numpad 4` (or `L`)          |
 
 - **Health:** tanks (Bruiser, Dr. Weissenberg) start at **175%** health, light
   fighters at **100%**. The number is shown on each health bar, and the bars are the
@@ -34,6 +35,13 @@ python3 -m http.server 8000
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
   block is a crackling electric shield. A character's moves can be overridden with
   `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
+- **Throws:** press throw right next to the opponent to grab them. Throws can't be
+  blocked, but a missed grab leaves you open, and the victim can break free by
+  pressing throw right as they're grabbed ("BREAK!"). Each fighter has their own throw:
+  Bruiser's **Lunch Line Slam** (overhead slam), Viper's **Snake Bite** (three knees and
+  a kick), Dr. Weissenberg's **Defibrillator** (electrocution). Numbers are in
+  `js/config/throws.js`, animations in `js/game/throw-kinds.js`.
+- **Heavy hits knock the opponent back** with a skid (`knockback` in `moves.js`).
 - **Combos:** a light attack that connects can be cancelled straight into another
   attack (up to 3 in a row), e.g. light, light, heavy. Each extra hit in a combo
   does a little less damage.
@@ -105,6 +113,7 @@ js/
     controls.js            key bindings
     moves.js               base frame data for light / heavy attacks
     specials.js            special move numbers
+    throws.js              each character's throw
     ai.js                  CPU difficulty levels
     music.js               the songs, written as note patterns
     characters.js          ROSTER + ALL PER-CHARACTER STATS  <- balance here
@@ -124,6 +133,7 @@ js/
     hud.js                 health bars, timer, round markers
     effects.js             hit sparks, floating text
     fx.js                  character effects (lightning heavy, electric shield)
+    throw-kinds.js         throw animations (overhead slam, knee flurry, electrocution)
     special-kinds.js       special move behaviours (projectile, slam, ...)
     ai.js                  the CPU opponent
   scenes/                  title menu, settings, how-to-play/credits, character select, stage select, VS screen
@@ -188,7 +198,7 @@ sprite: {
 Each row needs these frame counts: idle 2, walk 4, jump 1,
 light 3 (startup / hit / recovery), heavy 3, block 1, hit 1,
 ko 2 (falling / lying), victory 2, special 3 (wind-up / thrust / floor slam),
-crouch 1, crouchBlock 1, lowLight 3, lowHeavy 3. Hitboxes come from `body`/`moves.js`, not
+crouch 1, crouchBlock 1, lowLight 3, lowHeavy 3, throw 3 (grab / lift / slam). Hitboxes come from `body`/`moves.js`, not
 the art, so you may need to retune them after a swap. The `` ` `` key shows them.
 
 ## Renaming the game

@@ -39,6 +39,13 @@
       const toward = Math.sign(opp.x - me.x) || me.facing;
       const key = (d) => (d > 0 ? 'right' : 'left');
 
+      // Being thrown: maybe break free.
+      if (me.state === 'thrown') {
+        if (me.stateTime === 1) this.breakAt = Math.random() < L.breakChance ? 3 + Math.floor(Math.random() * 5) : -1;
+        if (me.stateTime === this.breakAt) this.tap('throw');
+        return;
+      }
+
       // 1. Defence: react to attacks we can see coming.
       const threat = this.detectThreat(me, opp, now);
       if (threat && threat.id !== this.lastThreat) {
@@ -81,7 +88,15 @@
         return;
       }
 
-      // 4. Attack when in range.
+      // 4. Throw when right next to them (more likely if they're blocking).
+      const gap = dist - (me.body.width + opp.body.width) / 2;
+      if (gap <= RF.CONFIG.THROW_RANGE - 2 && opp.grounded &&
+          Math.random() < L.throwChance * (opp.state === 'block' ? 4 : 1)) {
+        this.tap('throw');
+        return;
+      }
+
+      // 5. Attack when in range.
       if (dist <= reach('heavy') && Math.random() < L.aggression) {
         const r = Math.random();
         if (r < 0.35 && dist < reach('light')) this.tap('light');
@@ -91,7 +106,7 @@
         return;
       }
 
-      // 5. Footsies: pick a short movement plan and stick to it for a moment.
+      // 6. Footsies: pick a short movement plan and stick to it for a moment.
       if (!this.plan || now >= this.plan.until) {
         const r = Math.random(), rnd = (n) => Math.floor(Math.random() * n);
         if (dist > reach('heavy') + 30) {

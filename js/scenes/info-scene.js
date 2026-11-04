@@ -12,23 +12,23 @@
     howto: {
       title: 'HOW TO PLAY',
       draw(ctx, W) {
-        RF.drawPanel(ctx, 12, 36, W - 24, 92);
-        const rows = [['MOVE', 'left'], ['JUMP', 'up'], ['CROUCH', 'down'], ['LIGHT ATTACK', 'light'], ['HEAVY ATTACK', 'heavy'], ['BLOCK (HOLD)', 'block']];
-        T(ctx, 'PLAYER 1', 170, 40, { align: 'center', color: '#ff6050', outline: '#000' });
-        T(ctx, 'PLAYER 2', 296, 40, { align: 'center', color: '#60a0ff', outline: '#000' });
+        RF.drawPanel(ctx, 12, 34, W - 24, 98);
+        const rows = [['MOVE', 'left'], ['JUMP', 'up'], ['CROUCH', 'down'], ['LIGHT ATTACK', 'light'], ['HEAVY ATTACK', 'heavy'], ['BLOCK (HOLD)', 'block'], ['THROW (UP CLOSE)', 'throw']];
+        T(ctx, 'PLAYER 1', 170, 38, { align: 'center', color: '#ff6050', outline: '#000' });
+        T(ctx, 'PLAYER 2', 296, 38, { align: 'center', color: '#60a0ff', outline: '#000' });
         rows.forEach(([label, action], i) => {
-          const y = 52 + i * 12;
+          const y = 49 + i * 11;
           T(ctx, label, 22, y, { color: '#d8c8c0', outline: '#000' });
           const fmt = (p) => (action === 'left' ? keys(p, 'left') + ' / ' + keys(p, 'right') : keys(p, action));
           T(ctx, fmt('p1'), 170, y, { align: 'center', color: '#fff', outline: '#000' });
           T(ctx, fmt('p2'), 296, y, { align: 'center', color: '#fff', outline: '#000' });
         });
-        RF.drawPanel(ctx, 12, 132, W - 24, 68, '#2a5a8a');
-        T(ctx, 'PERFECT BLOCK', W / 2, 136, { align: 'center', color: '#8ff0ff', outline: '#000' });
+        RF.drawPanel(ctx, 12, 135, W - 24, 68, '#2a5a8a');
+        T(ctx, 'PERFECT BLOCK', W / 2, 138, { align: 'center', color: '#8ff0ff', outline: '#000' });
         RF.font.wrap('TAP BLOCK JUST BEFORE AN ATTACK LANDS. YOU TAKE NO DAMAGE, THE ATTACKER STAGGERS, AND YOUR FIGHTER UNLEASHES THEIR SPECIAL MOVE.', 58)
-          .forEach((line, i) => T(ctx, line, W / 2, 146 + i * 8, { align: 'center', color: '#e8e0d8', outline: '#000' }));
-        T(ctx, 'HIGH/LOW', W / 2, 172, { align: 'center', color: '#ffb060', outline: '#000' });
-        RF.font.wrap('CROUCH + HEAVY IS A SWEEP: CROUCH-BLOCK IT. JUMP ATTACKS MUST BE BLOCKED STANDING.', 58)
+          .forEach((line, i) => T(ctx, line, W / 2, 148 + i * 8, { align: 'center', color: '#e8e0d8', outline: '#000' }));
+        T(ctx, 'HIGH/LOW AND THROWS', W / 2, 172, { align: 'center', color: '#ffb060', outline: '#000' });
+        RF.font.wrap('SWEEPS: CROUCH-BLOCK. JUMP-INS: BLOCK STANDING. THROWS BEAT BLOCKING - PRESS THROW WHEN GRABBED TO BREAK FREE.', 58)
           .forEach((line, i) => T(ctx, line, W / 2, 182 + i * 8, { align: 'center', color: '#e8e0d8', outline: '#000' }));
       },
     },

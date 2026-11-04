@@ -17,6 +17,7 @@
 // cancel: true = once it connects, you can cancel its recovery into another attack (combos).
 // anim: which animation to show (defaults to the move's own name).
 // launch: pops the victim into the air (knockdown).
+// knockback: how hard a clean hit shoves the victim back (pushback is used when blocked).
 //
 // hitbox is relative to the attacker's feet, facing right, before the
 // character's body scale: x = distance in front of centre, y = height above
@@ -34,7 +35,7 @@ RF.MOVES = {
     startup: 10, active: 4, recovery: 18,
     damage: 11,
     hitstun: 22, blockstun: 14,
-    pushback: 5.5, hitstop: 6,
+    pushback: 5.5, knockback: 10, hitstop: 6,
     hitbox: { x: 12, y: 36, w: 40, h: 18 },
   },
   // Jump attacks: angled down so they can hit crouching opponents.
@@ -50,7 +51,7 @@ RF.MOVES = {
     startup: 7, active: 6, recovery: 10,
     damage: 10,
     hitstun: 20, blockstun: 12,
-    pushback: 4.5, hitstop: 6,
+    pushback: 4.5, knockback: 8, hitstop: 6,
     anim: 'heavy',
     hitbox: { x: 4, y: -6, w: 38, h: 30 },
   },

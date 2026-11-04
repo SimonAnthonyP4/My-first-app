@@ -23,6 +23,10 @@ RF.CONFIG = {
   JUMP_MIN_SPEED: 2.6,    // forward jumps travel at least this fast, so everyone can jump over the opponent
   CROUCH_HEIGHT: 0.62,    // crouching hurtbox height, as a fraction of standing height
   CHIP_DAMAGE: 0.1,
+  THROW_RANGE: 16,        // how close (gap between bodies, in pixels) you must be to grab
+  THROW_STARTUP: 4,       // frames the grab takes to reach out
+  THROW_WHIFF: 22,        // frames you're stuck after a missed grab
+  THROW_BREAK_WINDOW: 10, // frames the victim has to press THROW and break free
   MAX_CHAIN: 3,           // light attacks that connect can be cancelled into another attack this many times
   COMBO_SCALING: 0.1,     // each extra hit in a combo does 10% less damage...
   COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block

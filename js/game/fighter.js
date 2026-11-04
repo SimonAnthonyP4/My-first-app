@@ -34,6 +34,8 @@
       this.maxHealth = (RF.CONFIG.HEALTH_BY_ARCHETYPE || {})[def.archetype] || RF.CONFIG.MAX_HEALTH;
       this.special = RF.SPECIALS[def.special];
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
+      this.throwCfg = RF.THROWS[def.throw];
+      this.throwKind = this.throwCfg && RF.THROW_KINDS[this.throwCfg.kind];
       this.scene = null; // set by FightScene
       this.reset(0, 1);
     }
@@ -58,6 +60,9 @@
       this.shieldHit = 0; // frames left of a block effect flaring up
       this.fxHitDist = null; // how far a ranged move's effect reached (it stops at its target)
       this.specialData = {};
+      this.victim = null;   // who we're throwing
+      this.grabber = null;  // who's throwing us
+      this.thrownPose = null;
       this.lastBlockPress = -Infinity;
       this.blockPressEligible = false;
       this.blockPressAge = Infinity;
@@ -111,6 +116,27 @@
         case 'special':
           this.specialKind.update(this, this.scene);
           break;
+        case 'throwReach': // arms out, trying to grab
+          if (this.stateTime === RF.CONFIG.THROW_STARTUP) this.scene.tryGrab(this);
+          else if (this.stateTime >= RF.CONFIG.THROW_STARTUP + RF.CONFIG.THROW_WHIFF) this.setState('idle');
+          break;
+        case 'throwing':
+          if (this.victim && this.victim.state === 'thrown') {
+            if (this.throwKind.update(this, this.victim, this.stateTime, this.scene)) this.endThrow();
+          } else if (--this.throwRecover <= 0) {
+            this.endThrow(); // victim already flung (or broke free): finish the follow-through
+          }
+          break;
+        case 'thrown':
+          // Quick reflexes: press THROW right after being grabbed to break free.
+          if (this.stateTime <= RF.CONFIG.THROW_BREAK_WINDOW && input.pressed('throw')) {
+            input.consume('throw');
+            this.scene.breakThrow(this.grabber, this);
+          } else if (!this.grabber || this.grabber.state !== 'throwing') {
+            this.grabber = null;
+            this.setState('idle');
+          }
+          break;
         case 'hitstun':
         case 'blockstun':
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
@@ -158,6 +184,7 @@
     groundControl(input, opp) {
       this.faceOpponent(opp);
       const down = input.held('down');
+      if (this.throwCfg && input.pressed('throw')) { input.consume('throw'); return this.startThrow(); }
       if (input.pressed('light')) { input.consume('light'); return this.startAttack(down ? 'lowLight' : 'light'); }
       if (input.pressed('heavy')) { input.consume('heavy'); return this.startAttack(down ? 'lowHeavy' : 'heavy'); }
       if (input.held('block')) {
@@ -212,7 +239,50 @@
       this.crouching = !!this.move.crouch;
     }
 
+    // ---- throws ----
+
+    startThrow() {
+      this.vx = 0;
+      this.move = null;
+      this.state = null;
+      this.setState('throwReach');
+      RF.audio.sfx('whoosh');
+    }
+
+    // Called by the scene when a grab connects.
+    beginThrowing(victim) {
+      this.victim = victim;
+      this.throwRecover = 14;
+      this.vx = 0;
+      this.state = null;
+      this.setState('throwing');
+      victim.grabber = this;
+      victim.vx = victim.vy = victim.pushVx = 0;
+      victim.y = 0;
+      victim.move = null;
+      victim.thrownPose = ['hit', 0];
+      victim.state = null;
+      victim.setState('thrown');
+    }
+
+    endThrow() {
+      if (this.victim && this.victim.state === 'thrown') this.victim.releaseFromThrow();
+      this.victim = null;
+      this.setState('idle');
+    }
+
+    // Let go of a thrown fighter, optionally flinging them.
+    releaseFromThrow(fling) {
+      this.grabber = null;
+      this.state = null;
+      if (this.health <= 0) return this.knockOut(fling ? Math.sign(fling.vx) || 1 : 1);
+      this.stun = 22;
+      this.setState('hitstun');
+      if (fling) { this.vx = fling.vx; this.vy = fling.vy; }
+    }
+
     physics(bounds) {
+      if (this.state === 'thrown') { this.clampTo(bounds); return; } // the thrower moves us
       if (!this.grounded || this.vy > 0) {
         this.vy -= RF.CONFIG.GRAVITY;
         this.y += this.vy;
@@ -274,7 +344,7 @@
     }
 
     getHurtbox() {
-      if (this.isKO) return null;
+      if (this.isKO || this.state === 'thrown') return null;
       const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
       const h = this.crouching && this.grounded ? this.body.height * crouchH : this.body.height;
       return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h };
@@ -316,7 +386,7 @@
         this.stun = move.hitstun;
         this.state = null;
         this.setState('hitstun');
-        this.pushVx = dir * move.pushback;
+        this.pushVx = dir * (move.knockback || move.pushback);
         if (move.launch) { this.vy = move.launch; this.vx = dir * 2; }
         else if (!this.grounded) { this.vy = 3; this.vx = dir * 1.5; }
       }
@@ -345,6 +415,9 @@
         case 'block':
         case 'blockstun': return [this.crouching ? 'crouchBlock' : 'block', 0];
         case 'hitstun': return ['hit', 0];
+        case 'throwReach': return ['throw', 0];
+        case 'throwing': return this.throwKind.anim(this, this.stateTime);
+        case 'thrown': return this.thrownPose || ['hit', 0];
         case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
         case 'victory': return ['victory', Math.floor(this.stateTime / 15) % 2];

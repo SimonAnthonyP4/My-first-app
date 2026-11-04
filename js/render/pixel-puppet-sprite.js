@@ -63,6 +63,11 @@
       F({ arm: 'forward', backArm: 'low', head: [2, 0], torso: [1, 0] }),
       F({ arm: 'forward', backArm: 'low', head: [2, 0], torso: [1, 0] }),
     ],
+    throw: [
+      F({ arm: 'forward', backArm: 'low', head: [1, 0] }),
+      F({ arm: 'up', backArm: 'up', head: [-1, 0] }),
+      F({ arm: 'forwardShort', backArm: 'low', head: [2, 1], torso: [1, 1] }),
+    ],
     crouch: [F({ crouch: true })],
     crouchBlock: [F({ crouch: true, arm: 'block' })],
     lowLight: [

@@ -138,6 +138,7 @@
     // Keep fighters from walking through each other (but allow jumping over).
     separate(a, b, bounds) {
       if (a.isKO || b.isKO) return;
+      if ([a.state, b.state].some((s) => s === 'thrown' || s === 'throwing')) return;
       const [low, high] = a.y <= b.y ? [a, b] : [b, a];
       if (high.y > low.body.height * 0.75) return;
       const minDist = (a.body.width + b.body.width) / 2;
@@ -156,6 +157,51 @@
         a.clampTo(bounds);
         b.clampTo(bounds);
       }
+    }
+
+    // ---- throws ----
+
+    tryGrab(att) {
+      const def = this.opponentOf(att);
+      const gap = Math.abs(def.x - att.x) - (att.body.width + def.body.width) / 2;
+      const grabbable = ['idle', 'walk', 'crouch', 'block', 'attack', 'throwReach'].includes(def.state);
+      if (this.phase !== 'fight' || !att.grounded || !def.grounded || !grabbable || gap > RF.CONFIG.THROW_RANGE) return;
+      if (def.state === 'throwReach') return this.breakThrow(att, def); // both grabbed at once
+      att.faceOpponent(def);
+      att.beginThrowing(def);
+      this.hitstop = Math.max(this.hitstop, 4);
+      this.effects.spawnText(att.throwCfg.name.toUpperCase() + '!', att.x, att.body.height + 10, '#ff9a40');
+      RF.audio.sfx('grab');
+    }
+
+    // Damage dealt during a throw. Pass `fling` ({vx, vy}) to let go of the victim.
+    throwHit(att, def, base, fling) {
+      const dmg = base * att.stats.damage * (1 - def.stats.damageReduction);
+      if (this.phase === 'fight') def.health = Math.max(0, def.health - dmg);
+      def.flash = 3;
+      this.hitstop = Math.max(this.hitstop, fling ? 8 : 4);
+      RF.audio.sfx(fling ? 'heavy' : 'hit');
+      if (fling || def.health <= 0) {
+        def.releaseFromThrow(fling || { vx: att.facing * 3, vy: 4 });
+        att.throwRecover = 14;
+      }
+    }
+
+    // Throw broken (or both grabbed at once): shove both fighters apart.
+    breakThrow(a, b) {
+      for (const f of [a, b]) {
+        const away = Math.sign(f.x - this.opponentOf(f).x) || -f.facing;
+        f.victim = f.grabber = null;
+        f.combo = 0;
+        f.state = null;
+        f.stun = 12;
+        f.setState('hitstun');
+        f.pushVx = away * 5;
+      }
+      a.throwRecover = 0;
+      this.effects.spawnText('BREAK!', (a.x + b.x) / 2, Math.max(a.body.height, b.body.height) + 8, '#8ff0ff');
+      this.effects.spawn('block', (a.x + b.x) / 2, 45);
+      RF.audio.sfx('block');
     }
 
     opponentOf(f) {
@@ -203,6 +249,7 @@
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
+      if (!blocked && move.knockback && def.grounded) this.effects.spawn('dust', def.x, 1); // skid
       if (move.fx === 'lightning' && !blocked) { this.flash = Math.max(this.flash, 3); this.effects.spawn('zap', ex, ey + 8); }
       RF.audio.sfx(blocked ? (def.def.blockFx ? 'shield' : 'block') : spark === 'heavy' || move.special ? 'heavy' : 'hit');
       this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
@@ -306,6 +353,7 @@
       this.drawProjectiles(ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
+        if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);
       }
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
