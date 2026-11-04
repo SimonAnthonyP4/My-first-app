@@ -29,8 +29,8 @@ python3 -m http.server 8000
 | Block      | `H` (hold)           | `Numpad 3` (or `/`) (hold)   |
 | Throw      | `T` (up close)       | `Numpad 4` (or `L`)          |
 
-- **Health:** tanks (Bruiser, Dr. Weissenberg) start at **175%** health, light
-  fighters at **100%**. The number is shown on each health bar, and the bars are the
+- **Health:** tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) start at **175%** health; everyone
+  else (Viper, Jauregui, El Escobedo, Lady Landa) at **100%**. The number is shown on each health bar, and the bars are the
   same size for everyone (`HEALTH_BY_ARCHETYPE` in `js/config/game.js`).
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
   block is a crackling electric shield. A character's moves can be overridden with
@@ -56,6 +56,10 @@ python3 -m http.server 8000
   a kick), Dr. Weissenberg's **Defibrillator** (electrocution). Numbers are in
   `js/config/throws.js`, animations in `js/game/throw-kinds.js`.
 - **Heavy hits knock the opponent back** with a skid (`knockback` in `moves.js`).
+- **Every fighter has a unique block:** Bruiser's lunch tray, Viper's shuriken wall,
+  Dr. Weissenberg's electric shield, Jauregui's protractor, Dr. Astuto's Constitution
+  scroll, El Escobedo's hex force field, Lady Landa's serpent (`blockFx` in `characters.js`,
+  drawn in `js/game/fx.js`).
 - **Combos:** a light attack that connects can be cancelled straight into another
   attack (up to 3 in a row), e.g. light, light, heavy. Each extra hit in a combo
   does a little less damage.
@@ -202,7 +206,7 @@ the air about 50% longer, with flames and smoke.
 
 ## Lady Landa
 
-The biology and zoology teacher (tank, from Bio Lab, Room 666). Evil and always
+The biology and zoology teacher (light, 100% health, from Bio Lab, Room 666). Evil and always
 angry: dark purple smoke rises off her and her red eyes glow (`aura`). Her heavy
 is a purple energy blast, and her block is unique: a ghostly serpent rears up
 in front of her and lunges, hissing, when something hits it (`blockFx`).

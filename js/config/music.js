@@ -8,6 +8,7 @@
 //   '.'   rest
 // Drum steps use k = kick, s = snare, h = hi-hat; combine with + (e.g. 'k+h').
 // Tracks loop independently, so a 2-bar drum loop can run under an 8-bar melody.
+// distort: true runs a track through guitar distortion.
 //
 // To add a song: add an entry here and set `music: '<id>'` on a stage.
 (function () {
@@ -16,56 +17,52 @@
   const PUMP = 'x . o x . x o . x . o x . x o x';
   const DRIVE = 'x x o x x o x x o x x o x x o x'; // relentless 16ths
 
+  // Transpose every note in a bar by some semitones (keeps rests/holds).
+  const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const shift = (bar, semis) => bar.split(' ').map((t) => {
+    const m = /^([A-G]#?)(-?\d)$/.exec(t);
+    if (!m) return t;
+    const n = NAMES.indexOf(m[1]) + 12 * +m[2] + semis;
+    return NAMES[((n % 12) + 12) % 12] + Math.floor(n / 12);
+  }).join(' ');
+
+  // Original thrash riff: chugging low E with chromatic stabs.
+  const RIFF = [
+    'E2 E2 E2 E2 E2 E2 G2 . E2 E2 A#2 . E2 E2 A2 .',
+    'E2 E2 E2 E2 E2 E2 G2 . E2 E2 F#2 . F2 . E2 .',
+    'C3 . C3 C3 . C3 B2 . A#2 . A#2 A#2 . A#2 A2 -',
+    'E2 E2 E2 E2 E2 E2 E2 E2 D3 - D#3 - E3 - - -',
+  ];
+
   RF.MUSIC = {
-    // Main menu / character select: dark, pounding arcade techno in E minor.
-    // 8 bars: Em Em C D | Em Em C B.
+    // Main menu / character select: fast, palm-muted thrash metal in E minor.
+    // Power chords are built from two voices (root + fifth), over a galloping
+    // double-kick. 8 bars: the riff twice, then a screaming lead over it.
     menu: {
-      bpm: 142,
+      bpm: 196,
       tracks: {
-        bass: {
-          wave: 'sawtooth', volume: 0.1,
-          bars: [
-            riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'C2', 'C3'), riff(DRIVE, 'D2', 'D3'),
-            riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'E2', 'E3'), riff(DRIVE, 'C2', 'C3'), riff(DRIVE, 'B1', 'B2'),
-          ],
-        },
-        sub: {
-          wave: 'triangle', volume: 0.3,
-          bars: [
-            'E1 - - - E1 - - - E1 - - - E1 - - -', 'E1 - - - E1 - - - E1 - - - E1 - - -',
-            'C2 - - - C2 - - - C2 - - - C2 - - -', 'D2 - - - D2 - - - D2 - - - D2 - - -',
-            'E1 - - - E1 - - - E1 - - - E1 - - -', 'E1 - - - E1 - - - E1 - - - E1 - - -',
-            'C2 - - - C2 - - - C2 - - - C2 - - -', 'B1 - - - B1 - - - B1 - - - B1 - - -',
-          ],
-        },
+        guitar: { wave: 'sawtooth', volume: 0.3, distort: true, bars: [...RIFF, ...RIFF] },
+        guitarFifth: { wave: 'sawtooth', volume: 0.22, distort: true, bars: [...RIFF, ...RIFF].map((b) => shift(b, 7)) },
+        bass: { wave: 'triangle', volume: 0.32, bars: [...RIFF, ...RIFF].map((b) => shift(b, -12)) },
         lead: {
-          wave: 'sawtooth', volume: 0.055,
+          wave: 'sawtooth', volume: 0.2, distort: true,
           bars: [
-            'E4 . E4 . G4 . E4 . B4 . A4 . G4 . F#4 .',
-            'E4 . E4 . G4 . E4 . D5 . B4 . G4 . A4 .',
-            'C5 . C5 . E5 . C5 . G5 . F#5 . E5 . D5 .',
-            'D5 . D5 . F#5 . D5 . A5 - - - F#5 . D5 .',
-            'E5 . E5 . B4 . E5 . G5 . F#5 . E5 . B4 .',
-            'E5 . E5 . B4 . E5 . A5 . G5 . F#5 . G5 .',
-            'C5 . E5 . G5 . C6 - - B5 . G5 . E5 . .',
-            'B4 . D#5 . F#5 . B5 - - - A5 . F#5 . D#5 .',
-          ],
-        },
-        stab: {
-          wave: 'square', volume: 0.045,
-          bars: [
-            '. . B3 . . . B3 . . . B3 . . . B3 .', '. . B3 . . . B3 . . . B3 . . . B3 .',
-            '. . G3 . . . G3 . . . G3 . . . G3 .', '. . A3 . . . A3 . . . A3 . . . A3 .',
-            '. . B3 . . . B3 . . . B3 . . . B3 .', '. . B3 . . . B3 . . . B3 . . . B3 .',
-            '. . G3 . . . G3 . . . G3 . . . G3 .', '. . F#3 . . . F#3 . . . F#3 . . . F#3 .',
+            '. . . . . . . . . . . . . . . .',
+            '. . . . . . . . . . . . . . . .',
+            '. . . . . . . . . . . . . . . .',
+            '. . . . . . . . . . . . . . . .',
+            'B5 - - - A5 B5 A5 G5 E5 - - - G5 A5 B5 -',
+            'D6 - C6 - B5 - A5 - G5 A5 G5 F#5 E5 - - -',
+            'C6 - B5 - A#5 - A5 - G5 - F#5 - G5 A5 B5 -',
+            'E6 - - - D#6 - - - E6 - - - - - - -',
           ],
         },
         drums: {
           bars: [
-            'k . h . k+s . h . k . h . k+s . h h',
-            'k . h . k+s . h . k . h . k+s . h h',
-            'k . h . k+s . h . k . h . k+s . h h',
-            'k . h . k+s . h . k . k . s s s s',
+            'k+h k s k k+h k s k k+h k s k k+h k s k', // galloping double-kick under a snare backbeat
+            'k+h k s k k+h k s k k+h k s k k k s s',
+            'k+h . s . k+h . s . k+h . s . k+h . s .', // thrash skank beat
+            'k+h . s . k+h . s . k k s k s s s s',
           ],
         },
       },

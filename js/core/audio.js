@@ -23,7 +23,7 @@
       while (tokens[i + len] === '-') len++;
       steps[i] = { f: freq(tok), len };
     });
-    return { steps, wave: track.wave, volume: track.volume, drums };
+    return { steps, wave: track.wave, volume: track.volume, drums, distort: !!track.distort };
   }
 
   const audio = {
@@ -43,6 +43,18 @@
         this.musicBus.connect(this.master);
         this.sfxBus = this.ctx.createGain();
         this.sfxBus.connect(this.master);
+        // Guitar distortion: a wave-shaper that clips the signal, into the music bus.
+        this.distBus = this.ctx.createWaveShaper();
+        const curve = new Float32Array(1024);
+        for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; curve[i] = Math.tanh(x * 6); }
+        this.distBus.curve = curve;
+        this.distBus.oversample = '2x';
+        const distOut = this.ctx.createGain();
+        distOut.gain.value = 0.45;
+        const tone = this.ctx.createBiquadFilter(); // take the fizz off the top
+        tone.type = 'lowpass';
+        tone.frequency.value = 3200;
+        this.distBus.connect(tone).connect(distOut).connect(this.musicBus);
         const len = this.ctx.sampleRate;
         this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
         const d = this.noise.getChannelData(0);
@@ -89,7 +101,7 @@
           const ev = tr.steps[s.step % tr.steps.length];
           if (!ev) continue;
           if (tr.drums) ev.forEach((d) => this.drum(d, s.next));
-          else if (ev.f) this.tone(tr.wave, ev.f, s.next, ev.len * s.stepDur * 0.92, tr.volume, this.musicBus);
+          else if (ev.f) this.tone(tr.wave, ev.f, s.next, ev.len * s.stepDur * 0.92, tr.volume, tr.distort ? this.distBus : this.musicBus);
         }
         s.next += s.stepDur;
         s.step++;
@@ -196,6 +208,14 @@
         case 'drill':
           this.tone('sawtooth', 300, t, 0.3, 0.07, null, 360);
           this.noiseBurst(t, 0.3, 0.12, 'highpass', 3000);
+          break;
+        case 'clang': // metal tray
+          this.tone('square', 1250, t, 0.25, 0.08, null, 1180);
+          this.tone('triangle', 2100, t, 0.3, 0.06);
+          this.noiseBurst(t, 0.08, 0.2, 'highpass', 3000);
+          break;
+        case 'paper':
+          this.noiseBurst(t, 0.18, 0.25, 'bandpass', 2600);
           break;
         case 'hiss':
           this.noiseBurst(t, 0.45, 0.22, 'highpass', 4500);

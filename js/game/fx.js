@@ -22,8 +22,9 @@
         }
         return;
       }
-      // eyes (art column ~21.5, row 9 of a 91-row drawing): pulse a red glow
-      const ex = f.x + f.facing * (21.5 - f.def.sprite.footCol), ey = baseY - (f.def.sprite.grid.length - 9) + (f.crouching ? 18 : 0);
+      // eyes (sprite.eye = [col, row] in the drawing): pulse a red glow
+      const [ec, er] = f.def.sprite.eye || [0, 0];
+      const ex = f.x + f.facing * (ec + 0.5 - f.def.sprite.footCol), ey = baseY - (f.def.sprite.grid.length - er) + (f.crouching ? f.def.sprite.crouchDrop : 0);
       if (f.isKO || f.state === 'thrown' || f.state === 'finished') return;
       const a = 0.25 + 0.2 * Math.sin(frame / 6);
       const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, 7);
@@ -138,7 +139,111 @@
     }
   };
 
+  // Shared geometry for block effects: centre in front of the fighter, size from the hurtbox.
+  function guardBox(f, floorY) {
+    const hurt = f.getHurtbox();
+    if (!hurt) return null;
+    return {
+      hurt, base: floorY - f.y, top: floorY - f.y - hurt.h,
+      mid: floorY - f.y - hurt.h / 2, front: f.x + f.facing * (f.body.width / 2 + 4),
+      strength: f.shieldHit > 0 ? f.shieldHit / 12 : 0,
+    };
+  }
+
   RF.BLOCK_FX = {
+    // Bruiser: a dented steel cafeteria tray held up as a shield. Clang!
+    lunchTray(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const shake = g.strength > 0 ? (frame % 2 ? 2 : -2) : 0;
+      const x = Math.round(g.front + shake), h = Math.round(g.hurt.h * 0.55), y = Math.round(g.mid - h / 2 - 6);
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 3, y - 1, 7, h + 2);
+      ctx.fillStyle = '#9aa0a8'; ctx.fillRect(x - 2, y, 5, h);
+      ctx.fillStyle = '#d8dce0'; ctx.fillRect(x - 1, y + 2, 1, h - 4);       // shine
+      ctx.fillStyle = '#6a7078'; ctx.fillRect(x, y + Math.round(h * 0.3), 2, 3); // dent
+      ctx.fillStyle = '#b05020'; ctx.fillRect(x + f.facing * 1, y + Math.round(h * 0.65), 1, 3); // old ketchup
+      if (g.strength > 0.5) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x + f.facing * 4, y + h / 2 - 4, 2, 8); }
+    },
+
+    // Viper: three ninja stars spinning in a wall in front of him.
+    shurikenWall(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const spin = frame * (0.4 + g.strength * 0.6);
+      for (let i = 0; i < 3; i++) {
+        const cx = g.front + f.facing * 2, cy = g.top + 10 + i * (g.hurt.h - 20) / 2;
+        for (let k = 0; k < 4; k++) {
+          const a = spin + (k * Math.PI) / 2 + i;
+          RF.electric.line(ctx, cx, cy, cx + Math.cos(a) * 7, cy + Math.sin(a) * 7, 3, '#111');
+          RF.electric.line(ctx, cx, cy, cx + Math.cos(a) * 6, cy + Math.sin(a) * 6, 1, '#c8d0d8');
+        }
+        ctx.fillStyle = '#2e8b3e'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 3, 3);
+      }
+    },
+
+    // Jauregui: a giant glowing protractor.
+    protractorShield(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const r = g.hurt.h / 2 + 4, cx = f.x + f.facing * 6, cy = g.mid;
+      ctx.fillStyle = `rgba(255,230,120,${0.12 + g.strength * 0.2})`;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r);
+      ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, f.facing < 0);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = g.strength > 0.3 ? '#ffffff' : '#ffe080';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, f.facing < 0); ctx.stroke();
+      ctx.lineWidth = 1;
+      for (let d = 0; d <= 180; d += 15) { // degree ticks
+        const a = -Math.PI / 2 + (d / 180) * Math.PI, len = d % 45 === 0 ? 6 : 3;
+        const ca = Math.cos(a) * f.facing, sa = Math.sin(a);
+        RF.electric.line(ctx, cx + ca * r, cy + sa * r, cx + ca * (r - len), cy + sa * (r - len), 1, '#ffe080');
+      }
+      RF.font.drawText(ctx, g.strength > 0 ? '0' : '90', cx + f.facing * (r - 12), cy - 4, { align: 'center', color: '#ffe080', outline: '#000' });
+    },
+
+    // Dr. Astuto: the Constitution, unrolled in front of him like a shield.
+    constitutionScroll(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const flutter = g.strength > 0 ? Math.round(Math.sin(frame) * 2) : 0;
+      const w = 22, h = Math.round(g.hurt.h * 0.62);
+      const x = Math.round(g.front + f.facing * 4 - w / 2 + flutter), y = Math.round(g.mid - h / 2 - 4);
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = '#e8d8a8'; ctx.fillRect(x, y, w, h);                          // parchment
+      ctx.fillStyle = '#c8b078'; ctx.fillRect(x, y, w, 3); ctx.fillRect(x, y + h - 3, w, 3); // rolled ends
+      ctx.fillStyle = '#6a4a20'; ctx.fillRect(x - 2, y - 2, w + 4, 2); ctx.fillRect(x - 2, y + h, w + 4, 2);
+      RF.font.drawText(ctx, 'WE', x + w / 2, y + 6, { align: 'center', color: '#3a2a10' });
+      RF.font.drawText(ctx, 'THE', x + w / 2, y + 15, { align: 'center', color: '#3a2a10' });
+      ctx.fillStyle = 'rgba(60,40,10,0.6)';
+      for (let i = 0; i < Math.floor((h - 34) / 4); i++) ctx.fillRect(x + 3, y + 26 + i * 4, w - 6 - (i % 3) * 3, 1); // writing
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'DENIED', x + w / 2, y - 10, { align: 'center', color: '#c01818', outline: '#000' });
+    },
+
+    // El Escobedo: a hard-light force field of glowing hexagons.
+    hexBarrier(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const cols = 2, rows = Math.max(3, Math.round(g.hurt.h / 14));
+      const x0 = g.front + f.facing * 2, s = 7;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cx = x0 + f.facing * (c * s * 1.5), cy = g.top + 6 + r * s * 1.7 + (c % 2) * s * 0.85;
+          const lit = g.strength > 0.2 || RF.util.hash(r * 7 + c + Math.floor(frame / 6)) > 0.2;
+          ctx.strokeStyle = lit ? `rgba(110,200,255,${0.55 + g.strength * 0.45})` : 'rgba(60,120,200,0.25)';
+          ctx.fillStyle = `rgba(80,170,255,${0.1 + g.strength * 0.25})`;
+          ctx.beginPath();
+          for (let k = 0; k < 6; k++) {
+            const a = (k * Math.PI) / 3;
+            const px = cx + Math.cos(a) * s, py = cy + Math.sin(a) * s;
+            if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+      }
+    },
+
     // Lady Landa: a giant ghostly serpent rears up in front of her. Lunges and hisses when hit.
     serpentGuard(f, ctx, floorY, frame) {
       const hurt = f.getHurtbox();
