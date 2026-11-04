@@ -1,4 +1,4 @@
-# Retro Fighter (working title)
+# TERRAMANIA
 
 A 2D retro fighting game in the spirit of classic Mortal Kombat and Street
 Fighter. Two players, one keyboard. It's built with plain HTML, JavaScript and
@@ -35,6 +35,13 @@ python3 -m http.server 8000
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
   block is a crackling electric shield. A character's moves can be overridden with
   `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
+- **FINISH THEM!** The blow that wins the match leaves the loser dazed for 5 seconds.
+  Walk up and press **throw** to do your finisher: Dr. Weissenberg's **Overcharge**
+  (x-ray skeleton, then a pile of ash), Bruiser's **Pile Driver** (head-first into the
+  floor) or Viper's **Venom Melt** (a puddle of goo). Hit them normally or wait, and
+  it's a plain K.O. (`js/game/finishers.js`, `finisher:` in `characters.js`)
+- **FLAWLESS VICTORY** for winning a round without taking damage, **FIRST HIT!** for
+  landing the first clean hit, and a rare surprise cameo on big hits.
 - **Throws:** press throw right next to the opponent to grab them. Throws can't be
   blocked, but a missed grab leaves you open, and the victim can break free by
   pressing throw right as they're grabbed ("BREAK!"). Each fighter has their own throw:
@@ -123,6 +130,7 @@ js/
     sheet-sprite.js        draws real sprite-sheet art (for later)
     sprites.js             picks the renderer per character
     electric.js            lightning / electric shield drawing
+    fire.js                pixel fire (title screen)
   stages/
     registry.js            stage system
     cafeteria.js           Stage 1
@@ -133,6 +141,7 @@ js/
     hud.js                 health bars, timer, round markers
     effects.js             hit sparks, floating text
     fx.js                  character effects (lightning heavy, electric shield)
+    finishers.js           FINISH THEM! finishers
     throw-kinds.js         throw animations (overhead slam, knee flurry, electrocution)
     special-kinds.js       special move behaviours (projectile, slam, ...)
     ai.js                  the CPU opponent

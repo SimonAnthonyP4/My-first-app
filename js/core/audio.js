@@ -167,6 +167,10 @@
           this.tone('triangle', 1760, t + 0.15, 0.4, 0.15, null, 2640);
           break;
         case 'special': this.tone('sawtooth', 200, t, 0.25, 0.12, null, 800); break;
+        case 'toasty':
+          this.tone('square', 500, t, 0.16, 0.09, null, 1500);
+          this.tone('square', 700, t + 0.17, 0.2, 0.09, null, 1800);
+          break;
         case 'grab':
           this.noiseBurst(t, 0.06, 0.3, 'lowpass', 700);
           this.tone('square', 160, t, 0.08, 0.12, null, 110);

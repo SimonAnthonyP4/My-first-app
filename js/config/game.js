@@ -1,7 +1,7 @@
 // Global rules of the game. Character-specific numbers live in characters.js,
 // attack frame data lives in moves.js.
 RF.CONFIG = {
-  TITLE: 'RETRO FIGHTER', // working title, shown on the main menu
+  TITLE: 'TERRAMANIA',    // shown on the main menu
   CREDITS: [
     ['DIRECTED BY', 'YOU AND YOUR FRIEND'],
     ['CODE', 'CLAUDE'],
@@ -27,6 +27,7 @@ RF.CONFIG = {
   THROW_STARTUP: 4,       // frames the grab takes to reach out
   THROW_WHIFF: 22,        // frames you're stuck after a missed grab
   THROW_BREAK_WINDOW: 10, // frames the victim has to press THROW and break free
+  FINISH_TIME: 300,       // frames the loser stays dazed waiting for a finisher (5 s)
   MAX_CHAIN: 3,           // light attacks that connect can be cancelled into another attack this many times
   COMBO_SCALING: 0.1,     // each extra hit in a combo does 10% less damage...
   COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block

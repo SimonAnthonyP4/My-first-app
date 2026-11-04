@@ -141,7 +141,10 @@
         case 'blockstun':
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
           break;
-        // 'ko' and 'victory' have no control
+        case 'dazed':
+          this.vx *= 0.8;
+          break;
+        // 'ko', 'victory', 'finishing' and 'finished' have no control
       }
       this.physics(bounds);
     }
@@ -282,7 +285,8 @@
     }
 
     physics(bounds) {
-      if (this.state === 'thrown') { this.clampTo(bounds); return; } // the thrower moves us
+      // Thrown fighters are moved by the thrower; finishers move both fighters themselves.
+      if (this.state === 'thrown' || this.state === 'finishing' || this.state === 'finished') { this.clampTo(bounds); return; }
       if (!this.grounded || this.vy > 0) {
         this.vy -= RF.CONFIG.GRAVITY;
         this.y += this.vy;
@@ -344,7 +348,7 @@
     }
 
     getHurtbox() {
-      if (this.isKO || this.state === 'thrown') return null;
+      if (this.isKO || ['thrown', 'finishing', 'finished'].includes(this.state)) return null;
       const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
       const h = this.crouching && this.grounded ? this.body.height * crouchH : this.body.height;
       return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h };
@@ -396,6 +400,8 @@
     }
 
     knockOut(dir) {
+      // The match-deciding blow leaves them dazed instead: FINISH THEM!
+      if (this.scene && this.scene.tryDaze(this)) return;
       this.setState('ko');
       this.vy = 5;
       this.vx = dir * 2.5;
@@ -418,6 +424,8 @@
         case 'throwReach': return ['throw', 0];
         case 'throwing': return this.throwKind.anim(this, this.stateTime);
         case 'thrown': return this.thrownPose || ['hit', 0];
+        case 'dazed': return Math.floor(this.stateTime / 18) % 2 ? ['hit', 0] : ['idle', 0];
+        case 'finishing': return this.finisherAnim || ['idle', 0];
         case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
         case 'victory': return ['victory', Math.floor(this.stateTime / 15) % 2];
@@ -434,6 +442,7 @@
     draw(ctx, floorY) {
       const [anim, frame] = this.animFrame();
       let x = this.x;
+      if (this.state === 'dazed') x += Math.sin(this.stateTime / 9) * 2; // wobbling on their feet
       // Shudder while frozen in hit-stop, like a real impact.
       if (this.scene && this.scene.hitstop > 0 && this.state === 'hitstun') x += this.scene.frame % 2 ? 1.5 : -1.5;
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);

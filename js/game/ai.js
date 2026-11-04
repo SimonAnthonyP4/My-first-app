@@ -33,9 +33,16 @@
     // Called once per frame before the fighters update.
     think() {
       this.holding.clear();
-      if (this.scene.phase !== 'fight') { this.blockPlan = null; return; }
       const now = this.kb.frame, L = this.level;
       const me = this.scene.fighters[this.side], opp = this.scene.opponentOf(me);
+      // FINISH THEM!: walk up and finish (harder CPUs never miss the chance).
+      if (this.scene.phase === 'finish' && !this.scene.finisher && this.scene.finishVictim === opp) {
+        const gap = Math.abs(opp.x - me.x) - (me.body.width + opp.body.width) / 2;
+        if (gap > RF.CONFIG.THROW_RANGE + 10) this.holding.add(opp.x > me.x ? 'right' : 'left');
+        else if (Math.random() < L.punish * 0.1) this.tap('throw');
+        return;
+      }
+      if (this.scene.phase !== 'fight') { this.blockPlan = null; return; }
       const toward = Math.sign(opp.x - me.x) || me.facing;
       const key = (d) => (d > 0 ? 'right' : 'left');
 

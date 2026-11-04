@@ -17,6 +17,7 @@
 //
 // special: id of this character's one special move in specials.js.
 // throw:   id of this character's throw in throws.js.
+// finisher: id of this character's FINISH THEM! move in game/finishers.js.
 //
 // Health depends on archetype (RF.CONFIG.HEALTH_BY_ARCHETYPE): tanks start at
 // 175%, light fighters at 100%. Health bars are the same size for everyone.
@@ -37,6 +38,7 @@ RF.CHARACTERS = [
     bio: 'Placeholder tank for the prototype.',
     special: 'seismicSlam',   // see specials.js
     throw: 'liftSlam',        // see throws.js
+    finisher: 'pileDriver',   // see game/finishers.js
     stats: {
       walkSpeed: 1.5,
       jumpPower: 10.4,
@@ -65,6 +67,7 @@ RF.CHARACTERS = [
     bio: 'Placeholder light fighter for the prototype.',
     special: 'venomSpit',
     throw: 'snakeBite',
+    finisher: 'venomMelt',
     stats: {
       walkSpeed: 2.4,
       jumpPower: 11.4,
@@ -92,6 +95,7 @@ RF.CHARACTERS = [
     bio: 'A lab accident turned this teacher into a human battery.',
     special: 'teslaSurge',
     throw: 'defibrillator',
+    finisher: 'overcharge',
     stats: {
       walkSpeed: 1.7,
       jumpPower: 10.6,
