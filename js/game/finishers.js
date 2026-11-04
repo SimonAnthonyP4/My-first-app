@@ -124,7 +124,79 @@
     ctx.restore();
   }
 
+  // A big glass specimen jar. fill = how much preserving fluid (0..1).
+  function specimenJar(ctx, x, bottom, w, h, lid, fill, frame) {
+    x = Math.round(x); bottom = Math.round(bottom);
+    ctx.fillStyle = 'rgba(180,210,220,0.22)'; ctx.fillRect(x - w / 2, bottom - h, w, h); // glass
+    if (fill > 0) {
+      ctx.fillStyle = 'rgba(140,200,90,0.35)';
+      ctx.fillRect(x - w / 2 + 1, bottom - Math.round(h * fill), w - 2, Math.round(h * fill));
+      for (let i = 0; i < 4; i++) { // bubbles
+        const by = bottom - ((frame * 0.7 + i * 11) % Math.max(1, h * fill));
+        ctx.fillStyle = 'rgba(220,255,200,0.6)';
+        ctx.fillRect(x - w / 2 + 4 + i * (w / 5), Math.round(by), 2, 2);
+      }
+    }
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x - w / 2 - 1, bottom - h, 1, h); ctx.fillRect(x + w / 2, bottom - h, 1, h); ctx.fillRect(x - w / 2, bottom, w, 1);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x - w / 2 + 3, bottom - h + 4, 2, h - 10); // glint
+    if (lid) {
+      ctx.fillStyle = '#111'; ctx.fillRect(x - w / 2 - 2, bottom - h - 7, w + 4, 8);
+      ctx.fillStyle = '#5a5048'; ctx.fillRect(x - w / 2 - 1, bottom - h - 6, w + 2, 6);
+    }
+  }
+
   RF.FINISHERS = {
+    // Lady Landa: shrinks them into a specimen jar for her collection.
+    specimenJar: {
+      name: 'Specimen Jar',
+      duration: 200,
+      jarX(att) { return att.x + att.facing * 34; },
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 60 ? ['special', 1] : t < 120 ? ['throw', 1] : ['victory', Math.floor(t / 15) % 2];
+        if (t === 2) RF.audio.sfx('cackle');
+        if (t === 15) RF.audio.sfx('special');
+        if (t === 62) { RF.audio.sfx('block'); RF.audio.sfx('heavy'); scene.shake = 10; } // lid slams
+        if (t > 80 && t < 170 && t % 16 === 0) RF.audio.sfx('move'); // tiny fists on glass
+        if (t === 120) { RF.audio.sfx('cackle'); scene.effects.spawnText('INTO THE COLLECTION!', att.x, att.body.height + 20, '#c080ff'); }
+      },
+      drawVictim(vic, ctx, floorY, t, frame, att) {
+        const k = RF.FINISHERS.specimenJar, jx = k.jarX(att), jarBottom = floorY - 34, jarH = 52;
+        const p = Math.max(0, Math.min(1, (t - 15) / 45)); // shrinking and being sucked in
+        const scale = 1 - p * 0.82;
+        const x = vic.x + (jx - vic.x) * p, foot = floorY + (jarBottom - 3 - floorY) * p;
+        const pound = t > 70 ? (Math.floor(t / 8) % 2 ? 1 : -1) : 0;
+        ctx.save();
+        if (p >= 1) { ctx.beginPath(); ctx.rect(jx - 15, jarBottom - jarH, 30, jarH); ctx.clip(); }
+        ctx.translate(Math.round(x + pound), Math.round(foot));
+        ctx.scale(scale, scale);
+        vic.sprite.draw(ctx, t > 70 && Math.floor(t / 8) % 2 ? 'light' : 'hit', 1, 0, 0, vic.facing,
+          p > 0.5 ? '#9ad070' : null);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const k = RF.FINISHERS.specimenJar, jx = k.jarX(att), jarBottom = floorY - 34;
+        const grow = Math.min(1, t / 12);
+        const w = Math.round(32 * grow), h = Math.round(52 * grow);
+        if (t > 15 && t < 60) { // purple swirl pulling them in
+          for (let i = 0; i < 10; i++) {
+            const a = frame * 0.3 + i * 0.63, r = 10 + ((frame + i * 7) % 30);
+            ctx.fillStyle = i % 2 ? 'rgba(200,120,255,0.7)' : 'rgba(120,40,200,0.6)';
+            ctx.fillRect(Math.round(jx + Math.cos(a) * r), Math.round(jarBottom - 26 + Math.sin(a) * r * 0.6), 2, 2);
+          }
+        }
+        specimenJar(ctx, jx, jarBottom, w, h, t >= 62, t >= 62 ? Math.min(1, (t - 62) / 30) * 0.9 : 0, frame);
+        if (t >= 90) { // the label
+          ctx.fillStyle = '#e8dcc0'; ctx.fillRect(Math.round(jx) - 14, jarBottom - 22, 28, 12);
+          RF.font.drawText(ctx, 'NO.47', jx, jarBottom - 20, { align: 'center', color: '#3a1010' });
+          RF.font.drawText(ctx, 'SPECIMEN', jx, jarBottom - 66, { align: 'center', color: '#e8dcc0', outline: '#000' });
+        }
+        // she holds it up: a dark hand under the jar
+        ctx.fillStyle = '#b67542'; ctx.fillRect(Math.round(jx) - 6, jarBottom + 1, 12, 4);
+      },
+    },
+
+
     // El Escobedo: builds a Havana classic car from spare parts, then floors it. DALE!
     havanaClassic: {
       name: 'Havana Classic',

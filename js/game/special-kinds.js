@@ -139,18 +139,18 @@
       start(f) { f.vx = 0; f.specialData.len = 0; },
       update(f, scene) {
         const s = f.special, t = f.stateTime, d = f.specialData;
-        if (t === s.startup) {
-          RF.audio.sfx('zap');
+        if (t === s.startup) RF.audio.sfx(s.sound || 'zap');
+        if (t === s.startup) d.len = s.range; // shown at full reach until it connects
+        if (t === s.startup + (s.hitDelay || 0)) { // a lunging snake bites a few frames after it shoots out
           const opp = scene.opponentOf(f);
           const x0 = f.x + f.facing * s.handX, y = f.y + s.handY;
           const box = { x: f.facing > 0 ? x0 : x0 - s.range, y: y - s.thickness / 2, w: s.range, h: s.thickness };
           const hurt = opp.getHurtbox();
-          d.len = s.range;
           if (hurt && RF.util.rectsOverlap(box, hurt)) {
             // The bolt stops at whoever it hits.
             d.len = Math.max(8, f.facing > 0 ? hurt.x - x0 + 4 : x0 - (hurt.x + hurt.w) + 4);
             const res = scene.applyHit(f, opp, RF.specialMove(f, s), 'zap', opp.x, y);
-            if (res === 'hit') for (let i = 0; i < 4; i++) scene.effects.spawn('zap', opp.x + (Math.random() - 0.5) * opp.body.width, opp.y + Math.random() * opp.body.height);
+            if (res === 'hit') for (let i = 0; i < 4; i++) scene.effects.spawn(s.hitEffect || 'zap', opp.x + (Math.random() - 0.5) * opp.body.width, opp.y + Math.random() * opp.body.height);
           }
         }
         if (t >= s.startup + s.active + s.recovery) f.setState('idle');
@@ -159,10 +159,41 @@
         const s = f.special;
         return ['special', f.stateTime < s.startup ? 0 : 1];
       },
+      drawSerpent(f, ctx, hx, hy, t, frame) {
+        const s = f.special, L = RF.electric.line;
+        if (t < s.startup) { // the snake coils, glowing, ready to strike
+          for (let i = 0; i < 10; i++) {
+            const a = i * 0.7 + frame * 0.2, r = 4 + i * 0.6;
+            ctx.fillStyle = i % 2 ? '#4aa86a' : '#2e7a48';
+            ctx.fillRect(Math.round(hx + Math.cos(a) * r), Math.round(hy + Math.sin(a) * r), 3, 3);
+          }
+          return;
+        }
+        if (t >= s.startup + s.active) return;
+        const len = f.specialData.len, out = Math.min(1, (t - s.startup + 1) / ((s.hitDelay || 4) + 1)); // shoots out fast
+        const reach = len * out, n = Math.max(2, Math.round(reach / 6));
+        let px = hx, py = hy;
+        for (let i = 1; i <= n; i++) {
+          const u = i / n, x = hx + f.facing * reach * u, y = hy + Math.sin(u * Math.PI * 3 + frame * 0.5) * 7 * (1 - u * 0.6);
+          const w = Math.round(10 - u * 3);
+          L(ctx, px, py, x, y, w + 2, '#0a1e0f');
+          L(ctx, px, py, x, y, w, i % 2 ? '#4aa86a' : '#3a8a58');
+          L(ctx, px, py, x, y, 2, '#c8e8a0'); // belly
+          px = x; py = y;
+        }
+        // head with open jaws and fangs
+        ctx.fillStyle = '#0a1e0f'; ctx.fillRect(Math.round(px - 8), Math.round(py - 8), 16, 16);
+        ctx.fillStyle = '#4aa86a'; ctx.fillRect(Math.round(px - 7), Math.round(py - 7), 14, 6);
+        ctx.fillStyle = '#3a8a58'; ctx.fillRect(Math.round(px - 7), Math.round(py + 2), 14, 5);
+        ctx.fillStyle = '#7a0010'; ctx.fillRect(Math.round(px - 6), Math.round(py - 1), 12, 3);   // open mouth
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(px + f.facing * 4), Math.round(py - 1), 1, 3); ctx.fillRect(Math.round(px + f.facing * 1), Math.round(py - 1), 1, 3);
+        ctx.fillStyle = '#ff2010'; ctx.fillRect(Math.round(px - f.facing * 3), Math.round(py - 6), 2, 2); // eye
+      },
       draw(f, ctx, floorY, frame) {
         const s = f.special, t = f.stateTime, el = RF.electric;
         const hx = Math.round(f.x + f.facing * s.handX), hy = Math.round(floorY - f.y - s.handY);
         const seed = Math.floor(frame / 2) * 13.7;
+        if (s.look === 'serpent') return RF.SPECIAL_KINDS.beam.drawSerpent(f, ctx, hx, hy, t, frame);
         if (t < s.startup) {
           // Charging: electricity gathers around his whole body, then his hands.
           const p = t / s.startup;

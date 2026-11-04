@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  angryLecture: {
+    name: 'Angry Lecture',
+    description: 'Grabs the opponent and screams in their face until the yelling blasts them across the room.',
+    kind: 'scream',
+    words: ['SIT DOWN!', 'WRONG!', 'GET OUT!'],
+    damagePerWord: 3,
+    finisherDamage: 9,
+  },
   roboticArm: {
     name: 'Robotic Arm',
     description: 'A giant robotic claw grabs the opponent, drills them, shakes them and hurls them across the screen.',

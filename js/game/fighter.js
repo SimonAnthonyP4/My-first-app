@@ -454,7 +454,10 @@
       if (this.hidden) return; // e.g. inside a car during a finisher
       const jetOn = this.def.jetpack && this.y > 0 && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
       if (jetOn) RF.MOVE_FX.jetpack(this, ctx, floorY, this.scene ? this.scene.frame : 0); // drawn behind him
+      const aura = this.def.aura && RF.MOVE_FX[this.def.aura];
+      if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'back');
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
+      if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);
       if ((this.state === 'block' || this.state === 'blockstun') && this.def.blockFx) RF.BLOCK_FX[this.def.blockFx](this, ctx, floorY, t);

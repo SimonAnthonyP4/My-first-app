@@ -69,6 +69,47 @@
       },
     },
 
+    // Lady Landa: screams in their face. Shockwaves, giant words, then the yell blasts them away.
+    scream: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, gap = 14, finish = 10 + T.words.length * gap;
+        const pushed = t >= 10 ? Math.min(10, (t - 10) * 0.4) : 0; // blown back by the yelling
+        hold(att, def, pushed + (t >= 10 && t < finish ? (t % 2 ? 1 : -1) : 0));
+        def.thrownPose = ['hit', 0];
+        T.words.forEach((w, i) => {
+          if (t === 10 + i * gap) {
+            RF.audio.sfx('scream');
+            scene.shake = 6 + i * 3;
+            scene.effects.spawnText(w, def.x, def.body.height + 8 + i * 9, i === T.words.length - 1 ? '#ff2010' : '#ffffff');
+            scene.throwHit(att, def, T.damagePerWord);
+          }
+        });
+        if (t === finish) {
+          scene.shake = 14; scene.flash = 4;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 8, vy: 4 });
+        }
+        return t >= finish + 14;
+      },
+      anim(att, t) { return t < 8 ? ['throw', 0] : ['special', 0]; }, // grabs, then leans in and yells
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 10 + att.throwCfg.words.length * 14;
+        if (t < 8 || t > finish + 4) return;
+        // shockwave rings blasting out of her mouth
+        const mx = att.x + att.facing * 10, my = floorY - att.body.height + 14;
+        for (let i = 0; i < 4; i++) {
+          const r = ((t * 4 + i * 12) % 48) + 4;
+          ctx.strokeStyle = `rgba(255,${120 + i * 30},${120 + i * 30},${0.8 - r / 60})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(mx, my, r, att.facing > 0 ? -0.6 : Math.PI - 0.6, att.facing > 0 ? 0.6 : Math.PI + 0.6);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 1;
+        // big open-mouth "AAAA" streaming out
+        RF.font.drawText(ctx, 'AAAAAH!', mx + att.facing * 30, my - 14 + (frame % 2), { align: 'center', color: '#ffe040', outline: '#000' });
+      },
+    },
+
     // El Escobedo: a giant robotic claw comes down from above, grabs, drills, hurls.
     claw: {
       update(att, def, t, scene) {

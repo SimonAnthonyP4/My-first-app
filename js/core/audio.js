@@ -197,6 +197,17 @@
           this.tone('sawtooth', 300, t, 0.3, 0.07, null, 360);
           this.noiseBurst(t, 0.3, 0.12, 'highpass', 3000);
           break;
+        case 'hiss':
+          this.noiseBurst(t, 0.45, 0.22, 'highpass', 4500);
+          break;
+        case 'scream': // furious yelling
+          this.tone('sawtooth', 620, t, 0.45, 0.12, null, 300);
+          this.tone('square', 930, t, 0.4, 0.05, null, 520);
+          this.noiseBurst(t, 0.45, 0.15, 'bandpass', 1800);
+          break;
+        case 'cackle': // evil laugh: ha-ha-ha-ha
+          for (let i = 0; i < 5; i++) this.tone('square', 520 - i * 40, t + i * 0.11, 0.08, 0.09, null, 380 - i * 30);
+          break;
         case 'grab':
           this.noiseBurst(t, 0.06, 0.3, 'lowpass', 700);
           this.tone('square', 160, t, 0.08, 0.12, null, 110);

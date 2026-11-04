@@ -314,7 +314,7 @@
       this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
       if (!blocked && move.knockback && def.grounded) this.effects.spawn('dust', def.x, 1); // skid
       if (move.fx === 'lightning' && !blocked) { this.flash = Math.max(this.flash, 3); this.effects.spawn('zap', ex, ey + 8); }
-      RF.audio.sfx(blocked ? (def.def.blockFx ? 'shield' : 'block') : spark === 'heavy' || move.special ? 'heavy' : 'hit');
+      RF.audio.sfx(blocked ? (def.def.blockSound || (def.def.blockFx ? 'shield' : 'block')) : spark === 'heavy' || move.special ? 'heavy' : 'hit');
       this.hitstop = Math.max(this.hitstop, blocked ? 2 : move.hitstop);
       if (!blocked && (spark === 'heavy' || move.special)) this.shake = Math.max(this.shake, 6);
       return blocked ? 'block' : 'hit';
