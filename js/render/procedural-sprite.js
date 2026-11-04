@@ -160,18 +160,7 @@
 
     draw(ctx, anim, frame, x, y, facing) {
       const list = this.frames[anim];
-      const f = list[frame % list.length];
-      x = Math.round(x);
-      y = Math.round(y);
-      if (facing >= 0) {
-        ctx.drawImage(f.canvas, x - f.anchorX, y - f.anchorY);
-      } else {
-        ctx.save();
-        ctx.translate(x, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(f.canvas, -f.anchorX, y - f.anchorY);
-        ctx.restore();
-      }
+      RF.drawBakedFrame(ctx, list[frame % list.length], x, y, facing);
     }
   }
 

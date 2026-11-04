@@ -249,7 +249,8 @@
 
     getHurtbox() {
       if (this.isKO) return null;
-      const h = this.crouching && this.grounded ? this.body.height * RF.CONFIG.CROUCH_HEIGHT : this.body.height;
+      const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
+      const h = this.crouching && this.grounded ? this.body.height * crouchH : this.body.height;
       return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h };
     }
 

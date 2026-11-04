@@ -297,6 +297,9 @@
       const order = [...this.fighters].sort((p, q) => (p.state === 'attack') - (q.state === 'attack'));
       for (const f of order) f.draw(ctx, floorY);
       this.drawProjectiles(ctx, floorY);
+      for (const f of this.fighters) {
+        if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
+      }
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
       ctx.restore();

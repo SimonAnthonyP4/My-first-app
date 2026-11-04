@@ -177,7 +177,10 @@
         T(ctx, 'IN MILESTONE 6.', L, y + 49, { color: '#806860', outline: '#000' });
         return;
       }
-      T(ctx, def.name, L, y + 4, { scale: 2, color: '#ffffff', outline: '#000' });
+      const [arch0] = ARCH[def.archetype] || [def.archetype.toUpperCase()];
+      const room = w - 24 - RF.font.textWidth(arch0) - (this.ready[p] ? 48 : 0);
+      const big = RF.font.textWidth(def.name, 2) <= room; // long names drop to small type
+      T(ctx, def.name, L, big ? y + 4 : y + 8, { scale: big ? 2 : 1, color: '#ffffff', outline: '#000' });
       const [arch, archCol] = ARCH[def.archetype] || [def.archetype.toUpperCase(), '#fff'];
       T(ctx, arch, x + w - 6, y + 8, { align: 'right', color: archCol, outline: '#000' });
       if (this.ready[p]) T(ctx, 'READY!', x + w - 6 - RF.font.textWidth(arch) - 8, y + 8, { align: 'right', color: '#ffd030', outline: '#000' });

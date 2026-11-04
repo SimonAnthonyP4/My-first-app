@@ -50,6 +50,7 @@ your character automatically unleashes their special move:
 |---------|---------|--------------|
 | Bruiser | **Seismic Slam** | Leaps at the opponent and pounds the floor. The shockwave launches them. |
 | Viper   | **Venom Spit**   | Spits a glob of venom across the screen. |
+| Dr. Weissenberg | **Tesla Surge** | Fires a bolt of electricity from his hands straight across the screen. |
 
 Holding block the whole time is a normal block (chip damage, no special), and
 mashing block doesn't count. A press only qualifies if it comes at least half a
@@ -132,6 +133,25 @@ Everything per-character is in `js/config/characters.js`:
 
 Base attack damage and frame data are in `js/config/moves.js`. Global rules
 (max health, round time, chip damage) are in `js/config/game.js`.
+
+## Adding a character drawn in Piskel
+
+You only need to draw **one standing frame, facing right**. The game animates
+it as a "pixel puppet": it moves the head, body and legs and adds blocky arms
+and kicks in the same style. Dr. Weissenberg is built this way, and his entry in
+`js/config/characters.js` is the template:
+
+- `grid` is the drawing, one string per row. Each letter is a colour named in
+  `legend`/`palette`, and `.` is see-through.
+- `neckRow` / `waistRow` are where the head ends and the legs start.
+- `shoulder` is where the arms attach. `sideHand` lists the hand pixels in the
+  drawing, which are hidden while an arm is posed.
+- `footCol` is the column the character stands on. `scale: 3` makes each art
+  pixel 3 game pixels.
+
+Easiest route: export the frame from Piskel as a PNG and send it over, and it
+gets turned into a grid. Open `tools/sprite-viewer.html` to check every
+animation frame.
 
 ## Swapping in real art
 

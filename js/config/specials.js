@@ -22,6 +22,21 @@ RF.SPECIALS = {
     hitstun: 30, blockstun: 18, pushback: 4, hitstop: 10,
     launch: 5,           // pops the victim into the air
   },
+  teslaSurge: {
+    name: 'Tesla Surge',
+    description: 'Fires a crackling bolt of electricity from his hands straight across the screen.',
+    kind: 'beam',
+    startup: 14,         // charging up (sparks crackle around him)
+    active: 16,          // frames the bolt is out
+    recovery: 18,
+    range: 200,          // how far the bolt reaches
+    thickness: 14,       // how tall the bolt's hit area is
+    handX: 20,           // where the bolt starts: in front of the feet...
+    handY: 44,           // ...and this high off the floor
+    damage: 15,
+    hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
+    colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
+  },
   venomSpit: {
     name: 'Venom Spit',
     description: 'Spits a glob of venom that streaks across the screen.',
