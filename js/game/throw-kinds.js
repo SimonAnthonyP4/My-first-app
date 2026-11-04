@@ -69,6 +69,60 @@
       },
     },
 
+    // El Escobedo: a giant robotic claw comes down from above, grabs, drills, hurls.
+    claw: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, finish = 40 + T.ticks * 8;
+        def.thrownPose = t < 20 ? ['hit', 0] : ['ko', 0];
+        if (t < 20) { hold(att, def, 6); return false; }
+        if (t === 20) RF.audio.sfx('grab');
+        if (t < 34) { def.y = (t - 20) * 4.5; return false; }          // hoisted up
+        if (t < finish) {                                                 // drilled and shaken
+          def.y = 63 + (t % 2 ? 3 : -3);
+          def.x += t % 2 ? 2 : -2;
+          if ((t - 34) % 8 === 0) {
+            RF.audio.sfx('drill');
+            scene.effects.spawn('hit', def.x + att.facing * -6, def.y + 30);
+            scene.throwHit(att, def, T.damagePerTick);
+          }
+          return false;
+        }
+        if (t === finish) {
+          scene.shake = 10;
+          scene.effects.spawn('heavy', def.x, def.y + 30);
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 });
+        }
+        return t >= finish + 16;
+      },
+      anim(att, t) { return t < 20 ? ['throw', 0] : ['throw', 1]; }, // working the controls
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 40 + att.throwCfg.ticks * 8;
+        if (t > finish + 10) return;
+        const cx = Math.round(def.x);
+        // claw head: comes down to the victim, then rides up with them
+        const headY = t < 20 ? Math.round(-10 + (floorY - def.body.height - 4 + 10) * (t / 20)) : Math.round(floorY - def.y - def.body.height - 4);
+        ctx.fillStyle = '#111'; ctx.fillRect(cx - 3, 0, 6, headY);                    // arm/cable
+        ctx.fillStyle = '#e8b020'; ctx.fillRect(cx - 2, 0, 4, headY);
+        ctx.fillStyle = '#111';
+        for (let y = 6; y < headY; y += 10) ctx.fillRect(cx - 2, y, 4, 2);           // hazard bands
+        ctx.fillStyle = '#111'; ctx.fillRect(cx - 10, headY - 2, 20, 8);
+        ctx.fillStyle = '#7a8088'; ctx.fillRect(cx - 9, headY - 1, 18, 6);           // hub
+        const open = t < 20 ? 6 : 1;                                                   // pincers close on grab
+        ctx.fillStyle = '#5a6068';
+        ctx.fillRect(cx - 10 - open, headY + 4, 4, 14); ctx.fillRect(cx + 6 + open, headY + 4, 4, 14);
+        if (t >= 34 && t < finish) {
+          // power drill grinding with sparks
+          const dx = cx - att.facing * 16, dy = Math.round(floorY - def.y - 30);
+          ctx.fillStyle = '#c02020'; ctx.fillRect(dx - 5, dy - 4, 10, 8);
+          ctx.fillStyle = '#aaa'; ctx.fillRect(att.facing > 0 ? dx + 5 : dx - 11, dy - 1, 6, 2);
+          for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = i % 2 ? '#ffd040' : '#fff';
+            ctx.fillRect(dx + att.facing * (8 + RF.util.hash(frame + i) * 10), dy - 6 + RF.util.hash(frame * 2 + i) * 12, 1, 1);
+          }
+        }
+      },
+    },
+
     // Dr. Astuto: victim on one pan of a giant balance scale, the AP GOV book
     // dropped on the other, victim catapulted sky-high and back down.
     balance: {

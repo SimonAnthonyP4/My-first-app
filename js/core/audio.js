@@ -182,6 +182,21 @@
           this.tone('sine', 1800, t, 0.35, 0.05, null, 500); // whistle up
           this.noiseBurst(t + 0.35, 0.4, 0.3, 'lowpass', 1600); // boom
           break;
+        case 'jet':
+          this.noiseBurst(t, 0.5, 0.25, 'bandpass', 900);
+          this.tone('sawtooth', 70, t, 0.4, 0.06, null, 120);
+          break;
+        case 'honk': // classic car horn: two quick toots
+          [0, 0.22].forEach((d) => { this.tone('square', 392, t + d, 0.16, 0.09); this.tone('square', 494, t + d, 0.16, 0.07); });
+          break;
+        case 'engine':
+          this.tone('sawtooth', 55, t, 0.9, 0.12, null, 110);
+          this.noiseBurst(t, 0.9, 0.15, 'lowpass', 400);
+          break;
+        case 'drill':
+          this.tone('sawtooth', 300, t, 0.3, 0.07, null, 360);
+          this.noiseBurst(t, 0.3, 0.12, 'highpass', 3000);
+          break;
         case 'grab':
           this.noiseBurst(t, 0.06, 0.3, 'lowpass', 700);
           this.tone('square', 160, t, 0.08, 0.12, null, 110);

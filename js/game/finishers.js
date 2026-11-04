@@ -92,7 +92,114 @@
     }
   }
 
+  // A 1950s Havana classic car (facing right; flipped for the other direction).
+  function classicCar(ctx, x, floorY, facing, built, frame, driver) {
+    // built: 0..1, how many parts have arrived
+    ctx.save();
+    ctx.translate(Math.round(x), floorY);
+    ctx.scale(facing * 1.4, 1.4); // big enough to fit a grown teacher
+    const part = (n) => built >= n;
+    if (part(0.2)) { // body with tail fins
+      ctx.fillStyle = '#111'; ctx.fillRect(-36, -22, 72, 16); ctx.fillRect(-38, -26, 8, 6);
+      ctx.fillStyle = '#3ac8c0'; ctx.fillRect(-35, -21, 70, 14); ctx.fillRect(-37, -25, 6, 5);
+      ctx.fillStyle = '#e8f0f0'; ctx.fillRect(-30, -16, 58, 2);                 // side stripe
+    }
+    if (part(0.4)) { // white roof and windows
+      ctx.fillStyle = '#111'; ctx.fillRect(-20, -35, 34, 14);
+      ctx.fillStyle = '#f4f4f0'; ctx.fillRect(-19, -34, 32, 13);
+      ctx.fillStyle = '#7ac8e8'; ctx.fillRect(-16, -32, 12, 9); ctx.fillRect(-2, -32, 12, 9);
+      if (driver) driver(ctx); // his head in the window
+    }
+    if (part(0.6)) { // chrome bumpers and headlight
+      ctx.fillStyle = '#d8dce0'; ctx.fillRect(33, -12, 6, 5); ctx.fillRect(-40, -12, 6, 5);
+      ctx.fillStyle = '#fff6b0'; ctx.fillRect(33, -20, 3, 4);
+    }
+    if (part(0.8)) { // whitewall wheels
+      for (const wx of [-22, 20]) {
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(wx, -6, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f0f0f0'; ctx.beginPath(); ctx.arc(wx, -6, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#9aa0a8'; ctx.fillRect(wx - 1 + (frame % 2), -7, 2, 2);
+      }
+    }
+    ctx.restore();
+  }
+
   RF.FINISHERS = {
+    // El Escobedo: builds a Havana classic car from spare parts, then floors it. DALE!
+    havanaClassic: {
+      name: 'Havana Classic',
+      duration: 200,
+      setup(att, vic) {
+        const b = att.scene.stageDef.bounds;
+        // Build the car behind him, with room to drive at the victim.
+        const back = att.x - att.facing * 70;
+        this.startX = Math.max(b.left + 40, Math.min(b.right - 40, back));
+        this.hitX = vic.x;
+      },
+      carX(t) {
+        if (t < 60) return this.startX;
+        const u = Math.min(1, (t - 60) / 24);
+        return this.startX + (this.hitX + 20 * Math.sign(this.hitX - this.startX || 1) - this.startX) * u * u;
+      },
+      update(att, vic, t, scene) {
+        if (t === 1) this.setup(att, vic); // finisher time starts at 1
+        att.finisherAnim = t < 50 ? ['light', Math.floor(t / 5) % 2] : ['idle', 0];
+        if (t < 50 && t % 10 === 2) { RF.audio.sfx('drill'); scene.effects.spawn('hit', this.startX + (Math.random() - 0.5) * 50, 14 + Math.random() * 20); }
+        if (t === 52) { att.hidden = true; RF.audio.sfx('honk'); }  // hops in
+        if (t === 60) RF.audio.sfx('engine');
+        if (t === 84) {
+          RF.audio.sfx('heavy'); RF.audio.sfx('ko');
+          scene.shake = 16; scene.flash = 4;
+          scene.effects.spawnText('DALE!', vic.x, vic.body.height + 30, '#ffd040');
+        }
+        if (t === 150) { // pops back out next to his car
+          att.hidden = false;
+          att.x = this.carX(t) - Math.sign(this.hitX - this.startX || 1) * 46;
+        }
+        att.finisherAnim = t >= 150 ? ['victory', Math.floor(t / 15) % 2] : att.finisherAnim;
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 84) return drawPose(vic, ctx, vic.x, floorY, ['hit', 0]);
+        // Launched off the top of the screen, spinning
+        const a = t - 84, dir = Math.sign(this.hitX - this.startX || 1);
+        const x = vic.x + dir * a * 3, y = floorY - a * a * 0.12 - a * 5;
+        if (y < -40) return;
+        ctx.save();
+        ctx.translate(x, y - vic.body.height / 2);
+        ctx.rotate(a * 0.35 * dir);
+        vic.sprite.draw(ctx, 'ko', 0, 0, vic.body.height / 2, vic.facing);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const dir = Math.sign(this.hitX - this.startX || 1);
+        const built = Math.min(1, t / 50);
+        const x = this.carX(t);
+        // parts flying in while he builds
+        if (t < 50) {
+          for (let i = 0; i < 4; i++) {
+            const p = ((t + i * 12) % 24) / 24;
+            const sx = x + (i % 2 ? -140 : 140) * (1 - p), sy = floorY - 60 * (1 - p) - 20;
+            ctx.fillStyle = ['#3ac8c0', '#d8dce0', '#111', '#f4f4f0'][i];
+            ctx.fillRect(Math.round(sx), Math.round(sy), 6, 4);
+          }
+        }
+        const driver = t >= 52 && t < 150 ? (c) => { c.fillStyle = '#f7a870'; c.fillRect(-1, -31, 8, 7); c.fillStyle = '#211d1d'; c.fillRect(-1, -33, 8, 3); } : null;
+        classicCar(ctx, x, floorY, dir, built, frame, driver);
+        if (t >= 60 && t < 90) { // exhaust and speed lines
+          ctx.fillStyle = 'rgba(160,160,160,0.6)';
+          for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(x - dir * (40 + i * 7)), floorY - 8 - (i % 2) * 3, 5, 4);
+        }
+        if (t >= 120 && t < 160 && t % 6 < 4) { // the victim's twinkle as they leave orbit
+          const sx = vic.x + dir * 120;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(Math.round(sx) - 4, 30, 9, 1); ctx.fillRect(Math.round(sx), 26, 1, 9);
+        }
+        if (t >= 84 && t < 150) RF.font.drawText(ctx, 'DALE!', RF.CONFIG.WIDTH / 2, 70, { scale: 5, align: 'center', outline: '#000',
+          color: ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#ff9a10', '#ff7000', '#e04000'] });
+      },
+    },
+
+
     // Dr. Astuto: tricorn on, the Liberty Bell drops on them, it cracks, fireworks. 1776!
     libertyBell: {
       name: 'Liberty Bell',

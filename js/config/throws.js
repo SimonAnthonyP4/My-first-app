@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  roboticArm: {
+    name: 'Robotic Arm',
+    description: 'A giant robotic claw grabs the opponent, drills them, shakes them and hurls them across the screen.',
+    kind: 'claw',
+    ticks: 3,
+    damagePerTick: 2,
+    finisherDamage: 9,
+  },
   checksAndBalances: {
     name: 'Checks and Balances',
     description: 'Puts the opponent on a giant balance scale and drops his textbook on the other side.',

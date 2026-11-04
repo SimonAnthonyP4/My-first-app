@@ -5,6 +5,22 @@
   const E = () => RF.electric;
 
   RF.MOVE_FX = {
+    // El Escobedo's jetpack: strapped to his back, flames roaring out of two nozzles.
+    jetpack(f, ctx, floorY, frame) {
+      const px = Math.round(f.x - f.facing * 13), top = Math.round(floorY - f.y - 70);
+      ctx.fillStyle = '#111'; ctx.fillRect(px - 6, top - 1, 12, 24);
+      ctx.fillStyle = '#7a8088'; ctx.fillRect(px - 5, top, 10, 22);
+      ctx.fillStyle = '#b8c0c8'; ctx.fillRect(px - 4, top + 2, 3, 18);          // shine
+      ctx.fillStyle = '#c02020'; ctx.fillRect(px - 5, top + 5, 10, 2);          // stripe
+      ctx.fillStyle = '#3a3a40'; ctx.fillRect(px - 5, top + 22, 4, 4); ctx.fillRect(px + 1, top + 22, 4, 4); // nozzles
+      for (const nx of [px - 3, px + 3]) {
+        const len = 8 + ((frame + nx) % 3) * 4;
+        ctx.fillStyle = '#ff5a10'; ctx.fillRect(nx - 2, top + 26, 4, len);
+        ctx.fillStyle = '#ffd040'; ctx.fillRect(nx - 1, top + 26, 2, Math.round(len * 0.6));
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(nx - 1, top + 26, 2, 2);
+      }
+    },
+
     // Ranged lightning: charges in the hand, then a forked bolt rips forward
     // and stops at whatever it hits.
     lightning(f, ctx, floorY, frame) {
@@ -40,6 +56,21 @@
 
   // Custom-drawn projectiles (a projectile config with art: '<name>').
   RF.PROJECTILE_ART = {
+    // El Escobedo's quadcopter drone: spinning rotors, blinking lights.
+    drone(ctx, x, y, t, dir) {
+      const bob = Math.round(Math.sin(t / 3));
+      y += bob;
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 9, y - 3, 18, 7);
+      ctx.fillStyle = '#4a5058'; ctx.fillRect(x - 8, y - 2, 16, 5);              // body
+      ctx.fillStyle = '#2a8ad8'; ctx.fillRect(x + dir * 3 - 2, y - 1, 4, 2);      // camera
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 12, y - 5, 4, 2); ctx.fillRect(x + 8, y - 5, 4, 2); // arms
+      const blade = t % 2 ? 7 : 3;                                               // rotor blur
+      ctx.fillStyle = 'rgba(220,230,240,0.8)';
+      ctx.fillRect(x - 10 - blade / 2, y - 7, blade, 1); ctx.fillRect(x + 10 - blade / 2, y - 7, blade, 1);
+      ctx.fillStyle = t % 10 < 5 ? '#ff2a1a' : '#40ff60';                        // blinking LED
+      ctx.fillRect(x - dir * 7, y + 2, 2, 2);
+    },
+
     // Dr. Astuto's AP GOV textbook, tumbling end over end.
     textbook(ctx, x, y, t, dir) {
       ctx.save();

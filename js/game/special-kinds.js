@@ -30,6 +30,47 @@
       },
     },
 
+    // Deploys a little auto-turret in front that fires a burst of shots.
+    turret: {
+      start(f) { f.vx = 0; },
+      turretX(f) { return f.x + f.facing * f.special.offset; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, k = RF.SPECIAL_KINDS.turret;
+        if (t === s.startup) { RF.audio.sfx('grab'); scene.effects.spawn('dust', k.turretX(f), 1); }
+        for (let i = 0; i < s.shots; i++) {
+          if (t === s.startup + 10 + i * s.interval) {
+            // Fire from the turret's barrel, not from his hands.
+            const shooter = { x: k.turretX(f) - f.facing * f.body.width * 0.7, y: 0, facing: f.facing, body: f.body, stats: f.stats, side: f.side };
+            scene.spawnProjectile(shooter, Object.assign({}, s.shot, { owner: f }));
+            const p = scene.projectiles[scene.projectiles.length - 1];
+            p.owner = f;
+          }
+        }
+        if (t >= s.startup + 10 + s.shots * s.interval + s.recovery) f.setState('idle');
+      },
+      anim(f) { return ['throw', f.stateTime < f.special.startup ? 0 : 2]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime;
+        if (t < s.startup - 4) return;
+        const x = Math.round(RF.SPECIAL_KINDS.turret.turretX(f)), fy = floorY;
+        const up = Math.min(1, (t - s.startup + 4) / 8); // unfolds
+        const h = Math.round(26 * up);
+        ctx.fillStyle = '#111';                                     // tripod
+        ctx.fillRect(x - 9, fy - 2, 18, 2); ctx.fillRect(x - 1, fy - h, 3, h);
+        ctx.fillStyle = '#5a6068'; ctx.fillRect(x - 7, fy - 2, 14, 1);
+        if (up < 1) return;
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 8, fy - 38, 16, 14);
+        ctx.fillStyle = '#6a7480'; ctx.fillRect(x - 7, fy - 37, 14, 12);  // housing
+        ctx.fillStyle = '#ffb020'; ctx.fillRect(x - 7, fy - 30, 14, 2);   // hazard stripe
+        ctx.fillStyle = '#111'; ctx.fillRect(f.facing > 0 ? x + 7 : x - 17, fy - 34, 10, 4); // barrel
+        ctx.fillStyle = t % 8 < 4 ? '#ff2a1a' : '#5a0a0a'; ctx.fillRect(x - 2, fy - 36, 3, 2); // sensor light
+        const shotT = (t - s.startup - 10) % s.interval;
+        if (t >= s.startup + 10 && t < s.startup + 10 + s.shots * s.interval && shotT < 3) {
+          ctx.fillStyle = '#fff6b0'; ctx.fillRect(f.facing > 0 ? x + 17 : x - 23, fy - 36, 6, 8); // muzzle flash
+        }
+      },
+    },
+
     // Something huge falls from the sky onto where the opponent is standing.
     drop: {
       start(f) { f.vx = 0; f.specialData.targetX = null; f.specialData.impact = false; },

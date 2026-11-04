@@ -57,6 +57,7 @@
       this.chain = 0;     // attacks cancelled into in the current string
       this.combo = 0;     // hits taken in a row without recovering
       this.flash = 0;     // frames left of the white hit flash
+      this.hidden = false; // finishers can hide a fighter
       this.shieldHit = 0; // frames left of a block effect flaring up
       this.fxHitDist = null; // how far a ranged move's effect reached (it stops at its target)
       this.specialData = {};
@@ -208,6 +209,7 @@
       if (input.held('up')) {
         this.setState('jump');
         this.vy = this.stats.jumpPower;
+        if (this.def.jetpack) RF.audio.sfx('jet');
         this.vx = dir * Math.max(this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR, RF.CONFIG.JUMP_MIN_SPEED);
         this.airAttackUsed = false;
         return;
@@ -289,7 +291,10 @@
       // Thrown fighters are moved by the thrower; finishers move both fighters themselves.
       if (this.state === 'thrown' || this.state === 'finishing' || this.state === 'finished') { this.clampTo(bounds); return; }
       if (!this.grounded || this.vy > 0) {
-        this.vy -= RF.CONFIG.GRAVITY;
+        // A jetpack (El Escobedo) means lighter gravity for the whole jump: more airtime.
+        const jet = this.def.jetpack && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
+        this.vy -= jet ? this.def.jetpack.gravity : RF.CONFIG.GRAVITY;
+        if (jet && this.scene && this.stateTime % 5 === 0) this.scene.effects.spawn('dust', this.x - this.facing * 10, this.y + 34);
         this.y += this.vy;
         if (this.y <= 0) {
           this.y = 0;
@@ -446,6 +451,9 @@
       if (this.state === 'dazed') x += Math.sin(this.stateTime / 9) * 2; // wobbling on their feet
       // Shudder while frozen in hit-stop, like a real impact.
       if (this.scene && this.scene.hitstop > 0 && this.state === 'hitstun') x += this.scene.frame % 2 ? 1.5 : -1.5;
+      if (this.hidden) return; // e.g. inside a car during a finisher
+      const jetOn = this.def.jetpack && this.y > 0 && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
+      if (jetOn) RF.MOVE_FX.jetpack(this, ctx, floorY, this.scene ? this.scene.frame : 0); // drawn behind him
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);
@@ -453,6 +461,7 @@
     }
 
     drawShadow(ctx, floorY) {
+      if (this.hidden) return;
       const w = this.body.width * (1 - Math.min(0.5, this.y / 200));
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.beginPath();

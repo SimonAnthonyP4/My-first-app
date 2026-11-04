@@ -37,6 +37,21 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  sentryTurret: {
+    name: 'Sentry Turret',
+    description: 'Deploys a mini auto-turret that fires a burst of four shots.',
+    kind: 'turret',
+    startup: 12,         // building it
+    offset: 30,          // how far in front of him it's set down
+    shots: 4,
+    interval: 8,         // frames between shots
+    recovery: 16,
+    shot: {
+      speed: 6.5, size: 8, height: 0.36,
+      damage: 5, hitstun: 16, blockstun: 8, pushback: 2, hitstop: 3,
+      colors: ['#ffffff', '#9ff0ff', '#2a8ad8'], sound: 'block',
+    },
+  },
   veto: {
     name: 'VETO',
     description: 'Strikes it down: a giant VETO stamp slams down from the sky onto the opponent.',

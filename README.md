@@ -36,7 +36,8 @@ python3 -m http.server 8000
   block is a crackling electric shield. A character's moves can be overridden with
   `moves: { heavy: {...} }` in `characters.js`; effects live in `js/game/fx.js`.
 - **FINISH THEM!** The blow that wins the match leaves the loser dazed for 5 seconds.
-  Walk up and press **throw** to do your finisher: Dr. Astuto's **Liberty Bell** (tricorn hat,
+  Walk up and press **throw** to do your finisher: El Escobedo's **Havana Classic** (builds a
+  1950s classic car and drives it into them: DALE!), Dr. Astuto's **Liberty Bell** (tricorn hat,
   bell from the sky, crack, fireworks, 1776), Jauregui's **Final Grade: F** (a red F,
   then erased from existence), Dr. Weissenberg's **Overcharge**
   (x-ray skeleton, then a pile of ash), Bruiser's **Pile Driver** (head-first into the
@@ -48,7 +49,8 @@ python3 -m http.server 8000
   blocked, but a missed grab leaves you open, and the victim can break free by
   pressing throw right as they're grabbed ("BREAK!"). Each fighter has their own throw:
   Bruiser's **Lunch Line Slam** (overhead slam), Jauregui's **Outlier Removal** (bell curve),
-  Dr. Astuto's **Checks and Balances** (catapulted off a balance scale), Viper's **Snake Bite** (three knees and
+  Dr. Astuto's **Checks and Balances** (catapulted off a balance scale),
+  El Escobedo's **Robotic Arm** (giant claw, power drill, hurled), Viper's **Snake Bite** (three knees and
   a kick), Dr. Weissenberg's **Defibrillator** (electrocution). Numbers are in
   `js/config/throws.js`, animations in `js/game/throw-kinds.js`.
 - **Heavy hits knock the opponent back** with a skid (`knockback` in `moves.js`).
@@ -81,6 +83,7 @@ your character automatically unleashes their special move:
 | Dr. Weissenberg | **Tesla Surge** | Fires a bolt of electricity from his hands straight across the screen. |
 | Jauregui | **Pop Quiz** | Hurls a volley of five math symbols at every height. |
 | Dr. Astuto | **VETO** | A giant VETO stamp slams down from the sky onto the opponent. |
+| El Escobedo | **Sentry Turret** | Deploys a mini auto-turret that fires a burst of four shots. |
 
 Holding block the whole time is a normal block (chip damage, no special), and
 mashing block doesn't count. A press only qualifies if it comes at least half a
@@ -186,6 +189,13 @@ The AP Gov teacher (tank, from History Wing, Room 1776). Hunched over with a
 crooked limping walk (custom `poses` in his sprite config). Light attacks are
 cane strikes (crouch + light is a low cane sweep at the ankles); his heavy hurls
 the APUSH / AP GOV textbook.
+
+## El Escobedo
+
+The engineering teacher (light, from the TCS&P Engineering Lab). Wrench whacks
+for light attacks, a quadcopter drone for his heavy, and a **jetpack**: his jumps
+use lighter gravity (`jetpack: { gravity }` in `characters.js`), so he hangs in
+the air about 50% longer, with flames and smoke.
 
 ## Adding a character drawn in Piskel
 
