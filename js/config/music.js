@@ -103,6 +103,62 @@
       },
     },
 
+    // Stage 3: Haunted Court. Creepy, heavy E Phrygian stomp.
+    court: {
+      bpm: 120,
+      tracks: {
+        bass: {
+          wave: 'square', volume: 0.13,
+          bars: [
+            'E2 . E2 F2 . E2 . . E2 . E2 F2 . G2 F2 .',
+            'E2 . E2 F2 . E2 . . E2 . A#1 . . B1 . .',
+            'C2 . C2 C#2 . C2 . . C2 . C2 C#2 . D2 C#2 .',
+            'E2 . E2 F2 . E2 . . E2 - - - . . . .',
+          ],
+        },
+        lead: {
+          wave: 'triangle', volume: 0.16,
+          bars: [
+            'E5 - - - F5 - - - E5 - - - . . . .',
+            'B4 - - - A#4 - - - G4 - - - . . . .',
+            'C5 - - - C#5 - - - E5 - - - F5 - - -',
+            'E5 - - - - - - - . . . . . . . .',
+          ],
+        },
+        drums: {
+          bars: ['k . . . s . . . k . k . s . . .', 'k . . . s . . k . . k . s . s s'],
+        },
+      },
+    },
+
+    // Stage 4: Sirven's Office. Elevator music that's gone wrong, in C minor.
+    office: {
+      bpm: 92,
+      tracks: {
+        bass: {
+          wave: 'triangle', volume: 0.3,
+          bars: [
+            'C2 . . . D#2 . . . G2 . . . F#2 . . .',
+            'F2 . . . G#2 . . . C3 . . . B2 . . .',
+            'G#1 . . . C2 . . . D#2 . . . D2 . . .',
+            'G1 . . . B1 . . . D2 . . . G1 . . .',
+          ],
+        },
+        lead: {
+          wave: 'sine', volume: 0.12,
+          bars: [
+            'G4 - - - D#5 - - - D5 - C5 - B4 - - -',
+            'C5 - - - G#4 - - - F4 - - - . . . .',
+            'D#5 - - - D5 - C5 - G#4 - - - G4 - - -',
+            'F#4 - - - G4 - - - . . . . . . . .',
+          ],
+        },
+        drums: {
+          bars: ['h . . h . . h . h . . h . . h .', 'h . . h . . h . h . h h . . h .'],
+        },
+      },
+    },
+
     // Stage 2: Abandoned NYC street. Gritty E minor street groove.
     nyc: {
       bpm: 104,

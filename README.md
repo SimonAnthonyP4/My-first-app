@@ -96,7 +96,8 @@ each special's numbers are in `js/config/specials.js`.
 - Main menu (Fight Now, VS CPU, How to Play, Settings, Credits)
 - **VS CPU**: play alone against a computer opponent (Easy / Normal / Hard in Settings).
   The CPU plays by the same rules, including perfect blocks.
-- Two stages, **Hell Cafeteria** and **Abandoned NYC Street**, plus a stage select screen (or Random)
+- Four stages, each with its own music: **Hell Cafeteria**, **Abandoned NYC Street**,
+  **Haunted Court** and **Sirven's Office**, plus a stage select screen (or Random)
 - Crouching, crouch jab, sweep, high/low blocking
 - Time out: whoever has more health wins the round (exactly equal = replayed)
 - Background music per stage and for the menus, plus sound effects, all generated
@@ -135,6 +136,8 @@ js/
     registry.js            stage system
     cafeteria.js           Stage 1
     nyc-street.js          Stage 2
+    haunted-court.js       Stage 3
+    sirvens-office.js      Stage 4
   game/
     fighter.js             fighter state machine, physics, hit reactions
     fight-scene.js         round / match flow, collisions, hit detection
