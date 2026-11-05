@@ -194,6 +194,7 @@
 
     startSuperFreeze(f) {
       this.superFreeze = { f, t: 0 };
+      this.game.kb.rumble(f.side, 1, 500);
       this.projectiles = this.projectiles.filter((p) => p.owner === f);
       RF.audio.sfx('super');
     }
@@ -319,6 +320,9 @@
       }
 
       const blocked = def.receiveHit(att, move);
+      const big = move.special || move.knockback || move.launch;
+      this.game.kb.rumble(def.side, blocked ? 0.15 : big ? 0.9 : 0.45, blocked ? 60 : big ? 220 : 110); // you got hit
+      if (!blocked) this.game.kb.rumble(att.side, big ? 0.35 : 0.15, 70);                              // you landed one
       // Super meter: dealing damage fills it fastest, taking it fills it too.
       att.gainMeter(move.damage * (blocked ? 0.3 : 0.75));
       def.gainMeter(move.damage * (blocked ? 0.2 : 0.45));

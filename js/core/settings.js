@@ -29,6 +29,10 @@
       options: [[0, 'OFF'], [0.4, 'LOW'], [0.8, 'MEDIUM'], [1, 'HIGH']],
     },
     {
+      id: 'RUMBLE', label: 'CONTROLLER RUMBLE',
+      options: [[true, 'ON'], [false, 'OFF']],
+    },
+    {
       id: 'SHOW_HITBOXES', label: 'SHOW HITBOXES',
       options: [[false, 'OFF'], [true, 'ON']],
     },

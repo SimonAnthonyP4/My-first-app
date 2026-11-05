@@ -39,8 +39,8 @@
       const both = {};
       for (const a in C.p1) both[a] = [...C.p1[a], ...C.p2[a]];
       this.inputs = this.cpu
-        ? [withMenuKeys(both, ['Enter', 'NumpadEnter', 'Space'], ['Backspace'])]
-        : [withMenuKeys(C.p1, ['Enter', 'Space'], ['Backspace']), withMenuKeys(C.p2, ['NumpadEnter'], [])];
+        ? [withMenuKeys(both, ['Enter', 'NumpadEnter', 'Space', 'Pad1Cross', 'Pad2Cross'], ['Backspace'])]
+        : [withMenuKeys(C.p1, ['Enter', 'Space', 'Pad1Cross'], ['Backspace']), withMenuKeys(C.p2, ['NumpadEnter', 'Pad2Cross'], [])];
       this.notice = [0, 0]; // frames left to show "coming soon" after picking an empty slot
       this.sprites = new Map();
     }

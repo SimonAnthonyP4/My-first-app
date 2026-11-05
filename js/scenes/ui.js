@@ -11,7 +11,7 @@
     down: [...C.p1.down, ...C.p2.down],
     left: [...C.p1.left, ...C.p2.left],
     right: [...C.p1.right, ...C.p2.right],
-    confirm: ['Enter', 'NumpadEnter', 'Space', ...C.p1.light, ...C.p2.light],
+    confirm: ['Enter', 'NumpadEnter', 'Space', ...C.p1.light, ...C.p2.light, 'Pad1Cross', 'Pad2Cross'],
     back: ['Escape', 'Backspace', ...C.p1.block, ...C.p2.block],
   };
   RF.menuPressed = (kb, action) => kb.justPressed(...MENU_KEYS[action]);

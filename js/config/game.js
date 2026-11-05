@@ -58,6 +58,7 @@ RF.CONFIG = {
 
   MUSIC_VOLUME: 0.7,      // 0..1
   SFX_VOLUME: 0.8,        // 0..1
-  CPU_LEVEL: 'normal',    // easy / normal / hard (see ai.js)
+  CPU_LEVEL: 'normal',
+  RUMBLE: true,           // controller vibration on hits    // easy / normal / hard (see ai.js)
   SHOW_HITBOXES: false,
 };

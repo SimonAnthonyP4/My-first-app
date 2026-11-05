@@ -18,6 +18,14 @@
   window.addEventListener('resize', resize);
   resize();
 
+  // Say hello when a controller is plugged in / paired.
+  window.addEventListener('gamepadconnected', (e) => {
+    const n = [...navigator.getGamepads()].filter((p) => p && p.connected).length;
+    const ps = /dualsense|054c|playstation|wireless controller/i.test(e.gamepad.id);
+    game.toast = { text: 'P' + Math.min(n, 2) + ' ' + (ps ? 'PS5 ' : '') + 'CONTROLLER CONNECTED', t: 180 };
+  });
+  window.addEventListener('gamepaddisconnected', () => { game.toast = { text: 'CONTROLLER DISCONNECTED', t: 150 }; });
+
   const game = {
     kb: new RF.Keyboard(),
     scene: null,
@@ -25,6 +33,7 @@
     manualStep: false, // automated tests set this and call game.step() themselves
     toast: null,
     step() {
+      this.kb.pollPads();
       if (this.kb.justPressed('KeyM')) {
         this.toast = { text: RF.audio.toggleMute() ? 'SOUND OFF' : 'SOUND ON', t: 90 };
       }

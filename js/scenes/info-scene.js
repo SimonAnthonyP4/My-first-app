@@ -6,7 +6,7 @@
     return code.replace(/^Key/, '').replace(/^Numpad/, 'NUM').replace(/^Arrow/, '')
       .replace('Comma', ',').replace('Period', '.').replace('Slash', '/');
   }
-  const keys = (p, action) => RF.CONTROLS[p][action].map(keyName).join(' OR ');
+  const keys = (p, action) => RF.CONTROLS[p][action].filter((c) => !c.startsWith('Pad')).map(keyName).join(' OR ');
 
   const PAGES = {
     howto: {
@@ -33,8 +33,35 @@
           .forEach((line, i) => T(ctx, line, W / 2, 182 + i * 8, { align: 'center', color: '#e8e0d8', outline: '#000' }));
       },
     },
+    controller: {
+      title: 'CONTROLLER',
+      draw(ctx, W) {
+        RF.drawPanel(ctx, 12, 34, W - 24, 170);
+        T(ctx, 'PS5 / PS4 / XBOX CONTROLLERS WORK TOO', W / 2, 40, { align: 'center', color: '#8ff0ff', outline: '#000' });
+        T(ctx, 'CONTROLLER 1 = PLAYER 1, CONTROLLER 2 = PLAYER 2', W / 2, 50, { align: 'center', color: '#a8b8c8', outline: '#000' });
+        const rows = [
+          ['D-PAD / L-STICK', 'MOVE, UP JUMP, DOWN CROUCH', '#fff'],
+          ['SQUARE', 'LIGHT ATTACK', '#ff7ac8'],
+          ['TRIANGLE', 'HEAVY ATTACK', '#40e0a0'],
+          ['CIRCLE OR R1', 'BLOCK', '#ff5050'],
+          ['CROSS OR L1', 'THROW', '#6aa0ff'],
+          ['R2', 'SUPER (LIGHT + HEAVY)', '#ffd030'],
+          ['UP + TRIANGLE', 'LAUNCHER', '#ff9a40'],
+          ['OPTIONS', 'PAUSE', '#fff'],
+          ['MENUS', 'CROSS = OK, CIRCLE = BACK', '#fff'],
+        ];
+        rows.forEach(([b, what, col], i) => {
+          const y = 66 + i * 12;
+          T(ctx, b, W / 2 - 30, y, { align: 'right', color: col, outline: '#000' });
+          T(ctx, what, W / 2 - 16, y, { color: '#e8e0d8', outline: '#000' });
+        });
+        T(ctx, 'NOT DETECTED? PRESS ANY BUTTON ON IT IN THE GAME.', W / 2, 180, { align: 'center', color: '#a08878', outline: '#000' });
+        T(ctx, 'CONNECT BY USB OR BLUETOOTH FIRST.', W / 2, 190, { align: 'center', color: '#a08878', outline: '#000' });
+      },
+    },
     combos: {
       title: 'COMBOS AND SUPERS',
+      next: 'controller',
       draw(ctx, W) {
         const rows = [
           ['COMBOS', '#ffd030', 'LIGHT ATTACKS THAT HIT CAN CHAIN INTO MORE ATTACKS: LIGHT, LIGHT, HEAVY.'],
@@ -87,7 +114,7 @@
       RF.drawTitle(ctx, this.page.title, 16);
       this.page.draw(ctx, W);
       if (Math.floor(this.t / 30) % 2 === 0) {
-        T(ctx, this.page.next ? 'ENTER: COMBOS AND SUPERS   ESC: BACK' : 'PRESS ENTER OR ESC TO GO BACK', W / 2, 210, { align: 'center', color: '#a08878', outline: '#000' });
+        T(ctx, this.page.next ? 'ENTER: NEXT PAGE   ESC: BACK' : 'PRESS ENTER OR ESC TO GO BACK', W / 2, 210, { align: 'center', color: '#a08878', outline: '#000' });
       }
     }
   }

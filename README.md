@@ -32,6 +32,30 @@ python3 -m http.server 8000
 | Super      | `F` + `G` together (meter full) | light + heavy together |
 | Dash       | double-tap `A` / `D` | double-tap `←` / `→`         |
 
+### PS5 (and other) controllers
+
+Plug a PS5 DualSense in by USB or pair it over Bluetooth **before** opening the game, then
+press any button on it once the page is open (browsers only reveal a controller after a
+button press). "P1 PS5 CONTROLLER CONNECTED" appears in the corner. The first controller is
+player 1, the second is player 2, and the keyboard keeps working, so you can mix and match
+(e.g. one player on a controller, one on the keyboard). PS4 and Xbox controllers work the same way.
+
+| Button | Action |
+|---|---|
+| D-pad / left stick | move, up = jump, down = crouch |
+| Square | light |
+| Triangle | heavy (Up + Triangle = launcher) |
+| Circle or R1 | block |
+| Cross or L1 | throw |
+| R2 | super (light + heavy together) |
+| Options | pause |
+| Menus | Cross = OK, Circle = back |
+
+Controllers rumble when you get hit (harder on big hits and supers); turn it off under
+Settings → Controller Rumble. Button layout is in `js/config/controls.js` (`Pad1Square`, ...),
+the reading code in `js/core/input.js` (`pollPads`). Works in Chrome, Edge, Firefox and Safari;
+rumble needs Chrome or Edge.
+
 ### Combos, air combos and supers
 
 - **Ground combos:** light attacks that connect cancel into another attack (up to 3 in a
