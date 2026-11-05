@@ -482,7 +482,27 @@ CONGRESS."); he cracks a new one at the start of every round (`laughs`, `jokes`)
 - **Entrance:** strolls in slowly with his arms crossed, then laughs. **Brutality:** Landslide
   Victory.
 
-Character select is now 8 x 2 (16 slots).
+## Nicholas
+
+The second Bro Batch CEO (boxer, **100% health**, from Bro Batch HQ). Anthony's business partner,
+Mathnasium tutor and gym rat. Inspired by classic underdog boxers, but his own design: the **shortest
+fighter** in the game (body height 64), and he never walks. Moving forward or back is a **full
+sprint** with dust kicking up behind him (`sprint`).
+
+- **Boxing:** lightning-fast jabs and crosses, strings of up to 4, peek-a-boo guard (shorter
+  blockstun). His air game is weak on purpose.
+- **Power meter:** every hit fills a star bar over his head. When it is full, his next heavy is a
+  **MAX GAINS** star uppercut that launches.
+- **Special: Problem Set.** Sprints in for 7 punches that double each time (1, 2, 4 ... 64) and
+  ends with an EXPONENTIAL! uppercut.
+- **Command specials:** Dash Straight (sprinting straight punch) and Slip Counter (TOO SLOW!).
+- **Throw: Spot Me.** Bench-presses them for three reps: NEW PR!
+- **Finisher: Final Bell.** A boxing-ring knockout with the bell. **Brutality:** One Punch.
+- **Entrance:** sprints in from off screen. **Taunt:** LIGHT WEIGHT, BABY!
+- **Bro Batch:** special lines with Anthony on entrance, taunt and win, matching banter, and when
+  the two meet the announcer calls it a **BRO BATCH CIVIL WAR!**
+
+The roster is now 16 fighters and the 8 x 2 character select is full.
 
 ## Adding a character drawn in Piskel
 

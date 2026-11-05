@@ -37,6 +37,21 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  problemSet: {
+    name: 'Problem Set',
+    description: 'Sprints in and unloads a flurry that doubles every hit - 1, 2, 4, 8... - then an EXPONENTIAL uppercut.',
+    kind: 'punchRush',
+    startup: 6,
+    dash: 24,            // max frames sprinting in
+    speed: 8,
+    punches: 7,
+    interval: 4,
+    recovery: 18,
+    damage: 2.4,         // per punch
+    finalDamage: 9,
+    hitstun: 18, blockstun: 8, pushback: 0.6, hitstop: 3,
+    launch: 0,
+  },
   filibuster: {
     name: 'Filibuster',
     description: 'Starts talking and never stops: a relentless stream of BLAH BLAH BLAH that hits again and again.',

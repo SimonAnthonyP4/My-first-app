@@ -84,6 +84,17 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Sprints in at full speed, skids to a stop and shadowboxes (Nicholas).
+    sprintIn: {
+      update(f, t, scene) {
+        const from = f.homeX - f.facing * 220, u = Math.min(1, t / 16);
+        f.x = from + (f.homeX - from) * (1 - (1 - u) * (1 - u));
+        if (t < 16) { f.state = 'walk'; f.walkTime = t * 3; if (t % 2 === 0) scene.effects.spawn('dust', f.x - f.facing * 8, 1); }
+        else if (t < 44) { f.state = (t >> 2) % 2 ? 'attack' : 'idle'; if (f.state === 'attack') { f.move = f.moves.light; f.moveKind = 'light'; f.stateTime = 4; } if (t % 4 === 0) RF.audio.sfx('whoosh'); }
+        else { f.state = 'idle'; f.move = null; }
+        if (t === 16) { RF.audio.sfx('stomp'); scene.effects.spawn('dust', f.x, 1); }
+      },
+    },
     // Strolls in slowly with his arms crossed, then laughs at you (Tamayo).
     swagger: {
       update(f, t, scene) {

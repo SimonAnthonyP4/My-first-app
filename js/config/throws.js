@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  spotMe: {
+    name: 'Spot Me',
+    description: 'Hoists the opponent overhead like a barbell, presses them for three reps, sets a NEW PR, then throws them.',
+    kind: 'benchPress',
+    damagePerRep: 3,
+    finisherDamage: 8,
+  },
   citizensArrest: {
     name: "Citizen's Arrest",
     description: 'Slaps on the cuffs, reads them their rights (with commentary), laughs, then shoves them off.',

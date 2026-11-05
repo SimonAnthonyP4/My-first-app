@@ -39,6 +39,37 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Nicholas's aura: his power meter as a tiny bar over his head; a spinning gold star when full.
+    boxerAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || f.isKO || f.state === 'finished' || f.state === 'thrown') return;
+      const x = Math.round(f.x), y = Math.round(floorY - f.y - f.body.height - 10);
+      if (f.power >= 100) { // the star
+        const r = 6 + Math.sin(frame / 4), a0 = frame / 10;
+        ctx.fillStyle = '#111'; ctx.beginPath();
+        for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r + 1, a = a0 + i * Math.PI / 5; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+        ctx.fill();
+        ctx.fillStyle = frame % 10 < 5 ? '#ffd030' : '#fff2a0'; ctx.beginPath();
+        for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.4 : r, a = a0 + i * Math.PI / 5; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+        ctx.fill();
+      } else if (f.power > 0) {
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 11, y - 1, 22, 4);
+        ctx.fillStyle = '#ffd030'; ctx.fillRect(x - 10, y, Math.round(20 * f.power / 100), 2);
+      }
+    },
+
+    // Nicholas's MAX GAINS punch: a burst of stars off the fist.
+    starPunch(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 12) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      for (let i = 0; i < 8; i++) {
+        const ang = i * Math.PI / 4, d = 4 + a * 2.5;
+        ctx.fillStyle = i % 2 ? '#ffd030' : '#ffffff';
+        ctx.fillRect(Math.round(x + Math.cos(ang) * d) - 1, Math.round(y + Math.sin(ang) * d) - 1, 3, 3);
+      }
+      if (a < 4) { ctx.fillStyle = 'rgba(255,240,160,0.7)'; ctx.beginPath(); ctx.arc(x, y, 10 - a * 2, 0, Math.PI * 2); ctx.fill(); }
+    },
+
     // Tamayo's light, LANYARD WHIP: his ID badge swung on its lanyard.
     lanyard(f, ctx, floorY, frame) {
       const m = f.move, t = f.stateTime;
@@ -525,6 +556,20 @@
   }
 
   RF.BLOCK_FX = {
+    // Nicholas: PEEK-A-BOO - gloves up tight, bobbing; motion lines as he rolls with it.
+    peekaboo(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, x = Math.round(g.front - f.facing * 2), y = Math.round(g.top + 6 + Math.sin(frame / 3) * 1.5);
+      for (const dy of [0, 9]) { // the two gloves
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 5, y + dy - 1, 10, 9);
+        ctx.fillStyle = '#c01818'; ctx.fillRect(x - 4, y + dy, 8, 7);
+        ctx.fillStyle = '#ff5a5a'; ctx.fillRect(x - 3, y + dy + 1, 3, 2);
+      }
+      if (fl > 0.2) for (let i = 0; i < 3; i++) { ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(Math.round(x - f.facing * (8 + i * 4)), y + 2 + i * 5, 4, 1); }
+      if (fl > 0.4) RF.font.drawText(ctx, 'BOB AND WEAVE', f.x, g.top - 26, { align: 'center', color: '#ffd030', outline: '#000' });
+    },
+
     // Tamayo: ACCESS DENIED - a giant laminated school ID badge flashing red.
     idBadge(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

@@ -49,6 +49,9 @@
     // ---- Simon ----
     spinningElbow: Object.assign({ name: 'Spinning Elbow', kind: 'rush', startup: 4, speed: 6, duration: 8, reach: 12, recovery: 12, color: '#ffb030' }, hit(9)),
     skipKnee: Object.assign({ name: 'Skip Knee', kind: 'rising', startup: 3, rise: 7.5, forward: 3, reach: 16, recovery: 14, invuln: 5, color: '#ffd060' }, hit(10, { launch: 6 })),
+    // ---- Nicholas ----
+    dashStraight: Object.assign({ name: 'Dash Straight', kind: 'rush', startup: 5, speed: 9, duration: 10, reach: 14, recovery: 14, color: '#ffd030', anim: 'heavy' }, hit(10, { pushback: 7 })),
+    slipCounter: Object.assign({ name: 'Slip Counter', kind: 'counter', startup: 2, window: 18, recovery: 14, color: '#ffd030', callout: 'TOO SLOW!' }, hit(12, { launch: 4 })),
     // ---- Tamayo ----
     pocketVeto: Object.assign({ name: 'Pocket Veto', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'VETOED!' }, hit(12, { launch: 4 })),
     gerrymander: Object.assign({ name: 'Gerrymander', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 18, recovery: 12, color: '#2a5ad0', callout: 'REDISTRICTED' }, hit(8)),
@@ -80,6 +83,7 @@
     chris: { commands: { qcf: 'coinFlip', qcb: 'myLawyer' }, taunt: 'WHERE THE ZA', voicePitch: 1.1 },
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
+    nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
   };
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
 })();

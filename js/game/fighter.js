@@ -37,6 +37,7 @@
       this.baseSpecial = this.special; // the signature special (perfect block / EX / super)
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
       this.motion = [];                // recent directions (numpad notation) for command inputs
+      if (def.powerPunch) this.moves.powerPunch = buildMove(def.powerPunch, def); // Nicholas's MAX GAINS punch
       this.throwCfg = RF.THROWS[def.throw];
       this.throwKind = this.throwCfg && RF.THROW_KINDS[this.throwCfg.kind];
       this.scene = null; // set by FightScene
@@ -70,6 +71,7 @@
       this.grabber = null;  // who's throwing us
       this.thrownPose = null;
       this.lastBlockPress = -Infinity;
+      this.power = 0;       // Nicholas's power-punch meter (0..100, per round)
       this.juggle = 0;      // hits taken while airborne in this combo
       this.bounced = false; // already floor-bounced in this combo
       this.superActive = false;
@@ -285,8 +287,9 @@
     startTaunt() {
       this.vx = 0; this.move = null;
       this.state = null; this.setState('taunt');
-      const jokes = this.def.jokes;
-      const line = jokes ? jokes[Math.floor(Math.random() * jokes.length)] : this.def.taunt || 'COME ON!';
+      const jokes = this.def.jokes, opp = this.scene && this.scene.opponentOf(this);
+      const rival = opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
+      const line = rival || (jokes ? jokes[Math.floor(Math.random() * jokes.length)] : this.def.taunt || 'COME ON!');
       if (jokes) { RF.audio.sfx('laugh'); this.scene && this.scene.effects.spawnText('HA HA HA!', this.x, this.body.height + 26, '#ff9a40'); }
       if (this.scene) this.scene.effects.spawnText(line, this.x, this.body.height + 14, '#ffffff');
       if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
@@ -450,6 +453,8 @@
         this.setState('walk');
         this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR);
         this.walkTime += forward ? 1 : -1;
+        // Sprinters (Nicholas) kick up dust as they run.
+        if (this.def.sprint && this.scene && Math.abs(this.walkTime) % 5 === 1) this.scene.effects.spawn('dust', this.x - dir * 10, 1);
         // Heavy footsteps (Mr. Dabalsa): every other step shakes the floor.
         const stepLen = Math.round(16 / this.stats.walkSpeed) * 2;
         if (this.def.stomp && this.scene && Math.abs(this.walkTime) % stepLen === 1) {
@@ -469,6 +474,12 @@
     }
 
     startAttack(kind, chained = false) {
+      // A full power meter turns the next heavy into the MAX GAINS punch.
+      if (kind === 'heavy' && this.moves.powerPunch && this.power >= 100) {
+        kind = 'powerPunch'; this.power = 0;
+        if (this.scene) { this.scene.effects.spawnText('MAX GAINS!', this.x, this.body.height + 18, '#ffd030'); this.scene.flash = 3; }
+        RF.audio.sfx('super');
+      }
       this.chain = chained ? this.chain + 1 : 0;
       this.armorUsed = false;
       this.fxHitDist = null;

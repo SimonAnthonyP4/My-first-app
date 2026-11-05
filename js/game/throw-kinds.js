@@ -69,6 +69,22 @@
       },
     },
 
+    // Nicholas: bench-pressed overhead for three reps, then thrown.
+    benchPress: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        const rep = t < 12 ? 0 : Math.min(3, Math.floor((t - 12) / 16)), phase = t < 12 ? t / 12 : ((t - 12) % 16) / 16;
+        const lift = t < 12 ? phase : rep >= 3 ? 1 : 0.6 + 0.4 * Math.abs(Math.cos(phase * Math.PI));
+        def.x = att.x; def.y = att.body.height * 0.55 + lift * 20; def.facing = -att.facing;
+        def.thrownPose = ['ko', 0];
+        if (t >= 12 && t < 60 && (t - 12) % 16 === 0) { scene.throwHit(att, def, T.damagePerRep); scene.effects.spawnText('REP ' + (rep + 1) + '!', att.x, att.body.height + 40, '#ffffff'); RF.audio.sfx('stomp'); }
+        if (t === 62) { scene.effects.spawnText('NEW PR!', att.x, att.body.height + 50, '#ffd030'); RF.audio.sfx('ready'); }
+        if (t === 72) scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 3 });
+        return t >= 86;
+      },
+      anim(att, t) { return t < 72 ? ['throw', 1] : ['throw', 2]; },
+    },
+
     // Tamayo: cuffs, the rights read out (each line stings), a laugh, a shove.
     arrest: {
       update(att, def, t, scene) {

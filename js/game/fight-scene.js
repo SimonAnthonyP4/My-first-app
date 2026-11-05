@@ -127,6 +127,9 @@
       if (RF.CONFIG.MOD_TURBO && !this.paused && this.phase === 'fight' && this.frame % 2 === 0) this.updateOnce(true);
     }
 
+    // Both Bro Batch CEOs in one fight.
+    civilWar() { const ids = this.fighters.map((f) => f.def.id).sort().join(); return ids === 'anthony,nicholas'; }
+
     isHuman(f) { return !this.opts.demo && this.inputs[f.side] instanceof RF.PlayerInput; }
 
     updateOnce(extra) {
@@ -171,7 +174,8 @@
           const f = this.fighters[i];
           if (t === 0) { if (i === 1) this.settle(this.fighters[0]); f.hidden = false; f.state = null; f.setState('idle'); f.x = f.homeX; }
           (RF.INTROS[f.def.intro] || RF.INTROS.walk).update(f, t, this);
-          if (t === RF.ENTRANCE_ARRIVE && f.def.quote) this.effects.spawnText(f.def.quote, f.homeX, f.body.height + 12, '#e8dcc0');
+          const rq = f.def.rivalQuote && f.def.rivalQuote[this.opponentOf(f).def.id];
+          if (t === RF.ENTRANCE_ARRIVE && (rq || f.def.quote)) this.effects.spawnText(rq || f.def.quote, f.homeX, f.body.height + 12, '#e8dcc0');
           if (this.phaseTime >= 2 * D || (this.phaseTime > 10 && RF.menuPressed(kb, 'confirm'))) {
             this.fighters.forEach((g) => this.settle(g));
             this.setPhase('intro');
@@ -180,6 +184,7 @@
         }
         case 'intro':
           if (this.phaseTime === 1) { RF.audio.sfx('gong'); RF.announcer.say('ROUND ' + RF.announcer.number(this.round)); }
+          if (this.phaseTime === 1 && this.round === 1 && this.civilWar()) { RF.announcer.say('BRO BATCH CIVIL WAR!'); this.effects.spawnText('BRO BATCH CIVIL WAR!', RF.CONFIG.WIDTH / 2, 150, '#ff80b0'); }
           if (this.phaseTime === 20 && this.round > 1) for (const f of this.fighters) if (f.def.jokes) { // a fresh joke every round
             this.effects.spawnText(f.def.jokes[Math.floor(Math.random() * f.def.jokes.length)], RF.CONFIG.WIDTH / 2, 150, '#ffd8a0');
           }
@@ -219,7 +224,8 @@
           if (this.phaseTime === 70 && this.roundWinner !== null) {
             const w = this.fighters[this.roundWinner];
             if (!w.isKO) { w.vx = 0; w.state = null; w.setState('victory'); }
-            if (w.def.winQuote && w.state === 'victory') this.effects.spawnText(w.def.winQuote, w.x, w.body.height + 12, '#e8dcc0');
+            const loser = this.opponentOf(w), q = (w.def.rivalWin && w.def.rivalWin[loser.def.id]) || w.def.winQuote; // rivals get special lines
+            if (q && w.state === 'victory') this.effects.spawnText(q, w.x, w.body.height + 12, '#e8dcc0');
           }
           if (this.phaseTime >= ROUND_OVER_FRAMES) {
             if (this.wins.some((n) => n >= this.roundsToWin)) {
@@ -719,6 +725,12 @@
       const big = move.special || move.knockback || move.launch;
       this.game.kb.rumble(def.side, blocked ? 0.15 : big ? 0.9 : 0.45, blocked ? 60 : big ? 220 : 110); // you got hit
       if (!blocked) this.game.kb.rumble(att.side, big ? 0.35 : 0.15, 70);                              // you landed one
+      // Power-punch meter (Nicholas): hits landed fill it fast, hits taken a little.
+      for (const [f, n] of [[att, blocked ? 3 : 12], [def, blocked ? 0 : 8]]) {
+        if (!f.moves.powerPunch || f.power >= 100) continue;
+        f.power = Math.min(100, f.power + n);
+        if (f.power >= 100) { this.effects.spawnText('MAX GAINS READY!', f.x, f.body.height + 26, '#ffd030'); RF.audio.sfx('ready'); }
+      }
       // Super meter: dealing damage fills it fastest, taking it fills it too.
       att.gainMeter(move.damage * (blocked ? 0.3 : 0.75));
       def.gainMeter(move.damage * (blocked ? 0.2 : 0.45));

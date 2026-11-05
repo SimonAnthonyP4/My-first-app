@@ -198,6 +198,36 @@
   }
 
   RF.FINISHERS = {
+    // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    finalBell: {
+      name: 'Final Bell',
+      duration: 240,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 14 ? ['idle', 0] : t < 84 ? [(t >> 2) % 2 ? 'light' : 'heavy', 1] : t < 100 ? ['uppercut', 1] : ['victory', (t >> 3) % 2];
+        if (t === 2 || t === 10) RF.audio.sfx('bell');
+        if (t >= 14 && t < 84 && t % 4 === 0) { RF.audio.sfx('hit'); scene.shake = 3; scene.effects.spawn('hit', vic.x - att.facing * 6, 30 + (t % 3) * 10); }
+        if (t === 90) { RF.audio.sfx('super'); RF.audio.sfx('boom'); scene.shake = 16; scene.flash = 6; scene.effects.spawnText('MAX GAINS!', att.x, att.body.height + 26, '#ffd030'); }
+        for (let n = 1; n <= 10; n++) if (t === 110 + n * 10) { scene.effects.spawnText(n === 10 ? '10... K.O.!' : String(n), RF.CONFIG.WIDTH / 2, 130, n === 10 ? '#ff4040' : '#ffffff'); RF.audio.sfx(n === 10 ? 'bell' : 'move'); }
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 90) return drawPose(vic, ctx, vic.x + (t >= 14 && t % 4 < 2 ? 2 : -2) * Math.sign(vic.facing || 1), floorY, ['hit', 0]);
+        const u = t - 90, y = floorY - u * u * 0.35 - u * 4; // straight up into orbit
+        if (y < -80) return;
+        ctx.save(); ctx.translate(Math.round(vic.x), Math.round(y)); ctx.rotate(u * 0.4);
+        vic.sprite.draw(ctx, 'hit', 0, 0, vic.body.height / 2, vic.facing);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 14) { // ring ropes flash in
+          ctx.fillStyle = '#c01818'; for (let i = 0; i < 3; i++) ctx.fillRect(0, floorY - 30 - i * 16, RF.CONFIG.WIDTH, 2);
+        }
+        if (t >= 130 && t < 230) { // twinkle where they left the atmosphere
+          const x = Math.round(vic.x), r = t % 10 < 5 ? 5 : 3;
+          ctx.fillStyle = '#fff'; ctx.fillRect(x - r, 14, r * 2 + 1, 1); ctx.fillRect(x, 14 - r, 1, r * 2 + 1);
+        }
+      },
+    },
+
     // Tamayo: IMPEACHMENT - a giant gavel comes down three times. ORDER! ORDER! IMPEACHED!
     impeachment: {
       name: 'Impeachment',

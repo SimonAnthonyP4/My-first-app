@@ -32,6 +32,46 @@
       },
     },
 
+    // Nicholas: PROBLEM SET - sprint in, a doubling flurry of punches, an exponential uppercut.
+    punchRush: {
+      start(f) { f.vx = 0; f.specialData.phase = 'wind'; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        const gap = Math.abs(opp.x - f.x) - (f.body.width + opp.body.width) / 2;
+        if (d.phase === 'wind' && t >= s.startup) { d.phase = 'dash'; d.t0 = t; RF.audio.sfx('whoosh'); }
+        if (d.phase === 'dash') {
+          f.vx = f.facing * s.speed;
+          if (t % 3 === 0) scene.effects.spawn('dust', f.x - f.facing * 8, 1);
+          if (gap < 6 || t - d.t0 > s.dash) { f.vx = 0; d.phase = 'punch'; d.t0 = t; d.n = 0; }
+        }
+        if (d.phase === 'punch') {
+          f.vx = 0;
+          const k = t - d.t0;
+          if (k % s.interval === 0 && d.n < s.punches) {
+            d.n++;
+            if (opp.getHurtbox() && gap < 22) {
+              scene.applyHit(f, opp, RF.specialMove(f, s), 'hit', opp.x - f.facing * 6, opp.body.height * (0.5 + (d.n % 2) * 0.15));
+              scene.effects.spawnText(String(Math.pow(2, d.n - 1)), opp.x + (d.n % 2 ? -8 : 8), opp.body.height + 4 + d.n * 3, '#ffd030');
+            }
+          }
+          if (k === s.punches * s.interval + 6) {
+            const mv = RF.specialMove(f, s); mv.damage = s.finalDamage * f.stats.damage * (f.superActive ? RF.CONFIG.SUPER_DAMAGE : f.exActive ? RF.CONFIG.EX_DAMAGE : 1); mv.launch = 8; mv.hitstun = 34; mv.hitstop = 12;
+            if (opp.getHurtbox() && gap < 26) { scene.applyHit(f, opp, mv, 'heavy', opp.x, opp.body.height * 0.7); scene.effects.spawnText('EXPONENTIAL!', opp.x, opp.body.height + 34, '#ff4040'); }
+            d.phase = 'recover'; d.t0 = t;
+          }
+        }
+        if (d.phase === 'recover' && t - d.t0 >= s.recovery) f.setState('idle');
+        if (t > 200) f.setState('idle');
+      },
+      anim(f) {
+        const d = f.specialData, t = f.stateTime;
+        if (d.phase === 'wind') return ['crouch', 0];
+        if (d.phase === 'dash') return ['walk', (t >> 1) % 4];
+        if (d.phase === 'punch') return [(t >> 2) % 2 ? 'light' : 'heavy', 1];
+        return ['uppercut', 1];
+      },
+    },
+
     // Ruano: DIVINE TOUCH - clouds part, a painted hand from the heavens touches the opponent.
     heavenHand: {
       start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx('bell'); },
