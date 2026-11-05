@@ -8,7 +8,8 @@
       this.game = game;
       this.opts = opts;
       this.t = 0;
-      this.sprites = [RF.createSprite(opts.p1), RF.createSprite(opts.p2Alt ? RF.altCostume(opts.p2) : opts.p2)];
+      const cos = opts.costumes || [0, opts.p2Alt ? 1 : 0];
+      this.sprites = [RF.createSprite(RF.costume(opts.p1, cos[0])), RF.createSprite(RF.costume(opts.p2, cos[1]))];
     }
 
     update() {

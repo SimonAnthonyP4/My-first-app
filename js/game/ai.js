@@ -35,9 +35,17 @@
       this.holding.clear();
       const now = this.kb.frame, L = this.level;
       const me = this.scene.fighters[this.side], opp = this.scene.opponentOf(me);
+      if (this.scene.phase !== 'finish') this.finishPlan = undefined;
       // FINISH THEM!: walk up and finish (harder CPUs never miss the chance).
       if (this.scene.phase === 'finish' && !this.scene.finisher && this.scene.finishVictim === opp) {
         const gap = Math.abs(opp.x - me.x) - (me.body.width + opp.body.width) / 2;
+        if (this.finishPlan === undefined) this.finishPlan = Math.random() < 0.45 ? 'brutal' : 'throw';
+        if (this.finishPlan === 'brutal') { // BRUTALITY: five hits in a row
+          const reach = me.moves.light.hitbox.x + me.moves.light.hitbox.w + opp.body.width / 2 - 4;
+          if (Math.abs(opp.x - me.x) > reach) this.holding.add(opp.x > me.x ? 'right' : 'left');
+          else if (ACTIONABLE.includes(me.state)) this.tap('light');
+          return;
+        }
         if (gap > RF.CONFIG.THROW_RANGE + 10) this.holding.add(opp.x > me.x ? 'right' : 'left');
         else if (Math.random() < L.punish * 0.1) this.tap('throw');
         return;

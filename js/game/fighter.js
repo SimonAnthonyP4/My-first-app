@@ -21,7 +21,7 @@
 
   class Fighter {
     constructor(def, side, alt = false) {
-      if (alt) def = RF.altCostume(def);
+      if (alt) def = RF.costume(def, alt === true ? 1 : alt); // alt = costume number
       this.def = def;
       this.side = side; // 0 = player 1, 1 = player 2
       this.stats = def.stats;

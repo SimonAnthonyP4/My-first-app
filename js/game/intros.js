@@ -1,0 +1,120 @@
+// ENTRANCES: before round 1 each fighter makes an entrance (player 1 first, then
+// player 2) with their name card and catchphrase. Press LIGHT/ENTER to skip.
+// characters.js -> `intro: '<kind>'`. Each kind gets the fighter, the frame t
+// (0..DURATION) and its target spot (f.homeX), and moves the fighter itself.
+(function () {
+  const T = (...a) => RF.font.drawText(...a);
+  const DURATION = 80;     // frames per entrance
+  const ARRIVE = 52;       // by now they're in place (name card + quote)
+
+  const walkIn = (f, t, until, stomp, scene) => { // walk in from your own side of the screen
+    const from = f.homeX - f.facing * 150, u = Math.min(1, t / until);
+    f.x = from + (f.homeX - from) * u;
+    f.state = u < 1 ? 'walk' : 'idle';
+    f.walkTime = t;
+    if (stomp && u < 1 && t % 14 === 0) { scene.shake = Math.max(scene.shake, stomp); RF.audio.sfx('stomp'); scene.effects.spawn('dust', f.x, 1); }
+  };
+
+  RF.INTROS = {
+    // Strolls in, cracks knuckles.
+    walk: { update(f, t, scene) { walkIn(f, t, 40, 0, scene); } },
+    // Every step shakes the floor (Bruiser, Mr. Dabalsa).
+    stomp: { update(f, t, scene) { walkIn(f, t, 46, f.def.stomp ? 7 : 4, scene); } },
+    // Drops from the ceiling in a puff of smoke (Viper).
+    drop: {
+      update(f, t, scene) {
+        if (t === 0) { f.y = 230; f.vy = 0; }
+        if (f.y > 0) { f.vy -= 0.9; f.y = Math.max(0, f.y + f.vy); f.state = 'jump';
+          if (f.y === 0) { scene.shake = 8; RF.audio.sfx('heavy'); for (let i = -2; i <= 2; i++) scene.effects.spawn('dust', f.x + i * 7, 1); }
+        } else f.state = t < ARRIVE ? 'crouch' : 'idle';
+      },
+    },
+    // Struck down by lightning (Dr. Weissenberg).
+    lightning: {
+      update(f, t, scene) {
+        f.hidden = t < 22;
+        if (t === 20) { RF.audio.sfx('bolt'); scene.flash = 8; scene.shake = 10; }
+        if (t === 24) RF.audio.sfx('zap');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t < 16 || t > 30) return;
+        let x = f.x, y = 0;
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, 0);
+        while (y < floorY) { y += 14; x = f.x + (Math.random() - 0.5) * 22; ctx.lineTo(x, Math.min(y, floorY)); }
+        ctx.stroke(); ctx.strokeStyle = '#7ad8ff'; ctx.lineWidth = 1; ctx.stroke();
+      },
+    },
+    // Rises out of purple smoke, cackling (Lady Landa).
+    smoke: {
+      update(f, t) { f.hidden = t < 26; if (t === 4) RF.audio.sfx('hiss'); if (t === 28) RF.audio.sfx('cackle'); },
+      draw(f, ctx, floorY, t) {
+        if (t > 60) return;
+        const a = t < 30 ? 1 : 1 - (t - 30) / 30;
+        for (let i = 0; i < 26; i++) {
+          const r = 6 + (i % 5) * 3 + t * 0.2, ang = i * 2.4 + t / 20;
+          const x = f.x + Math.cos(ang) * (8 + (i % 4) * 7), y = floorY - 8 - (i % 6) * 14 - Math.sin(ang) * 6;
+          ctx.fillStyle = `rgba(${60 + (i % 3) * 25},0,${90 + (i % 2) * 50},${0.6 * a})`;
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        }
+      },
+    },
+    // Flies in on the jetpack and touches down (El Escobedo).
+    jet: {
+      update(f, t, scene) {
+        if (t === 0) { f.y = 150; f.x = f.homeX - f.facing * 60; RF.audio.sfx('jet'); }
+        if (f.y > 0) { f.y = Math.max(0, f.y - 3.2); f.x += (f.homeX - f.x) * 0.06; f.state = 'jump';
+          if (t % 6 === 0) scene.effects.spawn('dust', f.x - f.facing * 10, f.y + 34);
+          if (f.y === 0) { f.x = f.homeX; scene.effects.spawn('dust', f.x, 1); RF.audio.sfx('engine'); }
+        } else f.state = 'idle';
+      },
+      draw(f, ctx, floorY, t, frame) { if (f.y > 0) RF.MOVE_FX.jetpack(f, ctx, floorY, frame); },
+    },
+    // Chalk symbols swirl together into her (Jauregui).
+    chalk: {
+      update(f, t) { f.hidden = t < 34; if (t % 8 === 0 && t < 34) RF.audio.sfx('paper'); if (t === 34) RF.audio.sfx('perfect'); },
+      draw(f, ctx, floorY, t) {
+        if (t > 40) return;
+        const G = ['Σ', 'Π', '√', '∞', '÷', '±', 'Δ', '∫'], u = Math.min(1, t / 34);
+        G.forEach((g, i) => {
+          const ang = i / G.length * Math.PI * 2 + t / 6, r = 70 * (1 - u) + 4;
+          T(ctx, g, f.x + Math.cos(ang) * r, floorY - 50 + Math.sin(ang) * r * 0.6, { scale: 2, align: 'center', color: '#f0f0e0', outline: '#101010' });
+        });
+      },
+    },
+    // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
+    cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // A red carpet rolls out and trumpets announce the king (King Sirven).
+    royal: {
+      back: true, // the carpet goes under him
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('fanfare');
+        if (t < 18) { f.hidden = true; return; }
+        f.hidden = false;
+        walkIn(f, t - 18, 34, 0, scene);
+      },
+      draw(f, ctx, floorY, t) {
+        const W = RF.CONFIG.WIDTH, u = Math.min(1, t / 18), edge = f.facing > 0 ? 0 : W;
+        const end = edge + (f.homeX + f.facing * 20 - edge) * u;
+        ctx.fillStyle = '#7a0a14'; ctx.fillRect(Math.min(edge, end), floorY - 2, Math.abs(end - edge), 5);
+        ctx.fillStyle = '#e8b420'; ctx.fillRect(Math.min(edge, end), floorY - 2, Math.abs(end - edge), 1);
+      },
+    },
+  };
+
+  RF.ENTRANCE_DURATION = DURATION;
+  RF.ENTRANCE_ARRIVE = ARRIVE;
+
+  // Name card along the bottom while a fighter makes their entrance.
+  RF.drawEntranceCard = function (ctx, f, t) {
+    const W = RF.CONFIG.WIDTH, H = RF.CONFIG.HEIGHT;
+    const slide = Math.min(1, t / 10), out = t > DURATION - 8 ? (DURATION - t) / 8 : 1, a = Math.min(slide, out);
+    const x = f.side === 0 ? -160 + 170 * a : W + 160 - 170 * a, align = f.side === 0 ? 'left' : 'right';
+    const Y = 38, bio = RF.font.wrap((f.def.bio || '').toUpperCase(), 40)[0] || '';
+    const w = Math.max(RF.font.textWidth(f.def.name, 2), RF.font.textWidth(bio)) + 16;
+    const bx = f.side === 0 ? x - 10 : x - w + 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(Math.min(bx, f.side === 0 ? 0 : bx), Y - 3, f.side === 0 ? bx + w : W - bx, 30);
+    T(ctx, f.def.name, x, Y, { scale: 2, align, color: RF.TITLE_COLORS, outline: '#000' });
+    T(ctx, bio, x, Y + 18, { align, color: '#e0d0c0', outline: '#000' });
+  };
+})();

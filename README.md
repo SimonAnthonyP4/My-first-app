@@ -374,6 +374,29 @@ note is a power chord, `E2*` is a palm-muted chug, `-` holds, `.` rests. Drums:
   always full, and the screen shows your last combo's hits and damage. Set what the dummy does
   (stand, block, crouch-block, jump, or fight like the CPU) from the pause menu.
 
+## Entrances, hazards, brutalities, costumes and endings
+
+- **Entrances:** before round 1 each fighter makes an entrance with a name card and their
+  catchphrase (press LIGHT/ENTER to skip): Dr. Weissenberg is struck down by lightning, Lady
+  Landa rises out of purple smoke, El Escobedo lands on his jetpack, Jauregui forms out of
+  swirling chalk symbols, King Sirven gets a red carpet and trumpets, Dr. Astuto hobbles in to
+  the Liberty Bell, Mr. Dabalsa and Bruiser stomp in shaking the floor, Viper drops from the
+  ceiling. (`intro:` in `characters.js`, kinds in `js/game/intros.js`.)
+- **Stage hazards:** knock your opponent into the hazard against one wall for extra damage and
+  a big launch (it then recharges for 5 seconds): the cafeteria's **deep fryer**, the court's
+  **ghost hands**, Sirven's **paper shredder**, the street's **fire hydrant**.
+  (`js/game/hazards.js`.)
+- **Brutalities:** during FINISH THEM!, instead of the throw finisher, land **5 hits in a row** on
+  the dazed opponent and they explode into a shower of their own pixels. Each fighter's has a
+  name and colour: Food Fight, Venom Burst, Short Circuit, Divided by Zero, Unconstitutional,
+  System Overload, Dissection, Tragedy in Five Acts, Zero Tolerance. Stop hitting and it's a
+  plain K.O. (`brutality:` in `characters.js`.)
+- **Costumes:** press HEAVY on character select to cycle CLASSIC, REMIX, TOXIC, SHADOW (a living
+  silhouette with glowing eyes) and GOLDEN (a solid gold statue). Mirror matches with the same
+  costume automatically give player 2 the next one. (`RF.COSTUMES` in `js/render/sprites.js`.)
+- **Arcade endings:** every fighter has their own ending story, typed out when you beat the
+  tower (`ending:` in `characters.js`).
+
 ## Announcer
 
 A deep arena voice calls the fight: fighter names on the versus screen, "ROUND ONE... FIGHT!",

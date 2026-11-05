@@ -33,6 +33,7 @@
       this.labels = this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
       RF.announcer.say('CHOOSE YOUR FIGHTER');
       this.ready = [false, false];
+      this.costume = (prev && prev.costumes) ? [...prev.costumes] : [0, 0];
       this.readyTime = 0;
       // Light attack picks, block cancels. Enter/Space also pick and Backspace
       // cancels (Enter for P1, numpad Enter for P2). In VS CPU mode the single
@@ -48,10 +49,16 @@
       this.sprites = new Map();
     }
 
-    sprite(def, alt) {
-      const key = def.id + (alt ? ':alt' : '');
-      if (!this.sprites.has(key)) this.sprites.set(key, RF.createSprite(alt ? RF.altCostume(def) : def));
+    sprite(def, costume = 0) {
+      const key = def.id + ':' + costume;
+      if (!this.sprites.has(key)) this.sprites.set(key, RF.createSprite(RF.costume(def, costume)));
       return this.sprites.get(key);
+    }
+
+    // P2's costume, bumped along if both players picked the same fighter AND costume.
+    costumesFor() {
+      const [a, b] = this.costume, p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
+      return [a, p1 && p2 && p1.id === p2.id && a === b ? (b + 1) % RF.COSTUMES.length : b];
     }
 
     update() {
@@ -75,7 +82,7 @@
     updateCpuMode(kb) {
       const pressed = (act) => kb.justPressed(...this.inputs[0][act]);
       if (!this.ready[0]) return this.updateCursor(0, pressed);
-      if (this.arcade) return RF.startArcade(this.game, this.slots[this.cursor[0]]); // the tower picks your opponents
+      if (this.arcade) return RF.startArcade(this.game, this.slots[this.cursor[0]], this.costume[0]); // the tower picks your opponents
       if (!this.ready[1]) {
         if (pressed('block')) { this.ready[0] = false; return; }
         return this.updateCursor(1, pressed);
@@ -94,6 +101,7 @@
       if (pressed('right')) c = (c % COLS === COLS - 1) ? c - COLS + 1 : c + 1;
       if (pressed('up')) c = (c - COLS + rows * COLS) % (rows * COLS);
       if (pressed('down')) c = (c + COLS) % (rows * COLS);
+      if (pressed('heavy')) { this.costume[p] = (this.costume[p] + 1) % RF.COSTUMES.length; RF.audio.sfx('move'); }
       const moved = Math.min(c, n - 1) !== this.cursor[p];
       this.cursor[p] = Math.min(c, n - 1);
       if (moved) RF.audio.sfx('move');
@@ -105,7 +113,7 @@
 
     startFight() {
       const p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
-      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: this.cpu, training: this.training, stage: this.stage }));
+      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, costumes: this.costumesFor(), cpu: this.cpu, training: this.training, stage: this.stage }));
     }
 
     render(ctx) {
@@ -152,19 +160,29 @@
           T(ctx, '?', x, 50, { scale: 4, align: 'center', color: '#3a2018' });
           continue;
         }
-        const alt = p === 1 && this.slots[this.cursor[0]] && this.slots[this.cursor[0]].id === def.id;
+        const cos = this.costumesFor()[p];
         const anim = this.ready[p] ? 'victory' : 'idle';
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.beginPath();
         ctx.ellipse(x, 101, 22, 3, 0, 0, Math.PI * 2);
         ctx.fill();
-        this.sprite(def, alt).draw(ctx, anim, Math.floor(this.t / 18) % 2, x, 101, p === 0 ? 1 : -1);
+        this.sprite(def, cos).draw(ctx, anim, Math.floor(this.t / 18) % 2, x, 101, p === 0 ? 1 : -1);
+
       }
 
       this.drawInfo(ctx, 0);
       if (this.arcade) this.drawArcadeInfo(ctx); else this.drawInfo(ctx, 1);
+      // Costume tags on the panels' top edges
+      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
+        if (!this.slots[this.cursor[p]]) continue;
+        const cos = this.costumesFor()[p], x = p === 0 ? 44 : W - 44;
+        if (this.ready[p] && !cos) continue;
+        const label = RF.COSTUMES[cos].name + (this.ready[p] ? '' : ' (HEAVY)'), tw = RF.font.textWidth(label) + 6;
+        ctx.fillStyle = '#000'; ctx.fillRect(x - tw / 2, 101, tw, 9);
+        T(ctx, label, x, 102, { align: 'center', color: cos ? '#ffd030' : '#a08878' });
+      }
 
-      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'F/ENTER OR LIGHT = SELECT - H/BLOCK = CANCEL - ESC = MENU';
+      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT/ENTER = SELECT - HEAVY = COSTUME - BLOCK = CANCEL';
       if (this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY (F OR ENTER)' : 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
       if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK ANOTHER ONE';
       T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });

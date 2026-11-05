@@ -702,4 +702,49 @@
       },
     },
   };
+  // BRUTALITY: land 5 hits on a dazed opponent during FINISH THEM! and they
+  // explode into a shower of their own pixels. characters.js -> `brutality`
+  // ({ name, color }) names it and colours the extra burst.
+  RF.FINISHERS.brutality = {
+    name: 'BRUTALITY', banner: 'BRUTALITY!', duration: 190,
+    update(att, vic, t, scene) {
+      att.finisherAnim = ['victory', (t >> 3) % 2];
+      if (t === 1) {
+        const br = att.def.brutality || {};
+        vic.brutalParts = explode(vic, br.color || '#e02020');
+        scene.shake = 18; scene.flash = 8; scene.hitstop = 0;
+        RF.audio.sfx('boom'); RF.audio.sfx('heavy'); RF.audio.sfx('ko');
+        RF.announcer.say('BRUTALITY!');
+        scene.game.kb.rumble(att.side, 1, 600);
+      }
+      if (t === 40) scene.effects.spawnText(((att.def.brutality || {}).name || 'BRUTALITY') + '!', att.x, att.body.height + 22, (att.def.brutality || {}).color || '#ff4040');
+      for (const p of vic.brutalParts || []) {
+        if (p.rest) continue;
+        p.vy -= 0.35; p.x += p.vx; p.y += p.vy;
+        if (p.y <= 0) { p.y = 0; p.vy *= -0.35; p.vx *= 0.6; if (Math.abs(p.vy) < 0.6) p.rest = true; }
+      }
+    },
+    drawVictim(vic, ctx, floorY, t) {
+      if (t < 1 || !vic.brutalParts) return drawPose(vic, ctx, vic.x, floorY, ['hit', 0]);
+      for (const p of vic.brutalParts) { ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(floorY - p.y - p.s), p.s, p.s); }
+    },
+  };
+
+  // Break a fighter's sprite into flying pixel chunks (plus a burst in `color`).
+  function explode(vic, color) {
+    const S = 220, [c, cx] = RF.util.makeCanvas(S, S);
+    vic.sprite.draw(cx, 'hit', 0, S / 2, S - 10, vic.facing);
+    const data = cx.getImageData(0, 0, S, S).data, parts = [], step = 3, cyMid = S - 10 - vic.body.height / 2;
+    for (let y = 0; y < S; y += step) for (let x = 0; x < S; x += step) {
+      const i = (y * S + x) * 4;
+      if (data[i + 3] < 128) continue;
+      const dx = x - S / 2, dy = y - cyMid, d = Math.hypot(dx, dy) || 1, sp = 2 + Math.random() * 5;
+      parts.push({ x: vic.x + dx, y: S - 10 - y, vx: (dx / d) * sp + (Math.random() - 0.5) * 2, vy: (-dy / d) * sp + 3 + Math.random() * 3, s: step, c: `rgb(${data[i]},${data[i + 1]},${data[i + 2]})` });
+    }
+    for (let k = 0; k < 90; k++) { // the coloured burst
+      const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 7;
+      parts.push({ x: vic.x, y: vic.body.height / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 4, s: 2, c: color });
+    }
+    return parts;
+  }
 })();

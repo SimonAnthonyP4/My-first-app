@@ -39,6 +39,14 @@ RF.CHARACTERS = [
     special: 'seismicSlam',   // see specials.js
     throw: 'liftSlam',        // see throws.js
     finisher: 'pileDriver',   // see game/finishers.js
+    intro: 'stomp',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "FOOD FIGHT", color: '#c8a040' }, // 5 hits on a dazed opponent
+    ending: [
+      'BRUISER TOOK OVER THE LUNCH LINE.',
+      'NOW EVERY MEAL IS MYSTERY MEAT,',
+      'AND EVERY TRAY IS A WEAPON.',
+      'NOBODY COMPLAINS ABOUT THE FOOD ANYMORE.',
+    ],
     stats: {
       walkSpeed: 1.5,
       jumpPower: 10.4,
@@ -70,6 +78,14 @@ RF.CHARACTERS = [
     special: 'venomSpit',
     throw: 'snakeBite',
     finisher: 'venomMelt',
+    intro: 'drop',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "VENOM BURST", color: '#60ff40' }, // 5 hits on a dazed opponent
+    ending: [
+      'VIPER VANISHED INTO THE VENTS.',
+      'STUDENTS SAY THAT IF YOU SKIP CLASS,',
+      'YOU HEAR A HISS FROM THE CEILING...',
+      'ATTENDANCE HAS NEVER BEEN HIGHER.',
+    ],
     stats: {
       walkSpeed: 2.4,
       jumpPower: 11.4,
@@ -100,6 +116,14 @@ RF.CHARACTERS = [
     special: 'teslaSurge',
     throw: 'defibrillator',
     finisher: 'overcharge',
+    intro: 'lightning',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "SHORT CIRCUIT", color: '#7ad8ff' }, // 5 hits on a dazed opponent
+    ending: [
+      'DR. WEISSENBERG WIRED THE WHOLE SCHOOL',
+      'INTO ONE GIANT TESLA COIL.',
+      'THE LIGHTS NEVER GO OUT NOW.',
+      'NEITHER DO THE STUDENTS. THEY ARE TOO SCARED.',
+    ],
     stats: {
       walkSpeed: 1.7,
       jumpPower: 10.6,
@@ -175,6 +199,14 @@ RF.CHARACTERS = [
     special: 'popQuiz',
     throw: 'outlierRemoval',
     finisher: 'failingGrade',
+    intro: 'chalk',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "DIVIDED BY ZERO", color: '#f0f0e0' }, // 5 hits on a dazed opponent
+    ending: [
+      'JAUREGUI PROVED SHE IS THE GREATEST.',
+      'THE PROOF IS 400 PAGES LONG.',
+      'IT WILL BE ON THE TEST.',
+      'SHOW YOUR WORK.',
+    ],
     stats: {
       walkSpeed: 2.2,
       jumpPower: 11.2,
@@ -325,6 +357,14 @@ RF.CHARACTERS = [
     special: 'veto',
     throw: 'checksAndBalances',
     finisher: 'libertyBell',
+    intro: 'cane',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "UNCONSTITUTIONAL", color: '#3a6ae0' }, // 5 hits on a dazed opponent
+    ending: [
+      'DR. ASTUTO WROTE A NEW CONSTITUTION',
+      'FOR TERRAMANIA HIGH.',
+      'ARTICLE ONE: AP GOV IS MANDATORY.',
+      'ARTICLE TWO: SEE ARTICLE ONE.',
+    ],
     stats: {
       walkSpeed: 1.35,
       jumpPower: 10.0,
@@ -503,6 +543,14 @@ RF.CHARACTERS = [
     special: 'sentryTurret',
     throw: 'roboticArm',
     finisher: 'havanaClassic',
+    intro: 'jet',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "SYSTEM OVERLOAD", color: '#ff9a30' }, // 5 hits on a dazed opponent
+    ending: [
+      'EL ESCOBEDO BUILT A ROBOT ARMY',
+      'OUT OF THE OLD CAFETERIA OVENS.',
+      'THEY ONLY DO TWO THINGS:',
+      'ENGINEERING HOMEWORK, AND SALSA.',
+    ],
     stats: {
       walkSpeed: 2.0,
       jumpPower: 8.6,     // lower launch, but the jetpack's light gravity keeps him up longer
@@ -673,6 +721,14 @@ RF.CHARACTERS = [
     special: 'serpentStrike',
     throw: 'angryLecture',
     finisher: 'specimenJar',
+    intro: 'smoke',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "DISSECTION", color: '#b040ff' }, // 5 hits on a dazed opponent
+    ending: [
+      'LADY LANDA ADDED EVERY RIVAL',
+      'TO HER SPECIMEN COLLECTION.',
+      'THE BIO LAB HAS A NEW EXHIBIT.',
+      'IT BLINKS SOMETIMES.',
+    ],
     stats: {
       walkSpeed: 1.9,
       jumpPower: 11.0,
@@ -832,6 +888,14 @@ RF.CHARACTERS = [
     special: 'iambicPentameter',
     throw: 'shallICompareThee',
     finisher: 'exitBear',
+    intro: 'stomp',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "TRAGEDY IN FIVE ACTS", color: '#e02020' }, // 5 hits on a dazed opponent
+    ending: [
+      'MR. DABALSA HAS WON. HE IS CALM.',
+      'HE OPENS HIS BOOK AND READS ALOUD:',
+      '\"WE ARE SUCH STUFF AS DREAMS ARE MADE ON.\"',
+      'THEN HE ASSIGNS A 20-PAGE ESSAY ON IT.',
+    ],
     stats: {
       walkSpeed: 1.1,            // the slowest
       jumpPower: 9.6,
@@ -1025,6 +1089,14 @@ RF.CHARACTERS = [
     special: 'paBlast',
     throw: 'permanentRecord',
     finisher: 'royalDecree',
+    intro: 'royal',              // entrance before round 1 (game/intros.js)
+    brutality: { name: "ZERO TOLERANCE", color: '#ffd030' }, // 5 hits on a dazed opponent
+    ending: [
+      'KING SIRVEN REMAINS ON HIS THRONE.',
+      'HIS FIRST ROYAL DECREE:',
+      'SUMMER VACATION IS CANCELLED. FOREVER.',
+      'LONG LIVE THE KING.',
+    ],
     stats: {
       walkSpeed: 1.9,
       jumpPower: 10.8,

@@ -9,6 +9,7 @@
   const ROUND_OVER_FRAMES = 200; // K.O. / TIME banner + victory pose
   const START_GAP = 70;          // each fighter starts this far from the centre
   const SUPER_FREEZE = 46;
+  const BRUTAL_HITS = 5;         // hits on a dazed opponent for a BRUTALITY
   // Training mode: what the dummy does (changed from the pause menu).
   const DUMMY_SETTING = { id: 'TRAINING_DUMMY', label: 'DUMMY', options: [['stand', 'STAND'], ['block', 'BLOCK'], ['crouch', 'CROUCH BLOCK'], ['jump', 'JUMP'], ['cpu', 'CPU']] };       // frames the world freezes for a super's cut-in
 
@@ -19,7 +20,8 @@
       this.stageDef = RF.getStage(opts.stage);
       this.stage = new RF.StageRenderer(this.stageDef);
       RF.audio.playSong(this.stageDef.music);
-      this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1, opts.p2Alt)];
+      const cos = opts.costumes || [0, opts.p2Alt ? 1 : 0];
+      this.fighters = [new RF.Fighter(opts.p1, 0, cos[0]), new RF.Fighter(opts.p2, 1, cos[1])];
       for (const f of this.fighters) f.scene = this;
       if (opts.boss) this.fighters[1].maxHealth = Math.round(this.fighters[1].maxHealth * opts.boss); // arcade final boss
       this.training = !!opts.training;
@@ -79,7 +81,14 @@
       this.projectiles = [];
       this.effects.clear();
       this.hud.reset();
-      this.setPhase('intro');
+      this.brutal = 0;
+      this.hazardCooldown = 0;
+      this.hazardFx = null;
+      // Round 1 opens with each fighter's entrance.
+      if (this.round === 1 && !this.training && !this.opts.noEntrance) {
+        for (const f of this.fighters) { f.homeX = f.x; f.hidden = true; }
+        this.setPhase('entrance');
+      } else this.setPhase('intro');
     }
 
     setPhase(p) {
@@ -116,6 +125,18 @@
       if (this.hitstop > 0) { this.hitstop--; return; }
 
       switch (this.phase) {
+        case 'entrance': {
+          const D = RF.ENTRANCE_DURATION, i = this.phaseTime <= D ? 0 : 1, t = this.phaseTime - 1 - i * D;
+          const f = this.fighters[i];
+          if (t === 0) { if (i === 1) this.settle(this.fighters[0]); f.hidden = false; f.state = null; f.setState('idle'); f.x = f.homeX; }
+          (RF.INTROS[f.def.intro] || RF.INTROS.walk).update(f, t, this);
+          if (t === RF.ENTRANCE_ARRIVE && f.def.quote) this.effects.spawnText(f.def.quote, f.homeX, f.body.height + 12, '#e8dcc0');
+          if (this.phaseTime >= 2 * D || (this.phaseTime > 10 && RF.menuPressed(kb, 'confirm'))) {
+            this.fighters.forEach((g) => this.settle(g));
+            this.setPhase('intro');
+          }
+          return; // the fighters don't act during entrances
+        }
         case 'intro':
           if (this.phaseTime === 1) { RF.audio.sfx('gong'); RF.announcer.say('ROUND ' + RF.announcer.number(this.round)); }
           if (this.phaseTime === 65) RF.announcer.say('FIGHT!', { rate: 0.9 });
@@ -123,7 +144,7 @@
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
           break;
         case 'fight':
-          if (this.phaseTime === 1 && this.round === 1) { // opening line, once the banners clear
+          if (this.phaseTime === 1 && this.round === 1 && (this.training || this.opts.noEntrance)) { // opening line, once the banners clear
             for (const f of this.fighters) if (f.def.quote) this.effects.spawnText(f.def.quote, f.x, f.body.height + 12, '#e8dcc0');
           }
           if (--this.timer <= 0) this.endRound('time'); // Infinity never runs out
@@ -135,6 +156,8 @@
             fin.t++;
             fin.kind.update(fin.att, fin.vic, fin.t, this);
             if (fin.t >= fin.kind.duration) this.endRound('finisher');
+          } else if (this.brutal && this.frame - this.brutalLast > 50 && this.finishVictim.state === 'dazed') {
+            this.finishVictim.knockOut(-this.finishVictim.facing); // the combo dropped: a plain K.O.
           } else if (this.phaseTime >= RF.CONFIG.FINISH_TIME && this.finishVictim.state === 'dazed') {
             this.finishVictim.knockOut(-this.finishVictim.facing); // too slow: they just collapse
           }
@@ -175,6 +198,7 @@
       this.separate(a, b, bounds);
       this.updateProjectiles(bounds);
 
+      RF.checkHazards(this); // also ticks the hazard's effect
       if (this.phase === 'fight' || (this.phase === 'finish' && !this.finisher)) {
         this.checkHits();
         if (a.isKO || b.isKO) this.endRound('ko');
@@ -203,6 +227,12 @@
         a.clampTo(bounds);
         b.clampTo(bounds);
       }
+    }
+
+    // Put a fighter on their starting spot after an entrance.
+    settle(f) {
+      f.hidden = false; f.x = f.homeX; f.y = 0; f.vx = f.vy = 0;
+      f.state = null; f.setState('idle');
     }
 
     // ---- arcade ----
@@ -290,6 +320,26 @@
       return true;
     }
 
+    // A hit on a dazed opponent during FINISH THEM!: 5 in a row = BRUTALITY.
+    brutalHit(att, def, ex, ey) {
+      this.brutal++;
+      this.brutalLast = this.frame;
+      def.flash = 4;
+      this.hitstop = Math.max(this.hitstop, 5);
+      this.shake = Math.max(this.shake, 3 + this.brutal);
+      this.effects.spawn('hit', ex, ey);
+      RF.audio.sfx('hit');
+      this.comboText = { side: att.side, hits: this.brutal, t: 70 };
+      if (this.brutal >= BRUTAL_HITS) {
+        this.finisher = { kind: RF.FINISHERS.brutality, att, vic: def, t: 0 };
+        att.vx = def.vx = att.pushVx = def.pushVx = 0;
+        att.move = null; att.state = null; att.setState('finishing');
+        def.state = null; def.setState('finished');
+        this.projectiles = [];
+      }
+      return 'hit';
+    }
+
     tryGrab(att) {
       const def = this.opponentOf(att);
       const gap = Math.abs(def.x - att.x) - (att.body.width + def.body.width) / 2;
@@ -361,6 +411,7 @@
     // here. Returns 'perfect', 'block' or 'hit'.
     applyHit(att, def, move, spark, ex, ey) {
       if ((this.phase !== 'fight' && this.phase !== 'finish') || def.isKO) return null;
+      if (this.phase === 'finish' && def === this.finishVictim && !this.finisher) return this.brutalHit(att, def, ex, ey);
       const bounds = this.stageDef.bounds;
 
       if (def.isPerfectBlockAgainst(att, move)) {
@@ -521,8 +572,8 @@
       let winner = null;
       if (reason === 'finisher') {
         winner = this.finisher.att.side;
-        this.banner = 'FINISHER!';
-        RF.announcer.say('FINISHER!');
+        this.banner = this.finisher.kind.banner || 'FINISHER!';
+        if (!this.finisher.kind.banner) RF.announcer.say('FINISHER!');
       } else if (reason === 'ko') {
         RF.audio.sfx('ko');
         RF.announcer.say(a.isKO && b.isKO ? 'DOUBLE K O' : 'K O!');
@@ -562,11 +613,16 @@
       const order = [...this.fighters].sort((p, q) => (p.state === 'attack') - (q.state === 'attack'));
       const fin = this.finisher;
       if (fin && fin.kind.drawBack) fin.kind.drawBack(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
+      const ent = this.phase === 'entrance' && this.entranceInfo();
+      if (ent && ent.kind.draw && ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
+      RF.drawHazard(this, ctx, floorY);
       for (const f of order) {
         if (fin && f === fin.vic) fin.kind.drawVictim(f, ctx, floorY, fin.t, this.frame, fin.att);
         else f.draw(ctx, floorY);
       }
       if (fin && fin.kind.drawFx) fin.kind.drawFx(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
+      if (ent && ent.kind.draw && !ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
+      RF.drawHazardFx(this, ctx, floorY);
       this.drawProjectiles(ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
@@ -581,6 +637,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       this.hud.draw(ctx, this);
+      if (ent) RF.drawEntranceCard(ctx, ent.f, ent.t);
       if (this.training) this.drawTrainingHud(ctx, W);
       if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
       if (this.toasty) this.drawToasty(ctx, W, H);
@@ -608,7 +665,7 @@
       } else if (this.phase === 'finish' && !this.finisher) {
         band(66, 60);
         if (Math.floor(this.phaseTime / 8) % 4 !== 3) big('FINISH THEM!', 74, 4);
-        T(ctx, 'GET CLOSE AND PRESS THROW', W / 2, 110, { align: 'center', color: '#ffd030', outline: '#000' });
+        T(ctx, 'THROW = FINISHER   OR HIT THEM ' + BRUTAL_HITS + 'X = BRUTALITY', W / 2, 110, { align: 'center', color: '#ffd030', outline: '#000' });
       } else if (this.phase === 'roundOver') {
         big(this.banner);
         if (this.phaseTime > 70) T(ctx, this.subBanner, W / 2, 118, { scale: 2, align: 'center', color: '#fff', outline: '#000' });
@@ -621,6 +678,11 @@
         T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
         if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
       }
+    }
+
+    entranceInfo() {
+      const D = RF.ENTRANCE_DURATION, i = this.phaseTime <= D ? 0 : 1, f = this.fighters[i];
+      return { f, t: Math.max(0, this.phaseTime - 1 - i * D), kind: RF.INTROS[f.def.intro] || RF.INTROS.walk };
     }
 
     drawTrainingHud(ctx, W) {

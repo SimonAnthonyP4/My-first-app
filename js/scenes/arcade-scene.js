@@ -9,20 +9,21 @@
   const BOSS_HEALTH = 1.4; // the final boss has 40% more health than usual
 
   // Build a run for the chosen fighter.
-  RF.startArcade = function (game, p1) {
+  RF.startArcade = function (game, p1, costume = 0) {
     const bossId = p1.id === 'sirven' ? 'dabalsa' : 'sirven';
     const pool = RF.CHARACTERS.filter((c) => c.id !== p1.id && c.id !== bossId);
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const stages = RF.STAGES.map((s) => s.id).filter((s) => s !== 'office');
     const ladder = pool.slice(0, RUNGS - 1).map((def, i) => ({ def, level: LEVELS[i], stage: stages[i % stages.length] }));
     ladder.push({ def: RF.getCharacter(bossId), level: 'hard', stage: 'office', boss: true });
-    game.setScene(new TowerScene(game, { p1, ladder, index: 0, continues: 0 }));
+    game.setScene(new TowerScene(game, { p1, costume, ladder, index: 0, continues: 0 }));
   };
 
   // The fight options for the current rung.
   RF.arcadeFight = function (run) {
     const r = run.ladder[run.index];
-    return { p1: run.p1, p2: r.def, p2Alt: r.def.id === run.p1.id, cpu: true, stage: r.stage, cpuLevel: r.level, boss: r.boss ? BOSS_HEALTH : 0, arcade: run };
+    const c = run.costume || 0;
+    return { p1: run.p1, p2: r.def, costumes: [c, r.def.id === run.p1.id ? (c + 1) % RF.COSTUMES.length : 0], cpu: true, stage: r.stage, cpuLevel: r.level, boss: r.boss ? BOSS_HEALTH : 0, arcade: run };
   };
 
   // The tower: opponents stacked bottom (first) to top (boss); you climb it.
@@ -33,7 +34,7 @@
       this.run = run;
       this.t = 0;
       this.sprites = run.ladder.map((r) => RF.createSprite(r.def));
-      this.me = RF.createSprite(run.p1);
+      this.me = RF.createSprite(RF.costume(run.p1, run.costume));
       const r = run.ladder[run.index];
       RF.announcer.say(r.boss ? 'FINAL BOSS. ' + r.def.name : 'NEXT OPPONENT. ' + r.def.name);
     }
@@ -93,7 +94,7 @@
       this.run = run;
       this.t = 0;
       this.fire = new RF.FireField(W, H, 3);
-      this.sprite = RF.createSprite(run.p1);
+      this.sprite = RF.createSprite(RF.costume(run.p1, run.costume));
       RF.announcer.say(run.p1.name + ' RULES TERRAMANIA HIGH!');
       RF.audio.sfx('applause');
     }
@@ -121,13 +122,20 @@
         }
       }
       ctx.globalAlpha = 1;
-      ctx.save(); ctx.translate(W / 2, 176); ctx.scale(1.4, 1.4);
+      ctx.save(); ctx.translate(W - 58, 196); ctx.scale(1.25, 1.25);
       this.sprite.draw(ctx, 'victory', Math.floor(this.t / 15) % 2, 0, 0, 1);
       ctx.restore();
       T(ctx, 'CHAMPION', W / 2, 10, { scale: 3, align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
       T(ctx, this.run.p1.name + ' CONQUERED TERRAMANIA HIGH', W / 2, 40, { align: 'center', color: '#fff', outline: '#000' });
-      if (this.run.p1.winQuote) T(ctx, '"' + this.run.p1.winQuote + '"', W / 2, 52, { align: 'center', color: '#e8dcc0', outline: '#000' });
-      T(ctx, this.run.continues ? 'CONTINUES USED: ' + this.run.continues : 'NO CONTINUES - FLAWLESS RUN!', W / 2, 64, { align: 'center', color: '#ffd030', outline: '#000' });
+      // Their ending, typed out line by line.
+      const lines = this.run.p1.ending || [this.run.p1.winQuote || ''];
+      let chars = Math.max(0, (this.t - 40) * 0.8);
+      lines.forEach((line, i) => {
+        const shown = line.slice(0, Math.max(0, Math.floor(chars)));
+        chars -= line.length + 6;
+        if (shown) T(ctx, shown, 14, 62 + i * 13, { color: i === lines.length - 1 ? '#ffd030' : '#e8dcc0', outline: '#000' });
+      });
+      T(ctx, this.run.continues ? 'CONTINUES USED: ' + this.run.continues : 'NO CONTINUES - FLAWLESS RUN!', 14, 128, { color: '#ff9a40', outline: '#000' });
       if (this.t > 90 && Math.floor(this.t / 30) % 2 === 0) T(ctx, 'PRESS ENTER', W / 2, H - 12, { align: 'center', color: '#ffe0b0', outline: '#000' });
     }
   }
