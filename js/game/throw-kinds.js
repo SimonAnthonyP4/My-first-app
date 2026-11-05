@@ -70,6 +70,55 @@
     },
 
     // King Sirven: their permanent record, opened, written in, slammed shut on them.
+    // Holbrook: wrapped around a spinning globe, then flattened into a Mercator map.
+    mercator: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 10);
+        def.hidden = t >= 10 && t < 96;
+        if (t === 10) RF.audio.sfx('whoosh');
+        if (t === 30 || t === 48 || t === 66) { RF.audio.sfx('hit'); scene.throwHit(att, def, T.spinDamage); def.hidden = true; }
+        if (t === 76) { RF.audio.sfx('stomp'); scene.shake = 8; scene.effects.spawnText('MERCATOR!', def.x, 70, '#80ffe0'); }
+        if (t === 96) {
+          def.hidden = false;
+          scene.effects.spawnText('OFF THE MAP!', def.x, def.body.height + 10, '#ff9a40');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 6 });
+        }
+        return t >= 110;
+      },
+      anim(att, t) { return t < 10 ? ['throw', 0] : t < 76 ? ['throw', 1] : t < 96 ? ['light', 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 10 || t >= 96) return;
+        const cx = Math.round(att.x + att.facing * 40), cy = floorY - 60, R = 24;
+        if (t < 76) {
+          // the giant globe, spinning, with them stuck to it
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#335975'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+          ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+          ctx.fillStyle = '#a49238';
+          for (let i = 0; i < 4; i++) { const lx = cx - R + ((t * 2 + i * 22) % (2 * R + 20)) - 10; ctx.fillRect(lx, cy - 14 + i * 7, 12, 8); }
+          ctx.restore();
+          ctx.strokeStyle = '#b8742a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R + 5, -2.4, 1.9); ctx.stroke(); ctx.lineWidth = 1;
+          ctx.fillStyle = '#6a4a20'; ctx.fillRect(cx - 3, cy + R + 4, 6, floorY - cy - R - 4); ctx.fillRect(cx - 12, floorY - 3, 24, 3);
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 0.25 * att.facing);
+          def.sprite.draw(ctx, 'hit', 0, 0, -R + 2, def.facing);
+          ctx.restore();
+        } else {
+          // flattened onto a Mercator map: stretched wide at the "poles"
+          const mw = 120, mh = 64, mx = cx - mw / 2, my = floorY - 90;
+          ctx.fillStyle = '#111'; ctx.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
+          ctx.fillStyle = '#3a6a90'; ctx.fillRect(mx, my, mw, mh);
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(mx + i * mw / 6, my); ctx.lineTo(mx + i * mw / 6, my + mh); ctx.stroke(); }
+          [8, 18, 32, 46, 56].forEach((yy) => { ctx.beginPath(); ctx.moveTo(mx, my + yy); ctx.lineTo(mx + mw, my + yy); ctx.stroke(); });
+          ctx.save(); ctx.translate(cx, my + mh - 6); ctx.scale(2.2, 0.55);
+          def.sprite.draw(ctx, 'ko', 1, 0, 0, def.facing);
+          ctx.restore();
+        }
+      },
+    },
+
     record: {
       update(att, def, t, scene) {
         const T = att.throwCfg;

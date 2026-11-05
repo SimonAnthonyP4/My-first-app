@@ -5,6 +5,40 @@
   const E = () => RF.electric;
 
   RF.MOVE_FX = {
+    // Holbrook's light, MIGRATION: flow-map arrows stream out of his hand and a flock of
+    // migrating birds sweeps back toward him, dragging the opponent along.
+    migration(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime, reach = m.hitbox.x + m.hitbox.w;
+      const hx = f.x + f.facing * 10, hy = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      const ph = t < m.startup ? t / m.startup : 1, fade = Math.max(0, 1 - Math.max(0, t - m.startup - m.active) / 8);
+      if (fade <= 0) return;
+      // three curved migration-flow arrows (dashed, like a map)
+      for (let k = -1; k <= 1; k++) {
+        const len = reach * ph, bow = k * 10;
+        ctx.strokeStyle = `rgba(${k ? 255 : 255},${k ? 200 : 120},${k ? 80 : 60},${0.9 * fade})`;
+        ctx.lineWidth = k ? 1 : 2;
+        ctx.setLineDash([3, 2]); ctx.lineDashOffset = -frame;
+        ctx.beginPath(); ctx.moveTo(hx, hy);
+        ctx.quadraticCurveTo(hx + f.facing * len / 2, hy + bow - 8, hx + f.facing * len, hy + bow / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const ex = hx + f.facing * len, ey = hy + bow / 2; // arrow head
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath(); ctx.moveTo(ex + f.facing * 4, ey); ctx.lineTo(ex - f.facing * 2, ey - 3); ctx.lineTo(ex - f.facing * 2, ey + 3); ctx.fill();
+      }
+      ctx.lineWidth = 1;
+      // the flock: chevrons flying back toward him
+      for (let i = 0; i < 7; i++) {
+        const u = ((t * 3 + i * 9) % reach) / reach;
+        const bx = hx + f.facing * reach * (1 - u) * ph, by = hy - 14 + (i % 3) * 9 + Math.sin(t / 2 + i) * 2;
+        const flap = (frame + i) % 6 < 3 ? 2 : 0;
+        ctx.fillStyle = `rgba(30,20,20,${fade})`;
+        ctx.fillRect(Math.round(bx) - 3, Math.round(by) - flap, 2, 1); ctx.fillRect(Math.round(bx) - 1, Math.round(by) + 1 - flap / 2, 2, 1);
+        ctx.fillRect(Math.round(bx) + 1, Math.round(by) - flap, 2, 1);
+      }
+      if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
+    },
+
     // Super specials: the fighter burns with golden energy.
     superAura(f, ctx, floorY, frame) {
       const h = f.body.height, baseY = floorY - f.y;
@@ -179,6 +213,39 @@
     }
   };
 
+  // Holbrook's URBAN SPRAWL: a city erupting out of the ground and spreading forward,
+  // skyscrapers at the leading edge, suburbs sprawling out behind.
+  RF.PROJECTILE_ART.sprawl = function (ctx, x, y, t, dir, p, floorY) {
+    const bottom = floorY - p.y, H = p.h, W = p.w;
+    // cracked ground under the wave
+    ctx.fillStyle = '#2a1a10'; ctx.fillRect(Math.round(x - dir * (W / 2 + 40)), bottom - 1, W + 40, 3);
+    // suburbs left behind (little houses)
+    for (let i = 1; i <= 5; i++) {
+      const hx = Math.round(x - dir * (W / 2 + i * 9)), hh = 5 + (i % 2) * 2;
+      ctx.fillStyle = '#111'; ctx.fillRect(hx - 4, bottom - hh - 1, 9, hh + 1);
+      ctx.fillStyle = ['#c86a40', '#d8b070', '#a0a8b0'][i % 3]; ctx.fillRect(hx - 3, bottom - hh, 7, hh);
+      ctx.fillStyle = '#7a2a18'; ctx.fillRect(hx - 4, bottom - hh - 3, 9, 3);
+    }
+    // the skyline: buildings get taller toward the leading edge
+    const n = Math.max(3, Math.round(W / 7));
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1), bw = 6 + (i % 3);
+      const bh = Math.round(H * (0.35 + 0.65 * u) * (0.75 + 0.25 * RF.util.hash(i * 7.1)) * Math.min(1, t / 8));
+      const bx = Math.round(x - dir * W / 2 + dir * u * W) - (dir < 0 ? bw : 0);
+      ctx.fillStyle = '#0a0a10'; ctx.fillRect(bx - 1, bottom - bh - 1, bw + 2, bh + 1);
+      ctx.fillStyle = ['#4a5a78', '#5a6a88', '#3a4a64', '#6a6a7a'][i % 4]; ctx.fillRect(bx, bottom - bh, bw, bh);
+      ctx.fillStyle = '#ffe080';                                           // lit windows
+      for (let wy = bottom - bh + 3; wy < bottom - 3; wy += 4) for (let wx = bx + 1; wx < bx + bw - 1; wx += 3)
+        if (RF.util.hash(wx * 3.1 + wy * 1.7 + Math.floor(t / 10)) > 0.45) ctx.fillRect(wx, wy, 1, 2);
+      if (i === n - 1 && bh > 30) { ctx.fillStyle = '#ff3030'; ctx.fillRect(bx + Math.floor(bw / 2), bottom - bh - 5, 1, 4); } // antenna light
+    }
+    // dust thrown up at the leading edge
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = `rgba(160,130,100,${0.5 - i * 0.07})`;
+      ctx.fillRect(Math.round(x + dir * (W / 2 + 2 + i * 3)), bottom - 4 - ((t + i * 5) % 10), 3, 3);
+    }
+  };
+
   // King Sirven's pink DETENTION slip, fluttering as it flies.
   RF.PROJECTILE_ART.detentionSlip = function (ctx, x, y, t, dir) {
     const tilt = Math.round(Math.sin(t / 3) * 2);
@@ -223,6 +290,45 @@
   }
 
   RF.BLOCK_FX = {
+    // Holbrook: SOVEREIGN BORDER - a towering wall of glowing border lines with continent
+    // outlines inside it. Attackers who hit it get shoved back across the border.
+    sovereignBorder(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const h = Math.round(g.hurt.h * 1.35), w = 30, fl = g.strength;
+      const x = Math.round(g.front + f.facing * 8 - w / 2), top = g.base - h;
+      ctx.save();
+      // the glowing field
+      ctx.fillStyle = `rgba(40,200,180,${0.16 + fl * 0.3})`; ctx.fillRect(x, top, w, h);
+      // latitude / longitude grid
+      ctx.strokeStyle = `rgba(120,255,230,${0.25 + fl * 0.3})`;
+      for (let yy = top + 6; yy < g.base; yy += 10) { ctx.beginPath(); ctx.moveTo(x, yy + 0.5); ctx.lineTo(x + w, yy + 0.5); ctx.stroke(); }
+      for (let xx = x + 5; xx < x + w; xx += 10) { ctx.beginPath(); ctx.moveTo(xx + 0.5, top); ctx.lineTo(xx + 0.5, g.base); ctx.stroke(); }
+      // continent outlines drifting through it
+      const CONT = [
+        [[0, 0], [5, -2], [9, 1], [8, 6], [10, 11], [6, 16], [3, 12], [1, 6]],          // africa-ish
+        [[0, 0], [4, 0], [7, 3], [5, 8], [3, 14], [1, 10], [-1, 4]],                    // south america-ish
+        [[0, 0], [8, -1], [12, 2], [9, 5], [4, 6], [1, 3]],                             // eurasia-ish
+      ];
+      ctx.strokeStyle = `rgba(200,255,120,${0.75 + fl * 0.25})`;
+      CONT.forEach((pts, i) => {
+        const ox = x + 4 + (i % 2) * 12, oy = top + 8 + ((frame * 0.3 + i * 28) % (h - 20));
+        ctx.beginPath(); pts.forEach(([px, py], j) => (j ? ctx.lineTo : ctx.moveTo).call(ctx, ox + px, oy + py)); ctx.closePath(); ctx.stroke();
+      });
+      // the border itself: thick dashed lines on both edges, glowing
+      ctx.setLineDash([5, 3]); ctx.lineDashOffset = frame / 2;
+      ctx.strokeStyle = fl > 0.3 ? '#ffffff' : '#ff4060'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x + 0.5, top); ctx.lineTo(x + 0.5, g.base); ctx.moveTo(x + w - 0.5, top); ctx.lineTo(x + w - 0.5, g.base); ctx.stroke();
+      ctx.setLineDash([]); ctx.lineWidth = 1;
+      // border posts with little flags on top
+      for (const px of [x, x + w]) {
+        ctx.fillStyle = '#e8e0d0'; ctx.fillRect(px - 1, top - 8, 2, 8);
+        ctx.fillStyle = (frame >> 3) % 2 ? '#d02020' : '#c01818'; ctx.fillRect(px + 1, top - 8, 5, 3);
+      }
+      ctx.restore();
+      if (fl > 0.4) RF.font.drawText(ctx, 'SOVEREIGN BORDER', f.x, top - 20, { align: 'center', color: '#80ffe0', outline: '#000' });
+    },
+
     // King Sirven: a gold royal shield with his crown crest.
     royalShield(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

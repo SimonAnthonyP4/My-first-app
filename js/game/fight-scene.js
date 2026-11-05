@@ -474,6 +474,7 @@
         if (hb && hurt && rectsOverlap(hb, hurt)) hits.push([att, def, hb, hurt]);
       }
       for (const [att, def, hb, hurt] of hits) {
+        if (!att.move) continue; // a trade where the first hit was perfect-blocked: this attack was cancelled
         att.moveHasHit = true;
         // Ranged effects (lightning) stop at the opponent's body.
         att.fxHitDist = att.facing > 0 ? hurt.x - att.x + 2 : att.x - (hurt.x + hurt.w) + 2;
@@ -546,6 +547,10 @@
         const PRAISE = { 5: 'BRUTAL!', 7: 'SAVAGE!', 9: 'INSANE!', 12: 'TERRAMANIA!' };
         if (PRAISE[def.combo]) { RF.audio.sfx('ready'); RF.announcer.say(PRAISE[def.combo], { rate: 0.95 }); }
       }
+      // Some blocks shove the attacker back across the line (Holbrook's Sovereign Border).
+      if (blocked && def.def.blockRepel) {
+        att.pushVx = -sign(def.x - att.x) * def.def.blockRepel;
+      }
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
       this.effects.spawn(blocked ? def.def.blockSpark || 'block' : spark, ex, ey);
@@ -575,9 +580,10 @@
       this.glyphCount = (this.glyphCount || 0) + 1;
       this.projectiles.push({
         owner: f, cfg: s, move: pm,
-        x: f.x + f.facing * f.body.width * 0.7, y: f.y + f.body.height * s.height - size / 2,
-        vx: f.facing * s.speed, w: size, h: size * 0.75, t: 0,
+        x: f.x + f.facing * f.body.width * 0.7, y: s.ground ? 0 : f.y + f.body.height * s.height - size / 2,
+        vx: f.facing * s.speed, w: size, h: s.ground ? size : size * 0.75, t: 0,
         glyph: s.glyphs ? s.glyphs[this.glyphCount % s.glyphs.length] : null, // math-symbol projectiles
+        baseDamage: pm.damage,
       });
     }
 
@@ -585,6 +591,11 @@
       for (const p of this.projectiles) {
         p.x += p.vx;
         p.t++;
+        if (p.cfg.grow) { // a projectile that grows as it travels (Holbrook's Urban Sprawl)
+          p.h = Math.min(p.cfg.maxH, p.h + p.cfg.grow);
+          p.w = Math.min(p.cfg.maxW, p.w + (p.cfg.growW || 0));
+          p.move.damage = p.baseDamage * (1 + 0.35 * Math.min(1, p.t / 60)); // the bigger the city, the harder it hits
+        }
         if (p.x < bounds.left - 20 || p.x > bounds.right + 20) p.dead = true;
       }
       // Two projectiles meeting cancel each other out.
@@ -616,7 +627,7 @@
         const x = Math.round(p.x), y = Math.round(floorY - p.y - p.h / 2);
         const dir = Math.sign(p.vx);
         if (p.cfg.art && RF.PROJECTILE_ART[p.cfg.art]) {
-          RF.PROJECTILE_ART[p.cfg.art](ctx, x, y, p.t, dir, p);
+          RF.PROJECTILE_ART[p.cfg.art](ctx, x, y, p.t, dir, p, floorY);
           continue;
         }
         if (p.glyph) {

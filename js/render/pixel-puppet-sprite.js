@@ -169,6 +169,17 @@
           ctx.fillStyle = w.trim; ctx.fillRect(Math.round(bx + U), Math.round(by + U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + U), Math.round(by + (w.h - 2) * U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + (w.w / 2 - 1) * U), Math.round(by + (w.h / 2 - 2) * U), 3 * U, 4 * U); // the Bard's face
+        } else if (s.weapon && s.weapon.kind === 'globe' && !dark) {
+          // A desk globe held up in the hand (Holbrook): ocean, continents, brass meridian.
+          const [hx, hy] = cells[cells.length - 1], R = s.weapon.r;
+          const gx = ox + (sc + hx * k + k / 2) * U + dx, gy = oy + (sr + hy * k + k / 2 - R) * U + dy;
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(gx, gy, (R + 1) * U, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#335975'; ctx.beginPath(); ctx.arc(gx, gy, R * U, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#a49238';
+          [[-0.4, -0.3, 0.45], [0.35, 0.1, 0.5], [-0.1, 0.5, 0.3]].forEach(([u, v, z]) => ctx.fillRect(Math.round(gx + u * R * U), Math.round(gy + v * R * U), Math.round(z * R * U), Math.round(z * R * U * 0.8)));
+          ctx.strokeStyle = '#b8742a'; ctx.lineWidth = Math.max(1, U);
+          ctx.beginPath(); ctx.arc(gx, gy, (R + 1.5) * U, -Math.PI * 0.75, Math.PI * 0.6); ctx.stroke();
+          ctx.lineWidth = 1;
         } else if (s.weapon && !dark) {
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
           const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);

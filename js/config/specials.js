@@ -37,6 +37,18 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  continentalDrift: {
+    name: 'Continental Drift',
+    description: 'The ground splits and a whole continent slides across the floor like a tectonic plate, flattening the opponent.',
+    kind: 'plate',
+    startup: 14,         // the earth rumbles
+    speed: 7,            // how fast the plate slides
+    travel: 44,          // frames it keeps sliding
+    recovery: 16,
+    damage: 16,
+    hitstun: 34, blockstun: 16, pushback: 6, hitstop: 10,
+    launch: 7,
+  },
   paBlast: {
     name: 'Attention Students',
     description: 'A giant PA speaker drops from the ceiling and blasts the whole screen. Nowhere to run.',

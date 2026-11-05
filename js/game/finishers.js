@@ -198,6 +198,53 @@
   }
 
   RF.FINISHERS = {
+    // Holbrook: a world map unrolls, a giant pushpin skewers the loser into it, and the
+    // map is rolled up and filed away. ANNEXED.
+    annexation: {
+      name: 'Annexation',
+      duration: 230,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 40 ? ['throw', 1] : t < 70 ? ['special', 1] : ['idle', 0];
+        if (t === 4) RF.audio.sfx('paper');
+        if (t === 84) { RF.audio.sfx('boom'); RF.audio.sfx('heavy'); scene.shake = 14; scene.flash = 5; }
+        if (t === 100) scene.effects.spawnText('ANNEXED!', vic.x, 110, '#ff4040');
+        if (t === 130) RF.audio.sfx('paper');
+        if (t === 200) RF.audio.sfx('applause');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 84) return drawPose(vic, ctx, vic.x, floorY, ['hit', 0]);
+        if (t >= 130) return; // rolled up inside the map
+        ctx.save(); ctx.translate(Math.round(vic.x), floorY - 40); ctx.scale(1.15, 0.85);
+        vic.sprite.draw(ctx, 'ko', 1, 0, 30, vic.facing); // flattened against the map
+        ctx.restore();
+      },
+      drawBack(att, vic, ctx, floorY, t) { // the map, behind the victim
+        const W = 170, H0 = 120, x = Math.round(vic.x - W / 2), top = floorY - H0 - 10;
+        const unroll = Math.min(1, t / 30), roll = t > 130 ? Math.min(1, (t - 130) / 30) : 0;
+        if (t > 175) return;
+        const h = Math.round(H0 * unroll * (1 - roll)), y = top + Math.round(H0 * roll);
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 2, y - 2, W + 4, h + 4);
+        ctx.fillStyle = '#4a7ab0'; ctx.fillRect(x, y, W, h);
+        ctx.save(); ctx.beginPath(); ctx.rect(x, y, W, h); ctx.clip();
+        ctx.fillStyle = '#a49238';
+        [[20, 18, 30, 26], [24, 48, 14, 34], [70, 14, 46, 22], [78, 40, 22, 36], [124, 24, 32, 22], [138, 80, 20, 14]].forEach(([a, b, c, d]) => ctx.fillRect(x + a, top + b, c, d));
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(x + i * W / 8, top); ctx.lineTo(x + i * W / 8, top + H0); ctx.stroke(); }
+        ctx.restore();
+        ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 6, y - 4, W + 12, 5); ctx.fillRect(x - 6, y + h - 1, W + 12, 5); // the rollers
+        if (t > 160) RF.font.drawText(ctx, 'FILED UNDER: ANNEXED', vic.x, floorY - 30, { align: 'center', color: '#e8dcc0', outline: '#000' });
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 40 || t >= 130) return; // the giant pushpin
+        const drop = Math.min(1, (t - 40) / 44), px = Math.round(vic.x), py = Math.round(-40 + (floorY - 70) * drop * drop);
+        ctx.fillStyle = '#111'; ctx.fillRect(px - 1, py, 3, 40);
+        ctx.fillStyle = '#c8c8d0'; ctx.fillRect(px, py, 1, 40);
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(px, py - 6, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e02020'; ctx.beginPath(); ctx.arc(px, py - 6, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff8080'; ctx.fillRect(px - 5, py - 12, 4, 3);
+      },
+    },
+
     // King Sirven: a royal decree, a trapdoor, and he takes his throne.
     royalDecree: {
       name: 'Royal Decree',

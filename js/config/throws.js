@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  mercatorProjection: {
+    name: 'Mercator Projection',
+    description: 'Wraps the opponent around a giant spinning globe, then flattens them onto a map and kicks them off the edge of the world.',
+    kind: 'mercator',
+    spinDamage: 3,
+    finisherDamage: 9,
+  },
   permanentRecord: {
     name: 'Permanent Record',
     description: 'Opens their permanent record, writes something terrible, slams it shut on them twice and kicks them out.',

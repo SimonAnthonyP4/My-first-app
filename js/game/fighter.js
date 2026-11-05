@@ -135,7 +135,7 @@
           }
           break;
         case 'attack':
-          if (this.move.fx && this.stateTime === this.move.startup) RF.audio.sfx('bolt');
+          if (this.move.fx && this.stateTime === this.move.startup) RF.audio.sfx(this.move.fxSound || 'bolt');
           if (this.move.projectile && this.stateTime === this.move.startup) this.scene.spawnProjectile(this, this.move.projectile);
           // Super: LIGHT + HEAVY together. Also cancels any ground attack that connected.
           const confirmed = this.moveHasHit && !this.attackAirborne && this.stateTime >= this.move.startup;
@@ -439,6 +439,7 @@
     // Let go of a thrown fighter, optionally flinging them.
     releaseFromThrow(fling) {
       this.grabber = null;
+      this.hidden = false; // some throws draw the victim themselves
       this.state = null;
       if (this.health <= 0) return this.knockOut(fling ? Math.sign(fling.vx) || 1 : 1);
       this.stun = 22;
@@ -589,6 +590,7 @@
         if (airborne || move.launch) this.juggle++;
         const airAttacker = attacker.state === 'attack' && attacker.attackAirborne;
         this.pushVx = dir * (airborne && airAttacker ? move.pushback * 0.5 : move.knockback || move.pushback);
+        if (move.pull) this.pushVx = -dir * move.pull; // dragged toward the attacker (Holbrook's Migration)
         if (airborne && airAttacker && /heavy/i.test(attacker.moveKind) && this.juggle > 1 && !this.bounced) {
           // Air heavy on a juggled opponent: spike them into the floor.
           this.spiked = true;

@@ -22,6 +22,8 @@
 // knockback: how hard a clean hit shoves the victim back (pushback is used when blocked).
 // launcher: true = hold UP after it connects to jump after the victim (air combo).
 // launchVx: sideways speed of a launched victim (default 2).
+// pull: a clean hit DRAGS the victim toward the attacker this hard instead of pushing them away.
+// fx / fxSound: an effect drawn during the move (game/fx.js MOVE_FX) and the sound it starts with.
 //
 // hitbox is relative to the attacker's feet, facing right, before the
 // character's body scale: x = distance in front of centre, y = height above

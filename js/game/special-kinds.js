@@ -32,6 +32,64 @@
       },
     },
 
+    // Holbrook: a continent-sized tectonic plate slides across the floor.
+    plate: {
+      start(f) { f.vx = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime;
+        if (t === 1) RF.audio.sfx('rumble');
+        if (t < s.startup) { scene.shake = Math.max(scene.shake, 2); return; }
+        const a = t - s.startup;
+        if (a < s.travel) {
+          scene.shake = Math.max(scene.shake, 5);
+          const edge = f.x + f.facing * (f.body.width / 2 + a * s.speed), opp = scene.opponentOf(f);
+          if (!f.specialData.hit && opp.getHurtbox() && opp.y < 50 && f.facing * (edge - (opp.x - f.facing * opp.body.width / 2)) >= 0) {
+            f.specialData.hit = true;
+            scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', opp.x, 20);
+          }
+        }
+        if (a >= s.travel + s.recovery) f.setState('idle');
+      },
+      anim(f) { return ['special', f.stateTime < f.special.startup ? 0 : 2]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, dir = f.facing;
+        if (t < s.startup) { // cracks spreading from his feet
+          ctx.fillStyle = '#1a0a00';
+          for (let i = 0; i < 6; i++) ctx.fillRect(Math.round(f.x + dir * i * t * 1.4), floorY - 1, 5, 2);
+          return;
+        }
+        const a = t - s.startup, fade = a > s.travel ? Math.max(0, 1 - (a - s.travel) / s.recovery) : 1;
+        if (fade <= 0) return;
+        const edge = f.x + dir * (f.body.width / 2 + Math.min(a, s.travel) * s.speed), len = 170, top = floorY - 26;
+        ctx.save(); ctx.globalAlpha = fade;
+        // the landmass: a slab with a rugged coast, green lowlands, brown mountains, snowy peaks
+        const xs = (u) => edge - dir * u;
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.moveTo(xs(-4), floorY + 2);
+        for (let u = 0; u <= len; u += 8) ctx.lineTo(xs(u), top - 2 + Math.round(4 * Math.sin(u / 11)) + (u < 12 ? 12 - u : 0));
+        ctx.lineTo(xs(len), floorY + 2); ctx.fill();
+        ctx.fillStyle = '#5a8a30';
+        ctx.beginPath(); ctx.moveTo(xs(0), floorY);
+        for (let u = 0; u <= len; u += 8) ctx.lineTo(xs(u), top + Math.round(4 * Math.sin(u / 11)) + (u < 12 ? 12 - u : 0));
+        ctx.lineTo(xs(len), floorY); ctx.fill();
+        ctx.fillStyle = '#7a5a30'; ctx.fillRect(Math.min(xs(0), xs(len)), floorY - 10, len, 10);   // the rock strata
+        ctx.fillStyle = '#5a3a20'; ctx.fillRect(Math.min(xs(0), xs(len)), floorY - 5, len, 2);
+        for (let i = 0; i < 4; i++) { // mountain ranges
+          const mx = xs(30 + i * 36), mh = 16 + (i % 2) * 8;
+          ctx.fillStyle = '#6a4a2a'; ctx.beginPath(); ctx.moveTo(mx - 12, top + 4); ctx.lineTo(mx, top - mh); ctx.lineTo(mx + 12, top + 4); ctx.fill();
+          ctx.fillStyle = '#f0f0f0'; ctx.beginPath(); ctx.moveTo(mx - 4, top - mh + 6); ctx.lineTo(mx, top - mh); ctx.lineTo(mx + 4, top - mh + 6); ctx.fill();
+        }
+        // spray of rubble and ocean foam at the leading edge
+        for (let i = 0; i < 10; i++) {
+          ctx.fillStyle = i % 2 ? '#e8f4ff' : '#7a5a30';
+          ctx.fillRect(Math.round(edge + dir * (2 + (i * 5 + frame) % 14)), floorY - 4 - ((i * 7 + frame * 2) % 26), 2, 2);
+        }
+        ctx.restore();
+        if (a < s.travel) RF.font.drawText(ctx, 'CONTINENTAL DRIFT!', RF.CONFIG.WIDTH / 2, 50, { scale: 2, align: 'center', outline: '#000',
+          color: ['#ffffff', '#d0ffb0', '#a0e070', '#70c040', '#50a030', '#3a8020', '#206010'] });
+      },
+    },
+
     // A giant PA speaker drops from the ceiling and blasts the whole screen.
     screenWave: {
       start(f) { f.vx = 0; },

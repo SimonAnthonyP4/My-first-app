@@ -379,6 +379,14 @@
           this.tone('square', 1400, t, 0.08, 0.08, null, 700);
           this.noiseBurst(t, 0.12, 0.2, 'highpass', 2500);
           break;
+        case 'birds': // a flock of migrating birds
+          for (let i = 0; i < 5; i++) this.tone('sine', 2200 + Math.random() * 900, t + i * 0.035, 0.05, 0.05, null, 3200);
+          this.noiseBurst(t, 0.15, 0.08, 'bandpass', 2400);
+          break;
+        case 'rumble': // the earth moving
+          this.tone('sawtooth', 45, t, 0.9, 0.25, null, 30);
+          this.noiseBurst(t, 0.9, 0.35, 'lowpass', 300);
+          break;
         case 'fanfare': // royal trumpets: da-da-da-DAAA
           [[523, 0], [523, 0.12], [523, 0.24], [784, 0.36]].forEach(([f, d], i) => {
             this.tone('sawtooth', f, t + d, i === 3 ? 0.6 : 0.1, 0.1);

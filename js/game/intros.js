@@ -84,6 +84,27 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Flies in along a dotted flight path on a little plane, like a route on a map (Holbrook).
+    flight: {
+      update(f, t, scene) {
+        f.hidden = t < 40;
+        if (t === 0) RF.audio.sfx('jet');
+        if (t === 40) { RF.audio.sfx('stomp'); scene.effects.spawn('dust', f.x, 1); scene.shake = 4; }
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 46) return;
+        const W = RF.CONFIG.WIDTH, sx = f.facing > 0 ? -10 : W + 10, ex = f.homeX, u = Math.min(1, t / 40);
+        const pt = (v) => [sx + (ex - sx) * v, floorY - 40 - Math.sin(v * Math.PI) * 90];
+        ctx.fillStyle = '#ff6040';
+        for (let v = 0; v < u; v += 0.035) { const [x, y] = pt(v); ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
+        const [px, py] = pt(u), dir = f.facing;
+        ctx.fillStyle = '#111'; ctx.fillRect(px - 7, py - 2, 15, 5);
+        ctx.fillStyle = '#e8e8f0'; ctx.fillRect(px - 6, py - 1, 13, 3);           // fuselage
+        ctx.fillStyle = '#3a6ae0'; ctx.fillRect(px - 2, py - 5, 4, 11);            // wings
+        ctx.fillRect(Math.round(px - dir * 6), py - 4, 2, 4);                       // tail
+        ctx.fillStyle = '#e02020'; ctx.beginPath(); ctx.arc(ex, floorY - 4, 3, 0, Math.PI * 2); ctx.fill(); // destination pin
+      },
+    },
     // A red carpet rolls out and trumpets announce the king (King Sirven).
     royal: {
       back: true, // the carpet goes under him

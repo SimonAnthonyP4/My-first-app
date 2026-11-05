@@ -99,7 +99,7 @@ rumble needs Chrome or Edge.
   `js/config/game.js` (`LAUNCH_JUMP`, `JUGGLE_LIMIT`, `SUPER_DAMAGE`, `METER_GAIN`, ...),
   `js/config/moves.js` (`launcher`) and `js/config/ai.js`.
 
-- **Health:** Mr. Dabalsa starts at **200%**; King Sirven at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
+- **Health:** Mr. Dabalsa starts at **200%**; King Sirven and Holbrook at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
   else (Viper, Jauregui, El Escobedo, Lady Landa) at **100%**. The number is shown on each health bar, and the bars are the
   same size for everyone (`HEALTH_BY_ARCHETYPE` in `js/config/game.js`).
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
@@ -305,6 +305,29 @@ leaves you stunned for longer, and he blocks with a gold royal shield ("DETENTIO
 Perfect block → **Attention Students**: the PA speaker comes down and the blast hits you
 anywhere on screen. Throw: **Permanent Record**. Finisher: **Royal Decree**. Opens with
 "THIS IS YOUR PRINCIPAL SPEAKING." and wins with "SEE YOU IN MY OFFICE."
+
+## Holbrook
+
+The AP Human Geography teacher (all-round, **125% health**, from Social Studies, Room 7). Holds a
+desk globe that moves into his attacking hand.
+
+- **Light: Migration.** Curved, dashed migration-flow arrows stream out of his hand while a flock
+  of birds sweeps back toward him. A clean hit **pulls** the opponent in instead of pushing them
+  away (`pull` in `moves.js`), so his strings stay close.
+- **Heavy: Urban Sprawl.** A city erupts from the ground and spreads forward: skyscrapers with
+  lit windows at the front, suburbs sprawling behind. It **grows taller, wider and stronger the
+  farther it spreads** (`grow` on the projectile), and knocks down.
+- **Block: Sovereign Border.** A towering glowing wall of dashed border lines, a latitude grid,
+  drifting continent outlines and flags. Attackers who hit it get **shoved back across the
+  border** (`blockRepel`).
+- **Special: Continental Drift.** The floor cracks and a whole continent (mountains, snowy peaks,
+  rock strata) slides across the stage like a tectonic plate.
+- **Throw: Mercator Projection.** Wrapped around a giant spinning globe, then flattened onto a
+  stretched Mercator map and kicked off the edge of the world.
+- **Finisher: Annexation.** A world map unrolls, a giant pushpin skewers the loser into it, and
+  the map is rolled up and filed away.
+- **Entrance:** flies in along a dotted flight path on a little plane. **Brutality:** Tectonic
+  Shift.
 
 ## Adding a character drawn in Piskel
 

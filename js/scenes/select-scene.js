@@ -6,7 +6,7 @@
   const SLOTS = 10, COLS = 5, SLOT = 34, GAP = 3; // 5 x 2 grid
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
   const PCOL = ['#ff4a3a', '#4a8aff'];
-  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'] };
+  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'] };
 
   // Stat bars normalised to 0..1 for display only.
   const STAT_BARS = [
