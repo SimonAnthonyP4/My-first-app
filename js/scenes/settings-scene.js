@@ -26,9 +26,9 @@
       const W = RF.CONFIG.WIDTH;
       RF.drawMenuBackdrop(ctx, this.t, 0.75);
       RF.drawTitle(ctx, 'SETTINGS', 18);
-      RF.drawPanel(ctx, 40, 40, W - 80, 150);
+      RF.drawPanel(ctx, 40, 36, W - 80, 156);
       const items = this.menu.items;
-      this.menu.draw(ctx, W / 2 + 10, 47, this.t, { spacing: 15 });
+      this.menu.draw(ctx, W / 2 + 10, 41, this.t, { spacing: 12 });
       const hint = {
         ROUND_TIME: 'HOW LONG EACH ROUND LASTS',
         ROUNDS_TO_WIN: 'ROUNDS NEEDED TO WIN THE MATCH',

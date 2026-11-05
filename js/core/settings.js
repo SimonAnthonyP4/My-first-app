@@ -46,6 +46,16 @@
     },
   ];
 
+  // Party mods: same shape as settings, shown on their own screen and never saved.
+  RF.MOD_SETTINGS = [
+    { id: 'MOD_BIGHEAD', label: 'BIG HEAD MODE', hint: 'EVERYONE GETS A GIANT HEAD', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_LOWGRAV', label: 'LOW GRAVITY', hint: 'FLOATY JUMPS AND SKY-HIGH JUGGLES', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_TURBO', label: 'TURBO', hint: 'THE WHOLE FIGHT RUNS 50% FASTER', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_TRIPLE', label: 'TRIPLE DAMAGE', hint: 'EVERY HIT DOES 3X DAMAGE. FIGHTS ARE SHORT.', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_PROTEIN', label: 'PROTEIN MODE', hint: 'HALF THE DAMAGE YOU DEAL HEALS YOU', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_RANDOM', label: 'RANDOM FIGHTERS', hint: 'BOTH PLAYERS GET A RANDOM FIGHTER EVERY ROUND', options: [[false, 'OFF'], [true, 'ON']] },
+  ];
+
   const defaults = {};
   for (const s of RF.SETTINGS) defaults[s.id] = RF.CONFIG[s.id];
 

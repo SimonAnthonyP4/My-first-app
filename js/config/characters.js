@@ -210,8 +210,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 2.2,
       jumpPower: 11.2,
-      damage: 1.1,
-      damageReduction: 0.05,
+      damage: 1.18,
+      damageReduction: 0.08,
       attackSpeed: 1.15,
     },
     moves: {
@@ -554,8 +554,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 2.0,
       jumpPower: 8.6,     // lower launch, but the jetpack's light gravity keeps him up longer
-      damage: 1.12,
-      damageReduction: 0.05,
+      damage: 1.2,
+      damageReduction: 0.1,
       attackSpeed: 1.1,
     },
     // Jetpack: much lighter gravity during jumps = about 50% more airtime.
@@ -732,8 +732,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 1.9,
       jumpPower: 11.0,
-      damage: 1.1,
-      damageReduction: 0.05,
+      damage: 1.18,
+      damageReduction: 0.1,
       attackSpeed: 0.95,
     },
     moves: {

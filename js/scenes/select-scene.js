@@ -28,7 +28,8 @@
       this.cursor = [idx(prev && prev.p1, 0), idx(prev && prev.p2, 1)];
       this.cpu = !!(prev && prev.cpu);
       this.stage = prev && prev.stage;
-      this.arcade = !!(prev && prev.arcade);
+      this.arcade = !!(prev && (prev.arcade || prev.survival));
+      this.survivalMode = !!(prev && prev.survival);
       this.training = !!(prev && prev.training);
       this.labels = this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
       RF.announcer.say('CHOOSE YOUR FIGHTER');
@@ -82,6 +83,7 @@
     updateCpuMode(kb) {
       const pressed = (act) => kb.justPressed(...this.inputs[0][act]);
       if (!this.ready[0]) return this.updateCursor(0, pressed);
+      if (this.survivalMode) return RF.startSurvival(this.game, this.slots[this.cursor[0]], this.costume[0]);
       if (this.arcade) return RF.startArcade(this.game, this.slots[this.cursor[0]], this.costume[0]); // the tower picks your opponents
       if (!this.ready[1]) {
         if (pressed('block')) { this.ready[0] = false; return; }
@@ -191,8 +193,10 @@
     drawArcadeInfo(ctx) {
       const x = W / 2 + 4, y = 106, w = W / 2 - 8;
       RF.drawPanel(ctx, x, y, w, 104, '#c8a040');
-      T(ctx, 'ARCADE', x + 6, y + 4, { scale: 2, color: RF.TITLE_COLORS, outline: '#000' });
-      ['CLIMB THE TOWER: 5 OPPONENTS,', 'EACH ONE TOUGHER THAN THE LAST.', '', 'THEN THE FINAL BOSS,', 'KING SIRVEN, IN HIS OWN OFFICE.', '', 'LOSE? CONTINUE AND TRY AGAIN.']
+      T(ctx, this.survivalMode ? 'SURVIVAL' : 'ARCADE', x + 6, y + 4, { scale: 2, color: RF.TITLE_COLORS, outline: '#000' });
+      (this.survivalMode
+        ? ['ONE HEALTH BAR. ENDLESS FIGHTS.', 'ONE ROUND EACH, 30% HEALED AFTER', 'EVERY WIN.', 'THE CPU GETS TOUGHER AS YOUR', 'STREAK GROWS.', '', 'BEST STREAK: ' + RF.records.data.best.survival]
+        : ['CLIMB THE TOWER: 5 OPPONENTS,', 'EACH ONE TOUGHER THAN THE LAST.', '', 'THEN THE FINAL BOSS,', 'KING SIRVEN, IN HIS OWN OFFICE.', '', 'LOSE? CONTINUE AND TRY AGAIN.'])
         .forEach((l, i) => T(ctx, l, x + 6, y + 24 + i * 9, { color: i >= 3 && i <= 4 ? '#ff9a40' : '#e0d8d0', outline: '#000' }));
     }
 

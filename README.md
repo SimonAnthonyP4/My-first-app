@@ -519,6 +519,26 @@ note is a power chord, `E2*` is a palm-muted chug, `-` holds, `.` rests. Drums:
 - **Arcade endings:** every fighter has their own ending story, typed out when you beat the
   tower (`ending:` in `characters.js`).
 
+## Survival, Party Mods, Records and more
+
+- **Survival** (title menu): pick a fighter and fight endless one-round matches on one health
+  bar (30% patched up after each win); the CPU gets tougher as your streak grows. Best streak is
+  saved.
+- **Party Mods** (title menu): Big Head Mode, Low Gravity (floaty jumps, sky-high juggles), Turbo
+  (50% faster), Triple Damage, Protein Mode (half the damage you deal heals you) and Random
+  Fighters (new random fighters every round). Mix them freely; they apply to every mode and reset
+  when the page reloads (`RF.MOD_SETTINGS` in `js/core/settings.js`).
+- **Records + achievements** (title menu -> RECORDS): 17 achievements with an "ACHIEVEMENT
+  UNLOCKED" pop-up (first win, flawless rounds, 5- and 10-hit combos, finishers, brutalities,
+  stage transitions, hazards, supers, combo breakers, Arcade clear, Survival streaks, all combo
+  trials, a win with every fighter...) and lifetime stats: matches, wins per fighter, longest
+  combo, best Survival streak. Saved in this browser (`js/core/records.js`).
+- **Rival banter:** matchups like Simon vs Anthony, Sirven vs Holbrook or Landa vs Weissenberg
+  trade lines in speech bubbles on the versus screen (`js/config/banter.js`).
+- **Attract demo:** leave the title screen alone for 20 seconds and two CPUs fight a demo match;
+  press any key to return.
+- **Balance:** El Escobedo, Lady Landa and Jauregui hit harder and take less damage.
+
 ## Announcer
 
 A deep arena voice calls the fight: fighter names on the versus screen, "ROUND ONE... FIGHT!",

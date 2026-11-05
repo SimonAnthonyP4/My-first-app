@@ -130,6 +130,10 @@
       this.pantsColor = s.palette[s.legColor || 'pants'];     // colour of an added kicking leg
       this.shoeColor = s.palette[s.footColor || 'shoes'];
 
+      this.bigHead = !!RF.CONFIG.MOD_BIGHEAD;          // party mod: Big Head Mode
+      this.topPad = this.bigHead ? s.neckRow : 0;      // room above for the giant head
+      const hc = this.cells.head.map((c) => c.c);
+      this.headPivot = [hc.length ? (Math.min(...hc) + Math.max(...hc)) / 2 : 0, s.neckRow];
       this.frames = {};
       for (const anim in RF.ANIMATIONS) {
         const recipes = (s.poses && s.poses[anim]) || PUPPET_POSES[anim];
@@ -140,9 +144,9 @@
     // Draw one frame recipe to a canvas.
     bake(p) {
       const U = this.U, s = this.s, k = this.k;
-      const W = (this.cols + (MARGIN_X + EXTRA_W) * k) * U, H = (this.rows + (MARGIN_TOP + EXTRA_H) * k) * U;
+      const W = (this.cols + (MARGIN_X + EXTRA_W) * k) * U, H = (this.rows + this.topPad + (MARGIN_TOP + EXTRA_H) * k) * U;
       const [canvas, ctx] = makeCanvas(W, H);
-      const ox = MARGIN_X * k * U, oy = MARGIN_TOP * k * U;
+      const ox = MARGIN_X * k * U, oy = (MARGIN_TOP * k + this.topPad) * U;
       const drop = p.crouch ? (s.crouchDrop || 5) * U : 0;
       // put: one art pixel (h = optional height in game pixels); blk: a k x k limb block.
       const put = (c, r, color, dx = 0, dy = 0, h = U) => {
@@ -210,7 +214,13 @@
         const color = cell.hand && posedArm ? s.palette[s.legend[s.coatChar || 'W']] : cell.color;
         put(cell.c, cell.r, color, torsoOff[0], torsoOff[1]);
       }
-      for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
+      if (this.bigHead) { // BIG HEAD MODE: the head drawn 1.8x around the neck
+        const [pc, pr] = this.headPivot, S = 1.8;
+        for (const cell of this.cells.head) {
+          ctx.fillStyle = cell.color;
+          ctx.fillRect(Math.round(ox + (pc + (cell.c - pc) * S) * U + headOff[0]), Math.round(oy + (pr + (cell.r - pr) * S) * U + headOff[1]), Math.ceil(U * S), Math.ceil(U * S));
+        }
+      } else for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
       this.drawLegs(p, put, blk, drop, true); // a kicking leg goes in front of the body
       drawArm(p.arm, false, p.armOff || [0, 0]);
 
@@ -297,7 +307,7 @@
       const len = this.rows * U, thick = (this.cols + 2) * U;
       const [canvas, ctx] = makeCanvas(len + 12, thick + 4);
       const backEdge = (MARGIN_X * k + this.minCol + 1) * U; // x of the figure's back in the stand canvas
-      const midY = MARGIN_TOP * k * U + len / 2;             // vertical middle of the figure
+      const midY = (MARGIN_TOP * k + this.topPad) * U + len / 2;             // vertical middle of the figure
       ctx.translate(Math.round((len + 12) / 2), thick + 3);
       ctx.rotate(-Math.PI / 2);
       ctx.drawImage(stand.canvas, -backEdge, -midY);

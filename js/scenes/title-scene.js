@@ -4,7 +4,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 102, ITEM_GAP = 14;
+  const ITEM_Y = 98, ITEM_GAP = 12;
 
   class TitleScene {
     constructor(game) {
@@ -14,9 +14,12 @@
       this.shake = 0;
       this.menu = new RF.ListMenu([
         { label: 'FIGHT NOW', onSelect: () => this.go(new RF.SelectScene(game)) },
-        { label: 'ARCADE', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
         { label: 'VS CPU', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
+        { label: 'ARCADE', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
+        { label: 'SURVIVAL', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
         { label: 'TRAINING', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
+        { label: 'PARTY MODS', onSelect: () => this.go(new RF.ModsScene(game)) },
+        { label: 'RECORDS', onSelect: () => this.go(new RF.RecordsScene(game)) },
         { label: 'HOW TO PLAY', onSelect: () => this.go(new RF.InfoScene(game, 'howto')) },
         { label: 'SETTINGS', onSelect: () => this.go(new RF.SettingsScene(game)) },
         { label: 'CREDITS', onSelect: () => this.go(new RF.InfoScene(game, 'credits')) },
@@ -58,6 +61,14 @@
 
     update() {
       this.t++;
+      // Attract mode: leave the menu alone and the CPU plays a demo match.
+      this.idle = this.game.kb.down.size > 0 ? 0 : (this.idle || 0) + 1;
+      if (this.idle > 60 * 20) {
+        const pick = () => RF.CHARACTERS[Math.floor(Math.random() * RF.CHARACTERS.length)];
+        const p1 = pick(), p2 = pick();
+        return this.go(new RF.FightScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: true, demo: true, cpuLevel: 'hard',
+          stage: RF.STAGES[Math.floor(Math.random() * RF.STAGES.length)].id }));
+      }
       const drop = this.logoDrop();
       if (this.t === 22) { this.shake = 14; RF.audio.sfx('ko'); }
       if (this.shake > 0) this.shake--;
@@ -134,9 +145,8 @@
       });
       ctx.restore();
 
-      if (Math.floor(this.t / 30) % 2 === 0) {
-        T(ctx, 'ENTER OR LIGHT ATTACK TO SELECT', W / 2, H - 12, { align: 'center', color: '#ffe0b0', outline: '#000' });
-      }
+      const mods = RF.MOD_SETTINGS.filter((m) => RF.CONFIG[m.id]).length;
+      if (mods) T(ctx, mods + ' PARTY MOD' + (mods > 1 ? 'S' : '') + ' ON', W - 6, H - 10, { align: 'right', color: '#ff9a40', outline: '#000' });
     }
 
     // Tiny animated flame used as the menu cursor.

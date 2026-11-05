@@ -8,6 +8,8 @@
       this.game = game;
       this.opts = opts;
       this.t = 0;
+      this.banter = RF.banterFor(opts.p1.id, opts.p2.id);
+      this.duration = this.banter ? 210 : DURATION;
       const cos = opts.costumes || [0, opts.p2Alt ? 1 : 0];
       this.sprites = [RF.createSprite(RF.costume(opts.p1, cos[0])), RF.createSprite(RF.costume(opts.p2, cos[1]))];
     }
@@ -15,8 +17,8 @@
     update() {
       this.t++;
       if (this.t === 12) RF.announcer.say(this.opts.p1.name + ' versus ' + this.opts.p2.name, { rate: 0.9 });
-      if (this.t > 20 && RF.menuPressed(this.game.kb, 'confirm')) this.t = DURATION;
-      if (this.t >= DURATION) this.game.setScene(new RF.FightScene(this.game, this.opts));
+      if (this.t > 20 && RF.menuPressed(this.game.kb, 'confirm')) this.t = this.duration;
+      if (this.t >= this.duration) this.game.setScene(new RF.FightScene(this.game, this.opts));
     }
 
     render(ctx) {
@@ -49,6 +51,17 @@
         const pop = Math.max(0, 28 - this.t);
         T(ctx, 'VS', W / 2, 70 - pop, { scale: 6 + Math.floor(pop / 4), align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
       }
+      // Rival banter: speech bubbles, P1 first, then the reply.
+      if (this.banter) [0, 1].forEach((p) => {
+        const start = p === 0 ? 50 : 110;
+        if (this.t < start) return;
+        const lines = RF.font.wrap(this.banter[p], 22), x = p === 0 ? 96 : W - 96, y = p === 0 ? 24 : 46;
+        const w = Math.max(...lines.map((l) => RF.font.textWidth(l))) + 10, h = lines.length * 9 + 6;
+        ctx.fillStyle = '#000'; ctx.fillRect(x - w / 2 - 1, y - 1, w + 2, h + 2);
+        ctx.fillStyle = '#f0e8d8'; ctx.fillRect(x - w / 2, y, w, h);
+        ctx.fillRect(x - 3, y + h, 6, 4); // tail
+        lines.forEach((l, i) => T(ctx, l, x, y + 4 + i * 9, { align: 'center', color: '#1a0a08' }));
+      });
       const stage = RF.getStage(this.opts.stage);
       T(ctx, 'STAGE: ' + stage.name, W / 2, 12, { align: 'center', color: '#c8a888', outline: '#000' });
     }

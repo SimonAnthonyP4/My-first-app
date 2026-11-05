@@ -213,7 +213,7 @@
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
           break;
         case 'taunt':
-          if (this.stateTime === 50) this.gainMeter(25);
+          if (this.stateTime === 50) { this.gainMeter(25); if (this.scene && this.scene.isHuman(this)) RF.records.count('taunt'); }
           if (this.stateTime >= 56) this.setState('idle');
           break;
         case 'knockdown': // on the floor; BLOCK right as you land = quick-rise
@@ -366,7 +366,7 @@
       this.doubleJumped = false;
       this.state = null;
       this.setState('jump');
-      this.vy = this.stats.jumpPower;
+      this.vy = this.stats.jumpPower * (RF.CONFIG.MOD_LOWGRAV ? 0.72 : 1); // same height, twice the hang time
       if (this.def.jetpack) RF.audio.sfx('jet');
       this.vx = dir * Math.max(this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR, RF.CONFIG.JUMP_MIN_SPEED);
       this.airAttackUsed = false;
@@ -533,7 +533,7 @@
         const jet = this.def.jetpack && !this.airCombo && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
         const juggled = this.state === 'hitstun' && this.juggle > 0;
         const floaty = this.def.airGravity && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
-        this.vy -= jet ? this.def.jetpack.gravity : juggled ? RF.CONFIG.JUGGLE_GRAVITY : floaty ? this.def.airGravity : RF.CONFIG.GRAVITY;
+        this.vy -= (jet ? this.def.jetpack.gravity : juggled ? RF.CONFIG.JUGGLE_GRAVITY : floaty ? this.def.airGravity : RF.CONFIG.GRAVITY) * (RF.CONFIG.MOD_LOWGRAV ? 0.5 : 1);
         if (jet && this.scene && this.stateTime % 5 === 0) this.scene.effects.spawn('dust', this.x - this.facing * 10, this.y + 34);
         this.y += this.vy;
         if (this.y <= 0) {
@@ -661,7 +661,7 @@
       this.counterHit = !blocked && ((this.state === 'attack' && this.attackPhase() === 'startup') || this.state === 'throwReach' || this.state === 'taunt' ||
         (this.state === 'special' && this.stateTime < 8));
       const airborne = !this.grounded;
-      let dmg = move.damage * (1 - this.stats.damageReduction);
+      let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (blocked) {
         dmg *= RF.CONFIG.CHIP_DAMAGE;

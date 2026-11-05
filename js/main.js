@@ -38,6 +38,7 @@
         this.toast = { text: RF.audio.toggleMute() ? 'SOUND OFF' : 'SOUND ON', t: 90 };
       }
       if (this.toast && --this.toast.t <= 0) this.toast = null;
+      if (this.achievement && --this.achievement.t <= 0) this.achievement = null;
       this.scene.update();
       this.kb.tick();
     },
@@ -59,6 +60,14 @@
       acc -= STEP;
     }
     game.scene.render(ctx);
+    if (game.achievement) { // ACHIEVEMENT UNLOCKED pop-up (top centre)
+      const a = game.achievement, tIn = Math.min(1, (240 - a.t) / 12), tOut = Math.min(1, a.t / 12), y = Math.round(-30 + 34 * Math.min(tIn, tOut));
+      ctx.fillStyle = '#000'; ctx.fillRect(WIDTH / 2 - 92, y - 1, 184, 26);
+      ctx.fillStyle = '#3a2a08'; ctx.fillRect(WIDTH / 2 - 91, y, 182, 24);
+      ctx.fillStyle = '#ffd030'; ctx.fillRect(WIDTH / 2 - 91, y, 182, 1);
+      RF.font.drawText(ctx, 'ACHIEVEMENT UNLOCKED', WIDTH / 2, y + 3, { align: 'center', color: '#ffd030' });
+      RF.font.drawText(ctx, a.a.name, WIDTH / 2, y + 13, { align: 'center', color: '#ffffff' });
+    }
     if (game.toast) {
       RF.font.drawText(ctx, game.toast.text, WIDTH - 6, HEIGHT - 12, { align: 'right', color: '#ffd030', outline: '#000' });
     }

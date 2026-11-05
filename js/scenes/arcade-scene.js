@@ -96,6 +96,7 @@
       this.fire = new RF.FireField(W, H, 3);
       this.sprite = RF.createSprite(RF.costume(run.p1, run.costume));
       RF.announcer.say(run.p1.name + ' RULES TERRAMANIA HIGH!');
+      RF.records.unlock('arcade');
       RF.audio.sfx('applause');
     }
 
@@ -139,6 +140,22 @@
       if (this.t > 90 && Math.floor(this.t / 30) % 2 === 0) T(ctx, 'PRESS ENTER', W / 2, H - 12, { align: 'center', color: '#ffe0b0', outline: '#000' });
     }
   }
+
+  // SURVIVAL: endless one-round fights on one health bar (30% patched up between fights).
+  // The CPU gets tougher as your streak grows. Best streak is saved in Records.
+  RF.startSurvival = function (game, p1, costume = 0) {
+    RF.nextSurvival(game, { p1, costume, streak: 0, health: null, meter: 0, last: null });
+  };
+  RF.nextSurvival = function (game, run) {
+    const pool = RF.CHARACTERS.filter((c) => c.id !== run.last);
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    run.last = def.id;
+    const level = run.streak < 3 ? 'easy' : run.streak < 7 ? 'normal' : 'hard';
+    const stage = RF.STAGES[Math.floor(Math.random() * RF.STAGES.length)].id;
+    const c = run.costume || 0;
+    game.setScene(new RF.VersusScene(game, { p1: run.p1, p2: def, costumes: [c, def.id === run.p1.id ? (c + 1) % RF.COSTUMES.length : 0], cpu: true, stage,
+      cpuLevel: level, survival: run, roundsToWin: 1, noEntrance: run.streak > 0 }));
+  };
 
   RF.TowerScene = TowerScene;
   RF.ArcadeEndScene = ArcadeEndScene;

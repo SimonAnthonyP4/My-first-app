@@ -34,11 +34,13 @@
       for (const f of this.fighters) f.scene = this;
       if (opts.boss) this.fighters[1].maxHealth = Math.round(this.fighters[1].maxHealth * opts.boss); // arcade final boss
       this.training = !!opts.training;
+      this.roundsToWin = opts.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN;
       this.projectiles = [];
       this.inputs = [
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
         opts.cpu ? new RF.AIInput(game.kb, this, 1) : new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
       ];
+      if (opts.demo) this.inputs[0] = new RF.AIInput(game.kb, this, 0); // attract demo: CPU vs CPU
       if (this.training) this.setupDummy();
       this.effects = new RF.Effects();
       this.hud = new RF.HUD();
@@ -75,8 +77,18 @@
 
     startRound() {
       const b = this.stageDef.bounds, mid = (b.left + b.right) / 2;
+      if (RF.CONFIG.MOD_RANDOM && !this.training) { // party mod: new random fighters every round
+        this.fighters = this.fighters.map((old, i) => {
+          const def = RF.CHARACTERS[Math.floor(Math.random() * RF.CHARACTERS.length)];
+          const f = new RF.Fighter(def, i, i === 1 && def.id === this.fighters[0].def.id ? 1 : 0);
+          f.scene = this; f.meter = old.meter;
+          return f;
+        });
+      }
       this.fighters[0].reset(mid - START_GAP, 1);
       this.fighters[1].reset(mid + START_GAP, -1);
+      const run = this.opts.survival;
+      if (run && run.health != null) { this.fighters[0].health = run.health; this.fighters[0].meter = run.meter || 0; } // survival: health carries over
       this.timer = RF.CONFIG.ROUND_TIME && !this.training ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
       this.comboDmg = 0; this.lastCombo = null; this.quietFrames = 0;
       this.hitstop = 0;
@@ -109,8 +121,19 @@
 
     // ---------------- update ----------------
 
+    // TURBO runs an extra simulation step every other frame.
     update() {
+      this.updateOnce(false);
+      if (RF.CONFIG.MOD_TURBO && !this.paused && this.phase === 'fight' && this.frame % 2 === 0) this.updateOnce(true);
+    }
+
+    isHuman(f) { return !this.opts.demo && this.inputs[f.side] instanceof RF.PlayerInput; }
+
+    updateOnce(extra) {
       const kb = this.game.kb;
+      // Attract demo: any key returns to the title screen.
+      if (this.opts.demo && !extra && this.frame > 30 && (kb.down.size > 0 || (this.phase === 'matchOver' && this.phaseTime > 120))) return this.game.setScene(new RF.TitleScene(this.game));
+      if (extra) { this.frame++; this.phaseTime++; this.effects.update(); for (const f of this.fighters) f.tickVisuals(); if (this.hitstop > 0) { this.hitstop--; return; } return this.simulate(); }
       if (kb.justPressed('Backquote')) this.showHitboxes = !this.showHitboxes;
       if (kb.justPressed('Escape', 'KeyP') && this.phase !== 'matchOver') {
         this.paused = !this.paused;
@@ -196,8 +219,10 @@
             if (w.def.winQuote && w.state === 'victory') this.effects.spawnText(w.def.winQuote, w.x, w.body.height + 12, '#e8dcc0');
           }
           if (this.phaseTime >= ROUND_OVER_FRAMES) {
-            if (this.wins.some((n) => n >= RF.CONFIG.ROUNDS_TO_WIN)) {
+            if (this.wins.some((n) => n >= this.roundsToWin)) {
+              this.recordMatch();
               if (this.opts.arcade) this.endMenu = this.arcadeMenu();
+              if (this.opts.survival) this.endMenu = this.survivalMenu();
               this.setPhase('matchOver');
             }
             else { this.round++; this.startRound(); }
@@ -209,6 +234,11 @@
           break;
       }
 
+      this.simulate();
+    }
+
+    // Fighters, collisions, projectiles and hits (one simulation step).
+    simulate() {
       // During FINISH THEM! only the winner can move.
       const canAct = (f) => this.phase === 'fight' || (this.phase === 'finish' && !this.finisher && f !== this.finishVictim);
       const [a, b] = this.fighters;
@@ -293,10 +323,34 @@
         this.trialDone = 90;
         this.trialsCleared = this.trialsCleared || new Set();
         this.trialsCleared.add(RF.CONFIG.TRAINING_TRIAL);
+        RF.records.trial(RF.CONFIG.TRAINING_TRIAL);
         this.effects.spawnText('TRIAL CLEAR!', RF.CONFIG.WIDTH / 2, 120, '#60ff80');
         RF.audio.sfx('perfect');
         RF.announcer.say('TRIAL CLEAR!');
       }
+    }
+
+    // Lifetime records: wins / matches for each human player's fighter.
+    recordMatch() {
+      if (this.training || this.opts.demo) return;
+      const w = this.wins[0] > this.wins[1] ? 0 : 1;
+      for (const f of this.fighters) if (this.isHuman(f)) RF.records.match(f.def.id, f.side === w);
+    }
+
+    // ---- survival ----
+
+    survivalMenu() {
+      const run = this.opts.survival, game = this.game, me = this.fighters[0], won = this.wins[0] > this.wins[1];
+      const quit = { label: 'MAIN MENU', onSelect: () => game.setScene(new RF.TitleScene(game)) };
+      if (won) {
+        run.streak++;
+        run.health = Math.min(me.maxHealth, me.health + me.maxHealth * 0.3); // patch up 30% between fights
+        run.meter = me.meter;
+        RF.records.survival(run.streak);
+        return new RF.ListMenu([{ label: 'NEXT FIGHT', onSelect: () => RF.nextSurvival(game, run) }, quit]);
+      }
+      RF.records.survival(run.streak);
+      return new RF.ListMenu([{ label: 'TRY AGAIN', onSelect: () => RF.startSurvival(game, run.p1, run.costume) }, quit]);
     }
 
     // ---- arcade ----
@@ -396,6 +450,7 @@
     // Smashed through the wall into the next stage.
     startTransition(att, def, dir, to) {
       this.transition = { att, def, dir, to, t: 0 };
+      if (this.isHuman(att)) RF.records.unlock('transition');
       this.projectiles = [];
       def.pushVx = 0; def.vx = dir * 3; def.vy = 3;
       this.setPhase('transition');
@@ -459,6 +514,7 @@
     comboBreaker(def) {
       const att = this.opponentOf(def), away = sign(att.x - def.x) || def.facing;
       def.meter -= RF.CONFIG.BREAKER_COST;
+      if (this.isHuman(def)) RF.records.unlock('breaker');
       def.combo = 0;
       def.state = null;
       if (def.grounded) def.setState('idle');
@@ -477,6 +533,7 @@
 
     startSuperFreeze(f) {
       this.superFreeze = { f, t: 0 };
+      if (this.isHuman(f)) RF.records.unlock('super');
       this.game.kb.rumble(f.side, 1, 500);
       this.projectiles = this.projectiles.filter((p) => p.owner === f);
       RF.audio.sfx('super');
@@ -490,7 +547,7 @@
     tryDaze(f) {
       const opp = this.opponentOf(f);
       if (this.phase !== 'fight' || this.finishOffered || f.state === 'dazed' || opp.isKO || opp.health <= 0) return false;
-      if (this.wins[opp.side] + 1 < RF.CONFIG.ROUNDS_TO_WIN) return false;
+      if (this.wins[opp.side] + 1 < this.roundsToWin) return false;
       this.finishOffered = true;
       this.finishVictim = f;
       f.health = 0;
@@ -508,6 +565,7 @@
       const kind = RF.FINISHERS[att.def.finisher];
       if (!kind) return false;
       this.finisher = { kind, att, vic, t: 0 };
+      if (this.isHuman(att)) RF.records.unlock('finisher');
       att.faceOpponent(vic);
       vic.facing = -att.facing;
       att.vx = vic.vx = att.pushVx = vic.pushVx = 0;
@@ -529,6 +587,7 @@
       RF.audio.sfx('hit');
       this.comboText = { side: att.side, hits: this.brutal, t: 70 };
       if (this.brutal >= BRUTAL_HITS) {
+        if (this.isHuman(att)) RF.records.unlock('brutality');
         this.finisher = { kind: RF.FINISHERS.brutality, att, vic: def, t: 0 };
         att.vx = def.vx = att.pushVx = def.pushVx = 0;
         att.move = null; att.state = null; att.setState('finishing');
@@ -632,6 +691,7 @@
 
       if (def.isPerfectBlockAgainst(att, move)) {
         def.gainMeter(15);
+        if (this.isHuman(def)) RF.records.count('perfect');
         this.effects.spawn('perfect', ex, ey);
         this.effects.spawnText('PERFECT!', def.x, def.body.height + 14, '#8ff0ff');
         this.effects.spawnText(def.special.name.toUpperCase() + '!', def.x, def.body.height + 4, '#ffd030', 12);
@@ -683,6 +743,8 @@
         const prev = this.comboText && this.comboText.side === att.side ? this.comboText : null;
         const air = def.juggle >= 2 || !!(prev && prev.air);
         this.comboText = { side: att.side, hits: def.combo, t: 70, air: air && def.combo >= 3 };
+        if (this.isHuman(att)) RF.records.combo(def.combo);
+        if (RF.CONFIG.MOD_PROTEIN) att.health = Math.min(att.maxHealth, att.health + (hpBefore - def.health) * 0.5);
         const PRAISE = { 5: 'BRUTAL!', 7: 'SAVAGE!', 9: 'INSANE!', 12: 'TERRAMANIA!' };
         if (PRAISE[def.combo]) { RF.audio.sfx('ready'); RF.announcer.say(PRAISE[def.combo], { rate: 0.95 }); }
       }
@@ -837,6 +899,7 @@
       }
       this.roundWinner = winner;
       this.flawless = winner !== null && this.fighters[winner].health >= this.fighters[winner].maxHealth;
+      if (this.flawless && this.isHuman(this.fighters[winner])) RF.records.unlock('flawless');
       if (this.flawless) RF.audio.sfx('perfect');
       this.setPhase('roundOver');
     }
@@ -886,6 +949,8 @@
       this.hud.draw(ctx, this);
       if (ent) RF.drawEntranceCard(ctx, ent.f, ent.t);
       if (this.training) this.drawTrainingHud(ctx, W);
+      if (this.opts.survival) T(ctx, 'SURVIVAL - STREAK ' + this.opts.survival.streak, W / 2, 30, { align: 'center', color: '#ffd030', outline: '#000' });
+      if (this.opts.demo && Math.floor(this.frame / 30) % 2) T(ctx, 'DEMO - PRESS ANY KEY', W / 2, 196, { align: 'center', color: '#ffe0b0', outline: '#000' });
       if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
       if (this.toasty) this.drawToasty(ctx, W, H);
       this.drawAnnouncements(ctx, W, H);

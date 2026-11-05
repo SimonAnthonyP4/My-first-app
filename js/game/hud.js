@@ -53,7 +53,7 @@
         // Name + round wins
         const nameOpts = { color: '#ffffff', outline: '#000', align: i === 0 ? 'left' : 'right' };
         T(ctx, f.def.name, i === 0 ? x : x + BAR_W, BAR_Y + BAR_H + 4, nameOpts);
-        for (let r = 0; r < RF.CONFIG.ROUNDS_TO_WIN; r++) {
+        for (let r = 0; r < (scene.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN); r++) {
           const px = i === 0 ? x + BAR_W - 8 - r * 10 : x + r * 10 + 1;
           ctx.fillStyle = '#000';
           ctx.fillRect(px - 1, BAR_Y + BAR_H + 4, 9, 9);
