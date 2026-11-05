@@ -37,6 +37,20 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  broBatch: {
+    name: 'Bro Batch',
+    description: 'Opens a portal above the opponent and rains down a fresh batch of giant BRO BATCH protein bars. The last one is a MEGA bar.',
+    kind: 'barRain',
+    startup: 16,         // the portal opens over their head
+    bars: 6,             // how many bars fall
+    interval: 7,         // frames between bars
+    fall: 14,            // frames each bar takes to land
+    recovery: 20,
+    damage: 3.5,         // per bar
+    megaDamage: 9,       // the final MEGA bar
+    hitstun: 26, blockstun: 10, pushback: 1, hitstop: 4,
+    launch: 0,
+  },
   flyingKnee: {
     name: 'Flying Knee',
     description: 'Launches off the back foot and flies across the stage knee-first.',

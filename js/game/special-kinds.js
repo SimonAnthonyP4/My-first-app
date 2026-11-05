@@ -32,6 +32,49 @@
       },
     },
 
+    // Anthony: BRO BATCH - a portal over the opponent rains giant protein bars.
+    barRain: {
+      start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx('arcane'); },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t < s.startup) { d.tx += (opp.x - d.tx) * 0.15; return; } // the portal tracks them while it opens
+        for (let i = 0; i < s.bars; i++) {
+          const landAt = s.startup + i * s.interval + s.fall;
+          if (t !== landAt) continue;
+          const mega = i === s.bars - 1, x = d.tx + (mega ? 0 : ((i % 3) - 1) * 10);
+          scene.shake = Math.max(scene.shake, mega ? 12 : 4);
+          RF.audio.sfx(mega ? 'boom' : 'stomp');
+          scene.effects.spawn('dust', x, 1);
+          if (opp.getHurtbox() && Math.abs(opp.x - x) < opp.body.width / 2 + (mega ? 22 : 12)) {
+            const mv = RF.specialMove(f, s);
+            if (mega) { mv.damage = s.megaDamage * f.stats.damage * (f.superActive ? RF.CONFIG.SUPER_DAMAGE : f.exActive ? RF.CONFIG.EX_DAMAGE : 1); mv.launch = 7; mv.hitstop = 10; mv.hitstun = 34; }
+            scene.applyHit(f, opp, mv, 'heavy', x, 30);
+          }
+        }
+        if (t >= s.startup + (s.bars - 1) * s.interval + s.fall + s.recovery) f.setState('idle');
+      },
+      anim(f) { return ['throw', f.stateTime < f.special.startup ? 1 : 1]; }, // both arms raised
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, d = f.specialData, top = 58;
+        const open = Math.min(1, t / s.startup), close = t > s.startup + (s.bars - 1) * s.interval + s.fall ? Math.max(0, 1 - (t - (s.startup + (s.bars - 1) * s.interval + s.fall)) / 12) : 1;
+        const rx = 34 * open * close, ry = 8 * open * close;
+        if (rx > 1) { // the portal
+          ctx.fillStyle = 'rgba(40,0,20,0.85)'; ctx.beginPath(); ctx.ellipse(d.tx, top, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#ff70a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(d.tx, top, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = '#ffe0ea'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(d.tx, top, rx - 4, Math.max(1, ry - 2), frame / 10, 0, Math.PI * 2); ctx.stroke();
+        }
+        for (let i = 0; i < s.bars; i++) { // the bars
+          const start = s.startup + i * s.interval, u = (t - start) / s.fall;
+          if (u < 0 || t > start + s.fall + 10) continue;
+          const mega = i === s.bars - 1, k = mega ? 2 : 1;
+          const x = d.tx + (mega ? 0 : ((i % 3) - 1) * 10), y = u >= 1 ? floorY - 6 * k : top + (floorY - top - 6 * k) * u * u;
+          RF.drawProteinBar(ctx, x, y, k, u >= 1 ? 0 : (t * 0.4 + i) * (i % 2 ? 1 : -1));
+        }
+        if (t >= s.startup && t < s.startup + 40) RF.font.drawText(ctx, 'BRO BATCH!', RF.CONFIG.WIDTH / 2, 50, { scale: 3, align: 'center', outline: '#000',
+          color: ['#ffffff', '#ffe0ea', '#ffb0c8', '#ff80a8', '#ff5080', '#e02060', '#a01040'] });
+      },
+    },
+
     // Simon: leaps across the stage knee-first.
     flyingKnee: {
       start(f) { f.vx = 0; },

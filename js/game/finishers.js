@@ -198,6 +198,49 @@
   }
 
   RF.FINISHERS = {
+    // Anthony: BULK ORDER - a portal opens and a whole shipment of BRO BATCH crates
+    // buries the loser. Stamped DELIVERED. He floats down onto the pile with a bar.
+    bulkOrder: {
+      name: 'Bulk Order',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 120 ? ['throw', 1] : ['victory', (t >> 3) % 2];
+        if (t === 2) RF.audio.sfx('arcane');
+        for (let i = 0; i < 9; i++) if (t === 30 + i * 8) { RF.audio.sfx(i === 8 ? 'boom' : 'stomp'); scene.shake = i === 8 ? 14 : 5; }
+        if (t === 112) { RF.audio.sfx('heavy'); scene.effects.spawnText('DELIVERED!', vic.x, 100, '#ff4060'); }
+        if (t === 170) RF.audio.sfx('applause');
+      },
+      drawVictim(vic, ctx, floorY, t) { if (t < 70) drawPose(vic, ctx, vic.x, floorY, ['hit', 0]); },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const x0 = Math.round(vic.x + Math.sign(vic.x - att.x || 1) * 16), top = 52; // the pile lands on them, clear of him
+        if (t < 120) { // the portal
+          const o = Math.min(1, t / 20), c = t > 100 ? Math.max(0, 1 - (t - 100) / 20) : 1;
+          ctx.fillStyle = 'rgba(40,0,20,0.85)'; ctx.beginPath(); ctx.ellipse(x0, top, 50 * o * c, 10 * o * c, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#ff70a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x0, top, 50 * o * c + 1, 10 * o * c + 1, 0, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
+        }
+        // crates stacking into a pyramid: 4 on the bottom, 3, then 2
+        const SPOTS = [[-36, 0], [-12, 0], [12, 0], [36, 0], [-24, 1], [0, 1], [24, 1], [-12, 2], [12, 2]];
+        SPOTS.forEach(([dx, row], i) => {
+          const land = 30 + i * 8, u = Math.min(1, Math.max(0, (t - land + 14) / 14));
+          if (u <= 0) return;
+          const y = top + (floorY - 22 - row * 22 - top) * u * u, x = x0 + dx;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 12, y - 1, 24, 23);
+          ctx.fillStyle = '#b8864a'; ctx.fillRect(x - 11, y, 22, 21);
+          ctx.fillStyle = '#8a5a2a'; ctx.fillRect(x - 11, y + 7, 22, 1); ctx.fillRect(x - 11, y + 14, 22, 1);
+          RF.font.drawText(ctx, 'BRO', x, y + 2, { align: 'center', color: '#1a1a22' });
+          RF.font.drawText(ctx, 'BATCH', x, y + 11, { align: 'center', color: '#c0204a' });
+        });
+        if (t >= 112) { // the DELIVERED stamp
+          const s = t < 118 ? 2 - (t - 112) / 6 : 1;
+          ctx.save(); ctx.translate(x0, floorY - 50); ctx.rotate(-0.25); ctx.scale(s, s);
+          ctx.strokeStyle = '#e02040'; ctx.lineWidth = 2; ctx.strokeRect(-40, -9, 80, 18); ctx.lineWidth = 1;
+          RF.font.drawText(ctx, 'DELIVERED', 0, -4, { align: 'center', color: '#e02040' });
+          ctx.restore();
+        }
+        if (t >= 140) RF.drawProteinBar(ctx, att.x + att.facing * 14, floorY - att.body.height * 0.55 - 14, 1, 0); // a well-earned snack
+      },
+    },
+
     // Simon: THE ART OF EIGHT LIMBS - fists, elbows, knees and shins, counted out
     // one by one, then a final kick that sends them into the sky.
     eightLimbs: {

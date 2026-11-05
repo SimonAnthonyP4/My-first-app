@@ -99,7 +99,7 @@ rumble needs Chrome or Edge.
   `js/config/game.js` (`LAUNCH_JUMP`, `JUGGLE_LIMIT`, `SUPER_DAMAGE`, `METER_GAIN`, ...),
   `js/config/moves.js` (`launcher`) and `js/config/ai.js`.
 
-- **Health:** Mr. Dabalsa starts at **200%**; King Sirven and Holbrook at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
+- **Health:** Mr. Dabalsa starts at **200%**; King Sirven, Holbrook and Anthony at **125%**; tanks (Bruiser, Dr. Weissenberg, Dr. Astuto) at **175%**; everyone
   else (Viper, Jauregui, El Escobedo, Lady Landa) at **100%**. The number is shown on each health bar, and the bars are the
   same size for everyone (`HEALTH_BY_ARCHETYPE` in `js/config/game.js`).
 - **Dr. Weissenberg:** his heavy attack is a ranged lightning bolt, not a kick, and his
@@ -352,6 +352,26 @@ throws his kicks.
   stance. **Brutality:** Elbow Storm.
 
 Character select is now a 6 x 2 grid (12 slots).
+
+## Anthony
+
+The ultra sorcerer and CEO of Bro Batch protein bars (sorcerer, **125% health**, from Bro Batch
+HQ). He **always floats**: hovering above the floor with a gentle bob while his shadow stays on
+the ground (`hover` / `hoverBob`), with floaty, slow-falling jumps (`airGravity`). A crimson magic
+circle turns behind his head and pink flames dance in his open hands (`aura: 'sorcererAura'`).
+
+- **Light: Arcane Burst.** A spinning sigil blasts out of his palm: mid range, and it chains.
+- **Heavy: Crimson Hex.** A slow, heavy magic orb that **homes in** on the opponent's height
+  (`home` on the projectile), so jumping over it doesn't save you.
+- **Block: Arcane Ward.** A spinning hexagram shield that **reflects projectiles** back at
+  whoever threw them ("REFLECTED!", `reflect: true`).
+- **Special: BRO BATCH.** A portal opens above the opponent and rains down a fresh batch of giant
+  branded protein bars, finishing with a MEGA bar that launches them.
+- **Throw: Protein Shake.** Levitated into a crimson vortex and shaken like a blender.
+- **Finisher: Bulk Order.** A portal drops a whole shipment of BRO BATCH crates on the loser,
+  stamped DELIVERED, then he floats there eating a bar.
+- **Entrance:** rises out of a glowing summoning circle in a pillar of light. **Brutality:**
+  Protein Overload.
 
 ## Adding a character drawn in Piskel
 

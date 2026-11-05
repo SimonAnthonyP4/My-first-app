@@ -467,7 +467,8 @@
         // A jetpack (El Escobedo) means lighter gravity for the whole jump: more airtime.
         const jet = this.def.jetpack && !this.airCombo && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
         const juggled = this.state === 'hitstun' && this.juggle > 0;
-        this.vy -= jet ? this.def.jetpack.gravity : juggled ? RF.CONFIG.JUGGLE_GRAVITY : RF.CONFIG.GRAVITY;
+        const floaty = this.def.airGravity && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
+        this.vy -= jet ? this.def.jetpack.gravity : juggled ? RF.CONFIG.JUGGLE_GRAVITY : floaty ? this.def.airGravity : RF.CONFIG.GRAVITY;
         if (jet && this.scene && this.stateTime % 5 === 0) this.scene.effects.spawn('dust', this.x - this.facing * 10, this.y + 34);
         this.y += this.vy;
         if (this.y <= 0) {
@@ -670,6 +671,11 @@
       // Shudder while frozen in hit-stop, like a real impact.
       if (this.scene && this.scene.hitstop > 0 && this.state === 'hitstun') x += this.scene.frame % 2 ? 1.5 : -1.5;
       if (this.hidden) return; // e.g. inside a car during a finisher
+      // Levitating fighters (Anthony) hover above the floor, gently bobbing.
+      const t0 = this.scene ? this.scene.frame : 0;
+      this.lift = this.def.hover && !['ko', 'knockdown', 'thrown', 'finished', 'dazed'].includes(this.state)
+        ? Math.round(this.def.hover + Math.sin(t0 / 14) * (this.def.hoverBob || 0)) : 0;
+      floorY -= this.lift;
       const jetOn = this.def.jetpack && this.y > 0 && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
       if (jetOn) RF.MOVE_FX.jetpack(this, ctx, floorY, this.scene ? this.scene.frame : 0); // drawn behind him
       const aura = this.def.aura && RF.MOVE_FX[this.def.aura];

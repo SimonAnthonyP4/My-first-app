@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  proteinShake: {
+    name: 'Protein Shake',
+    description: 'Levitates the opponent into a crimson vortex and shakes them like a blender, then blasts them away.',
+    kind: 'levitate',
+    ticks: 4,
+    damagePerTick: 2.5,
+    finisherDamage: 8,
+  },
   thaiClinch: {
     name: 'Thai Clinch',
     description: 'Locks both hands behind the head and drives in five rapid knees, then pushes them off with a teep kick.',

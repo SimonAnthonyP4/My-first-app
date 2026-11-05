@@ -591,6 +591,11 @@
       for (const p of this.projectiles) {
         p.x += p.vx;
         p.t++;
+        if (p.cfg.home) { // homing: drifts toward the target's height (Anthony's Crimson Hex)
+          const tg = this.opponentOf(p.owner), ty = tg.y + tg.body.height * 0.5 - p.h / 2;
+          p.y += Math.max(-p.cfg.home, Math.min(p.cfg.home, ty - p.y));
+          p.y = Math.max(0, p.y);
+        }
         if (p.cfg.grow) { // a projectile that grows as it travels (Holbrook's Urban Sprawl)
           p.h = Math.min(p.cfg.maxH, p.h + p.cfg.grow);
           p.w = Math.min(p.cfg.maxW, p.w + (p.cfg.growW || 0));
@@ -611,6 +616,15 @@
           const target = this.opponentOf(p.owner);
           const hurt = target.getHurtbox();
           if (hurt && rectsOverlap(this.projBox(p), hurt)) {
+            // A reflecting guard (Anthony's Arcane Ward) sends projectiles straight back.
+            if (target.def.reflect && target.isBlockingAgainst(p.owner, p.move) && p.owner !== target) {
+              p.owner = target; p.vx = -p.vx * 1.2; p.move = Object.assign({}, p.move, { tag: 'special' });
+              target.shieldHit = 12;
+              this.effects.spawnText('REFLECTED!', target.x, target.body.height + 14, '#ff80c0');
+              this.effects.spawn('perfect', p.x, p.y + p.h / 2);
+              RF.audio.sfx('arcane');
+              continue;
+            }
             p.dead = true;
             this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
           }

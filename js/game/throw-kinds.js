@@ -69,6 +69,35 @@
       },
     },
 
+    // Anthony: lifted into a magic vortex and shaken like a protein shake.
+    levitate: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 14, Math.min(40, t * 1.2));
+        def.x += Math.sin(t * 1.3) * Math.min(4, t / 8);       // shaking
+        def.thrownPose = ['hit', 0];
+        if (t === 4) RF.audio.sfx('arcane');
+        for (let i = 0; i < T.ticks; i++) if (t === 24 + i * 12) { scene.throwHit(att, def, T.damagePerTick); RF.audio.sfx('drill'); }
+        if (t === 24 + T.ticks * 12) {
+          scene.effects.spawnText('SHAKEN!', def.x, def.y + def.body.height + 10, '#ff80c0');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 4 });
+        }
+        return t >= 24 + T.ticks * 12 + 16;
+      },
+      anim(att, t) { return t < 6 ? ['throw', 0] : ['throw', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t > 24 + att.throwCfg.ticks * 12) return;
+        const cx = def.x, cy = floorY - def.y - def.body.height / 2;
+        for (let i = 0; i < 14; i++) { // the vortex
+          const a = frame / 3 + i * 0.9, r = 18 + (i % 4) * 6;
+          ctx.fillStyle = i % 2 ? 'rgba(255,110,160,0.8)' : 'rgba(255,230,240,0.8)';
+          ctx.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r * 1.4), 3, 3);
+        }
+        ctx.strokeStyle = 'rgba(255,90,140,0.7)'; ctx.beginPath(); ctx.ellipse(cx, floorY - 2, 22, 5, 0, 0, Math.PI * 2); ctx.stroke();
+      },
+    },
+
     // Holbrook: wrapped around a spinning globe, then flattened into a Mercator map.
     mercator: {
       update(att, def, t, scene) {

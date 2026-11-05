@@ -39,6 +39,67 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Anthony's aura: a slowly turning crimson magic circle behind his head and
+    // pink flames dancing in his open hands.
+    sorcererAura(f, ctx, floorY, frame, layer) {
+      if (f.isKO || f.state === 'thrown' || f.state === 'finished' || f.state === 'knockdown') return;
+      const sp = f.def.sprite, U = sp.scale, baseY = floorY - f.y; // floorY already includes his hover
+      const at = (cr) => [f.x + f.facing * (cr[0] + 0.5 - sp.footCol) * U, baseY - (sp.grid.length - cr[1]) * U];
+      if (layer === 'back') {
+        const [hx, hy] = at(sp.haloAt), R = 24, rot = frame / 60;
+        ctx.save(); ctx.translate(Math.round(hx), Math.round(hy));
+        ctx.globalAlpha = 0.55 + 0.15 * Math.sin(frame / 9);
+        ctx.strokeStyle = '#e8507a'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1; ctx.strokeStyle = '#ffb0c8';
+        ctx.beginPath(); ctx.arc(0, 0, R - 5, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 8; i++) { // spokes + runes
+          const a = rot + (i / 8) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * (R - 5), Math.sin(a) * (R - 5)); ctx.lineTo(Math.cos(a) * (R + 4), Math.sin(a) * (R + 4)); ctx.stroke();
+          const b = -rot * 1.5 + (i / 8) * Math.PI * 2;
+          ctx.fillStyle = '#ffe0ea'; ctx.fillRect(Math.round(Math.cos(b) * (R - 10)) - 1, Math.round(Math.sin(b) * (R - 10)) - 1, 2, 2);
+        }
+        ctx.restore();
+        return;
+      }
+      // flames in the open hands (the front one only while that arm is free)
+      const hands = [sp.backHandAt];
+      if (!['attack', 'special', 'throwReach', 'throwing', 'block', 'blockstun'].includes(f.state)) hands.push(sp.frontHandAt);
+      for (const h of hands) {
+        const [x, y] = at(h);
+        for (let i = 0; i < 9; i++) {
+          const u = ((frame * 1.3 + i * 13) % 24) / 24;
+          const fx = x + Math.sin(i * 2.1 + frame / 5) * (3 + u * 3), fy = y - 3 - u * 18;
+          ctx.fillStyle = u < 0.3 ? '#fff0f4' : u < 0.6 ? `rgba(255,120,160,${1 - u})` : `rgba(200,40,80,${1 - u})`;
+          const s = Math.max(1, Math.round(4 - u * 3));
+          ctx.fillRect(Math.round(fx - s / 2), Math.round(fy), s, s + 1);
+        }
+      }
+    },
+
+    // Anthony's light, ARCANE BURST: a spinning sigil bursts out of his palm.
+    arcane(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime, reach = m.hitbox.x + m.hitbox.w;
+      const hx = f.x + f.facing * 16, hy = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      if (t < m.startup) { // gathering
+        ctx.fillStyle = `rgba(255,120,170,${t / m.startup})`;
+        ctx.beginPath(); ctx.arc(hx, hy, 2 + t, 0, Math.PI * 2); ctx.fill();
+        return;
+      }
+      const a = t - m.startup; if (a > m.active + 6) return;
+      const fade = a > m.active ? 1 - (a - m.active) / 6 : 1, len = reach * Math.min(1, (a + 1) / 2);
+      ctx.save(); ctx.globalAlpha = fade;
+      ctx.fillStyle = 'rgba(255,90,140,0.55)'; ctx.fillRect(Math.round(Math.min(hx, hx + f.facing * len)), Math.round(hy - 5), Math.round(len), 10);
+      ctx.fillStyle = '#ffe0ea'; ctx.fillRect(Math.round(Math.min(hx, hx + f.facing * len)), Math.round(hy - 1), Math.round(len), 3);
+      const sx = hx + f.facing * len; // the sigil at the tip
+      ctx.strokeStyle = '#ff70a8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sx, hy, 9, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) { const ang = frame / 4 + i * Math.PI / 3; ctx.lineTo(sx + Math.cos(ang) * 9, hy + Math.sin(ang) * 9); }
+      ctx.closePath(); ctx.stroke(); ctx.lineWidth = 1;
+      ctx.restore();
+    },
+
     // Super specials: the fighter burns with golden energy.
     superAura(f, ctx, floorY, frame) {
       const h = f.body.height, baseY = floorY - f.y;
@@ -213,6 +274,30 @@
     }
   };
 
+  // A giant BRO BATCH protein bar (Anthony's special and finisher). k = size, rot = spin.
+  RF.drawProteinBar = function (ctx, x, y, k = 1, rot = 0) {
+    const w = 26 * k, h = 10 * k;
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(rot);
+    ctx.fillStyle = '#111'; ctx.fillRect(-w / 2 - 1, -h / 2 - 1, w + 2, h + 2);
+    ctx.fillStyle = '#1a1a22'; ctx.fillRect(-w / 2, -h / 2, w, h);              // black wrapper
+    ctx.fillStyle = '#e8b420'; ctx.fillRect(-w / 2, -h / 2, w, k);                // gold stripes
+    ctx.fillRect(-w / 2, h / 2 - k, w, k);
+    ctx.fillStyle = '#c0204a'; ctx.fillRect(-w / 2, -h / 2, 3 * k, h); ctx.fillRect(w / 2 - 3 * k, -h / 2, 3 * k, h); // crimps
+    if (k >= 1) RF.font.drawText(ctx, k >= 2 ? 'BRO BATCH' : 'BRO', 0, -3 * k, { align: 'center', color: '#ffffff', scale: k >= 2 ? 1 : 1 });
+    ctx.restore();
+  };
+
+  // Anthony's CRIMSON HEX: a pulsing orb of crimson magic wrapped in orbiting runes.
+  RF.PROJECTILE_ART.hexOrb = function (ctx, x, y, t, dir) {
+    const r = 8 + Math.sin(t / 3) * 1.5;
+    for (let i = 1; i <= 5; i++) { ctx.fillStyle = `rgba(230,60,110,${0.35 - i * 0.06})`; ctx.beginPath(); ctx.arc(x - dir * i * 6, y, r - i, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, r + 1, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#c0204a'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ff7aa8'; ctx.beginPath(); ctx.arc(x - 2, y - 2, r * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff0f4'; ctx.fillRect(Math.round(x - 3), Math.round(y - 4), 3, 3);
+    for (let i = 0; i < 3; i++) { const a = t / 5 + i * 2.1; ctx.fillStyle = '#ffd0e0'; ctx.fillRect(Math.round(x + Math.cos(a) * (r + 5)) - 1, Math.round(y + Math.sin(a) * (r + 5) * 0.6) - 1, 3, 3); }
+  };
+
   // Holbrook's URBAN SPRAWL: a city erupting out of the ground and spreading forward,
   // skyscrapers at the leading edge, suburbs sprawling out behind.
   RF.PROJECTILE_ART.sprawl = function (ctx, x, y, t, dir, p, floorY) {
@@ -290,6 +375,26 @@
   }
 
   RF.BLOCK_FX = {
+    // Anthony: ARCANE WARD - a spinning hexagram magic circle. It REFLECTS projectiles.
+    arcaneWard(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, cx = Math.round(g.front + f.facing * 6), cy = Math.round(g.mid), R = 18 + fl * 6, rot = frame / 15;
+      ctx.save();
+      ctx.globalAlpha = 0.6 + fl * 0.4;
+      ctx.translate(cx, cy); ctx.scale(0.45, 1); // seen edge-on, like a shield
+      ctx.fillStyle = 'rgba(255,80,140,0.18)'; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = fl > 0.3 ? '#ffffff' : '#ff70a8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+      for (const off of [0, Math.PI / 3]) { // hexagram
+        ctx.beginPath();
+        for (let i = 0; i < 3; i++) { const a = rot + off + i * (Math.PI * 2 / 3); ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); }
+        ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+      if (fl > 0.4) RF.font.drawText(ctx, 'ARCANE WARD', f.x, g.top - 16, { align: 'center', color: '#ff9ac8', outline: '#000' });
+    },
+
     // Simon: SHIN CHECK - a raised, glowing shin and crossed forearms wrapped in sacred
     // Sak Yant-style gold lines. He recovers from blocks fast (blockstunScale).
     shinCheck(f, ctx, floorY, frame) {

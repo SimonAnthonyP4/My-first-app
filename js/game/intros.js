@@ -84,6 +84,27 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Rises out of a glowing summoning circle (Anthony).
+    portal: {
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('arcane');
+        f.hidden = t < 14;
+        if (t === 14) { scene.flash = 4; }
+      },
+      draw(f, ctx, floorY, t, frame) {
+        if (t > 60) return;
+        const o = Math.min(1, t / 12) * (t > 45 ? (60 - t) / 15 : 1), R = 30 * o;
+        ctx.save(); ctx.translate(f.x, floorY - 2); ctx.scale(1, 0.25);
+        ctx.strokeStyle = '#ff70a8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#ffe0ea'; ctx.lineWidth = 2;
+        ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = frame / 15 + i * Math.PI / 3; ctx.lineTo(Math.cos(a) * R * 0.8, Math.sin(a) * R * 0.8); } ctx.closePath(); ctx.stroke();
+        ctx.restore();
+        if (t > 10 && t < 30) { // a pillar of light
+          ctx.fillStyle = `rgba(255,140,190,${0.5 * (1 - Math.abs(t - 20) / 10)})`;
+          ctx.fillRect(Math.round(f.x - 16), 0, 32, floorY);
+        }
+      },
+    },
     // Wai Kru: kneels and bows in the pre-fight ritual, then rises into his stance (Simon).
     waikru: {
       update(f, t, scene) {
