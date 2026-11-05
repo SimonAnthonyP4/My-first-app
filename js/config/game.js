@@ -59,6 +59,8 @@ RF.CONFIG = {
   MUSIC_VOLUME: 0.7,      // 0..1
   SFX_VOLUME: 0.8,        // 0..1
   CPU_LEVEL: 'normal',
-  RUMBLE: true,           // controller vibration on hits    // easy / normal / hard (see ai.js)
+  RUMBLE: true,
+  ANNOUNCER: true,
+  TRAINING_DUMMY: 'stand', // training mode dummy: stand / block / crouch / jump / cpu        // the deep arena voice ("ROUND ONE... FIGHT!")           // controller vibration on hits    // easy / normal / hard (see ai.js)
   SHOW_HITBOXES: false,
 };

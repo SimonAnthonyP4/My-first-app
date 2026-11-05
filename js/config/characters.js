@@ -73,8 +73,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 2.4,
       jumpPower: 11.4,
-      damage: 0.9,
-      damageReduction: -0.1,
+      damage: 1.1,
+      damageReduction: 0.05,
       attackSpeed: 1.3,
     },
     blockFx: 'shurikenWall',
@@ -178,8 +178,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 2.2,
       jumpPower: 11.2,
-      damage: 0.95,
-      damageReduction: -0.05,
+      damage: 1.1,
+      damageReduction: 0.05,
       attackSpeed: 1.15,
     },
     moves: {
@@ -506,8 +506,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 2.0,
       jumpPower: 8.6,     // lower launch, but the jetpack's light gravity keeps him up longer
-      damage: 1.0,
-      damageReduction: -0.05,
+      damage: 1.12,
+      damageReduction: 0.05,
       attackSpeed: 1.1,
     },
     // Jetpack: much lighter gravity during jumps = about 50% more airtime.

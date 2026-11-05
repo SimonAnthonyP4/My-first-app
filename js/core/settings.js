@@ -29,6 +29,10 @@
       options: [[0, 'OFF'], [0.4, 'LOW'], [0.8, 'MEDIUM'], [1, 'HIGH']],
     },
     {
+      id: 'ANNOUNCER', label: 'ANNOUNCER VOICE',
+      options: [[true, 'ON'], [false, 'OFF']],
+    },
+    {
       id: 'RUMBLE', label: 'CONTROLLER RUMBLE',
       options: [[true, 'ON'], [false, 'OFF']],
     },

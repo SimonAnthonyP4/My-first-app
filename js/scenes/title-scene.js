@@ -4,7 +4,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 104, ITEM_GAP = 17;
+  const ITEM_Y = 102, ITEM_GAP = 14;
 
   class TitleScene {
     constructor(game) {
@@ -14,7 +14,9 @@
       this.shake = 0;
       this.menu = new RF.ListMenu([
         { label: 'FIGHT NOW', onSelect: () => this.go(new RF.SelectScene(game)) },
+        { label: 'ARCADE', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
         { label: 'VS CPU', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
+        { label: 'TRAINING', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
         { label: 'HOW TO PLAY', onSelect: () => this.go(new RF.InfoScene(game, 'howto')) },
         { label: 'SETTINGS', onSelect: () => this.go(new RF.SettingsScene(game)) },
         { label: 'CREDITS', onSelect: () => this.go(new RF.InfoScene(game, 'credits')) },

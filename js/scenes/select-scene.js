@@ -28,7 +28,10 @@
       this.cursor = [idx(prev && prev.p1, 0), idx(prev && prev.p2, 1)];
       this.cpu = !!(prev && prev.cpu);
       this.stage = prev && prev.stage;
-      this.labels = this.cpu ? ['P1', 'CPU'] : ['P1', 'P2'];
+      this.arcade = !!(prev && prev.arcade);
+      this.training = !!(prev && prev.training);
+      this.labels = this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
+      RF.announcer.say('CHOOSE YOUR FIGHTER');
       this.ready = [false, false];
       this.readyTime = 0;
       // Light attack picks, block cancels. Enter/Space also pick and Backspace
@@ -72,6 +75,7 @@
     updateCpuMode(kb) {
       const pressed = (act) => kb.justPressed(...this.inputs[0][act]);
       if (!this.ready[0]) return this.updateCursor(0, pressed);
+      if (this.arcade) return RF.startArcade(this.game, this.slots[this.cursor[0]]); // the tower picks your opponents
       if (!this.ready[1]) {
         if (pressed('block')) { this.ready[0] = false; return; }
         return this.updateCursor(1, pressed);
@@ -101,7 +105,7 @@
 
     startFight() {
       const p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
-      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: this.cpu, stage: this.stage }));
+      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: this.cpu, training: this.training, stage: this.stage }));
     }
 
     render(ctx) {
@@ -127,7 +131,7 @@
         }
       });
       // Cursors (P1 outer frame, P2 inner frame, so both show on the same slot)
-      for (let p = 0; p < 2; p++) {
+      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
         const i = this.cursor[p];
         const x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP);
         const blink = this.ready[p] || Math.floor(this.t / 6) % 4 !== 0;
@@ -141,7 +145,7 @@
       ctx.lineWidth = 1;
 
       // Big previews either side of the grid
-      for (let p = 0; p < 2; p++) {
+      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
         const def = this.slots[this.cursor[p]];
         const x = p === 0 ? 44 : W - 44;
         if (!def) {
@@ -157,12 +161,21 @@
         this.sprite(def, alt).draw(ctx, anim, Math.floor(this.t / 18) % 2, x, 101, p === 0 ? 1 : -1);
       }
 
-      for (let p = 0; p < 2; p++) this.drawInfo(ctx, p);
+      this.drawInfo(ctx, 0);
+      if (this.arcade) this.drawArcadeInfo(ctx); else this.drawInfo(ctx, 1);
 
       let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'F/ENTER OR LIGHT = SELECT - H/BLOCK = CANCEL - ESC = MENU';
-      if (this.cpu && this.ready[0] && !this.ready[1]) hint = 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
-      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK BRUISER OR VIPER';
+      if (this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY (F OR ENTER)' : 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
+      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK ANOTHER ONE';
       T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });
+    }
+
+    drawArcadeInfo(ctx) {
+      const x = W / 2 + 4, y = 106, w = W / 2 - 8;
+      RF.drawPanel(ctx, x, y, w, 104, '#c8a040');
+      T(ctx, 'ARCADE', x + 6, y + 4, { scale: 2, color: RF.TITLE_COLORS, outline: '#000' });
+      ['CLIMB THE TOWER: 5 OPPONENTS,', 'EACH ONE TOUGHER THAN THE LAST.', '', 'THEN THE FINAL BOSS,', 'KING SIRVEN, IN HIS OWN OFFICE.', '', 'LOSE? CONTINUE AND TRY AGAIN.']
+        .forEach((l, i) => T(ctx, l, x + 6, y + 24 + i * 9, { color: i >= 3 && i <= 4 ? '#ff9a40' : '#e0d8d0', outline: '#000' }));
     }
 
     drawInfo(ctx, p) {

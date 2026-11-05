@@ -8,7 +8,9 @@
   const INTRO_FRAMES = 110;      // "ROUND n" ... "FIGHT!"
   const ROUND_OVER_FRAMES = 200; // K.O. / TIME banner + victory pose
   const START_GAP = 70;          // each fighter starts this far from the centre
-  const SUPER_FREEZE = 46;       // frames the world freezes for a super's cut-in
+  const SUPER_FREEZE = 46;
+  // Training mode: what the dummy does (changed from the pause menu).
+  const DUMMY_SETTING = { id: 'TRAINING_DUMMY', label: 'DUMMY', options: [['stand', 'STAND'], ['block', 'BLOCK'], ['crouch', 'CROUCH BLOCK'], ['jump', 'JUMP'], ['cpu', 'CPU']] };       // frames the world freezes for a super's cut-in
 
   class FightScene {
     constructor(game, opts) {
@@ -19,11 +21,14 @@
       RF.audio.playSong(this.stageDef.music);
       this.fighters = [new RF.Fighter(opts.p1, 0), new RF.Fighter(opts.p2, 1, opts.p2Alt)];
       for (const f of this.fighters) f.scene = this;
+      if (opts.boss) this.fighters[1].maxHealth = Math.round(this.fighters[1].maxHealth * opts.boss); // arcade final boss
+      this.training = !!opts.training;
       this.projectiles = [];
       this.inputs = [
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
         opts.cpu ? new RF.AIInput(game.kb, this, 1) : new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
       ];
+      if (this.training) this.setupDummy();
       this.effects = new RF.Effects();
       this.hud = new RF.HUD();
       this.frame = 0;
@@ -33,6 +38,7 @@
       const toTitle = () => game.setScene(new RF.TitleScene(game));
       this.pauseMenu = new RF.ListMenu([
         { label: 'RESUME', onSelect: () => { this.paused = false; } },
+        ...(this.training ? [{ label: 'DUMMY', setting: DUMMY_SETTING }] : []),
         { label: 'RESTART MATCH', onSelect: () => { this.paused = false; this.startMatch(); } },
         { label: 'CHARACTER SELECT', onSelect: toSelect },
         { label: 'MAIN MENU', onSelect: toTitle },
@@ -58,7 +64,8 @@
       const b = this.stageDef.bounds, mid = (b.left + b.right) / 2;
       this.fighters[0].reset(mid - START_GAP, 1);
       this.fighters[1].reset(mid + START_GAP, -1);
-      this.timer = RF.CONFIG.ROUND_TIME ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
+      this.timer = RF.CONFIG.ROUND_TIME && !this.training ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
+      this.comboDmg = 0; this.lastCombo = null; this.quietFrames = 0;
       this.hitstop = 0;
       this.shake = 0;
       this.flash = 0;
@@ -110,8 +117,8 @@
 
       switch (this.phase) {
         case 'intro':
-          if (this.phaseTime === 1) RF.audio.sfx('gong');
-
+          if (this.phaseTime === 1) { RF.audio.sfx('gong'); RF.announcer.say('ROUND ' + RF.announcer.number(this.round)); }
+          if (this.phaseTime === 65) RF.announcer.say('FIGHT!', { rate: 0.9 });
           if (this.phaseTime === 65) RF.audio.sfx('fight');
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
           break;
@@ -120,6 +127,7 @@
             for (const f of this.fighters) if (f.def.quote) this.effects.spawnText(f.def.quote, f.x, f.body.height + 12, '#e8dcc0');
           }
           if (--this.timer <= 0) this.endRound('time'); // Infinity never runs out
+          if (this.training) this.updateTraining();
           break;
         case 'finish':
           if (this.finisher) {
@@ -134,13 +142,20 @@
         case 'roundOver':
           // Brief slow-motion right after the round ends.
           if (this.phaseTime < 40 && this.phaseTime % 2) return;
+          if (this.phaseTime === 70) {
+            const w = this.roundWinner !== null && this.fighters[this.roundWinner];
+            RF.announcer.say(!w ? 'DRAW' : w.def.name + ' WINS.' + (this.flawless ? ' FLAWLESS VICTORY!' : ''));
+          }
           if (this.phaseTime === 70 && this.roundWinner !== null) {
             const w = this.fighters[this.roundWinner];
             if (!w.isKO) { w.vx = 0; w.state = null; w.setState('victory'); }
             if (w.def.winQuote && w.state === 'victory') this.effects.spawnText(w.def.winQuote, w.x, w.body.height + 12, '#e8dcc0');
           }
           if (this.phaseTime >= ROUND_OVER_FRAMES) {
-            if (this.wins.some((n) => n >= RF.CONFIG.ROUNDS_TO_WIN)) this.setPhase('matchOver');
+            if (this.wins.some((n) => n >= RF.CONFIG.ROUNDS_TO_WIN)) {
+              if (this.opts.arcade) this.endMenu = this.arcadeMenu();
+              this.setPhase('matchOver');
+            }
             else { this.round++; this.startRound(); }
           }
           break;
@@ -190,6 +205,46 @@
       }
     }
 
+    // ---- arcade ----
+
+    arcadeMenu() {
+      const run = this.opts.arcade, game = this.game, won = this.wins[0] > this.wins[1];
+      const quit = { label: 'MAIN MENU', onSelect: () => game.setScene(new RF.TitleScene(game)) };
+      if (won) {
+        const last = run.index >= run.ladder.length - 1;
+        return new RF.ListMenu([{ label: last ? 'SEE ENDING' : 'NEXT FIGHT', onSelect: () => {
+          if (last) return game.setScene(new RF.ArcadeEndScene(game, run));
+          run.index++;
+          game.setScene(new RF.TowerScene(game, run));
+        } }, quit]);
+      }
+      return new RF.ListMenu([{ label: 'CONTINUE', onSelect: () => { run.continues++; this.startMatch(); } }, quit]);
+    }
+
+    // ---- training ----
+
+    setupDummy() {
+      const ai = this.inputs[1];
+      const think = RF.AIInput.prototype.think;
+      ai.think = () => {
+        const mode = RF.CONFIG.TRAINING_DUMMY, me = this.fighters[1];
+        ai.holding.clear();
+        if (mode === 'cpu') return think.call(ai);
+        if (mode === 'block') ai.holding.add('block');
+        if (mode === 'crouch') { ai.holding.add('block'); ai.holding.add('down'); }
+        if (mode === 'jump' && me.grounded && me.state === 'idle') ai.holding.add('up');
+      };
+    }
+
+    // Health refills once a combo is over; your super meter stays full.
+    updateTraining() {
+      const [p, d] = this.fighters;
+      p.meter = RF.CONFIG.SUPER_MAX;
+      const busy = (f) => ['hitstun', 'blockstun', 'thrown', 'dazed'].includes(f.state) || !f.grounded;
+      if (busy(d) || busy(p)) this.quietFrames = 0;
+      else if (++this.quietFrames === 50) { for (const f of this.fighters) f.health = f.maxHealth; }
+    }
+
     // ---- supers ----
 
     startSuperFreeze(f) {
@@ -197,6 +252,7 @@
       this.game.kb.rumble(f.side, 1, 500);
       this.projectiles = this.projectiles.filter((p) => p.owner === f);
       RF.audio.sfx('super');
+      RF.announcer.say('SUPER!', { rate: 0.95 });
     }
 
     // ---- FINISH THEM! ----
@@ -216,6 +272,7 @@
       this.projectiles = [];
       this.setPhase('finish');
       RF.audio.sfx('gong');
+      RF.announcer.say('FINISH THEM!');
       return true;
     }
 
@@ -251,7 +308,7 @@
     throwHit(att, def, base, fling) {
       const dmg = base * att.stats.damage * (1 - def.stats.damageReduction);
       att.gainMeter(base * 0.5); def.gainMeter(base * 0.3);
-      if (this.phase === 'fight') def.health = Math.max(0, def.health - dmg);
+      if (this.phase === 'fight') def.health = Math.max(this.training ? 1 : 0, def.health - dmg);
       def.flash = 3;
       this.hitstop = Math.max(this.hitstop, fling ? 8 : 4);
       RF.audio.sfx(fling ? 'heavy' : 'hit');
@@ -319,7 +376,13 @@
         return 'perfect';
       }
 
+      const hpBefore = def.health;
       const blocked = def.receiveHit(att, move);
+      if (!blocked) {
+        if (def.combo <= 1) this.comboDmg = 0;
+        this.comboDmg += hpBefore - def.health;
+        this.lastCombo = { hits: def.combo, dmg: this.comboDmg, pct: this.comboDmg / def.maxHealth * 100 };
+      }
       const big = move.special || move.knockback || move.launch;
       this.game.kb.rumble(def.side, blocked ? 0.15 : big ? 0.9 : 0.45, blocked ? 60 : big ? 220 : 110); // you got hit
       if (!blocked) this.game.kb.rumble(att.side, big ? 0.35 : 0.15, 70);                              // you landed one
@@ -350,7 +413,8 @@
         const prev = this.comboText && this.comboText.side === att.side ? this.comboText : null;
         const air = def.juggle >= 2 || !!(prev && prev.air);
         this.comboText = { side: att.side, hits: def.combo, t: 70, air: air && def.combo >= 3 };
-        if ([5, 8, 12].includes(def.combo)) RF.audio.sfx('ready');
+        const PRAISE = { 5: 'BRUTAL!', 7: 'SAVAGE!', 9: 'INSANE!', 12: 'TERRAMANIA!' };
+        if (PRAISE[def.combo]) { RF.audio.sfx('ready'); RF.announcer.say(PRAISE[def.combo], { rate: 0.95 }); }
       }
       // Pushing someone into the wall pushes the attacker back instead.
       if (def.atWall(bounds) && Math.abs(att.x - def.x) < 80) att.pushVx = -sign(def.x - att.x) * move.pushback * 0.7;
@@ -458,12 +522,15 @@
       if (reason === 'finisher') {
         winner = this.finisher.att.side;
         this.banner = 'FINISHER!';
+        RF.announcer.say('FINISHER!');
       } else if (reason === 'ko') {
         RF.audio.sfx('ko');
+        RF.announcer.say(a.isKO && b.isKO ? 'DOUBLE K O' : 'K O!');
         if (a.isKO && b.isKO) this.banner = 'DOUBLE K.O.';
         else { winner = a.isKO ? 1 : 0; this.banner = 'K.O.'; }
       } else {
         this.banner = 'TIME';
+        RF.announcer.say('TIME!');
         if (a.health !== b.health) winner = a.health > b.health ? 0 : 1;
       }
       // A draw round gives nobody a point; the round is simply replayed.
@@ -514,6 +581,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       this.hud.draw(ctx, this);
+      if (this.training) this.drawTrainingHud(ctx, W);
       if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
       if (this.toasty) this.drawToasty(ctx, W, H);
       this.drawAnnouncements(ctx, W, H);
@@ -553,6 +621,14 @@
         T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
         if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
       }
+    }
+
+    drawTrainingHud(ctx, W) {
+      ctx.fillStyle = '#000'; ctx.fillRect(W / 2 - 22, 2, 44, 18);
+      T(ctx, 'TRAINING', W / 2, 8, { align: 'center', color: '#60e0ff', outline: '#000' });
+      const c = this.lastCombo;
+      if (c) T(ctx, `LAST COMBO: ${c.hits} HIT${c.hits > 1 ? 'S' : ''}  ${Math.round(c.dmg)} DMG (${Math.round(c.pct)}%)`, W / 2, 196, { align: 'center', color: '#ffd030', outline: '#000' });
+      T(ctx, 'DUMMY: ' + RF.CONFIG.TRAINING_DUMMY.toUpperCase() + '  (ESC TO CHANGE)', W / 2, 186, { align: 'center', color: '#8ab0e0', outline: '#000' });
     }
 
     // The super cut-in: a band slashes across the screen with the fighter and their move.

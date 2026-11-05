@@ -13,6 +13,7 @@
   }
 
   // Turn a track's bars into per-step events: { note, len } or drum hit lists.
+  // A note ending in * is palm-muted (short, chunky chug) on guitar and bass.
   function parseTrack(track, drums) {
     const tokens = track.bars.join(' ').split(/\s+/).filter(Boolean);
     const steps = tokens.map(() => null);
@@ -21,9 +22,10 @@
       if (drums) { steps[i] = tok.split('+'); return; }
       let len = 1;
       while (tokens[i + len] === '-') len++;
-      steps[i] = { f: freq(tok), len };
+      const mute = tok.endsWith('*');
+      steps[i] = { f: freq(mute ? tok.slice(0, -1) : tok), len, mute };
     });
-    return { steps, wave: track.wave, volume: track.volume, drums, distort: !!track.distort };
+    return { steps, wave: track.wave, volume: track.volume, drums, distort: !!track.distort, instrument: track.instrument, pan: track.pan || 0 };
   }
 
   const audio = {
@@ -59,6 +61,7 @@
         this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
         const d = this.noise.getChannelData(0);
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        this.buildMetalRig();
         this.applyVolumes();
         if (this.pendingSong) this.playSong(this.pendingSong, true);
       }
@@ -101,11 +104,135 @@
           const ev = tr.steps[s.step % tr.steps.length];
           if (!ev) continue;
           if (tr.drums) ev.forEach((d) => this.drum(d, s.next));
+          else if (ev.f && tr.instrument === 'guitar') { // double-tracked: one take per side, a hair apart
+            const dur = ev.len * s.stepDur * 0.95;
+            this.guitarNote(this.ampL, ev.f, s.next, dur, ev.mute, true, tr.volume, 9);
+            this.guitarNote(this.ampR, ev.f, s.next + 0.006, dur, ev.mute, true, tr.volume, 13);
+          }
+          else if (ev.f && tr.instrument === 'lead') this.leadNote(ev.f, s.next, ev.len * s.stepDur * 0.96, tr.volume);
+          else if (ev.f && tr.instrument === 'bass') this.bassNote(ev.f, s.next, ev.len * s.stepDur * 0.92, ev.mute, tr.volume);
           else if (ev.f) this.tone(tr.wave, ev.f, s.next, ev.len * s.stepDur * 0.92, tr.volume, tr.distort ? this.distBus : this.musicBus);
         }
         s.next += s.stepDur;
         s.step++;
       }
+    },
+
+    // ---- the metal rig: amps, cabinets, reverb ----
+
+    // A guitar amp channel: input -> tighten lows -> high-gain clipping -> cabinet
+    // (scooped mids, rolled-off fizz) -> pan. Notes plug into `.input`.
+    makeAmp(pan, drive, out) {
+      const c = this.ctx, input = c.createGain();
+      const tight = c.createBiquadFilter(); tight.type = 'highpass'; tight.frequency.value = 110;
+      const pre = c.createGain(); pre.gain.value = drive;
+      const shaper = c.createWaveShaper();
+      const curve = new Float32Array(2048);
+      for (let i = 0; i < 2048; i++) { const x = (i / 2047) * 2 - 1; curve[i] = Math.tanh(x * 3 + 0.15) - Math.tanh(0.15); } // slightly asymmetric = more harmonics
+      shaper.curve = curve; shaper.oversample = '4x';
+      const low = c.createBiquadFilter(); low.type = 'lowshelf'; low.frequency.value = 160; low.gain.value = 5;      // chug thump
+      const scoop = c.createBiquadFilter(); scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -7; // metal mid scoop
+      const pres = c.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 2400; pres.Q.value = 1; pres.gain.value = 4;     // bite
+      const cab1 = c.createBiquadFilter(); cab1.type = 'lowpass'; cab1.frequency.value = 5200; cab1.Q.value = 0.7;  // speaker cabinet
+      const cab2 = c.createBiquadFilter(); cab2.type = 'lowpass'; cab2.frequency.value = 7000;
+      const lvl = c.createGain(); lvl.gain.value = out;
+      const p = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+      if (p.pan) p.pan.value = pan;
+      input.connect(tight).connect(pre).connect(shaper).connect(low).connect(scoop).connect(pres).connect(cab1).connect(cab2).connect(lvl).connect(p).connect(this.band);
+      return { input, lvl };
+    },
+
+    buildMetalRig() {
+      const c = this.ctx;
+      // Everything in the band goes through a bus compressor (glue + no clipping).
+      this.band = c.createGain();
+      const comp = c.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 6; comp.ratio.value = 6;
+      comp.attack.value = 0.004; comp.release.value = 0.15;
+      const makeup = c.createGain(); makeup.gain.value = 1.3;
+      this.band.connect(comp).connect(makeup).connect(this.musicBus);
+      this.ampL = this.makeAmp(-0.75, 9, 0.2);   // rhythm guitar, double-tracked left...
+      this.ampR = this.makeAmp(0.75, 9, 0.2);    // ...and right
+      this.ampLead = this.makeAmp(0, 7, 0.32);   // lead guitar, centre
+      // Bass: growly, lightly driven.
+      const bin = c.createGain(), bshape = c.createWaveShaper(), bcurve = new Float32Array(1024);
+      for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; bcurve[i] = Math.tanh(x * 2.2); }
+      bshape.curve = bcurve;
+      const blp = c.createBiquadFilter(); blp.type = 'lowpass'; blp.frequency.value = 1400;
+      const bout = c.createGain(); bout.gain.value = 0.28;
+      bin.connect(bshape).connect(blp).connect(bout).connect(this.band);
+      this.bassIn = bin;
+      // Room reverb (a generated impulse response) for drums and leads.
+      const rlen = Math.floor(c.sampleRate * 1.6), ir = c.createBuffer(2, rlen, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = ir.getChannelData(ch);
+        for (let i = 0; i < rlen; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rlen, 3.2);
+      }
+      this.reverb = c.createConvolver(); this.reverb.buffer = ir;
+      const rout = c.createGain(); rout.gain.value = 0.35;
+      this.reverb.connect(rout).connect(this.band);
+      // Lead echo
+      this.delay = c.createDelay(1); this.delay.delayTime.value = 0.32;
+      const fb = c.createGain(); fb.gain.value = 0.3;
+      const dlp = c.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 2500;
+      this.delay.connect(dlp).connect(fb).connect(this.delay);
+      const dout = c.createGain(); dout.gain.value = 0.35;
+      dlp.connect(dout).connect(this.ampLead.lvl);
+      this.ampLead.lvl.connect(this.reverb);
+      // Drum bus with a little reverb
+      this.drumBus = c.createGain(); this.drumBus.gain.value = 0.85;
+      this.drumBus.connect(this.band);
+    },
+
+    // One guitar note: a power chord (root + fifth + octave) from detuned saws.
+    // Palm-muted notes are short and darker.
+    guitarNote(amp, f, t, dur, mute, chord, vol, detune) {
+      const c = this.ctx, g = c.createGain(), lp = c.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = mute ? 900 : 4000;
+      const len = mute ? Math.min(dur, 0.13) : dur;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.004);
+      if (mute) g.gain.exponentialRampToValueAtTime(vol * 0.05, t + len);
+      else { g.gain.setValueAtTime(vol, t + Math.max(0.01, len - 0.03)); g.gain.linearRampToValueAtTime(0.0001, t + len); }
+      g.connect(lp).connect(amp.input);
+      const parts = chord ? [[1, 1], [1.5, 0.8], [2, 0.45]] : [[1, 1]];
+      for (const [mul, v] of parts) for (const d of [-detune, detune]) {
+        const o = c.createOscillator(), og = c.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f * mul, t);
+        o.detune.value = d;
+        og.gain.value = v * 0.5;
+        o.connect(og).connect(g);
+        o.start(t); o.stop(t + len + 0.03);
+      }
+    },
+
+    leadNote(f, t, dur, vol) {
+      const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
+      const vib = c.createOscillator(), vg = c.createGain();
+      o.type = o2.type = 'sawtooth';
+      o.frequency.setValueAtTime(f * 0.985, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04); // pick slide into the note
+      o2.frequency.setValueAtTime(f * 2, t); o2.detune.value = 6;
+      vib.frequency.value = 6; vg.gain.value = dur > 0.25 ? f * 0.012 : 0;   // vibrato on held notes
+      vib.connect(vg).connect(o.frequency);
+      const g2 = c.createGain(); g2.gain.value = 0.3;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01);
+      g.gain.setValueAtTime(vol, t + Math.max(0.02, dur - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); o2.connect(g2).connect(g);
+      g.connect(this.ampLead.input); g.connect(this.delay);
+      for (const n of [o, o2, vib]) { n.start(t); n.stop(t + dur + 0.05); }
+    },
+
+    bassNote(f, t, dur, mute, vol) {
+      const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
+      o.type = 'sawtooth'; o2.type = 'square';
+      o.frequency.value = f; o2.frequency.value = f / 2;
+      const len = mute ? Math.min(dur, 0.16) : dur;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.005);
+      g.gain.setValueAtTime(vol * 0.8, t + Math.max(0.01, len - 0.03)); g.gain.linearRampToValueAtTime(0.0001, t + len);
+      const g2 = c.createGain(); g2.gain.value = 0.5;
+      o.connect(g); o2.connect(g2).connect(g); g.connect(this.bassIn);
+      o.start(t); o2.start(t); o.stop(t + len + 0.02); o2.stop(t + len + 0.02);
     },
 
     // ---- instruments ----
@@ -136,22 +263,44 @@
       src.stop(t + dur + 0.02);
     },
 
+    // Drum kit: k kick, s snare, h hi-hat, o open hat, c crash, r ride, t low tom, T high tom.
     drum(type, t) {
-      const bus = this.musicBus;
-      if (type === 'k') {
-        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-        o.frequency.setValueAtTime(150, t);
-        o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
-        g.gain.setValueAtTime(0.5, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      const bus = this.drumBus || this.musicBus, c = this.ctx;
+      const verb = (node, amt) => { if (this.reverb) { const g = c.createGain(); g.gain.value = amt; node.connect(g).connect(this.reverb); } };
+      const thump = (f0, f1, len, vol) => {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f1, t + len * 0.7);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + len);
         o.connect(g).connect(bus);
-        o.start(t);
-        o.stop(t + 0.16);
-      } else if (type === 's') {
-        this.noiseBurst(t, 0.14, 0.22, 'highpass', 1200, bus);
-        this.tone('triangle', 190, t, 0.06, 0.12, bus);
+        o.start(t); o.stop(t + len + 0.02);
+        return g;
+      };
+      if (type === 'k') {                       // punchy metal kick: beater click + low thump
+        thump(170, 48, 0.17, 0.75);
+        this.noiseBurst(t, 0.012, 0.35, 'highpass', 3000, bus);
+      } else if (type === 's') {               // cracking snare with room
+        const g = thump(230, 170, 0.08, 0.35);
+        this.noiseBurst(t, 0.18, 0.4, 'bandpass', 2200, bus);
+        this.noiseBurst(t, 0.1, 0.18, 'highpass', 5000, bus);
+        verb(g, 0.8);
+        if (this.reverb) this.noiseBurst(t, 0.12, 0.25, 'bandpass', 2000, this.reverb);
       } else if (type === 'h') {
-        this.noiseBurst(t, 0.035, 0.08, 'highpass', 7000, bus);
+        this.noiseBurst(t, 0.03, 0.09, 'highpass', 8000, bus);
+      } else if (type === 'o') {
+        this.noiseBurst(t, 0.25, 0.1, 'highpass', 7000, bus);
+      } else if (type === 'c') {               // crash cymbal
+        this.noiseBurst(t, 1.3, 0.22, 'highpass', 5000, bus);
+        this.noiseBurst(t, 0.6, 0.12, 'bandpass', 3500, bus);
+        if (this.reverb) this.noiseBurst(t, 0.5, 0.12, 'highpass', 4000, this.reverb);
+      } else if (type === 'r') {
+        this.tone('square', 2600, t, 0.12, 0.025, bus);
+        this.noiseBurst(t, 0.2, 0.06, 'highpass', 6000, bus);
+      } else if (type === 't' || type === 'T') {
+        const g = thump(type === 't' ? 110 : 170, type === 't' ? 70 : 110, 0.3, 0.6);
+        verb(g, 0.5);
       }
     },
 

@@ -545,7 +545,7 @@
           this.vx = dir * (airAttacker ? 0.6 : 1.5);
         }
       }
-      this.health = Math.max(0, this.health - dmg);
+      this.health = Math.max(this.scene && this.scene.training ? 1 : 0, this.health - dmg); // training: nobody dies
       if (this.health <= 0) this.knockOut(dir);
       return blocked;
     }

@@ -28,7 +28,7 @@
     consume(a) { this.consumedAt[a] = this.kb.frame; }
     tap(a) { this.pressAt[a] = this.kb.frame; }
 
-    get level() { return RF.AI_LEVELS[RF.CONFIG.CPU_LEVEL] || RF.AI_LEVELS.normal; }
+    get level() { return RF.AI_LEVELS[(this.scene.opts && this.scene.opts.cpuLevel) || RF.CONFIG.CPU_LEVEL] || RF.AI_LEVELS.normal; }
 
     // Called once per frame before the fighters update.
     think() {

@@ -13,6 +13,7 @@
 
     update() {
       this.t++;
+      if (this.t === 12) RF.announcer.say(this.opts.p1.name + ' versus ' + this.opts.p2.name, { rate: 0.9 });
       if (this.t > 20 && RF.menuPressed(this.game.kb, 'confirm')) this.t = DURATION;
       if (this.t >= DURATION) this.game.setScene(new RF.FightScene(this.game, this.opts));
     }

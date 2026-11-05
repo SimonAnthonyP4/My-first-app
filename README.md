@@ -345,9 +345,41 @@ on the stage select screen automatically.
 
 ## Changing the music
 
-Songs live in `js/config/music.js` as note patterns (one bar = 16 steps, e.g.
-`'A4 - - C5 . . E5 -'`). Edit the notes or tempo, or add a song and point a
-stage's `music` at it.
+The soundtrack is original heavy metal played by a built-in synth "metal rig"
+(`js/core/audio.js`, no audio files): double-tracked distorted rhythm guitars panned
+left/right through a high-gain amp and speaker-cabinet simulation, a growling bass, a
+metal drum kit (double kick, crash, toms) with room reverb, a lead guitar with vibrato
+and echo, and a bus compressor gluing it together.
+
+| Song | Where | Style |
+|---|---|---|
+| TERRAMANIA | menus | fast downpicked thrash in E minor, gallop section, solo |
+| Lunch Line Massacre | Hell Cafeteria | relentless thrash |
+| Dead Ball | Haunted Court | slow, crushing drop-D doom |
+| Expelled | Sirven's Office | stop-start groove metal |
+| Concrete Jungle | NYC Street | fast punk-metal |
+
+Songs live in `js/config/music.js` as note patterns (one bar = 16 steps). On guitar a
+note is a power chord, `E2*` is a palm-muted chug, `-` holds, `.` rests. Drums:
+`k` kick, `s` snare, `h` hat, `c` crash, `t`/`T` toms.
+
+## Game modes
+
+- **Fight Now:** two players.
+- **Arcade:** one player climbs a tower of 5 CPU opponents (easy → hard), then the final boss:
+  **King Sirven** in his own office with 40% extra health (if you *are* King Sirven, Mr. Dabalsa
+  is the boss). Lose and you can CONTINUE as many times as you like; beat the boss for the ending.
+- **VS CPU:** pick your fighter and the CPU's.
+- **Training:** no timer, nobody can die, health refills after each combo, your super meter is
+  always full, and the screen shows your last combo's hits and damage. Set what the dummy does
+  (stand, block, crouch-block, jump, or fight like the CPU) from the pause menu.
+
+## Announcer
+
+A deep arena voice calls the fight: fighter names on the versus screen, "ROUND ONE... FIGHT!",
+"FINISH THEM!", "K.O.", "<NAME> WINS. FLAWLESS VICTORY!", supers, and big combos
+(BRUTAL! SAVAGE! INSANE! TERRAMANIA!). It uses the browser's built-in speech voice
+(`js/core/announcer.js`) and can be turned off in Settings → Announcer Voice.
 
 ## Roadmap
 
