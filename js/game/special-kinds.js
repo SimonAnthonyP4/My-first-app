@@ -176,7 +176,7 @@
         if (rx > 1) { // the portal
           ctx.fillStyle = 'rgba(40,0,20,0.85)'; ctx.beginPath(); ctx.ellipse(d.tx, top, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = '#ff70a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(d.tx, top, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
-          ctx.strokeStyle = '#ffe0ea'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(d.tx, top, rx - 4, Math.max(1, ry - 2), frame / 10, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = '#ffe0ea'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(d.tx, top, Math.max(1, rx - 4), Math.max(1, ry - 2), frame / 10, 0, Math.PI * 2); ctx.stroke();
         }
         for (let i = 0; i < s.bars; i++) { // the bars
           const start = s.startup + i * s.interval, u = (t - start) / s.fall;

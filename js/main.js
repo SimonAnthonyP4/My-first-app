@@ -26,6 +26,17 @@
   });
   window.addEventListener('gamepaddisconnected', () => { game.toast = { text: 'CONTROLLER DISCONNECTED', t: 150 }; });
 
+  // Safety: a circle or oval with a negative size throws an error in the browser; clamp
+  // them to zero instead, so a shrinking effect can never crash a frame.
+  const P = CanvasRenderingContext2D.prototype, arc0 = P.arc, ell0 = P.ellipse;
+  P.arc = function (x, y, r, ...rest) { return arc0.call(this, x, y, Math.max(0, r || 0), ...rest); };
+  P.ellipse = function (x, y, rx, ry, ...rest) { return ell0.call(this, x, y, Math.max(0, rx || 0), Math.max(0, ry || 0), ...rest); };
+
+  // If something ever goes wrong in one frame, log it and keep the game running
+  // (an uncaught error would stop the loop and freeze the game).
+  let errors = 0;
+  const safely = (fn) => { try { fn(); } catch (e) { if (errors++ < 5) console.error('Frame error (game keeps running):', e); } };
+
   const game = {
     kb: new RF.Keyboard(),
     scene: null,
@@ -56,10 +67,10 @@
     if (Math.abs(dt - STEP) < 2) dt = STEP;
     acc += dt;
     while (acc >= STEP) {
-      if (!game.manualStep) game.step();
+      if (!game.manualStep) safely(() => game.step());
       acc -= STEP;
     }
-    game.scene.render(ctx);
+    safely(() => game.scene.render(ctx));
     if (game.achievement) { // ACHIEVEMENT UNLOCKED pop-up (top centre)
       const a = game.achievement, tIn = Math.min(1, (240 - a.t) / 12), tOut = Math.min(1, a.t / 12), y = Math.round(-30 + 34 * Math.min(tIn, tOut));
       ctx.fillStyle = '#000'; ctx.fillRect(WIDTH / 2 - 92, y - 1, 184, 26);
@@ -71,7 +82,7 @@
     if (game.toast) {
       RF.font.drawText(ctx, game.toast.text, WIDTH - 6, HEIGHT - 12, { align: 'right', color: '#ffd030', outline: '#000' });
     }
-    RF.audio.update();
+    safely(() => RF.audio.update());
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
