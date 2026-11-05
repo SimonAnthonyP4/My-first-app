@@ -85,11 +85,28 @@
     pressed(action, buffer = RF.CONFIG.INPUT_BUFFER) {
       const t = this.lastPress(action);
       const consumed = action in this.consumedAt ? this.consumedAt[action] : -Infinity;
-      return t > consumed && this.kb.frame - t <= buffer;
+      return t > consumed && RF.bufferAge(this, t) <= buffer;
     }
+
+    noteFrame(frozen) { RF.noteFrame(this, frozen); }
 
     consume(action) { this.consumedAt[action] = this.kb.frame; }
   }
+
+  // Input buffering: a press stays "fresh" for INPUT_BUFFER frames of actual
+  // gameplay. Frames frozen in hit-stop or a super cut-in don't age it, so an
+  // attack pressed during the freeze still comes out right after.
+  RF.noteFrame = (inp, frozen) => {
+    if (!inp.frozenAt) { inp.frozenAt = new Map(); inp.frozen = 0; }
+    inp.frozenAt.set(inp.kb.frame, inp.frozen);
+    inp.frozenAt.delete(inp.kb.frame - 90);
+    if (frozen) inp.frozen++;
+  };
+  RF.bufferAge = (inp, t) => {
+    const raw = inp.kb.frame - t;
+    if (!inp.frozenAt || !inp.frozenAt.has(t)) return raw;
+    return raw - (inp.frozen - inp.frozenAt.get(t));
+  };
 
   RF.Keyboard = Keyboard;
   RF.PlayerInput = PlayerInput;

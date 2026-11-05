@@ -64,19 +64,19 @@
       next: 'controller',
       draw(ctx, W) {
         const rows = [
-          ['COMBOS', '#ffd030', 'LIGHT ATTACKS THAT HIT CAN CHAIN INTO MORE ATTACKS: LIGHT, LIGHT, HEAVY.'],
-          ['LAUNCHER', '#ff9a40', 'UP + HEAVY: AN UPPERCUT THAT POPS THEM INTO THE AIR. HOLD UP AS IT HITS TO JUMP AFTER THEM.'],
-          ['AIR COMBOS', '#8ff0ff', 'IN THE AIR, CHAIN LIGHT, LIGHT, HEAVY. THE AIR HEAVY SPIKES THEM INTO A FLOOR BOUNCE - HIT THEM AGAIN!'],
-          ['SUPER', '#ffd030', 'HIT AND GET HIT TO FILL THE METER. WHEN FULL, PRESS LIGHT + HEAVY TOGETHER (EVEN TO END A COMBO) FOR A POWERED-UP SPECIAL.'],
-          ['DASH', '#c0ff80', 'DOUBLE-TAP FORWARD TO DASH IN, BACK TO SLIP AWAY (BRIEFLY UNTOUCHABLE).'],
-          ['COUNTER!', '#ff6050', 'HIT THEM WHILE THEY ARE STARTING AN ATTACK FOR EXTRA DAMAGE AND STUN.'],
+          ['COMBOS', '#ffd030', 'LIGHT, LIGHT, HEAVY. A HEAVY THAT HITS CAN CANCEL INTO EX, SUPER OR (UP+HEAVY) LAUNCHER.'],
+          ['LAUNCHER', '#ff9a40', 'UP + HEAVY POPS THEM UP. HOLD UP AS IT HITS TO JUMP AFTER THEM.'],
+          ['AIR COMBOS', '#8ff0ff', 'AIR LIGHT, LIGHT, HEAVY. THE AIR HEAVY SPIKES THEM INTO A FLOOR BOUNCE.'],
+          ['WALL BOUNCE', '#ffb060', 'A HEAVY IN THE CORNER BOUNCES THEM OFF THE WALL. KEEP THE COMBO GOING!'],
+          ['METER', '#60c0ff', '3 BARS. 1 = EX SPECIAL (THROW IN A COMBO, OR DOWN+THROW). 2 = COMBO BREAKER (LIGHT+HEAVY WHILE HIT). 3 = SUPER (LIGHT+HEAVY).'],
+          ['TECH', '#c0ff80', 'KNOCKED DOWN? PRESS BLOCK AS YOU LAND TO ROLL BACK UP. DOUBLE-TAP TO DASH.'],
         ];
         RF.drawPanel(ctx, 12, 34, W - 24, 170);
         let y = 40;
         for (const [title, col, text] of rows) {
           T(ctx, title, 20, y, { color: col, outline: '#000' });
           RF.font.wrap(text, 46).forEach((line, i) => T(ctx, line, 92, y + i * 8, { color: '#e8e0d8', outline: '#000' }));
-          y += Math.max(1, RF.font.wrap(text, 46).length) * 8 + 6;
+          y += Math.max(1, RF.font.wrap(text, 46).length) * 8 + 5;
         }
       },
     },

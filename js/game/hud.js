@@ -79,13 +79,18 @@
       const H = RF.CONFIG.HEIGHT, MAX = RF.CONFIG.SUPER_MAX;
       scene.fighters.forEach((f, i) => {
         const x = i === 0 ? MARGIN : W - MARGIN - METER_W, y = H - 10;
-        const full = f.meter >= MAX, w = Math.round(METER_W * f.meter / MAX);
+        const full = f.meter >= MAX, BAR = RF.CONFIG.METER_BAR, bars = Math.floor(f.meter / BAR), nb = MAX / BAR;
+        const SEG = (METER_W - (nb - 1) * 2) / nb;
         ctx.fillStyle = '#000'; ctx.fillRect(x - 2, y - 2, METER_W + 4, METER_H + 4);
-        ctx.fillStyle = '#1a2440'; ctx.fillRect(x, y, METER_W, METER_H);
-        ctx.fillStyle = full ? (scene.frame % 10 < 5 ? '#ffffff' : '#ffd030') : '#3a9aff';
-        ctx.fillRect(i === 0 ? x : x + METER_W - w, y, w, METER_H);
-        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(i === 0 ? x : x + METER_W - w, y, w, 1);
-        const label = full ? 'SUPER! LIGHT+HEAVY' : 'SUPER';
+        for (let k = 0; k < nb; k++) { // one segment per bar, filling from the outside in
+          const seg = i === 0 ? k : nb - 1 - k, sx = x + seg * (SEG + 2);
+          const fill = Math.max(0, Math.min(1, (f.meter - k * BAR) / BAR)), w = Math.round(SEG * fill);
+          ctx.fillStyle = '#1a2440'; ctx.fillRect(sx, y, SEG, METER_H);
+          ctx.fillStyle = full ? (scene.frame % 10 < 5 ? '#ffffff' : '#ffd030') : fill >= 1 ? '#60c0ff' : '#2a6ab0';
+          ctx.fillRect(i === 0 ? sx : sx + SEG - w, y, w, METER_H);
+          if (fill >= 1) { ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(sx, y, SEG, 1); }
+        }
+        const label = full ? 'SUPER! LIGHT+HEAVY' : bars >= 2 ? bars + ' BARS: EX / BREAKER' : bars === 1 ? '1 BAR: EX' : 'METER';
         T(ctx, label, i === 0 ? x : x + METER_W, y - 10, { align: i === 0 ? 'left' : 'right', color: full ? '#ffd030' : '#8ab0e0', outline: '#000' });
       });
 

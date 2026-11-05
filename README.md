@@ -56,6 +56,24 @@ Settings → Controller Rumble. Button layout is in `js/config/controls.js` (`Pa
 the reading code in `js/core/input.js` (`pollPads`). Works in Chrome, Edge, Firefox and Safari;
 rumble needs Chrome or Edge.
 
+### Combo system 2.0
+
+- **Smarter input buffer:** presses are remembered for 8 frames of real gameplay, and frames
+  frozen in hit-stop or a super cut-in don't count, so links and cancels pressed a bit early
+  still come out.
+- **Combo routes:** light, light, heavy. A heavy that connects can cancel into an **EX special**
+  (THROW), your **super** (LIGHT + HEAVY) or the **launcher** (UP + HEAVY).
+- **3-bar meter:** 1 bar = **EX special** (THROW during a combo, or DOWN + THROW on its own;
+  15% stronger than a free special), 2 bars = **COMBO BREAKER** (LIGHT + HEAVY while you're
+  being comboed: blasts the attacker away), 3 bars = **SUPER**.
+- **Wall bounce:** a heavy that drives someone into the corner bounces them back off the wall,
+  ready to be launched or juggled (once per combo; on the hazard's wall the hazard wins).
+- **Knockdowns and TECH:** launches, sweeps, spikes and throws leave the victim on the floor
+  (they can't be hit while down or getting up). Press BLOCK right as you land to quick-rise.
+- **Combo trials (Training):** 8 trials from BASIC CHAIN to CORNER CARRY and GRAND FINALE,
+  with a checklist that ticks off each step; clearing one moves to the next. Pick a trial
+  (or OFF) from the pause menu. Defined in `js/config/trials.js`.
+
 ### Combos, air combos and supers
 
 - **Ground combos:** light attacks that connect cancel into another attack (up to 3 in a

@@ -31,7 +31,7 @@ RF.CONFIG = {
   MAX_CHAIN: 3,           // light attacks that connect can be cancelled into another attack this many times
   COMBO_SCALING: 0.1,     // each extra hit in a combo does 10% less damage...
   COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block
-  INPUT_BUFFER: 6,        // frames an attack press is remembered
+  INPUT_BUFFER: 8,        // frames an attack press is remembered (hit-freeze frames don't count)
 
   // Air combos: a launcher (UP + HEAVY) pops the opponent up; hold UP to jump after
   // them and chain air attacks. Air heavy on an airborne opponent spikes them into a
@@ -45,7 +45,15 @@ RF.CONFIG = {
 
   // Super meter: fills as you hit and get hit. When full, press LIGHT + HEAVY together
   // (also works to cancel a light attack that connected) for a powered-up special.
-  SUPER_MAX: 100,
+  SUPER_MAX: 300,         // 3 bars of 100
+  METER_BAR: 100,
+  METER_RATE: 2.2,        // how fast the meter fills
+  EX_COST: 100,           // 1 bar: EX special (THROW during a combo, or DOWN + THROW)
+  BREAKER_COST: 200,      // 2 bars: COMBO BREAKER (LIGHT + HEAVY while being comboed)
+  EX_DAMAGE: 1.15,        // an EX special hits a little harder than a free one
+  KNOCKDOWN_TIME: 34,     // frames lying on the floor after being knocked down
+  TECH_WINDOW: 10,        // press BLOCK within this many frames of landing to quick-rise (TECH!)
+  WAKEUP_TIME: 10,        // frames getting up (can't be hit)
   SUPER_DAMAGE: 1.6,      // a super special does this much more damage
   SUPER_INPUT_WINDOW: 5,  // frames between the two presses
   METER_GAIN: { light: 1.35 }, // light fighters build super meter faster (default 1)
@@ -61,6 +69,7 @@ RF.CONFIG = {
   CPU_LEVEL: 'normal',
   RUMBLE: true,
   ANNOUNCER: true,
-  TRAINING_DUMMY: 'stand', // training mode dummy: stand / block / crouch / jump / cpu        // the deep arena voice ("ROUND ONE... FIGHT!")           // controller vibration on hits    // easy / normal / hard (see ai.js)
+  TRAINING_DUMMY: 'stand',
+  TRAINING_TRIAL: 1,      // combo trial shown in training (0 = off) // training mode dummy: stand / block / crouch / jump / cpu        // the deep arena voice ("ROUND ONE... FIGHT!")           // controller vibration on hits    // easy / normal / hard (see ai.js)
   SHOW_HITBOXES: false,
 };

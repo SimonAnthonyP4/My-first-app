@@ -87,8 +87,8 @@
       this.stateTime = 0;
       // Only these states can be done low; everything else stands you up.
       if (!['crouch', 'block', 'blockstun', 'attack'].includes(state)) this.crouching = false;
-      if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; }
-      if (state !== 'special') this.superActive = false;
+      if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; this.wallBounced = false; }
+      if (state !== 'special') { this.superActive = false; this.exActive = false; }
       if (state !== 'jump' && state !== 'attack') this.airCombo = false;
     }
 
@@ -137,8 +137,15 @@
         case 'attack':
           if (this.move.fx && this.stateTime === this.move.startup) RF.audio.sfx('bolt');
           if (this.move.projectile && this.stateTime === this.move.startup) this.scene.spawnProjectile(this, this.move.projectile);
-          // Super: LIGHT + HEAVY together. Also cancels a light attack that connected.
-          if (canAct && !this.attackAirborne && (this.stateTime <= 3 || this.canCancel()) && this.wantsSuper(input)) { this.startSuper(); break; }
+          // Super: LIGHT + HEAVY together. Also cancels any ground attack that connected.
+          const confirmed = this.moveHasHit && !this.attackAirborne && this.stateTime >= this.move.startup;
+          if (canAct && !this.attackAirborne && (this.stateTime <= 3 || confirmed) && this.wantsSuper(input)) { this.startSuper(); break; }
+          // EX special: THROW during a ground attack that connected (1 bar).
+          if (canAct && confirmed && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); this.startEX(); break; }
+          // Heavy that connected + UP + HEAVY: cancel into the launcher (great after a wall bounce).
+          if (canAct && confirmed && this.moveKind === 'heavy' && this.chain < RF.CONFIG.MAX_CHAIN + 1 && input.held('up') && input.pressed('heavy')) {
+            input.consume('heavy'); this.startAttack('launcher', true); break;
+          }
           // Launcher connected + UP held: jump after them for an air combo.
           if (canAct && this.move.launcher && this.moveHasHit && input.held('up')) { this.launchJump(opp); break; }
           if (canAct && this.canCancel()) {
@@ -179,8 +186,20 @@
           }
           break;
         case 'hitstun':
+          // COMBO BREAKER: LIGHT + HEAVY while being comboed (2 bars).
+          if (canAct && this.combo >= 2 && this.meter >= RF.CONFIG.BREAKER_COST && this.lhPressed(input)) { this.scene.comboBreaker(this); break; }
+          if (--this.stun <= 0 && this.grounded) this.setState('idle');
+          break;
         case 'blockstun':
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
+          break;
+        case 'knockdown': // on the floor; BLOCK right as you land = quick-rise
+          this.vx *= 0.8;
+          if (this.stateTime <= RF.CONFIG.TECH_WINDOW && this.scene && this.scene.phase === 'fight' && input.pressed('block')) { input.consume('block'); this.tech(); break; }
+          if (this.stateTime >= RF.CONFIG.KNOCKDOWN_TIME) { this.state = null; this.setState('wakeup'); }
+          break;
+        case 'wakeup':
+          if (this.stateTime >= RF.CONFIG.WAKEUP_TIME) { this.pushVx = 0; this.setState('idle'); }
           break;
         case 'dazed':
           this.vx *= 0.8;
@@ -223,14 +242,39 @@
 
     // Both attack buttons pressed (nearly) together, with a full meter.
     wantsSuper(input) {
-      if (this.meter < RF.CONFIG.SUPER_MAX || !this.scene) return false;
+      return this.meter >= RF.CONFIG.SUPER_MAX && !!this.scene && this.lhPressed(input);
+    }
+
+    lhPressed(input) {
       const now = input.kb.frame, l = input.lastPress('light'), h = input.lastPress('heavy'), w = RF.CONFIG.SUPER_INPUT_WINDOW;
-      return now - l <= w && now - h <= w && Math.abs(l - h) <= w && Math.min(l, h) > this.lastSuperAt;
+      const ok = now - l <= w && now - h <= w && Math.abs(l - h) <= w && Math.min(l, h) > this.lastSuperAt;
+      if (ok) { this.lastSuperAt = Math.max(l, h); input.consume('light'); input.consume('heavy'); } // don't also fire a normal attack
+      return ok;
+    }
+
+    // EX special: spend a bar to fire your special on demand.
+    startEX() {
+      this.meter -= RF.CONFIG.EX_COST;
+      this.startSpecial();
+      this.exActive = true;
+      this.scene.flash = Math.max(this.scene.flash, 3);
+      this.scene.effects.spawnText('EX ' + this.special.name.toUpperCase() + '!', this.x, this.body.height + 14, '#60e0ff');
+      RF.audio.sfx('perfect');
+    }
+
+    // Quick-rise off the floor with a little roll back.
+    tech() {
+      this.state = null;
+      this.setState('wakeup');
+      this.stateTime = Math.floor(RF.CONFIG.WAKEUP_TIME / 2);
+      this.pushVx = -this.facing * 3;
+      if (this.scene) this.scene.effects.spawnText('TECH!', this.x, this.body.height * 0.5, '#8ff0ff');
+      RF.audio.sfx('whoosh');
     }
 
     startSuper() {
       this.lastSuperAt = this.scene.game.kb.frame;
-      this.meter = 0;
+      this.meter -= RF.CONFIG.SUPER_MAX;
       this.startSpecial();
       this.superActive = true;
       this.scene.startSuperFreeze(this);
@@ -239,7 +283,7 @@
     gainMeter(n) {
       if (!this.scene || this.scene.phase !== 'fight' || this.superActive) return;
       const was = this.meter;
-      this.meter = Math.min(RF.CONFIG.SUPER_MAX, this.meter + n * ((RF.CONFIG.METER_GAIN || {})[this.def.archetype] || 1));
+      this.meter = Math.min(RF.CONFIG.SUPER_MAX, this.meter + n * (RF.CONFIG.METER_RATE || 1) * ((RF.CONFIG.METER_GAIN || {})[this.def.archetype] || 1));
       if (was < RF.CONFIG.SUPER_MAX && this.meter >= RF.CONFIG.SUPER_MAX) {
         this.scene.effects.spawnText('SUPER READY!', this.x, this.body.height + 24, '#ffd030');
         RF.audio.sfx('ready');
@@ -297,6 +341,7 @@
       this.faceOpponent(opp);
       const down = input.held('down'), up = input.held('up');
       if (this.wantsSuper(input)) return this.startSuper();
+      if (down && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); return this.startEX(); } // DOWN + THROW = EX special
       if (this.throwCfg && input.pressed('throw')) { input.consume('throw'); return this.startThrow(); }
       if (input.pressed('light')) { input.consume('light'); return this.startAttack(down ? 'lowLight' : 'light'); }
       if (input.pressed('heavy')) { input.consume('heavy'); return this.startAttack(down ? 'lowHeavy' : up ? 'launcher' : 'heavy'); }
@@ -398,7 +443,7 @@
       if (this.health <= 0) return this.knockOut(fling ? Math.sign(fling.vx) || 1 : 1);
       this.stun = 22;
       this.setState('hitstun');
-      if (fling) { this.vx = fling.vx; this.vy = fling.vy; }
+      if (fling) { this.vx = fling.vx; this.vy = fling.vy; if (fling.vy > 0) this.juggle = 1; } // thrown through the air = knockdown
     }
 
     physics(bounds) {
@@ -417,7 +462,7 @@
           this.land();
         }
       }
-      if (this.grounded && (this.state === 'hitstun' || this.state === 'blockstun' || this.state === 'ko')) {
+      if (this.grounded && ['hitstun', 'blockstun', 'ko', 'knockdown', 'wakeup'].includes(this.state)) {
         this.vx *= 0.8;
       }
       this.x += this.vx + this.pushVx;
@@ -441,8 +486,16 @@
           this.scene.shake = Math.max(this.scene.shake, 8);
           this.scene.effects.spawn('dust', this.x - 8, 1); this.scene.effects.spawn('dust', this.x + 8, 1);
           this.scene.effects.spawnText('BOUNCE!', this.x, 30, '#ffb060');
+          this.scene.trialEvent && this.scene.trialEvent('bounce');
           RF.audio.sfx('boom');
         }
+      } else if (this.state === 'hitstun' && this.juggle > 0) {
+        // Knocked down: hit the floor and lie there (BLOCK to quick-rise).
+        this.vx *= 0.3;
+        this.state = null;
+        this.setState('knockdown');
+        if (this.scene) { this.scene.effects.spawn('dust', this.x - 6, 1); this.scene.effects.spawn('dust', this.x + 6, 1); this.scene.shake = Math.max(this.scene.shake, 3); }
+        RF.audio.sfx('stomp');
       } else if (this.state === 'hitstun') {
         this.vx = 0;
         if (this.scene) this.scene.effects.spawn('dust', this.x, 1);
@@ -484,6 +537,7 @@
       if (this.isKO || ['thrown', 'finishing', 'finished'].includes(this.state)) return null;
       // Too many hits in the air: they fall out of the combo (no infinite juggles).
       if (this.state === 'hitstun' && !this.grounded && this.juggle >= RF.CONFIG.JUGGLE_LIMIT) return null;
+      if (this.state === 'knockdown' || this.state === 'wakeup') return null; // on the floor / getting up
       // Backdash: briefly untouchable as you slip away.
       if (this.state === 'dash' && this.dashDir !== this.facing && this.stateTime <= 6) return null;
       const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
@@ -565,6 +619,8 @@
         case 'walk': return ['walk', Math.floor(Math.abs(this.walkTime) / Math.round(16 / this.stats.walkSpeed)) % 4];
         case 'jump': return ['jump', 0];
         case 'jumpSquat': return ['crouch', 0];
+        case 'knockdown': return ['ko', 1];
+        case 'wakeup': return ['crouch', 0];
         case 'dash': return ['walk', 1];
         case 'attack': {
           const ph = this.attackPhase();
@@ -614,7 +670,7 @@
         }
         ctx.restore();
       }
-      if (this.superActive) RF.MOVE_FX.superAura(this, ctx, floorY, this.scene ? this.scene.frame : 0);
+      if (this.superActive || this.exActive) RF.MOVE_FX.superAura(this, ctx, floorY, this.scene ? this.scene.frame : 0);
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
       if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
       const t = this.scene ? this.scene.frame : 0;

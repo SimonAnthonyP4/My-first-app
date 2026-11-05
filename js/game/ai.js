@@ -23,8 +23,9 @@
     pressed(a, buffer = RF.CONFIG.INPUT_BUFFER) {
       const t = this.lastPress(a);
       const c = a in this.consumedAt ? this.consumedAt[a] : -Infinity;
-      return t > c && this.kb.frame - t <= buffer;
+      return t > c && RF.bufferAge(this, t) <= buffer;
     }
+    noteFrame(frozen) { RF.noteFrame(this, frozen); }
     consume(a) { this.consumedAt[a] = this.kb.frame; }
     tap(a) { this.pressAt[a] = this.kb.frame; }
 
@@ -54,6 +55,16 @@
       const toward = Math.sign(opp.x - me.x) || me.facing;
       const key = (d) => (d > 0 ? 'right' : 'left');
 
+      // Knocked down: quick-rise.
+      if (me.state === 'knockdown') {
+        if (me.stateTime === 2 && Math.random() < L.breakChance + 0.2) this.tap('block');
+        return;
+      }
+      // Being comboed with 2 bars: COMBO BREAKER.
+      if (me.state === 'hitstun' && me.combo >= 2 && me.meter >= RF.CONFIG.BREAKER_COST && Math.random() < L.breakChance * 0.12) {
+        this.tap('light'); this.tap('heavy');
+        return;
+      }
       // Being thrown: maybe break free.
       if (me.state === 'thrown') {
         if (me.stateTime === 1) this.breakAt = Math.random() < L.breakChance ? 3 + Math.floor(Math.random() * 5) : -1;
@@ -92,7 +103,9 @@
         if (this.comboGo === undefined || me.stateTime === 1) this.comboGo = Math.random() < L.combo;
         if (this.comboGo) {
           if (me.move.launcher) { this.holding.add('up'); return; }               // chase them into the air
-          if (me.canCancel() && me.stateTime >= me.move.startup + 1) {
+          if (!me.attackAirborne && me.moveKind === 'heavy' && me.meter >= RF.CONFIG.EX_COST && me.stateTime >= me.move.startup + 1 && Math.random() < 0.35) {
+            this.tap('throw'); // EX special to end the combo
+          } else if (me.canCancel() && me.stateTime >= me.move.startup + 1) {
             if (me.attackAirborne) this.tap(me.chain < 2 ? 'light' : 'heavy');
             else if (me.meter >= RF.CONFIG.SUPER_MAX && Math.random() < 0.5) { this.tap('light'); this.tap('heavy'); }
             else if (me.chain < 1) this.tap('light');

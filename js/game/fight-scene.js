@@ -11,6 +11,7 @@
   const SUPER_FREEZE = 46;
   const BRUTAL_HITS = 5;         // hits on a dazed opponent for a BRUTALITY
   // Training mode: what the dummy does (changed from the pause menu).
+  const TRIAL_SETTING = { id: 'TRAINING_TRIAL', label: 'TRIAL', options: [[0, 'OFF'], ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => [n, String(n)])] };
   const DUMMY_SETTING = { id: 'TRAINING_DUMMY', label: 'DUMMY', options: [['stand', 'STAND'], ['block', 'BLOCK'], ['crouch', 'CROUCH BLOCK'], ['jump', 'JUMP'], ['cpu', 'CPU']] };       // frames the world freezes for a super's cut-in
 
   class FightScene {
@@ -40,7 +41,7 @@
       const toTitle = () => game.setScene(new RF.TitleScene(game));
       this.pauseMenu = new RF.ListMenu([
         { label: 'RESUME', onSelect: () => { this.paused = false; } },
-        ...(this.training ? [{ label: 'DUMMY', setting: DUMMY_SETTING }] : []),
+        ...(this.training ? [{ label: 'TRIAL', setting: TRIAL_SETTING }, { label: 'DUMMY', setting: DUMMY_SETTING }] : []),
         { label: 'RESTART MATCH', onSelect: () => { this.paused = false; this.startMatch(); } },
         { label: 'CHARACTER SELECT', onSelect: toSelect },
         { label: 'MAIN MENU', onSelect: toTitle },
@@ -117,6 +118,8 @@
       if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
       if (this.toasty && ++this.toasty.t > 70) this.toasty = null;
       for (const f of this.fighters) f.tickVisuals();
+      const frozen = !!this.superFreeze || this.hitstop > 0;
+      for (const inp of this.inputs) if (inp.noteFrame) inp.noteFrame(frozen); // frozen frames don't age buffered presses
       if (this.superFreeze) {
         // Everything stops while the super cut-in plays.
         if (++this.superFreeze.t >= SUPER_FREEZE) this.superFreeze = null;
@@ -235,6 +238,45 @@
       f.state = null; f.setState('idle');
     }
 
+    // A heavy hit that drives someone into the corner bounces them back off the wall.
+    tryWallBounce(att, def, move) {
+      if (!move.knockback || def.wallBounced || def.health <= 0 || def.state !== 'hitstun') return;
+      const b = this.stageDef.bounds, dir = sign(def.x - att.x) || att.facing;
+      const gap = dir > 0 ? b.right - (def.x + def.body.width / 2) : def.x - def.body.width / 2 - b.left;
+      if (gap > 40) return;
+      const hz = RF.HAZARDS[this.stageDef.id];
+      if (hz && hz.side === dir && this.hazardCooldown <= 0) return; // the hazard gets them instead
+      def.wallBounced = true;
+      def.pushVx = 0;
+      def.x = dir > 0 ? Math.min(def.x, b.right - def.body.width / 2 - 1) : Math.max(def.x, b.left + def.body.width / 2 + 1);
+      def.vx = -dir * 1.6;
+      def.vy = 6.2;
+      def.juggle = Math.max(def.juggle, 1);
+      def.stun = Math.max(def.stun, 34);
+      this.shake = Math.max(this.shake, 8);
+      this.hitstop = Math.max(this.hitstop, 8);
+      this.effects.spawn('dust', dir > 0 ? b.right - 4 : b.left + 4, def.body.height / 2);
+      this.effects.spawnText('WALL BOUNCE!', def.x, def.body.height + 18, '#ffb060');
+      RF.audio.sfx('boom');
+      this.trialEvent('wall', att);
+    }
+
+    // Combo trials (training): log what each hit of the current combo was.
+    trialEvent(tag) {
+      if (!this.training) return;
+      (this.trialLog = this.trialLog || []).push(tag);
+      const trial = RF.TRIALS[RF.CONFIG.TRAINING_TRIAL - 1];
+      if (!trial || this.trialDone) return;
+      if (RF.trialProgress(trial, this.trialLog) >= trial.steps.length) {
+        this.trialDone = 90;
+        this.trialsCleared = this.trialsCleared || new Set();
+        this.trialsCleared.add(RF.CONFIG.TRAINING_TRIAL);
+        this.effects.spawnText('TRIAL CLEAR!', RF.CONFIG.WIDTH / 2, 120, '#60ff80');
+        RF.audio.sfx('perfect');
+        RF.announcer.say('TRIAL CLEAR!');
+      }
+    }
+
     // ---- arcade ----
 
     arcadeMenu() {
@@ -270,12 +312,46 @@
     updateTraining() {
       const [p, d] = this.fighters;
       p.meter = RF.CONFIG.SUPER_MAX;
-      const busy = (f) => ['hitstun', 'blockstun', 'thrown', 'dazed'].includes(f.state) || !f.grounded;
+      if (this.trialDone && --this.trialDone === 0 && RF.CONFIG.TRAINING_TRIAL < RF.TRIALS.length) RF.CONFIG.TRAINING_TRIAL++; // next trial
+      if (this.trialShown !== RF.CONFIG.TRAINING_TRIAL) { this.trialShown = RF.CONFIG.TRAINING_TRIAL; this.resetTrainingPositions(); this.trialLog = []; }
+      const busy = (f) => ['hitstun', 'blockstun', 'thrown', 'dazed', 'knockdown', 'wakeup', 'attack', 'special', 'throwing'].includes(f.state) || !f.grounded;
       if (busy(d) || busy(p)) this.quietFrames = 0;
-      else if (++this.quietFrames === 50) { for (const f of this.fighters) f.health = f.maxHealth; }
+      else if (++this.quietFrames === 50) {
+        for (const f of this.fighters) f.health = f.maxHealth;
+        if (RF.TRIALS[RF.CONFIG.TRAINING_TRIAL - 1]) this.resetTrainingPositions(); // fresh attempt
+        this.trialLog = [];
+      }
+    }
+
+    resetTrainingPositions() {
+      const b = this.stageDef.bounds, trial = RF.TRIALS[RF.CONFIG.TRAINING_TRIAL - 1];
+      const [p, d] = this.fighters, gap = (p.body.width + d.body.width) / 2 + 14;
+      const dx = trial && trial.corner ? b.right - d.body.width / 2 - 2 : (b.left + b.right) / 2 + gap / 2;
+      p.reset(dx - gap, 1); d.reset(dx, -1);
+      p.meter = RF.CONFIG.SUPER_MAX;
     }
 
     // ---- supers ----
+
+    // COMBO BREAKER: the victim spends 2 bars and blasts the attacker away.
+    comboBreaker(def) {
+      const att = this.opponentOf(def), away = sign(att.x - def.x) || def.facing;
+      def.meter -= RF.CONFIG.BREAKER_COST;
+      def.combo = 0;
+      def.state = null;
+      if (def.grounded) def.setState('idle');
+      else { def.setState('jump'); def.airAttackUsed = true; def.vy = Math.max(def.vy, 2); }
+      att.stagger(28);
+      att.pushVx = away * 6;
+      if (!att.grounded) att.vy = Math.max(att.vy, 3);
+      this.comboText = null;
+      this.flash = 8; this.shake = 12; this.hitstop = 10;
+      this.effects.spawn('perfect', (att.x + def.x) / 2, def.body.height / 2);
+      this.effects.spawnText('COMBO BREAKER!', def.x, def.body.height + 18, '#ff60ff');
+      RF.audio.sfx('perfect'); RF.audio.sfx('boom');
+      RF.announcer.say('COMBO BREAKER!');
+      this.game.kb.rumble(att.side, 0.8, 300);
+    }
 
     startSuperFreeze(f) {
       this.superFreeze = { f, t: 0 };
@@ -430,6 +506,9 @@
       const hpBefore = def.health;
       const blocked = def.receiveHit(att, move);
       if (!blocked) {
+        if (def.combo <= 1) this.trialLog = [];
+        this.trialEvent(move.tag || (move === att.move ? att.moveKind : 'special'), att);
+        this.tryWallBounce(att, def, move);
         if (def.combo <= 1) this.comboDmg = 0;
         this.comboDmg += hpBefore - def.health;
         this.lastCombo = { hits: def.combo, dmg: this.comboDmg, pct: this.comboDmg / def.maxHealth * 100 };
@@ -490,10 +569,12 @@
 
     spawnProjectile(f, s) {
       RF.audio.sfx(s.sound || 'special');
+      const pm = RF.specialMove(f, s);
+      if (f.state === 'attack') pm.tag = f.moveKind; // a normal move's projectile (e.g. a heavy)
       const size = s.size * f.body.scale;
       this.glyphCount = (this.glyphCount || 0) + 1;
       this.projectiles.push({
-        owner: f, cfg: s, move: RF.specialMove(f, s),
+        owner: f, cfg: s, move: pm,
         x: f.x + f.facing * f.body.width * 0.7, y: f.y + f.body.height * s.height - size / 2,
         vx: f.facing * s.speed, w: size, h: size * 0.75, t: 0,
         glyph: s.glyphs ? s.glyphs[this.glyphCount % s.glyphs.length] : null, // math-symbol projectiles
@@ -685,7 +766,19 @@
       return { f, t: Math.max(0, this.phaseTime - 1 - i * D), kind: RF.INTROS[f.def.intro] || RF.INTROS.walk };
     }
 
+    drawTrialPanel(ctx) {
+      const n = RF.CONFIG.TRAINING_TRIAL, trial = RF.TRIALS[n - 1];
+      if (!trial) return;
+      const got = RF.trialProgress(trial, this.trialLog || []), x = 14, y = 80;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 4, y - 4, 128, 22 + trial.steps.length * 9);
+      const cleared = this.trialsCleared && this.trialsCleared.has(n);
+      T(ctx, 'TRIAL ' + n + '/' + RF.TRIALS.length + (cleared ? ' CLEAR' : ''), x, y, { color: cleared ? '#60ff80' : '#ffd030', outline: '#000' });
+      T(ctx, trial.name, x, y + 9, { color: '#fff', outline: '#000' });
+      trial.steps.forEach((s, i) => T(ctx, (i < got ? '> ' : '  ') + (RF.TRIAL_LABELS[s] || s.toUpperCase()), x, y + 20 + i * 9, { color: i < got ? '#60ff80' : '#a8a8b8', outline: '#000' }));
+    }
+
     drawTrainingHud(ctx, W) {
+      this.drawTrialPanel(ctx);
       ctx.fillStyle = '#000'; ctx.fillRect(W / 2 - 22, 2, 44, 18);
       T(ctx, 'TRAINING', W / 2, 8, { align: 'center', color: '#60e0ff', outline: '#000' });
       const c = this.lastCombo;
