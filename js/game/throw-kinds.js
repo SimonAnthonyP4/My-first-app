@@ -69,6 +69,30 @@
       },
     },
 
+    // Tamayo: cuffs, the rights read out (each line stings), a laugh, a shove.
+    arrest: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, LINES = ['YOU HAVE THE RIGHT TO REMAIN SILENT', 'ANYTHING YOU SAY IS ALSO WRONG', 'HA HA HA!'];
+        hold(att, def, 6);
+        def.thrownPose = ['hit', 0];
+        if (t === 6) RF.audio.sfx('clang');
+        LINES.forEach((l, i) => { if (t === 14 + i * 18) { scene.effects.spawnText(l, att.x, att.body.height + 8 + i * 9, i === 2 ? '#ff9a40' : '#ffffff'); scene.throwHit(att, def, T.damagePerLine); if (i === 2) RF.audio.sfx('laugh'); } });
+        if (t === 70) scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 4 });
+        return t >= 84;
+      },
+      anim(att, t) { return t < 60 ? ['idle', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) { // the handcuffs on their wrists
+        const t = att.stateTime;
+        if (t < 6 || t > 70) return;
+        const x = Math.round(def.x + att.facing * 2), y = Math.round(floorY - def.body.height * 0.5);
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x - 4, y, 4, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(x + 5, y, 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#c8c8d0'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x - 4, y, 4, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(x + 5, y, 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1;
+      },
+    },
+
     // Ruano: dates from European history, each one a hit, then a wing gust.
     history: {
       update(att, def, t, scene) {

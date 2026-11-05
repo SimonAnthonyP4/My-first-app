@@ -379,6 +379,12 @@
           this.tone('square', 1400, t, 0.08, 0.08, null, 700);
           this.noiseBurst(t, 0.12, 0.2, 'highpass', 2500);
           break;
+        case 'laugh': // HA HA HA (a cocky chuckle)
+          for (let i = 0; i < 4; i++) {
+            this.tone('sawtooth', 260 - i * 18, t + i * 0.13, 0.09, 0.07, null, 200 - i * 15);
+            this.noiseBurst(t + i * 0.13, 0.06, 0.08, 'bandpass', 900);
+          }
+          break;
         case 'cash': // ka-ching!
           this.noiseBurst(t, 0.05, 0.2, 'highpass', 3000);
           this.tone('square', 1568, t + 0.05, 0.12, 0.08);

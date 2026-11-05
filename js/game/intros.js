@@ -84,6 +84,16 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Strolls in slowly with his arms crossed, then laughs at you (Tamayo).
+    swagger: {
+      update(f, t, scene) {
+        const from = f.homeX - f.facing * 150, u = Math.min(1, t / 44);
+        f.x = from + (f.homeX - from) * u;
+        f.state = u < 1 ? 'walk' : 'idle';
+        f.walkTime = t;
+        if (t === 46) { RF.audio.sfx('laugh'); scene.effects.spawnText('HA!', f.x, f.body.height + 22, '#ff9a40'); }
+      },
+    },
     // Descends from heaven in a beam of light, wings spread (Ruano).
     descend: {
       update(f, t, scene) {

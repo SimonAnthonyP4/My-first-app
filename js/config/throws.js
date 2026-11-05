@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  citizensArrest: {
+    name: "Citizen's Arrest",
+    description: 'Slaps on the cuffs, reads them their rights (with commentary), laughs, then shoves them off.',
+    kind: 'arrest',
+    damagePerLine: 3,
+    finisherDamage: 8,
+  },
   historyLesson: {
     name: 'History Lesson',
     description: 'Holds them gently and teaches them European history - every important date hits like a hammer - then a gust from her wings sends them home.',

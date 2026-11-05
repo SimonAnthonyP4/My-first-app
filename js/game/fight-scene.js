@@ -180,6 +180,9 @@
         }
         case 'intro':
           if (this.phaseTime === 1) { RF.audio.sfx('gong'); RF.announcer.say('ROUND ' + RF.announcer.number(this.round)); }
+          if (this.phaseTime === 20 && this.round > 1) for (const f of this.fighters) if (f.def.jokes) { // a fresh joke every round
+            this.effects.spawnText(f.def.jokes[Math.floor(Math.random() * f.def.jokes.length)], RF.CONFIG.WIDTH / 2, 150, '#ffd8a0');
+          }
           if (this.phaseTime === 65) RF.announcer.say('FIGHT!', { rate: 0.9 });
           if (this.phaseTime === 65) RF.audio.sfx('fight');
           if (this.phaseTime >= INTRO_FRAMES) this.setPhase('fight');
@@ -744,9 +747,16 @@
         const air = def.juggle >= 2 || !!(prev && prev.air);
         this.comboText = { side: att.side, hits: def.combo, t: 70, air: air && def.combo >= 3 };
         if (this.isHuman(att)) RF.records.combo(def.combo);
+        if (def.combo === 5 && att.def.laughs) { this.effects.spawnText('HA HA HA!', att.x, att.body.height + 22, '#ff9a40'); RF.audio.sfx('laugh'); }
         if (RF.CONFIG.MOD_PROTEIN) att.health = Math.min(att.maxHealth, att.health + (hpBefore - def.health) * 0.5);
         const PRAISE = { 5: 'BRUTAL!', 7: 'SAVAGE!', 9: 'INSANE!', 12: 'TERRAMANIA!' };
         if (PRAISE[def.combo]) { RF.audio.sfx('ready'); RF.announcer.say(PRAISE[def.combo], { rate: 0.95 }); }
+      }
+      // Cocky defenders laugh at you when you hit their guard (Tamayo), and blocking pays.
+      if (blocked && def.def.blockMeter) def.gainMeter(def.def.blockMeter);
+      if (blocked && def.def.laughs && Math.random() < 0.45) {
+        this.effects.spawnText(['HA!', 'TOO EASY!', 'IS THAT IT?', 'HA HA!', 'NICE TRY.'][Math.floor(Math.random() * 5)], def.x, def.body.height + 14, '#ff9a40');
+        RF.audio.sfx('laugh');
       }
       // Some blocks shove the attacker back across the line (Holbrook's Sovereign Border).
       if (blocked && def.def.blockRepel) {

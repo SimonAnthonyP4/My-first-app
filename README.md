@@ -455,6 +455,35 @@ hardest hits, and like the tanks she shrugs off one hit during a heavy (`armor`)
 
 The roster is 14 fighters; character select (7 x 2) is full.
 
+## Tamayo
+
+The government teacher (defensive, **130% health**, from Government, Room 1787). Very cocky: he
+laughs at you when you hit his guard ("HA!", "TOO EASY!", "IS THAT IT?"), laughs when he lands a
+5-hit combo, and every taunt is a random government joke ("YOU FIGHT LIKE A GRIDLOCKED
+CONGRESS."); he cracks a new one at the start of every round (`laughs`, `jokes`).
+
+- **Defensive:** **Unbothered** - standing still with his arms crossed for half a second, he
+  auto-blocks the next standing attack (lows and throws still work; `unbothered`). Blocking also
+  builds his super meter (`blockMeter`).
+- **Combos:** strings of up to **6** (`maxChain`), his heavy cancels into more attacks, and his
+  combos lose damage half as fast as everyone else's (`comboScaling`).
+- **Light: Lanyard Whip.** His school ID badge swung on its lanyard.
+- **Heavy: Executive Order.** A straight punch that lands with an official red stamp.
+- **Block: Access Denied.** A giant laminated ID badge flashing NO / ACCESS DENIED.
+- **Special: Filibuster.** He starts talking and never stops: BLAH BLAH BLAH... AND ANOTHER
+  THING... FURTHERMORE... - eight hits.
+- **Command specials:** Pocket Veto (counter stance: VETOED!) and Gerrymander (redraws the lines
+  and appears behind you: REDISTRICTED).
+- **Throw: Citizen's Arrest.** Handcuffs, "YOU HAVE THE RIGHT TO REMAIN SILENT", "ANYTHING YOU SAY
+  IS ALSO WRONG", HA HA HA, shove.
+- **Finisher: Impeachment.** A giant gavel slams down three times - ORDER! ORDER!! IMPEACHED! -
+  flattening them more each time, while he stands there with his arms crossed. HA HA HA! CASE
+  CLOSED.
+- **Entrance:** strolls in slowly with his arms crossed, then laughs. **Brutality:** Landslide
+  Victory.
+
+Character select is now 8 x 2 (16 slots).
+
 ## Adding a character drawn in Piskel
 
 You only need to draw **one standing frame, facing right**. The game animates

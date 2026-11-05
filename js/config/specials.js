@@ -37,6 +37,22 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  filibuster: {
+    name: 'Filibuster',
+    description: 'Starts talking and never stops: a relentless stream of BLAH BLAH BLAH that hits again and again.',
+    kind: 'volley',
+    startup: 10,
+    interval: 5,
+    recovery: 18,
+    heights: [0.8, 0.6, 0.85, 0.5, 0.75, 0.55, 0.9, 0.65],
+    speed: 5.5,
+    size: 12,
+    damage: 3.2,         // per BLAH
+    hitstun: 18, blockstun: 8, pushback: 1.5, hitstop: 3,
+    glyphs: ['BLAH'],
+    callouts: ['BLAH', 'BLAH', 'AND ANOTHER THING', 'BLAH', 'FURTHERMORE', 'BLAH', 'IN CONCLUSION', 'JUST KIDDING'],
+    colors: ['#ffffff', '#ffd8a0', '#c08040'],
+  },
   divineTouch: {
     name: 'Divine Touch',
     description: 'The clouds part over the opponent and a giant painted hand reaches down and strikes them with holy light.',

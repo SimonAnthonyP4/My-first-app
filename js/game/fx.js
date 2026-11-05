@@ -39,6 +39,30 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Tamayo's light, LANYARD WHIP: his ID badge swung on its lanyard.
+    lanyard(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t > m.startup + m.active + 4) return;
+      const u = Math.min(1, t / (m.startup + m.active)), a = -1.2 + u * 1.6, R = m.hitbox.x + m.hitbox.w - 4;
+      const ox = f.x + f.facing * 6, oy = floorY - f.y - m.hitbox.y - 8;
+      const bx = ox + f.facing * Math.cos(a) * R, by = oy + Math.sin(a) * R * 0.5;
+      ctx.strokeStyle = '#2a5ad0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(bx, by); ctx.stroke();
+      ctx.fillStyle = '#111'; ctx.fillRect(Math.round(bx) - 4, Math.round(by) - 5, 8, 10);
+      ctx.fillStyle = '#e8ecf2'; ctx.fillRect(Math.round(bx) - 3, Math.round(by) - 4, 6, 8);
+      ctx.fillStyle = '#5a82b0'; ctx.fillRect(Math.round(bx) - 2, Math.round(by) - 3, 4, 3);
+    },
+
+    // Tamayo's heavy, EXECUTIVE ORDER: the punch lands with an official stamp.
+    execOrder(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (!f.moveHasHit || t > m.startup + m.active + 16) return;
+      const x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.8), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2 - 10;
+      ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(-0.15);
+      ctx.strokeStyle = '#e02020'; ctx.lineWidth = 2; ctx.strokeRect(-36, -8, 72, 16); ctx.lineWidth = 1;
+      RF.font.drawText(ctx, 'EXECUTIVE ORDER', 0, -4, { align: 'center', color: '#e02020', outline: '#000' });
+      ctx.restore();
+    },
+
     // Ruano's aura: a golden halo and soft angel wings that gently beat, with drifting light.
     angelAura(f, ctx, floorY, frame, layer) {
       if (f.isKO || f.state === 'thrown' || f.state === 'finished' || f.state === 'knockdown') return;
@@ -501,6 +525,21 @@
   }
 
   RF.BLOCK_FX = {
+    // Tamayo: ACCESS DENIED - a giant laminated school ID badge flashing red.
+    idBadge(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, w = 22, h = 30, x = Math.round(g.front + f.facing * 6 - w / 2), y = Math.round(g.mid - h / 2 - 6);
+      ctx.fillStyle = '#2a5ad0'; ctx.fillRect(x + w / 2 - 1, y - 12, 2, 12);            // lanyard
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = '#e8ecf2'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#5a82b0'; ctx.fillRect(x + 4, y + 3, w - 8, 12);                  // photo
+      ctx.fillStyle = '#e8a070'; ctx.fillRect(x + 8, y + 5, 6, 6);                       // (his bald head)
+      ctx.fillStyle = fl > 0.2 && (frame >> 2) % 2 ? '#ff2020' : '#c01818'; ctx.fillRect(x, y + h - 9, w, 9);
+      RF.font.drawText(ctx, 'NO', x + w / 2, y + h - 8, { align: 'center', color: '#ffffff' });
+      if (fl > 0.3) RF.font.drawText(ctx, 'ACCESS DENIED', f.x, g.top - 14, { align: 'center', color: '#ff4040', outline: '#000' });
+    },
+
     // Ruano: ROSE WINDOW - a glowing stained-glass cathedral window. GRACE: each blocked
     // hit heals her a little (blockHeal).
     roseWindow(f, ctx, floorY, frame) {

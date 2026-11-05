@@ -221,7 +221,10 @@
       this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;
       for (const cell of this.cells.torso) {
-        if (cell.prop && posedArm) continue; // the prop moves to the posed hand
+        if (cell.prop && posedArm) { // the prop moves to the posed hand (or fills in, e.g. crossed arms)
+          if (s.propFill) put(cell.c, cell.r, s.palette[s.propFill], torsoOff[0], torsoOff[1]);
+          continue;
+        }
         const color = cell.hand && posedArm ? s.palette[s.legend[s.coatChar || 'W']] : cell.color;
         put(cell.c, cell.r, color, torsoOff[0], torsoOff[1]);
       }

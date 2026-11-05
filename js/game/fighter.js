@@ -285,7 +285,9 @@
     startTaunt() {
       this.vx = 0; this.move = null;
       this.state = null; this.setState('taunt');
-      const line = this.def.taunt || 'COME ON!';
+      const jokes = this.def.jokes;
+      const line = jokes ? jokes[Math.floor(Math.random() * jokes.length)] : this.def.taunt || 'COME ON!';
+      if (jokes) { RF.audio.sfx('laugh'); this.scene && this.scene.effects.spawnText('HA HA HA!', this.x, this.body.height + 26, '#ff9a40'); }
       if (this.scene) this.scene.effects.spawnText(line, this.x, this.body.height + 14, '#ffffff');
       if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
     }
@@ -633,8 +635,12 @@
       return attacker.state === 'attack' && attacker.attackAirborne ? 'overhead' : 'mid';
     }
 
+    // Tamayo's UNBOTHERED: standing still with his arms crossed he auto-blocks (not lows).
+    unbothered() { return this.def.unbothered && this.state === 'idle' && this.stateTime >= this.def.unbothered && this.grounded; }
+
     isBlockingAgainst(attacker, move) {
-      if (!((this.state === 'block' || this.state === 'blockstun') && this.grounded)) return false;
+      const auto = this.unbothered() && Fighter.attackLevel(attacker, move) !== 'low';
+      if (!auto && !((this.state === 'block' || this.state === 'blockstun') && this.grounded)) return false;
       if (this.facing !== (sign(attacker.x - this.x) || this.facing)) return false;
       const level = Fighter.attackLevel(attacker, move);
       if (level === 'low' && !this.crouching) return false;
@@ -674,7 +680,8 @@
       } else {
         // Combo damage scaling: each extra hit before recovering does a bit less.
         this.combo = wasStunned ? this.combo + 1 : 1;
-        dmg *= Math.max(RF.CONFIG.COMBO_MIN_SCALE, 1 - RF.CONFIG.COMBO_SCALING * (this.combo - 1));
+        const scaling = attacker.def.comboScaling != null ? attacker.def.comboScaling : RF.CONFIG.COMBO_SCALING; // Tamayo's combos barely scale
+        dmg *= Math.max(RF.CONFIG.COMBO_MIN_SCALE, 1 - scaling * (this.combo - 1));
         this.flash = 4;
         this.stun = move.hitstun + (this.counterHit ? 10 : 0);
         this.state = null;

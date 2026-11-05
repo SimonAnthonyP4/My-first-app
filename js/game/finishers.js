@@ -198,6 +198,39 @@
   }
 
   RF.FINISHERS = {
+    // Tamayo: IMPEACHMENT - a giant gavel comes down three times. ORDER! ORDER! IMPEACHED!
+    impeachment: {
+      name: 'Impeachment',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 140 ? ['idle', 0] : ['victory', (t >> 3) % 2]; // arms crossed while the gavel works
+        [40, 80, 120].forEach((hitT, i) => {
+          if (t === hitT) {
+            scene.shake = 10 + i * 4; scene.flash = 3; RF.audio.sfx('boom'); RF.audio.sfx('clang');
+            scene.effects.spawnText(['ORDER!', 'ORDER!!', 'IMPEACHED!'][i], vic.x, 120 - i * 6, i === 2 ? '#ff4040' : '#ffffff');
+          }
+        });
+        if (t === 150 || t === 175) RF.audio.sfx('laugh');
+        if (t === 160) scene.effects.spawnText('HA HA HA! CASE CLOSED.', att.x, att.body.height + 20, '#ff9a40');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        const squash = t < 40 ? 1 : t < 80 ? 0.75 : t < 120 ? 0.5 : 0.3; // flatter with every strike
+        ctx.save(); ctx.translate(Math.round(vic.x), floorY); ctx.scale(1 + (1 - squash) * 0.6, squash);
+        vic.sprite.draw(ctx, 'hit', 0, 0, 0, vic.facing);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t >= 140) return;
+        const cycle = (t % 40) / 40, x = Math.round(vic.x);
+        const up = cycle < 0.6 ? cycle / 0.6 : 1 - (cycle - 0.6) / 0.4; // raise slowly, slam fast
+        const headY = Math.round(floorY - vic.body.height * (t < 80 ? 0.9 : 0.6) - 20 - up * 60);
+        ctx.fillStyle = '#5a3a1a'; ctx.fillRect(x - 3, headY - 70, 6, 70);          // handle
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 23, headY - 1, 46, 22);
+        ctx.fillStyle = '#7a4a20'; ctx.fillRect(x - 22, headY, 44, 20);              // head of the gavel
+        ctx.fillStyle = '#c8961e'; ctx.fillRect(x - 22, headY + 3, 44, 3); ctx.fillRect(x - 22, headY + 14, 44, 3);
+      },
+    },
+
     // Ruano: MASTERPIECE - she paints the loser into a gilded museum painting, plaque and all.
     masterpiece: {
       name: 'Masterpiece',

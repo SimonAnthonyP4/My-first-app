@@ -49,6 +49,9 @@
     // ---- Simon ----
     spinningElbow: Object.assign({ name: 'Spinning Elbow', kind: 'rush', startup: 4, speed: 6, duration: 8, reach: 12, recovery: 12, color: '#ffb030' }, hit(9)),
     skipKnee: Object.assign({ name: 'Skip Knee', kind: 'rising', startup: 3, rise: 7.5, forward: 3, reach: 16, recovery: 14, invuln: 5, color: '#ffd060' }, hit(10, { launch: 6 })),
+    // ---- Tamayo ----
+    pocketVeto: Object.assign({ name: 'Pocket Veto', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'VETOED!' }, hit(12, { launch: 4 })),
+    gerrymander: Object.assign({ name: 'Gerrymander', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 18, recovery: 12, color: '#2a5ad0', callout: 'REDISTRICTED' }, hit(8)),
     // ---- Ruano ----
     flamencoFan: Object.assign({ name: 'Flamenco Fan', kind: 'projectile', startup: 12, recovery: 22, speed: 4.5, size: 14, height: 0.6, art: 'fan', sound: 'whoosh', colors: ['#ffffff', '#f0c020', '#d01828'] }, hit(11)),
     ascension: Object.assign({ name: 'Ascension', kind: 'rising', startup: 6, rise: 8.5, forward: 1, reach: 20, recovery: 22, invuln: 8, color: '#fff2c0', sound: 'bell' }, hit(13, { launch: 6 })),
@@ -76,6 +79,7 @@
     anthony: { commands: { qcf: 'blink', qcb: 'barToss' }, taunt: 'WANT A BRO BATCH?', voicePitch: 0.9 },
     chris: { commands: { qcf: 'coinFlip', qcb: 'myLawyer' }, taunt: 'WHERE THE ZA', voicePitch: 1.1 },
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
+    tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
   };
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
 })();
