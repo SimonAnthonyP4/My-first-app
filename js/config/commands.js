@@ -49,6 +49,9 @@
     // ---- Simon ----
     spinningElbow: Object.assign({ name: 'Spinning Elbow', kind: 'rush', startup: 4, speed: 6, duration: 8, reach: 12, recovery: 12, color: '#ffb030' }, hit(9)),
     skipKnee: Object.assign({ name: 'Skip Knee', kind: 'rising', startup: 3, rise: 7.5, forward: 3, reach: 16, recovery: 14, invuln: 5, color: '#ffd060' }, hit(10, { launch: 6 })),
+    // ---- Ruano ----
+    flamencoFan: Object.assign({ name: 'Flamenco Fan', kind: 'projectile', startup: 12, recovery: 22, speed: 4.5, size: 14, height: 0.6, art: 'fan', sound: 'whoosh', colors: ['#ffffff', '#f0c020', '#d01828'] }, hit(11)),
+    ascension: Object.assign({ name: 'Ascension', kind: 'rising', startup: 6, rise: 8.5, forward: 1, reach: 20, recovery: 22, invuln: 8, color: '#fff2c0', sound: 'bell' }, hit(13, { launch: 6 })),
     // ---- Chris ----
     coinFlip: Object.assign({ name: 'Coin Flip', kind: 'projectile', startup: 8, recovery: 18, speed: 5.5, size: 12, height: 0.6, art: 'coin', sound: 'cash', colors: ['#ffffff', '#ffd040', '#c8961e'] }, hit(8)),
     myLawyer: Object.assign({ name: 'My Lawyer', kind: 'counter', startup: 3, window: 22, recovery: 20, color: '#e8e8e8', callout: 'MY LAWYER!' }, hit(12, { launch: 4 })),
@@ -72,6 +75,7 @@
     simon: { commands: { qcf: 'spinningElbow', qcb: 'skipKnee' }, taunt: 'COME ON. COME ON!', voicePitch: 1.1 },
     anthony: { commands: { qcf: 'blink', qcb: 'barToss' }, taunt: 'WANT A BRO BATCH?', voicePitch: 0.9 },
     chris: { commands: { qcf: 'coinFlip', qcb: 'myLawyer' }, taunt: 'WHERE THE ZA', voicePitch: 1.1 },
+    ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
   };
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
 })();

@@ -37,6 +37,17 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  divineTouch: {
+    name: 'Divine Touch',
+    description: 'The clouds part over the opponent and a giant painted hand reaches down and strikes them with holy light.',
+    kind: 'heavenHand',
+    startup: 20,         // the clouds part
+    reach: 22,           // frames for the hand to come down
+    recovery: 24,
+    damage: 18,
+    hitstun: 36, blockstun: 18, pushback: 4, hitstop: 14,
+    launch: 6,
+  },
   makeItRain: {
     name: 'Make It Rain',
     description: 'Opens his wallet over the opponent: gold bars and cash rain down. The last one is a giant 24-karat bar.',

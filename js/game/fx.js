@@ -39,6 +39,76 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Ruano's aura: a golden halo and soft angel wings that gently beat, with drifting light.
+    angelAura(f, ctx, floorY, frame, layer) {
+      if (f.isKO || f.state === 'thrown' || f.state === 'finished' || f.state === 'knockdown') return;
+      const sp = f.def.sprite, U = sp.scale, baseY = floorY - f.y;
+      const at = (cr) => [f.x + f.facing * (cr[0] + 0.5 - sp.footCol) * U, baseY - (sp.grid.length - cr[1]) * U];
+      if (layer === 'back') { // wings, behind her
+        const [wx, wy] = at(sp.wingsAt), flap = Math.sin(frame / 16) * 0.18;
+        for (const side of [1, -1]) {
+          ctx.save(); ctx.translate(Math.round(wx - f.facing * 4), Math.round(wy)); ctx.scale(-f.facing, 1); ctx.rotate(side > 0 ? -0.25 - flap : 0.1 + flap * 0.6);
+          ctx.globalAlpha = side > 0 ? 0.85 : 0.5;
+          for (let i = 0; i < 5; i++) { // feathers, longest at the top
+            const len = 30 - i * 4, y = -18 + i * 7;
+            ctx.fillStyle = '#c8c8d8'; ctx.fillRect(0, y, len + 1, 6);
+            ctx.fillStyle = i % 2 ? '#ffffff' : '#f0f0fa'; ctx.fillRect(1, y + 1, len, 4);
+          }
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        for (let i = 0; i < 5; i++) { // drifting motes of light
+          const u = ((frame * 0.5 + i * 19) % 60) / 60;
+          ctx.fillStyle = `rgba(255,240,180,${0.8 * (1 - u)})`;
+          ctx.fillRect(Math.round(f.x + (RF.util.hash(i * 3.7) - 0.5) * 40), Math.round(baseY - 10 - u * f.body.height), 2, 2);
+        }
+        return;
+      }
+      const [hx, hy] = at(sp.haloAt); // the halo
+      const bob = Math.sin(frame / 20);
+      ctx.strokeStyle = '#8a6a10'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(Math.round(hx), Math.round(hy - 6 + bob), 10, 3, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = '#ffe680'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,250,210,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(Math.round(hx), Math.round(hy - 6 + bob), 13, 5, 0, 0, Math.PI * 2); ctx.stroke();
+    },
+
+    // Ruano's light, BRUSHSTROKE: a sweeping arc of paint (red, yellow, blue - like a palette).
+    paintStroke(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup - 2 || t > m.startup + m.active + 8) return;
+      const prog = Math.min(1, (t - m.startup + 2) / (m.active + 2)), fade = t > m.startup + m.active ? 1 - (t - m.startup - m.active) / 8 : 1;
+      const cx = f.x + f.facing * 8, cy = floorY - f.y - m.hitbox.y - m.hitbox.h / 2, R = m.hitbox.x + m.hitbox.w - 6;
+      ctx.save(); ctx.globalAlpha = Math.max(0, fade);
+      ['#d02a2a', '#f0c020', '#2a5ad0'].forEach((col, i) => {
+        ctx.strokeStyle = col; ctx.lineWidth = 4 - i;
+        ctx.beginPath();
+        const a0 = -1.1, a1 = a0 + 2.0 * prog;
+        for (let a = a0; a <= a1; a += 0.1) {
+          const x = cx + f.facing * Math.cos(a) * (R - i * 5), y = cy + Math.sin(a) * (R - i * 5) * 0.55;
+          a === a0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+      ctx.restore(); ctx.lineWidth = 1;
+    },
+
+    // Ruano's heavy, GOLDEN FRAME: a huge gilded picture frame brought down overhead.
+    goldFrame(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t > m.startup + m.active + 10) return;
+      const u = Math.min(1, t / m.startup), ang = (1 - u) * -1.6; // raised, then swung down
+      const px = f.x + f.facing * 6, py = floorY - f.y - f.body.height * 0.75;
+      ctx.save(); ctx.translate(Math.round(px), Math.round(py)); ctx.scale(f.facing, 1); ctx.rotate(ang);
+      ctx.fillStyle = '#111'; ctx.fillRect(4, -16, 46, 34);
+      ctx.fillStyle = '#c8961e'; ctx.fillRect(5, -15, 44, 32);
+      ctx.fillStyle = '#ffd860'; ctx.fillRect(6, -14, 42, 2); ctx.fillRect(6, 13, 42, 2);
+      ctx.fillStyle = '#3a6a9a'; ctx.fillRect(10, -10, 34, 24);      // the painting: a little Spanish landscape
+      ctx.fillStyle = '#e8c070'; ctx.fillRect(10, 2, 34, 12);
+      ctx.fillStyle = '#ffe680'; ctx.fillRect(34, -7, 5, 5);           // the sun
+      ctx.restore();
+    },
+
     // Chris's light, MONEY SLAP: bills fly off the hand that slaps you.
     cashSlap(f, ctx, floorY, frame) {
       const m = f.move, t = f.stateTime;
@@ -302,6 +372,16 @@
     ctx.restore();
   };
 
+  // Ruano: a red flamenco fan, spinning.
+  RF.PROJECTILE_ART.fan = function (ctx, x, y, t, dir) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.45 * dir);
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 11, -Math.PI * 0.9, -Math.PI * 0.1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d01828'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 10, -Math.PI * 0.88, -Math.PI * 0.12); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#f0c020'; for (let i = 0; i < 5; i++) { const a = -Math.PI * 0.85 + i * 0.42; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.stroke(); }
+    ctx.fillStyle = '#f0c020'; ctx.fillRect(-1, -1, 3, 3);
+    ctx.restore();
+  };
+
   // Chris: a black card (spins as it flies) and a gold coin.
   RF.PROJECTILE_ART.card = function (ctx, x, y, t, dir) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.5 * dir); ctx.scale(1, Math.abs(Math.cos(t * 0.25)) * 0.6 + 0.4);
@@ -421,6 +501,28 @@
   }
 
   RF.BLOCK_FX = {
+    // Ruano: ROSE WINDOW - a glowing stained-glass cathedral window. GRACE: each blocked
+    // hit heals her a little (blockHeal).
+    roseWindow(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, cx = Math.round(g.front + f.facing * 6), cy = Math.round(g.mid - 8), R = 20 + fl * 4;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(0.5, 1);
+      ctx.globalAlpha = 0.75 + fl * 0.25;
+      ctx.fillStyle = '#2a1a10'; ctx.beginPath(); ctx.arc(0, 0, R + 2, 0, Math.PI * 2); ctx.fill();
+      const COLS = ['#d02a2a', '#2a5ad0', '#f0c020', '#2a9a4a', '#a040c0', '#f08020'];
+      for (let i = 0; i < 12; i++) { // petals of coloured glass
+        ctx.fillStyle = COLS[(i + Math.floor(frame / 30)) % COLS.length];
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, (i / 12) * Math.PI * 2, ((i + 1) / 12) * Math.PI * 2); ctx.closePath(); ctx.fill();
+      }
+      ctx.strokeStyle = '#2a1a10'; ctx.lineWidth = 2;
+      for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.45, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = fl > 0.3 ? '#ffffff' : '#ffe680'; ctx.beginPath(); ctx.arc(0, 0, R * 0.25, 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); ctx.lineWidth = 1;
+      if (fl > 0.4) RF.font.drawText(ctx, 'GRACE', f.x, g.top - 14, { align: 'center', color: '#ffe680', outline: '#000' });
+    },
+
     // Chris: BODYGUARD - a guy in a black suit and shades steps in and takes the hit.
     // Chris takes no chip damage while he's guarded (noChip).
     bodyguard(f, ctx, floorY, frame) {

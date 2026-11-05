@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  historyLesson: {
+    name: 'History Lesson',
+    description: 'Holds them gently and teaches them European history - every important date hits like a hammer - then a gust from her wings sends them home.',
+    kind: 'history',
+    dates: ['1492!', '1517!', '1789!'],
+    damagePerDate: 3.5,
+    finisherDamage: 8,
+  },
   hostileTakeover: {
     name: 'Hostile Takeover',
     description: 'Shoves a contract in their face, stamps it ACQUIRED, throws a wad of cash at them and has them escorted out.',

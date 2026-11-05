@@ -431,6 +431,30 @@ does is money.
 
 Character select is now a 7 x 2 grid (14 slots).
 
+## Ruano
+
+AP European History, AP Art History and AP Spanish, from Madrid (angel, **125% health**). Gentle,
+endlessly knowledgeable, and an actual angel: a golden halo floats over her head and soft wings
+gently beat behind her (`aura: 'angelAura'`). Slow but powerful: the lowest attack speed and the
+hardest hits, and like the tanks she shrugs off one hit during a heavy (`armor`).
+
+- **Light: Brushstroke.** A sweeping arc of red, yellow and blue paint.
+- **Heavy: Golden Frame.** A huge gilded picture frame brought down overhead.
+- **Block: Rose Window.** A glowing stained-glass cathedral window. **GRACE:** every blocked hit
+  heals her a little (`blockHeal`).
+- **Special: Divine Touch.** The clouds part over the opponent and a giant painted hand reaches
+  down (Creation of Adam style) and strikes them with holy light.
+- **Command specials:** Flamenco Fan (a spinning red fan) and Ascension (anti-air: she rises on
+  her wings).
+- **Throw: History Lesson.** 1492! 1517! 1789! - every date hits - then a wing gust: CLASS
+  DISMISSED.
+- **Finisher: Masterpiece.** She paints the loser into a gilded museum painting: "THE DEFEATED" -
+  Ruano, oil on canvas. Applause.
+- **Taunt:** "OLE! MUY BIEN." **Entrance:** descends from heaven in a beam of light.
+  **Brutality:** Renaissance.
+
+The roster is 14 fighters; character select (7 x 2) is full.
+
 ## Adding a character drawn in Piskel
 
 You only need to draw **one standing frame, facing right**. The game animates

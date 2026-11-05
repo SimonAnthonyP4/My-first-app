@@ -32,6 +32,45 @@
       },
     },
 
+    // Ruano: DIVINE TOUCH - clouds part, a painted hand from the heavens touches the opponent.
+    heavenHand: {
+      start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx('bell'); },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t < s.startup) d.tx += (opp.x - d.tx) * 0.12; // the light follows them while the clouds open
+        if (t === s.startup + s.reach) {
+          scene.flash = 8; scene.shake = 10; RF.audio.sfx('perfect'); RF.audio.sfx('boom');
+          if (opp.getHurtbox() && Math.abs(opp.x - d.tx) < opp.body.width / 2 + 14) scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', d.tx, opp.body.height * 0.8);
+        }
+        if (t >= s.startup + s.reach + s.recovery) f.setState('idle');
+      },
+      anim(f) { return ['throw', 1]; }, // arms raised to the sky
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, d = f.specialData, x = Math.round(d.tx);
+        const open = Math.min(1, t / s.startup), end = s.startup + s.reach + s.recovery, fade = t > end - 12 ? (end - t) / 12 : 1;
+        ctx.save(); ctx.globalAlpha = Math.max(0, fade);
+        ctx.fillStyle = `rgba(255,245,200,${0.35 * open})`; ctx.fillRect(x - 18 * open, 0, 36 * open, floorY); // beam of light
+        for (let i = 0; i < 8; i++) { // clouds
+          const cx = x + (i - 3.5) * 14 * (0.6 + open * 0.6), cy = 18 + (i % 2) * 6;
+          ctx.fillStyle = '#f4f0f8'; ctx.beginPath(); ctx.arc(cx, cy, 10 + (i % 3) * 3, 0, Math.PI * 2); ctx.fill();
+        }
+        if (t >= s.startup) { // the hand, reaching down with one finger
+          const u = Math.min(1, (t - s.startup) / s.reach), hy = 20 + (floorY - 120) * u;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 9, 0, 18, hy + 1);
+          ctx.fillStyle = '#f0c8a8'; ctx.fillRect(x - 8, 0, 16, hy);       // arm
+          ctx.fillStyle = '#e8b890'; ctx.fillRect(x - 8, hy - 14, 16, 14);  // hand
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 2, hy, 5, 22);
+          ctx.fillStyle = '#f0c8a8'; ctx.fillRect(x - 1, hy, 3, 21);        // the finger
+          if (t >= s.startup + s.reach && t < s.startup + s.reach + 10) { // the spark of creation
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, hy + 24, 10 - (t - s.startup - s.reach), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.restore();
+        if (t >= s.startup && t < s.startup + 40) RF.font.drawText(ctx, 'DIVINE TOUCH', RF.CONFIG.WIDTH / 2, 50, { scale: 2, align: 'center', outline: '#000',
+          color: ['#ffffff', '#fffbe0', '#fff2a0', '#ffe680', '#ffd040', '#e8b420', '#c8961e'] });
+      },
+    },
+
     // ---------- command-special kinds (js/config/commands.js) ----------
 
     // RUSH: charges forward and hits whatever is in front (shoulder charges, flying elbows...).

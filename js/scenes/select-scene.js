@@ -6,7 +6,7 @@
   const SLOTS = 14, COLS = 7, SLOT = 30, GAP = 3; // 7 x 2 grid
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
   const PCOL = ['#ff4a3a', '#4a8aff'];
-  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'] };
+  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'], angel: ['ANGEL', '#fff2a0'] };
 
   // Stat bars normalised to 0..1 for display only.
   const STAT_BARS = [
@@ -180,8 +180,9 @@
         const cos = this.costumesFor()[p], x = p === 0 ? 38 : W - 38;
         if (this.ready[p] && !cos) continue;
         const label = RF.COSTUMES[cos].name + (this.ready[p] ? '' : ' (HEAVY)'), tw = RF.font.textWidth(label) + 6;
-        ctx.fillStyle = '#000'; ctx.fillRect(x - tw / 2, 101, tw, 9);
-        T(ctx, label, x, 102, { align: 'center', color: cos ? '#ffd030' : '#a08878' });
+        const lx = Math.max(tw / 2 + 2, Math.min(W - tw / 2 - 2, x)); // keep the tag on screen
+        ctx.fillStyle = '#000'; ctx.fillRect(lx - tw / 2, 101, tw, 9);
+        T(ctx, label, lx, 102, { align: 'center', color: cos ? '#ffd030' : '#a08878' });
       }
 
       let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT/ENTER = SELECT - HEAVY = COSTUME - BLOCK = CANCEL';

@@ -69,6 +69,34 @@
       },
     },
 
+    // Ruano: dates from European history, each one a hit, then a wing gust.
+    history: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 4);
+        def.thrownPose = ['hit', 0];
+        T.dates.forEach((d, i) => {
+          if (t === 14 + i * 16) {
+            scene.effects.spawnText(d, def.x + (i - 1) * 14, def.body.height + 6 + i * 6, '#ffe680');
+            scene.throwHit(att, def, T.damagePerDate); RF.audio.sfx('ready');
+          }
+        });
+        const end = 14 + T.dates.length * 16;
+        if (t === end) { RF.audio.sfx('whoosh'); scene.effects.spawnText('CLASS DISMISSED!', att.x, att.body.height + 18, '#ffffff'); scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 }); }
+        return t >= end + 14;
+      },
+      anim(att, t) { return t < 14 ? ['throw', 0] : ['throw', 1]; },
+      draw(att, def, ctx, floorY, frame) { // an open book of history floating between them
+        const t = att.stateTime;
+        if (t < 8 || t > 14 + att.throwCfg.dates.length * 16) return;
+        const x = Math.round((att.x + def.x) / 2), y = floorY - att.body.height - 14 + Math.sin(frame / 8) * 2;
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 15, y - 1, 30, 18);
+        ctx.fillStyle = '#7a1a20'; ctx.fillRect(x - 14, y, 28, 16);
+        ctx.fillStyle = '#f4ead0'; ctx.fillRect(x - 12, y + 1, 11, 14); ctx.fillRect(x + 1, y + 1, 11, 14);
+        ctx.fillStyle = '#8a7a60'; for (let i = 0; i < 4; i++) { ctx.fillRect(x - 11, y + 3 + i * 3, 9, 1); ctx.fillRect(x + 2, y + 3 + i * 3, 9, 1); }
+      },
+    },
+
     // Chris: a contract, an ACQUIRED stamp, a face full of cash, then a shove.
     takeover: {
       update(att, def, t, scene) {

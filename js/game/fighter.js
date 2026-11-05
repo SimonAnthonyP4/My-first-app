@@ -649,7 +649,7 @@
       const wasStunned = this.state === 'hitstun';
       // Hit during the start-up of your own attack or grab: COUNTER!
       // Tank armor: big fighters shrug off ONE hit while winding up / swinging a heavy.
-      if (!blocked && this.def.archetype === 'tank' && this.state === 'attack' && this.moveKind === 'heavy' && !this.armorUsed && this.attackPhase() !== 'recovery') {
+      if (!blocked && (this.def.archetype === 'tank' || this.def.armor) && this.state === 'attack' && this.moveKind === 'heavy' && !this.armorUsed && this.attackPhase() !== 'recovery') {
         this.armorUsed = true;
         this.health = Math.max(0, this.health - move.damage * 0.6 * (1 - this.stats.damageReduction));
         this.flash = 3;
@@ -665,6 +665,7 @@
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (blocked) {
         dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
+        if (this.def.blockHeal) this.health = Math.min(this.maxHealth, this.health + this.def.blockHeal); // Ruano's GRACE
         this.shieldHit = 12;
         this.stun = Math.max(1, Math.round(move.blockstun * (this.def.blockstunScale || 1))); // Simon's checks recover fast
         this.state = null;

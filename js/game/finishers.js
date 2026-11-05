@@ -198,6 +198,56 @@
   }
 
   RF.FINISHERS = {
+    // Ruano: MASTERPIECE - she paints the loser into a gilded museum painting, plaque and all.
+    masterpiece: {
+      name: 'Masterpiece',
+      duration: 230,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 30 ? ['idle', 0] : t < 120 ? ['light', (t >> 2) % 2 ? 1 : 2] : ['victory', (t >> 3) % 2];
+        if (t === 4) RF.audio.sfx('bell');
+        if (t > 30 && t < 120 && t % 10 === 0) RF.audio.sfx('paper');
+        if (t === 130) { RF.audio.sfx('perfect'); scene.flash = 4; }
+        if (t === 170) RF.audio.sfx('applause');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        // fades into the canvas as she paints
+        const a = t < 30 ? 1 : Math.max(0, 1 - (t - 30) / 90);
+        if (a > 0) drawPose(vic, ctx, vic.x, floorY, ['hit', 0], null, a);
+      },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const x0 = Math.round(vic.x + Math.sign(vic.x - att.x || 1) * 22), w = 70, h = 96, top = floorY - h - 8; // clear of the painter
+        const grow = Math.min(1, t / 26);
+        // the gilded frame materializing around them
+        ctx.save(); ctx.globalAlpha = grow;
+        ctx.fillStyle = '#111'; ctx.fillRect(x0 - w / 2 - 6, top - 6, w + 12, h + 12);
+        ctx.fillStyle = '#c8961e'; ctx.fillRect(x0 - w / 2 - 5, top - 5, w + 10, h + 10);
+        ctx.fillStyle = '#ffd860'; ctx.fillRect(x0 - w / 2 - 5, top - 5, w + 10, 2);
+        ctx.restore();
+        // the canvas: transparent at first, filling in with paint strokes
+        const paint = Math.min(1, Math.max(0, (t - 30) / 90));
+        ctx.fillStyle = `rgba(236,222,190,${0.25 + paint * 0.75})`; ctx.fillRect(x0 - w / 2, top, w, h);
+        if (paint > 0) {
+          ctx.save(); ctx.beginPath(); ctx.rect(x0 - w / 2, top, w, h); ctx.clip();
+          ctx.globalAlpha = paint;
+          ctx.fillStyle = '#5a7ab0'; ctx.fillRect(x0 - w / 2, top, w, h * 0.45);       // sky
+          ctx.fillStyle = '#c89a50'; ctx.fillRect(x0 - w / 2, top + h * 0.45, w, h * 0.55); // Spanish plain
+          drawPose(vic, ctx, x0, top + h - 4, ['ko', 0], null, paint);                // the subject: them
+          ctx.restore();
+        }
+        if (t > 30 && t < 120) for (let i = 0; i < 4; i++) { // flicks of paint off the brush
+          ctx.fillStyle = ['#d02a2a', '#f0c020', '#2a5ad0', '#2a9a4a'][(i + (t >> 2)) % 4];
+          ctx.fillRect(Math.round(x0 - w / 2 + ((t * 7 + i * 23) % w)), Math.round(top + ((t * 5 + i * 31) % h)), 3, 2);
+        }
+        if (t >= 130) { // museum plaque + spotlight
+          ctx.fillStyle = 'rgba(255,250,220,0.12)'; ctx.beginPath(); ctx.moveTo(x0 - 10, 0); ctx.lineTo(x0 + 10, 0); ctx.lineTo(x0 + w / 2 + 14, floorY); ctx.lineTo(x0 - w / 2 - 14, floorY); ctx.fill();
+          ctx.fillStyle = '#111'; ctx.fillRect(x0 - 41, top - 26, 82, 16);
+          ctx.fillStyle = '#c8961e'; ctx.fillRect(x0 - 40, top - 25, 80, 14);
+          RF.font.drawText(ctx, '"THE DEFEATED"', x0, top - 22, { align: 'center', color: '#2a1a08' });
+          RF.font.drawText(ctx, 'RUANO, OIL ON CANVAS', x0, top - 36, { align: 'center', color: '#ffe680', outline: '#000' });
+        }
+      },
+    },
+
     // Chris: BOUGHT OUT - he snaps his fingers and an avalanche of cash buries the loser.
     boughtOut: {
       name: 'Bought Out',

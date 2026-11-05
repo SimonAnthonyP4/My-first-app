@@ -84,6 +84,21 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Descends from heaven in a beam of light, wings spread (Ruano).
+    descend: {
+      update(f, t, scene) {
+        if (t === 0) { f.y = 160; RF.audio.sfx('bell'); }
+        f.y = Math.max(0, 160 - t * 4);
+        f.state = f.y > 0 ? 'jump' : 'idle';
+        if (t === 40) { scene.effects.spawn('dust', f.x, 1); RF.audio.sfx('perfect'); }
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 60) return;
+        const a = t < 40 ? 0.45 : 0.45 * (60 - t) / 20;
+        ctx.fillStyle = `rgba(255,245,200,${a})`; ctx.fillRect(Math.round(f.x - 22), 0, 44, floorY);
+        for (let i = 0; i < 8; i++) { ctx.fillStyle = `rgba(255,255,255,${a * 1.5})`; ctx.fillRect(Math.round(f.x - 18 + ((i * 11 + t * 2) % 36)), Math.round(((i * 37 + t * 3) % floorY)), 2, 2); }
+      },
+    },
     // A white stretch limo pulls up; he steps out (Chris).
     limo: {
       update(f, t, scene) {
