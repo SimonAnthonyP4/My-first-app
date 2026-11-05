@@ -176,6 +176,17 @@
           ctx.fillStyle = w.trim; ctx.fillRect(Math.round(bx + U), Math.round(by + U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + U), Math.round(by + (w.h - 2) * U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + (w.w / 2 - 1) * U), Math.round(by + (w.h / 2 - 2) * U), 3 * U, 4 * U); // the Bard's face
+        } else if (s.weapon && s.weapon.kind === 'cash' && !dark) {
+          // A fan of hundred-dollar bills (Chris).
+          const [hx, hy] = cells[cells.length - 1];
+          const gx = ox + (sc + hx * k + k / 2) * U + dx, gy = oy + (sr + hy * k) * U + dy;
+          for (let i = 0; i < 4; i++) {
+            ctx.save(); ctx.translate(Math.round(gx), Math.round(gy)); ctx.rotate(-0.9 + i * 0.35);
+            ctx.fillStyle = '#111'; ctx.fillRect(-1, -12 * U, 6 * U, 12 * U);
+            ctx.fillStyle = '#9ac070'; ctx.fillRect(0, -11 * U, 4 * U, 10 * U);
+            ctx.fillStyle = '#5a8040'; ctx.fillRect(U, -7 * U, 2 * U, 2 * U);
+            ctx.restore();
+          }
         } else if (s.weapon && s.weapon.kind === 'globe' && !dark) {
           // A desk globe held up in the hand (Holbrook): ocean, continents, brass meridian.
           const [hx, hy] = cells[cells.length - 1], R = s.weapon.r;

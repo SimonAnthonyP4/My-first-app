@@ -84,6 +84,28 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // A white stretch limo pulls up; he steps out (Chris).
+    limo: {
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('engine');
+        f.hidden = t < 30;
+        if (t === 30) { RF.audio.sfx('cash'); scene.effects.spawn('dust', f.x, 1); }
+      },
+      draw(f, ctx, floorY, t) {
+        const W = RF.CONFIG.WIDTH, len = 110, from = f.facing > 0 ? -len - 10 : W + 10;
+        const stop = f.homeX - f.facing * 50, u = t < 22 ? Math.min(1, t / 22) : t < 52 ? 1 : 1 + (t - 52) / 18;
+        const x = from + (stop - from) * Math.min(u, 1) - f.facing * (u > 1 ? (u - 1) * 260 : 0);
+        if (t > 72) return;
+        const l = Math.round(f.facing > 0 ? x - len / 2 : x - len / 2), y = floorY - 26;
+        ctx.fillStyle = '#111'; ctx.fillRect(l - 1, y - 1, len + 2, 22);
+        ctx.fillStyle = '#f0f0f4'; ctx.fillRect(l, y + 6, len, 14);                 // body
+        ctx.fillRect(l + 18, y, len - 40, 7);                                        // roof
+        ctx.fillStyle = '#2a3040'; for (let i = 0; i < 5; i++) ctx.fillRect(l + 22 + i * 14, y + 1, 10, 5); // tinted windows
+        ctx.fillStyle = '#e8c020'; ctx.fillRect(l, y + 12, len, 1);                  // gold trim
+        ctx.fillStyle = '#111'; for (const wx of [l + 14, l + len - 22]) { ctx.beginPath(); ctx.arc(wx, floorY - 4, 5, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
+      },
+    },
     // Rises out of a glowing summoning circle (Anthony).
     portal: {
       update(f, t, scene) {

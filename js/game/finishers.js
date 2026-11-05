@@ -198,6 +198,48 @@
   }
 
   RF.FINISHERS = {
+    // Chris: BOUGHT OUT - he snaps his fingers and an avalanche of cash buries the loser.
+    boughtOut: {
+      name: 'Bought Out',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 24 ? ['throw', 1] : t < 150 ? ['idle', 0] : ['victory', (t >> 3) % 2];
+        if (t === 20) RF.audio.sfx('cash');
+        if (t > 30 && t < 110 && t % 10 === 0) RF.audio.sfx('paper');
+        if (t === 110) { RF.audio.sfx('heavy'); scene.shake = 10; }
+        if (t === 150) RF.audio.sfx('cash');
+      },
+      drawVictim(vic, ctx, floorY, t) { if (t < 96) drawPose(vic, ctx, vic.x, floorY, ['hit', 0]); },
+      drawFx(att, vic, ctx, floorY, t, frame) {
+        const x0 = Math.round(vic.x + Math.sign(vic.x - att.x || 1) * 18); // the pile lands on them, not on him
+        // bills raining down
+        if (t > 26 && t < 120) for (let i = 0; i < 40; i++) {
+          const y = ((t - 26) * 4 + i * 37) % (floorY + 20) - 20, x = x0 - 50 + ((i * 29) % 100) + Math.sin(t / 5 + i) * 4;
+          ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(t * 0.1 + i);
+          ctx.fillStyle = '#111'; ctx.fillRect(-4, -2, 9, 5); ctx.fillStyle = i % 5 ? '#9ac070' : '#e8b420'; ctx.fillRect(-3, -1, 7, 3);
+          ctx.restore();
+        }
+        // the pile of cash growing over them
+        const pile = Math.min(1, Math.max(0, (t - 40) / 70)), ph = Math.round(pile * 70);
+        if (ph > 0) {
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x0, floorY, 46, ph + 1, 0, Math.PI, 0); ctx.fill();
+          ctx.fillStyle = '#7aa050'; ctx.beginPath(); ctx.ellipse(x0, floorY, 45, ph, 0, Math.PI, 0); ctx.fill();
+          for (let i = 0; i < 36; i++) { // individual bills and coins in the pile
+            const a = Math.PI + (i / 36) * Math.PI, rr = (0.3 + (i * 7 % 10) / 14) ;
+            ctx.fillStyle = i % 4 ? '#9ac070' : '#e8b420';
+            ctx.fillRect(Math.round(x0 + Math.cos(a) * 42 * rr), Math.round(floorY + Math.sin(a) * ph * rr), 6, 3);
+          }
+        }
+        if (t >= 110) { // the BOUGHT OUT stamp
+          const s = t < 116 ? 2 - (t - 110) / 6 : 1;
+          ctx.save(); ctx.translate(x0, floorY - 90); ctx.rotate(-0.2); ctx.scale(s, s);
+          ctx.strokeStyle = '#ffd030'; ctx.lineWidth = 2; ctx.strokeRect(-46, -9, 92, 18); ctx.lineWidth = 1;
+          RF.font.drawText(ctx, 'BOUGHT OUT', 0, -4, { align: 'center', color: '#ffd030', outline: '#000' });
+          ctx.restore();
+        }
+      },
+    },
+
     // Anthony: BULK ORDER - a portal opens and a whole shipment of BRO BATCH crates
     // buries the loser. Stamped DELIVERED. He floats down onto the pile with a bar.
     bulkOrder: {

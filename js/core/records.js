@@ -20,7 +20,7 @@
     { id: 'survival5', name: 'SURVIVOR', desc: 'WIN 5 IN A ROW IN SURVIVAL' },
     { id: 'survival10', name: 'IRON WILL', desc: 'WIN 10 IN A ROW IN SURVIVAL' },
     { id: 'trials', name: 'TEACHER\'S PET', desc: 'CLEAR ALL 8 COMBO TRIALS' },
-    { id: 'roster', name: 'HALL MONITOR', desc: 'WIN A MATCH WITH ALL 12 FIGHTERS' },
+    { id: 'roster', name: 'HALL MONITOR', desc: 'WIN A MATCH WITH EVERY FIGHTER' },
   ];
 
   const blank = () => ({ wins: {}, played: {}, counts: {}, best: { combo: 0, survival: 0 }, unlocked: {}, trials: [] });

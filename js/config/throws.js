@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  hostileTakeover: {
+    name: 'Hostile Takeover',
+    description: 'Shoves a contract in their face, stamps it ACQUIRED, throws a wad of cash at them and has them escorted out.',
+    kind: 'takeover',
+    stampDamage: 5,
+    finisherDamage: 9,
+  },
   proteinShake: {
     name: 'Protein Shake',
     description: 'Levitates the opponent into a crimson vortex and shakes them like a blender, then blasts them away.',

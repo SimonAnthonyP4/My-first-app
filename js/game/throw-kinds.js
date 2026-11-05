@@ -69,6 +69,35 @@
       },
     },
 
+    // Chris: a contract, an ACQUIRED stamp, a face full of cash, then a shove.
+    takeover: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 6);
+        def.thrownPose = ['hit', 0];
+        if (t === 6) RF.audio.sfx('paper');
+        if (t === 30) { RF.audio.sfx('heavy'); scene.shake = 6; scene.throwHit(att, def, T.stampDamage); scene.effects.spawnText('ACQUIRED!', def.x, def.body.height + 16, '#e02020'); }
+        if (t === 50) RF.audio.sfx('cash');
+        if (t === 66) { scene.effects.spawnText('SOLD!', def.x, def.body.height + 10, '#ffd030'); scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 4 }); }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 30 ? ['throw', 0] : t < 50 ? ['heavy', 1] : t < 66 ? ['light', 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t >= 6 && t < 46) { // the contract held up in their face
+          const x = Math.round(def.x - att.facing * 2), y = floorY - def.body.height + 4;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 12, y - 1, 24, 30);
+          ctx.fillStyle = '#f4f0e4'; ctx.fillRect(x - 11, y, 22, 28);
+          ctx.fillStyle = '#8a8a8a'; for (let i = 0; i < 5; i++) ctx.fillRect(x - 8, y + 4 + i * 4, 16, 1);
+          if (t >= 30) { ctx.strokeStyle = '#e02020'; ctx.lineWidth = 2; ctx.strokeRect(x - 9, y + 10, 18, 9); ctx.lineWidth = 1; }
+        }
+        if (t >= 50 && t < 70) for (let i = 0; i < 10; i++) { // a wad of cash to the face
+          const u = (t - 50) / 20, bx = att.x + att.facing * (10 + u * 40 + i * 2), by = floorY - def.body.height * 0.7 + Math.sin(i * 1.7 + t / 3) * 10;
+          ctx.fillStyle = '#9ac070'; ctx.fillRect(Math.round(bx), Math.round(by), 6, 3);
+        }
+      },
+    },
+
     // Anthony: lifted into a magic vortex and shaken like a protein shake.
     levitate: {
       update(att, def, t, scene) {

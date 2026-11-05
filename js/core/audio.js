@@ -379,6 +379,12 @@
           this.tone('square', 1400, t, 0.08, 0.08, null, 700);
           this.noiseBurst(t, 0.12, 0.2, 'highpass', 2500);
           break;
+        case 'cash': // ka-ching!
+          this.noiseBurst(t, 0.05, 0.2, 'highpass', 3000);
+          this.tone('square', 1568, t + 0.05, 0.12, 0.08);
+          this.tone('square', 2093, t + 0.12, 0.35, 0.08);
+          this.tone('sine', 4186, t + 0.12, 0.3, 0.04);
+          break;
         case 'arcane': // shimmering magic
           [880, 1320, 1760, 2200].forEach((f, i) => this.tone('sine', f, t + i * 0.03, 0.25, 0.05, null, f * 1.5));
           this.tone('sawtooth', 220, t, 0.3, 0.06, null, 440);

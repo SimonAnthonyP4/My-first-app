@@ -39,6 +39,21 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Chris's light, MONEY SLAP: bills fly off the hand that slaps you.
+    cashSlap(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 10) return;
+      const a = t - m.startup, hx = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.6), hy = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      for (let i = 0; i < 7; i++) {
+        const ang = (i / 7) * Math.PI * 1.4 - 1.2, d = a * (1.6 + (i % 3) * 0.6);
+        const x = hx + f.facing * Math.cos(ang) * d, y = hy + Math.sin(ang) * d + a * a * 0.05;
+        ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(a * 0.3 + i);
+        ctx.fillStyle = '#111'; ctx.fillRect(-4, -2, 8, 5); ctx.fillStyle = '#9ac070'; ctx.fillRect(-3, -1, 6, 3);
+        ctx.restore();
+      }
+      if (a === 0) RF.audio.sfx('cash');
+    },
+
     // Anthony's aura: a slowly turning crimson magic circle behind his head and
     // pink flames dancing in his open hands.
     sorcererAura(f, ctx, floorY, frame, layer) {
@@ -287,6 +302,34 @@
     ctx.restore();
   };
 
+  // Chris: a black card (spins as it flies) and a gold coin.
+  RF.PROJECTILE_ART.card = function (ctx, x, y, t, dir) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.5 * dir); ctx.scale(1, Math.abs(Math.cos(t * 0.25)) * 0.6 + 0.4);
+    ctx.fillStyle = '#e8c020'; ctx.fillRect(-10, -6, 20, 12);
+    ctx.fillStyle = '#16161c'; ctx.fillRect(-9, -5, 18, 10);
+    ctx.fillStyle = '#e8c020'; ctx.fillRect(-7, -2, 4, 3); ctx.fillRect(-7, 3, 12, 1);
+    ctx.restore();
+    for (let i = 1; i <= 3; i++) { ctx.fillStyle = `rgba(232,192,32,${0.4 - i * 0.1})`; ctx.fillRect(Math.round(x - dir * i * 6), Math.round(y), 4, 1); }
+  };
+  RF.PROJECTILE_ART.coin = function (ctx, x, y, t) {
+    const w = Math.max(1, Math.abs(Math.cos(t * 0.35)) * 7);
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x, y, w + 1, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e8b420'; ctx.beginPath(); ctx.ellipse(x, y, w, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff2a0'; ctx.fillRect(Math.round(x - w / 3), Math.round(y - 4), Math.max(1, Math.round(w / 3)), 3);
+    if (w > 4) RF.font.drawText(ctx, '$', x, y - 3, { align: 'center', color: '#8a5a10' });
+  };
+  // A gold bar (Chris's Make It Rain).
+  RF.drawGoldBar = function (ctx, x, y, k = 1, rot = 0) {
+    const w = 22 * k, h = 9 * k;
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(rot);
+    ctx.fillStyle = '#111'; ctx.fillRect(-w / 2 - 1, -h / 2 - 1, w + 2, h + 2);
+    ctx.fillStyle = '#c8961e'; ctx.fillRect(-w / 2, -h / 2, w, h);
+    ctx.fillStyle = '#ffd040'; ctx.fillRect(-w / 2 + 2 * k, -h / 2, w - 4 * k, h - 3 * k);
+    ctx.fillStyle = '#fff2a0'; ctx.fillRect(-w / 2 + 3 * k, -h / 2 + k, w / 3, k);
+    if (k >= 2) RF.font.drawText(ctx, '24K', 0, -3, { align: 'center', color: '#8a5a10' });
+    ctx.restore();
+  };
+
   // Anthony's Bar Toss: a spinning protein bar.
   RF.PROJECTILE_ART.barToss = function (ctx, x, y, t, dir) { RF.drawProteinBar(ctx, x, y, 1, t * 0.45 * dir); };
 
@@ -378,6 +421,25 @@
   }
 
   RF.BLOCK_FX = {
+    // Chris: BODYGUARD - a guy in a black suit and shades steps in and takes the hit.
+    // Chris takes no chip damage while he's guarded (noChip).
+    bodyguard(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, x = Math.round(g.front + f.facing * (10 - fl * 3)), base = g.base, h = Math.round(g.hurt.h * 1.05);
+      const top = base - h;
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 9, top, 18, h);                      // outline
+      ctx.fillStyle = '#1e1e26'; ctx.fillRect(x - 8, top + 13, 16, h - 13);          // suit
+      ctx.fillStyle = '#f0f0f0'; ctx.fillRect(x - 2, top + 13, 4, 8);                // shirt
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 1, top + 14, 2, 7);                   // tie
+      ctx.fillStyle = '#c0845c'; ctx.fillRect(x - 6, top + 1, 12, 12);              // head
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 6, top + 4, 12, 3);                  // shades
+      ctx.fillStyle = '#7ad8ff'; ctx.fillRect(x - 5, top + 4, 3, 1); ctx.fillRect(x + 2, top + 4, 3, 1);
+      ctx.fillStyle = '#c0845c'; ctx.fillRect(x + f.facing * 6 - 2, top + 20, 4, 5); // raised palm
+      ctx.fillStyle = '#e8e8e8'; ctx.fillRect(x - f.facing * 7, top + 4, 1, 6);      // earpiece wire
+      if (fl > 0.4) RF.font.drawText(ctx, 'NOT TODAY.', x, top - 12, { align: 'center', color: '#e8e8e8', outline: '#000' });
+    },
+
     // Anthony: ARCANE WARD - a spinning hexagram magic circle. It REFLECTS projectiles.
     arcaneWard(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

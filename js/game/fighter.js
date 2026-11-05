@@ -353,7 +353,7 @@
     gainMeter(n) {
       if (!this.scene || this.scene.phase !== 'fight' || this.superActive) return;
       const was = this.meter;
-      this.meter = Math.min(RF.CONFIG.SUPER_MAX, this.meter + n * (RF.CONFIG.METER_RATE || 1) * ((RF.CONFIG.METER_GAIN || {})[this.def.archetype] || 1));
+      this.meter = Math.min(RF.CONFIG.SUPER_MAX, this.meter + n * (RF.CONFIG.METER_RATE || 1) * ((RF.CONFIG.METER_GAIN || {})[this.def.archetype] || 1) * (this.def.meterRate || 1));
       if (was < RF.CONFIG.SUPER_MAX && this.meter >= RF.CONFIG.SUPER_MAX) {
         this.scene.effects.spawnText('SUPER READY!', this.x, this.body.height + 24, '#ffd030');
         RF.audio.sfx('ready');
@@ -664,7 +664,7 @@
       let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (blocked) {
-        dmg *= RF.CONFIG.CHIP_DAMAGE;
+        dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
         this.shieldHit = 12;
         this.stun = Math.max(1, Math.round(move.blockstun * (this.def.blockstunScale || 1))); // Simon's checks recover fast
         this.state = null;

@@ -410,6 +410,27 @@ circle turns behind his head and pink flames dance in his open hands (`aura: 'so
 - **Entrance:** rises out of a glowing summoning circle in a pillar of light. **Brutality:**
   Protein Overload.
 
+## Chris
+
+Very rich, very spoiled (rich kid, 100% health, from the Penthouse, Top Floor). Everything he
+does is money.
+
+- **Money talks:** builds super meter 30% faster (`meterRate`).
+- **Light: Money Slap.** Slaps you with a stack of cash; bills fly everywhere ("ka-ching").
+- **Heavy: Black Card.** Flicks a spinning black-and-gold credit card across the screen. Fast.
+- **Block: Bodyguard.** A guy in a black suit and shades steps in ("NOT TODAY.") and Chris takes
+  **no chip damage** (`noChip`).
+- **Special: Make It Rain.** Gold bars and cash rain down on the opponent; the last one is a
+  giant 24K bar.
+- **Command specials:** Coin Flip (DOWN, FWD + attack: a spinning gold coin) and **My Lawyer**
+  (DOWN, BACK + attack: a counter stance - hit him and his lawyer hits back).
+- **Throw: Hostile Takeover.** A contract in your face, stamped ACQUIRED, a wad of cash, SOLD.
+- **Finisher: Bought Out.** He snaps his fingers and an avalanche of cash buries the loser.
+- **Taunt:** "WHERE THE ZA". **Entrance:** pulls up in a white stretch limo.
+  **Brutality:** Market Crash.
+
+Character select is now a 7 x 2 grid (14 slots).
+
 ## Adding a character drawn in Piskel
 
 You only need to draw **one standing frame, facing right**. The game animates

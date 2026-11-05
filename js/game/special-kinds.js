@@ -149,7 +149,7 @@
 
     // Anthony: BRO BATCH - a portal over the opponent rains giant protein bars.
     barRain: {
-      start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx('arcane'); },
+      start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx(f.special.look === 'money' ? 'cash' : 'arcane'); },
       update(f, scene) {
         const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
         if (t < s.startup) { d.tx += (opp.x - d.tx) * 0.15; return; } // the portal tracks them while it opens
@@ -183,10 +183,13 @@
           if (u < 0 || t > start + s.fall + 10) continue;
           const mega = i === s.bars - 1, k = mega ? 2 : 1;
           const x = d.tx + (mega ? 0 : ((i % 3) - 1) * 10), y = u >= 1 ? floorY - 6 * k : top + (floorY - top - 6 * k) * u * u;
-          RF.drawProteinBar(ctx, x, y, k, u >= 1 ? 0 : (t * 0.4 + i) * (i % 2 ? 1 : -1));
+          (s.look === 'money' ? RF.drawGoldBar : RF.drawProteinBar)(ctx, x, y, k, u >= 1 ? 0 : (t * 0.4 + i) * (i % 2 ? 1 : -1));
+          if (s.look === 'money' && u < 1) for (let j = 0; j < 4; j++) { // cash fluttering down with it
+            ctx.fillStyle = '#9ac070'; ctx.fillRect(Math.round(x - 20 + j * 13 + Math.sin(t / 4 + j) * 4), Math.round(y - 14 - j * 6), 6, 3);
+          }
         }
-        if (t >= s.startup && t < s.startup + 40) RF.font.drawText(ctx, 'BRO BATCH!', RF.CONFIG.WIDTH / 2, 50, { scale: 3, align: 'center', outline: '#000',
-          color: ['#ffffff', '#ffe0ea', '#ffb0c8', '#ff80a8', '#ff5080', '#e02060', '#a01040'] });
+        if (t >= s.startup && t < s.startup + 40) RF.font.drawText(ctx, s.callout || 'BRO BATCH!', RF.CONFIG.WIDTH / 2, 50, { scale: 3, align: 'center', outline: '#000',
+          color: s.look === 'money' ? ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#e8b420', '#c8961e', '#8a6a10'] : ['#ffffff', '#ffe0ea', '#ffb0c8', '#ff80a8', '#ff5080', '#e02060', '#a01040'] });
       },
     },
 

@@ -49,6 +49,9 @@
     // ---- Simon ----
     spinningElbow: Object.assign({ name: 'Spinning Elbow', kind: 'rush', startup: 4, speed: 6, duration: 8, reach: 12, recovery: 12, color: '#ffb030' }, hit(9)),
     skipKnee: Object.assign({ name: 'Skip Knee', kind: 'rising', startup: 3, rise: 7.5, forward: 3, reach: 16, recovery: 14, invuln: 5, color: '#ffd060' }, hit(10, { launch: 6 })),
+    // ---- Chris ----
+    coinFlip: Object.assign({ name: 'Coin Flip', kind: 'projectile', startup: 8, recovery: 18, speed: 5.5, size: 12, height: 0.6, art: 'coin', sound: 'cash', colors: ['#ffffff', '#ffd040', '#c8961e'] }, hit(8)),
+    myLawyer: Object.assign({ name: 'My Lawyer', kind: 'counter', startup: 3, window: 22, recovery: 20, color: '#e8e8e8', callout: 'MY LAWYER!' }, hit(12, { launch: 4 })),
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
@@ -68,6 +71,7 @@
     holbrook: { commands: { qcf: 'tectonicUplift', qcb: 'jetStream' }, taunt: 'YOU ARE OFF THE MAP.', voicePitch: 0.8 },
     simon: { commands: { qcf: 'spinningElbow', qcb: 'skipKnee' }, taunt: 'COME ON. COME ON!', voicePitch: 1.1 },
     anthony: { commands: { qcf: 'blink', qcb: 'barToss' }, taunt: 'WANT A BRO BATCH?', voicePitch: 0.9 },
+    chris: { commands: { qcf: 'coinFlip', qcb: 'myLawyer' }, taunt: 'WHERE THE ZA', voicePitch: 1.1 },
   };
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
 })();

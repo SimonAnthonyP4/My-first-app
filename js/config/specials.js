@@ -37,6 +37,15 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  makeItRain: {
+    name: 'Make It Rain',
+    description: 'Opens his wallet over the opponent: gold bars and cash rain down. The last one is a giant 24-karat bar.',
+    kind: 'barRain', look: 'money', callout: 'MAKE IT RAIN!',
+    startup: 14, bars: 6, interval: 7, fall: 14, recovery: 20,
+    damage: 3.5, megaDamage: 9,
+    hitstun: 26, blockstun: 10, pushback: 1, hitstop: 4,
+    launch: 0,
+  },
   broBatch: {
     name: 'Bro Batch',
     description: 'Opens a portal above the opponent and rains down a fresh batch of giant BRO BATCH protein bars. The last one is a MEGA bar.',

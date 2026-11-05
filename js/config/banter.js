@@ -18,6 +18,11 @@ RF.BANTER = {
   'bruiser|dabalsa': ['I AM THE BIGGEST HERE.', 'MEASURE TWICE. LOSE ONCE.'],
   'landa|jauregui': ['SNAKES DO NOT DO MATH.', 'THIS ONE IS ABOUT TO BE SUBTRACTED.'],
   'escobedo|simon': ['MY ROBOTS NEVER GET TIRED.', 'MY KNEES NEVER MISS.'],
+  'chris|anthony': ['HOW MUCH FOR YOUR COMPANY?', 'BRO BATCH IS NOT FOR SALE.'],
+  'chris|sirven': ['MY DAD PAID FOR THIS SCHOOL.', 'AND HE CAN PAY FOR YOUR DETENTION.'],
+  'chris|simon': ['I COULD BUY YOUR GYM.', 'YOU COULD NOT BUY A WIN.'],
+  'chris|holbrook': ['I OWN LAND ON FOUR CONTINENTS.', 'NAME ONE ON THE MAP.'],
+  'chris|dabalsa': ['WHERE THE ZA', 'WHEREFORE ART THE ZA, YOU MEAN.'],
 };
 
 // [line for p1, line for p2] or null.

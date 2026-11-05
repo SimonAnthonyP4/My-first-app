@@ -3,10 +3,10 @@
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384;
-  const SLOTS = 12, COLS = 6, SLOT = 34, GAP = 3; // 6 x 2 grid
+  const SLOTS = 14, COLS = 7, SLOT = 30, GAP = 3; // 7 x 2 grid
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
   const PCOL = ['#ff4a3a', '#4a8aff'];
-  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'] };
+  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'] };
 
   // Stat bars normalised to 0..1 for display only.
   const STAT_BARS = [
@@ -157,7 +157,7 @@
       // Big previews either side of the grid
       for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
         const def = this.slots[this.cursor[p]];
-        const x = p === 0 ? 44 : W - 44;
+        const x = p === 0 ? 38 : W - 38;
         if (!def) {
           T(ctx, '?', x, 50, { scale: 4, align: 'center', color: '#3a2018' });
           continue;
@@ -177,7 +177,7 @@
       // Costume tags on the panels' top edges
       for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
         if (!this.slots[this.cursor[p]]) continue;
-        const cos = this.costumesFor()[p], x = p === 0 ? 44 : W - 44;
+        const cos = this.costumesFor()[p], x = p === 0 ? 38 : W - 38;
         if (this.ready[p] && !cos) continue;
         const label = RF.COSTUMES[cos].name + (this.ready[p] ? '' : ' (HEAVY)'), tw = RF.font.textWidth(label) + 6;
         ctx.fillStyle = '#000'; ctx.fillRect(x - tw / 2, 101, tw, 9);
