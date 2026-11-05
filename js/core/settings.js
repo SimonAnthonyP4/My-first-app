@@ -29,6 +29,10 @@
       options: [[0, 'OFF'], [0.4, 'LOW'], [0.8, 'MEDIUM'], [1, 'HIGH']],
     },
     {
+      id: 'DYNAMIC_CAMERA', label: 'DYNAMIC CAMERA',
+      options: [[true, 'ON'], [false, 'OFF']],
+    },
+    {
       id: 'ANNOUNCER', label: 'ANNOUNCER VOICE',
       options: [[true, 'ON'], [false, 'OFF']],
     },

@@ -34,7 +34,9 @@
       }
       this.maxHealth = def.health || (RF.CONFIG.HEALTH_BY_ARCHETYPE || {})[def.archetype] || RF.CONFIG.MAX_HEALTH;
       this.special = RF.SPECIALS[def.special];
+      this.baseSpecial = this.special; // the signature special (perfect block / EX / super)
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
+      this.motion = [];                // recent directions (numpad notation) for command inputs
       this.throwCfg = RF.THROWS[def.throw];
       this.throwKind = this.throwCfg && RF.THROW_KINDS[this.throwCfg.kind];
       this.scene = null; // set by FightScene
@@ -88,7 +90,10 @@
       // Only these states can be done low; everything else stands you up.
       if (!['crouch', 'block', 'blockstun', 'attack'].includes(state)) this.crouching = false;
       if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; this.wallBounced = false; }
-      if (state !== 'special') { this.superActive = false; this.exActive = false; }
+      if (state !== 'special') {
+        this.superActive = false; this.exActive = false;
+        if (this.baseSpecial && this.special !== this.baseSpecial) { this.special = this.baseSpecial; this.specialKind = RF.SPECIAL_KINDS[this.special.kind]; }
+      }
       if (state !== 'jump' && state !== 'attack') this.airCombo = false;
     }
 
@@ -103,6 +108,7 @@
       this.stateTime++;
       this.trackBlockPress(input);
       this.trackDash(input);
+      this.trackMotion(input);
       this.trail.unshift([this.x, this.y]);
       if (this.trail.length > 10) this.trail.pop();
       switch (this.state) {
@@ -151,6 +157,8 @@
           // Super: LIGHT + HEAVY together. Also cancels any ground attack that connected.
           const confirmed = this.moveHasHit && !this.attackAirborne && this.stateTime >= this.move.startup;
           if (canAct && !this.attackAirborne && (this.stateTime <= 3 || confirmed) && this.wantsSuper(input)) { this.startSuper(); break; }
+          // Command special cancel: a ground attack that connected -> DOWN, FORWARD/BACK + attack.
+          if (canAct && confirmed && this.def.commands) { const cmd = this.commandPressed(input); if (cmd) { this.startCommand(cmd); break; } }
           // EX special: THROW during a ground attack that connected (1 bar).
           if (canAct && confirmed && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); this.startEX(); break; }
           // Heavy that connected + UP + HEAVY: cancel into the launcher (great after a wall bounce).
@@ -204,6 +212,10 @@
         case 'blockstun':
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
           break;
+        case 'taunt':
+          if (this.stateTime === 50) this.gainMeter(25);
+          if (this.stateTime >= 56) this.setState('idle');
+          break;
         case 'knockdown': // on the floor; BLOCK right as you land = quick-rise
           this.vx *= 0.8;
           if (this.stateTime <= RF.CONFIG.TECH_WINDOW && this.scene && this.scene.phase === 'fight' && input.pressed('block')) { input.consume('block'); this.tech(); break; }
@@ -229,6 +241,53 @@
         this.lastBlockPress = lp;
       }
       this.blockPressAge = input.kb.frame - lp;
+    }
+
+    // ---- command specials: DOWN, FORWARD + attack / DOWN, BACK + attack ----
+    trackMotion(input) {
+      const h = ((input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0)) * this.facing;
+      const v = input.held('down') ? -1 : input.held('up') ? 1 : 0;
+      this.motion.push(v < 0 ? (h > 0 ? 3 : h < 0 ? 1 : 2) : v > 0 ? (h > 0 ? 9 : h < 0 ? 7 : 8) : (h > 0 ? 6 : h < 0 ? 4 : 5));
+      if (this.motion.length > 20) this.motion.shift();
+    }
+
+    // Did the stick go DOWN then FORWARD (6) / BACK (4) in the last ~15 frames, ending recently?
+    motionDone(end) {
+      const m = this.motion, n = m.length;
+      let k = n - 1;
+      while (k >= 0 && n - 1 - k <= 6 && m[k] !== end) k--;
+      if (k < 0 || n - 1 - k > 6) return false;
+      for (let j = k - 1; j >= Math.max(0, k - 14); j--) if (m[j] === 2) return true;
+      return false;
+    }
+
+    // Which command special (if any) was just performed: 'qcf' or 'qcb'.
+    commandPressed(input) {
+      const cmds = this.def.commands;
+      if (!cmds) return null;
+      for (const slot of ['qcf', 'qcb']) if (input.pressed('cmd' + slot)) { input.consume('cmd' + slot); return slot; } // the CPU
+      const btn = input.pressed('light') || input.pressed('heavy');
+      if (!btn) return null;
+      const slot = this.motionDone(6) ? 'qcf' : this.motionDone(4) ? 'qcb' : null;
+      if (slot) { input.consume('light'); input.consume('heavy'); }
+      return slot;
+    }
+
+    startCommand(slot) {
+      const cfg = RF.COMMANDS[this.def.commands[slot]];
+      if (!cfg) return;
+      this.motion.length = 0;
+      this.startSpecial(cfg);
+      if (this.scene && cfg.kind !== 'counter') this.scene.effects.spawnText(cfg.name.toUpperCase() + '!', this.x, this.body.height + 12, cfg.color || '#ffd030'); // counters show their own callout
+    }
+
+    // ---- taunt: a pose and a line; finish it for a little meter, but you're wide open ----
+    startTaunt() {
+      this.vx = 0; this.move = null;
+      this.state = null; this.setState('taunt');
+      const line = this.def.taunt || 'COME ON!';
+      if (this.scene) this.scene.effects.spawnText(line, this.x, this.body.height + 14, '#ffffff');
+      if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
     }
 
     // Double-tap forward/back to dash. Remembers when each direction was last pressed.
@@ -331,8 +390,10 @@
         this.blockPressEligible && this.blockPressAge <= RF.CONFIG.PERFECT_BLOCK_WINDOW;
     }
 
-    startSpecial() {
+    startSpecial(cfg) {
       this.move = null;
+      this.special = cfg || this.baseSpecial;
+      this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
       this.specialData = {};
       this.faceOpponent(this.scene.opponentOf(this));
       this.state = null;
@@ -354,6 +415,9 @@
       this.faceOpponent(opp);
       const down = input.held('down'), up = input.held('up');
       if (this.wantsSuper(input)) return this.startSuper();
+      const cmd = this.commandPressed(input);
+      if (cmd) return this.startCommand(cmd);
+      if (input.pressed('taunt')) { input.consume('taunt'); return this.startTaunt(); }
       if (down && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); return this.startEX(); } // DOWN + THROW = EX special
       if (this.throwCfg && input.pressed('throw')) { input.consume('throw'); return this.startThrow(); }
       if (input.pressed('light')) { input.consume('light'); return this.startAttack(down ? 'lowLight' : 'light'); }
@@ -404,6 +468,7 @@
 
     startAttack(kind, chained = false) {
       this.chain = chained ? this.chain + 1 : 0;
+      this.armorUsed = false;
       this.fxHitDist = null;
       this.move = this.moves[kind];
       this.moveKind = kind;
@@ -553,6 +618,8 @@
       // Too many hits in the air: they fall out of the combo (no infinite juggles).
       if (this.state === 'hitstun' && !this.grounded && this.juggle >= RF.CONFIG.JUGGLE_LIMIT) return null;
       if (this.state === 'knockdown' || this.state === 'wakeup') return null; // on the floor / getting up
+      if (this.hidden) return null; // mid-teleport
+      if (this.state === 'special' && this.special.invuln && this.stateTime < this.special.invuln) return null; // invincible start (anti-airs)
       // Backdash: briefly untouchable as you slip away.
       if (this.state === 'dash' && this.dashDir !== this.facing && this.stateTime <= 6) return null;
       const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
@@ -581,7 +648,17 @@
       const blocked = this.isBlockingAgainst(attacker, move);
       const wasStunned = this.state === 'hitstun';
       // Hit during the start-up of your own attack or grab: COUNTER!
-      this.counterHit = !blocked && ((this.state === 'attack' && this.attackPhase() === 'startup') || this.state === 'throwReach' ||
+      // Tank armor: big fighters shrug off ONE hit while winding up / swinging a heavy.
+      if (!blocked && this.def.archetype === 'tank' && this.state === 'attack' && this.moveKind === 'heavy' && !this.armorUsed && this.attackPhase() !== 'recovery') {
+        this.armorUsed = true;
+        this.health = Math.max(0, this.health - move.damage * 0.6 * (1 - this.stats.damageReduction));
+        this.flash = 3;
+        if (this.scene) { this.scene.effects.spawnText('ARMOR!', this.x, this.body.height + 10, '#c0c8d0'); RF.audio.sfx('clang'); }
+        if (this.health <= 0) this.knockOut(dir);
+        this.counterHit = false;
+        return false;
+      }
+      this.counterHit = !blocked && ((this.state === 'attack' && this.attackPhase() === 'startup') || this.state === 'throwReach' || this.state === 'taunt' ||
         (this.state === 'special' && this.stateTime < 8));
       const airborne = !this.grounded;
       let dmg = move.damage * (1 - this.stats.damageReduction);
@@ -636,6 +713,7 @@
         case 'jump': return ['jump', 0];
         case 'jumpSquat': return ['crouch', 0];
         case 'knockdown': return ['ko', 1];
+        case 'taunt': return ['victory', Math.floor(this.stateTime / 8) % 2];
         case 'wakeup': return ['crouch', 0];
         case 'dash': return ['walk', 1];
         case 'attack': {

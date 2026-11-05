@@ -69,6 +69,7 @@ RF.CONFIG = {
   CPU_LEVEL: 'normal',
   RUMBLE: true,
   ANNOUNCER: true,
+  DYNAMIC_CAMERA: true,   // zoom in when the fighters are close; punch in on supers and finishers
   TRAINING_DUMMY: 'stand',
   TRAINING_TRIAL: 1,      // combo trial shown in training (0 = off) // training mode dummy: stand / block / crouch / jump / cpu        // the deep arena voice ("ROUND ONE... FIGHT!")           // controller vibration on hits    // easy / normal / hard (see ai.js)
   SHOW_HITBOXES: false,

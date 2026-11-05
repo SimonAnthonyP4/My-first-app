@@ -56,6 +56,43 @@ Settings → Controller Rumble. Button layout is in `js/config/controls.js` (`Pa
 the reading code in `js/core/input.js` (`pollPads`). Works in Chrome, Edge, Firefox and Safari;
 rumble needs Chrome or Edge.
 
+### Command specials, taunts, tank armor, camera, stage transitions
+
+- **Two command specials per fighter:** DOWN, FORWARD + attack and DOWN, BACK + attack (no meter).
+  A ground attack that connects can cancel straight into one. Built from move types in
+  `js/game/special-kinds.js` (rush, teleport, rising anti-air, counter stance, projectile, slam);
+  the moves and who has them are in `js/config/commands.js`.
+
+  | Fighter | Down, Fwd + Atk | Down, Back + Atk |
+  |---|---|---|
+  | Bruiser | Tray Charge (rush) | Ladle Uppercut (anti-air) |
+  | Viper | Fang Rush (rush) | Smoke Step (teleport behind + strike) |
+  | Dr. Weissenberg | Ball Lightning (slow orb) | Static Uppercut (anti-air) |
+  | Jauregui | Delta Force (projectile) | Square Root (anti-air) |
+  | Dr. Astuto | Objection! (counter stance) | Gavel Slam (leaping slam) |
+  | El Escobedo | Rocket Boost (jet rush) | Drone Strike (projectile) |
+  | Lady Landa | Hex Step (teleport behind + strike) | Cobra Rise (anti-air) |
+  | Mr. Dabalsa | To Be Or Not To Be (counter stance) | Sonnet Slam (leaping slam) |
+  | King Sirven | Hall Pass (teleport behind + strike) | Suspension (rush) |
+  | Holbrook | Tectonic Uplift (anti-air) | Jet Stream (rush) |
+  | Simon | Spinning Elbow (rush) | Skip Knee (anti-air) |
+  | Anthony | Blink (teleport behind + strike) | Bar Toss (protein bar projectile) |
+
+- **Taunt:** `R` (P1) / `Numpad 5` or `K` (P2) / CREATE on a controller. Each fighter has a line
+  and voice; finish it for a quarter bar of meter, but you're wide open (hits on you are COUNTERs).
+- **Tank armor:** Bruiser, Dr. Weissenberg, Dr. Astuto and Mr. Dabalsa absorb ONE hit while
+  winding up or swinging a heavy ("ARMOR!", 60% damage, no flinch). Throws still beat it.
+- **Move list:** pause -> MOVE LIST shows both fighters' full move lists.
+- **Dynamic camera:** zooms in when the fighters are close, eases out when they're apart or high
+  in the air, and punches in on supers, finishers and stage transitions (Settings -> Dynamic Camera).
+- **Stage transitions:** some walls are breakable (cafeteria's right wall -> Haunted Court, the
+  court's left -> back to the cafeteria, Sirven's office right -> NYC street, the street's left ->
+  the office; the other walls have hazards). Heavy them into a breakable wall for a WALL BOUNCE,
+  then catch them with another heavy, a command special or a special before they land (or hit them
+  into it with a super) and they smash through: the screen wipes, they crash down into the next
+  stage for extra damage and the new stage's music kicks in. (`RF.STAGE_LINKS` in
+  `js/game/fight-scene.js`.)
+
 ### Combo system 2.0
 
 - **Smarter input buffer:** presses are remembered for 8 frames of real gameplay, and frames

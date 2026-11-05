@@ -32,6 +32,121 @@
       },
     },
 
+    // ---------- command-special kinds (js/config/commands.js) ----------
+
+    // RUSH: charges forward and hits whatever is in front (shoulder charges, flying elbows...).
+    rush: {
+      start(f) { f.vx = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (t === s.startup) { f.vx = f.facing * s.speed; if (s.hop) f.vy = s.hop; RF.audio.sfx(s.sound || 'whoosh'); scene.effects.spawn('dust', f.x - f.facing * 8, 1); }
+        if (t >= s.startup && t < s.startup + s.duration && !d.hit) {
+          const opp = scene.opponentOf(f), hurt = opp.getHurtbox();
+          const box = { x: f.facing > 0 ? f.x : f.x - f.body.width / 2 - s.reach, y: f.y + f.body.height * 0.2, w: f.body.width / 2 + s.reach, h: f.body.height * 0.7 };
+          if (hurt && RF.util.rectsOverlap(box, hurt)) {
+            d.hit = true; f.vx *= 0.2;
+            scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', f.x + f.facing * f.body.width / 2, f.body.height * 0.5);
+          }
+        }
+        if (t === s.startup + s.duration && f.grounded) f.vx = 0;
+        if (t >= s.startup + s.duration && f.grounded) f.vx *= 0.7;
+        if (t >= s.startup + s.duration + s.recovery && f.grounded) f.setState('idle');
+      },
+      anim(f) { const s = f.special; return f.stateTime < s.startup ? ['crouch', 0] : [s.anim || 'light', 1]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime;
+        if (t < s.startup || t > s.startup + s.duration) return;
+        const y0 = floorY - f.y - f.body.height * 0.55;
+        for (let i = 0; i < 7; i++) { // speed streaks in the move's colour
+          ctx.fillStyle = s.color || '#ffffff'; ctx.globalAlpha = 0.7 - i * 0.09;
+          ctx.fillRect(Math.round(f.x - f.facing * (10 + i * 8)), Math.round(y0 - 16 + ((i * 13 + frame) % 32)), 7, 2);
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // TELEPORT: vanish in a puff and reappear on the other side of the opponent,
+    // optionally striking as you arrive.
+    teleport: {
+      start(f) { f.vx = 0; RF.audio.sfx(f.special.sound || 'whoosh'); },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t === s.startup) {
+          d.from = f.x;
+          const b = scene.stageDef.bounds, dir = Math.sign(opp.x - f.x) || f.facing;
+          let x = s.behind ? opp.x + dir * (opp.body.width / 2 + f.body.width / 2 + 6) : opp.x - dir * (opp.body.width / 2 + f.body.width / 2 + 10);
+          if (x < b.left + f.body.width / 2 || x > b.right - f.body.width / 2) x = opp.x - dir * (opp.body.width / 2 + f.body.width / 2 + 6); // no room: land in front
+          f.x = x; f.y = 0; f.hidden = true; d.at = x;
+        }
+        if (t === s.startup + 6) { f.hidden = false; f.faceOpponent(opp); scene.effects.spawn('dust', f.x, 1); }
+        if (s.damage && t === s.startup + 6 + (s.strikeDelay || 4) && !d.hit) {
+          const hurt = opp.getHurtbox();
+          if (hurt && Math.abs(opp.x - f.x) < f.body.width / 2 + opp.body.width / 2 + (s.reach || 18)) {
+            d.hit = true; scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', (f.x + opp.x) / 2, f.body.height * 0.55);
+          }
+        }
+        if (t >= s.startup + 6 + (s.strikeDelay || 4) + s.recovery) { f.hidden = false; f.setState('idle'); }
+      },
+      anim(f) { const s = f.special, t = f.stateTime; return t < s.startup ? ['crouch', 0] : t < s.startup + 6 + (s.strikeDelay || 4) ? ['idle', 0] : [s.anim || 'light', 1]; },
+      draw(f, ctx, floorY, frame) { // a puff where you left and where you arrive
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        const puff = (x, age) => { if (age < 0 || age > 16) return;
+          for (let i = 0; i < 10; i++) { const a = i * 0.63, r = 4 + age * 1.2;
+            ctx.fillStyle = s.color || '#c0c0c0'; ctx.globalAlpha = 1 - age / 16;
+            ctx.fillRect(Math.round(x + Math.cos(a) * r), Math.round(floorY - f.body.height / 2 + Math.sin(a) * r * 1.6), 3, 3); }
+          ctx.globalAlpha = 1; };
+        if (t < s.startup) puff(f.x, t);
+        if (d.from != null) { puff(d.from, t - s.startup); puff(d.at, t - s.startup - 4); }
+        if (t >= s.startup && t < s.startup + 20 && s.callout) RF.font.drawText(ctx, s.callout, d.at ?? f.x, floorY - f.body.height - 22, { align: 'center', color: s.color || '#fff', outline: '#000' });
+      },
+    },
+
+    // RISING: an anti-air that launches upward (briefly untouchable at the start).
+    rising: {
+      start(f) { f.vx = 0; f.specialData.landedAt = null; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (t === s.startup) { f.vy = s.rise; f.vx = f.facing * (s.forward || 1); RF.audio.sfx(s.sound || 'whoosh'); }
+        if (t >= s.startup && !d.hit && f.vy > -2) {
+          const opp = scene.opponentOf(f), hurt = opp.getHurtbox();
+          const box = { x: f.facing > 0 ? f.x - 4 : f.x - f.body.width / 2 - s.reach, y: f.y + f.body.height * 0.4, w: f.body.width / 2 + s.reach + 4, h: f.body.height * 0.9 };
+          if (hurt && RF.util.rectsOverlap(box, hurt)) { d.hit = true; scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', opp.x, opp.y + opp.body.height * 0.6); }
+        }
+        if (d.landedAt != null && t - d.landedAt >= s.recovery) f.setState('idle');
+        if (t > 150) f.setState('idle');
+      },
+      onLand(f) { if (f.specialData.landedAt == null && f.stateTime > f.special.startup + 2) { f.specialData.landedAt = f.stateTime; f.vx = 0; } },
+      anim(f) { return f.stateTime < f.special.startup ? ['crouch', 0] : f.specialData.landedAt != null ? ['crouch', 0] : ['uppercut', 1]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime;
+        if (t < s.startup || f.specialData.landedAt != null) return;
+        for (let i = 0; i < 6; i++) { // a column of energy under the rising fighter
+          ctx.fillStyle = s.color || '#fff'; ctx.globalAlpha = 0.6 - i * 0.08;
+          ctx.fillRect(Math.round(f.x - 6 + ((i * 7 + frame) % 12)), Math.round(floorY - f.y + i * 6), 2, 6);
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // COUNTER: a stance. Get hit during it and you strike back instead (see FightScene.applyHit).
+    counter: {
+      start(f) { f.vx = 0; RF.audio.sfx('shield'); },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (d.countered) { if (t - d.countered >= 22) f.setState('idle'); return; }
+        if (t >= s.startup + s.window + s.recovery) f.setState('idle');
+      },
+      anim(f) { const s = f.special, d = f.specialData; return d.countered ? ['heavy', 1] : f.stateTime < s.startup + s.window ? ['block', 0] : ['idle', 0]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime;
+        if (f.specialData.countered || t < s.startup || t >= s.startup + s.window) return;
+        ctx.strokeStyle = s.color || '#fff'; ctx.globalAlpha = 0.5 + 0.3 * Math.sin(frame / 2);
+        ctx.strokeRect(Math.round(f.x - f.body.width / 2 - 4), Math.round(floorY - f.y - f.body.height - 4), f.body.width + 8, f.body.height + 6);
+        ctx.globalAlpha = 1;
+        if (s.callout) RF.font.drawText(ctx, s.callout, f.x, floorY - f.y - f.body.height - 16, { align: 'center', color: s.color || '#fff', outline: '#000' });
+      },
+    },
+
     // Anthony: BRO BATCH - a portal over the opponent rains giant protein bars.
     barRain: {
       start(f, scene) { f.vx = 0; f.specialData.tx = scene.opponentOf(f).x; RF.audio.sfx('arcane'); },

@@ -287,6 +287,9 @@
     ctx.restore();
   };
 
+  // Anthony's Bar Toss: a spinning protein bar.
+  RF.PROJECTILE_ART.barToss = function (ctx, x, y, t, dir) { RF.drawProteinBar(ctx, x, y, 1, t * 0.45 * dir); };
+
   // Anthony's CRIMSON HEX: a pulsing orb of crimson magic wrapped in orbiting runes.
   RF.PROJECTILE_ART.hexOrb = function (ctx, x, y, t, dir) {
     const r = 8 + Math.sin(t / 3) * 1.5;

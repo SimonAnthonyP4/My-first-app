@@ -9,6 +9,7 @@
 //   D-pad / left stick  move, up = jump, down = crouch
 //   SQUARE  light       TRIANGLE  heavy       CIRCLE / R1  block
 //   CROSS / L1  throw   R2  SUPER (light + heavy at once)   OPTIONS  pause
+//   CREATE (share)  taunt
 const pad = (n, ...names) => names.map((b) => 'Pad' + n + b);
 RF.CONTROLS = {
   p1: {
@@ -20,6 +21,7 @@ RF.CONTROLS = {
     heavy: ['KeyG', ...pad(1, 'Triangle', 'R2')],
     block: ['KeyH', ...pad(1, 'Circle', 'R1')],
     throw: ['KeyT', ...pad(1, 'Cross', 'L1')],
+    taunt: ['KeyR', ...pad(1, 'Create')],
   },
   p2: {
     left: ['ArrowLeft', ...pad(2, 'Left')],
@@ -31,5 +33,6 @@ RF.CONTROLS = {
     heavy: ['Numpad2', 'Period', ...pad(2, 'Triangle', 'R2')],
     block: ['Numpad3', 'Slash', ...pad(2, 'Circle', 'R1')],
     throw: ['Numpad4', 'KeyL', ...pad(2, 'Cross', 'L1')],
+    taunt: ['Numpad5', 'KeyK', ...pad(2, 'Create')],
   },
 };

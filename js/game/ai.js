@@ -109,6 +109,7 @@
             if (me.attackAirborne) this.tap(me.chain < 2 ? 'light' : 'heavy');
             else if (me.meter >= RF.CONFIG.SUPER_MAX && Math.random() < 0.5) { this.tap('light'); this.tap('heavy'); }
             else if (me.chain < 1) this.tap('light');
+            else if (me.def.commands && Math.random() < 0.3) this.tap('cmd' + (Math.random() < 0.5 ? 'qcf' : 'qcb')); // cancel into a command special
             else if (Math.random() < 0.5) { this.holding.add('up'); this.tap('heavy'); } // launcher
             else this.tap('heavy');
           }
@@ -152,6 +153,15 @@
           Math.random() < L.throwChance * (opp.state === 'block' ? 4 : 1)) {
         this.tap('throw');
         return;
+      }
+
+      // 4b. Command specials (anti-airs when they jump, rushes / teleports / projectiles otherwise).
+      if (me.def.commands && dist < 170 && Math.random() < L.aggression * 0.4) {
+        const slots = ['qcf', 'qcb'].map((sl) => [sl, RF.COMMANDS[me.def.commands[sl]]]).filter(([, c]) => c);
+        const anti = slots.find(([, c]) => c.kind === 'rising');
+        if (anti && !opp.grounded && dist < 80) { this.tap('cmd' + anti[0]); return; }
+        const pick = slots[Math.floor(Math.random() * slots.length)];
+        if (pick && (pick[1].kind !== 'rising' || dist < 60)) { this.tap('cmd' + pick[0]); return; }
       }
 
       // 5. Attack when in range.

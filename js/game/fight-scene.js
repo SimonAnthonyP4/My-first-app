@@ -9,6 +9,14 @@
   const ROUND_OVER_FRAMES = 200; // K.O. / TIME banner + victory pose
   const START_GAP = 70;          // each fighter starts this far from the centre
   const SUPER_FREEZE = 46;
+  // Breakable walls: smash someone through this side of a stage and the fight continues
+  // in the next one. (The other walls have stage hazards.)
+  RF.STAGE_LINKS = {
+    cafeteria: { right: 'court' },
+    court: { left: 'cafeteria' },
+    office: { right: 'nyc' },
+    nyc: { left: 'office' },
+  };
   const BRUTAL_HITS = 5;         // hits on a dazed opponent for a BRUTALITY
   // Training mode: what the dummy does (changed from the pause menu).
   const TRIAL_SETTING = { id: 'TRAINING_TRIAL', label: 'TRIAL', options: [[0, 'OFF'], ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => [n, String(n)])] };
@@ -42,6 +50,7 @@
       this.pauseMenu = new RF.ListMenu([
         { label: 'RESUME', onSelect: () => { this.paused = false; } },
         ...(this.training ? [{ label: 'TRIAL', setting: TRIAL_SETTING }, { label: 'DUMMY', setting: DUMMY_SETTING }] : []),
+        { label: 'MOVE LIST', onSelect: () => { this.showMoveList = true; } },
         { label: 'RESTART MATCH', onSelect: () => { this.paused = false; this.startMatch(); } },
         { label: 'CHARACTER SELECT', onSelect: toSelect },
         { label: 'MAIN MENU', onSelect: toTitle },
@@ -55,6 +64,7 @@
     }
 
     startMatch() {
+      if (this.stageDef.id !== this.opts.stage) this.setStage(RF.getStage(this.opts.stage)); // back from a stage transition
       this.wins = [0, 0];
       this.round = 1;
       this.toastyShown = false;
@@ -107,6 +117,10 @@
         this.pauseMenu.index = 0;
         return;
       }
+      if (this.paused && this.showMoveList) {
+        if (RF.menuPressed(kb, 'confirm') || RF.menuPressed(kb, 'back')) this.showMoveList = false;
+        return;
+      }
       if (this.paused) return this.pauseMenu.update(kb);
 
       this.frame++;
@@ -118,6 +132,7 @@
       if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
       if (this.toasty && ++this.toasty.t > 70) this.toasty = null;
       for (const f of this.fighters) f.tickVisuals();
+      this.updateCamera();
       const frozen = !!this.superFreeze || this.hitstop > 0;
       for (const inp of this.inputs) if (inp.noteFrame) inp.noteFrame(frozen); // frozen frames don't age buffered presses
       if (this.superFreeze) {
@@ -152,6 +167,9 @@
           }
           if (--this.timer <= 0) this.endRound('time'); // Infinity never runs out
           if (this.training) this.updateTraining();
+          break;
+        case 'transition':
+          this.updateTransition();
           break;
         case 'finish':
           if (this.finisher) {
@@ -240,10 +258,14 @@
 
     // A heavy hit that drives someone into the corner bounces them back off the wall.
     tryWallBounce(att, def, move) {
-      if (!move.knockback || def.wallBounced || def.health <= 0 || def.state !== 'hitstun') return;
+      if (!(move.knockback || move.special) || def.health <= 0 || def.state !== 'hitstun' || this.phase !== 'fight') return;
       const b = this.stageDef.bounds, dir = sign(def.x - att.x) || att.facing;
       const gap = dir > 0 ? b.right - (def.x + def.body.width / 2) : def.x - def.body.width / 2 - b.left;
-      if (gap > 40) return;
+      // STAGE TRANSITION: once they've wall-bounced off a breakable wall, any heavy or special
+      // that catches them before they land smashes them through it (a super does it outright).
+      const link = (RF.STAGE_LINKS[this.stageDef.id] || {})[dir > 0 ? 'right' : 'left'];
+      if (link && ((def.wallBounced && gap <= 90) || ((move.tag === 'super' || att.superActive) && gap <= 40))) return this.startTransition(att, def, dir, link);
+      if (gap > 40 || !move.knockback || def.wallBounced) return;
       const hz = RF.HAZARDS[this.stageDef.id];
       if (hz && hz.side === dir && this.hazardCooldown <= 0) return; // the hazard gets them instead
       def.wallBounced = true;
@@ -329,6 +351,106 @@
       const dx = trial && trial.corner ? b.right - d.body.width / 2 - 2 : (b.left + b.right) / 2 + gap / 2;
       p.reset(dx - gap, 1); d.reset(dx, -1);
       p.meter = RF.CONFIG.SUPER_MAX;
+    }
+
+    // ---- camera ----
+
+    // Smoothly zoom in when the fighters are close (out when they're apart or high in the
+    // air), and punch in on supers, finishers and stage transitions.
+    updateCamera() {
+      const W = RF.CONFIG.WIDTH, [a, b] = this.fighters;
+      let tz = 1, tx = (a.x + b.x) / 2;
+      if (RF.CONFIG.DYNAMIC_CAMERA) {
+        const d = Math.abs(a.x - b.x), high = Math.max(a.y, b.y);
+        tz = 1 + 0.2 * Math.max(0, Math.min(1, (200 - d) / 140)) - Math.max(0, high - 20) / 220;
+        if (this.superFreeze) { tz = 1.35; tx = this.superFreeze.f.x; }
+        else if (this.finisher) { tz = 1.22; tx = (this.finisher.att.x + this.finisher.vic.x) / 2; }
+        else if (this.transition) { tz = 1.3; tx = this.transition.def.x; }
+        else if (this.phase === 'roundOver' && this.phaseTime < 60) tz = Math.max(tz, 1.15);
+        tz = Math.max(1, Math.min(1.4, tz));
+      }
+      const c = this.cam || (this.cam = { x: W / 2, z: 1 });
+      c.z += (tz - c.z) * (this.superFreeze ? 0.25 : 0.08);
+      c.x += (tx - c.x) * 0.12;
+      const half = W / 2 / c.z;
+      c.x = Math.max(half, Math.min(W - half, c.x));
+    }
+
+    applyCamera(ctx) {
+      const c = this.cam;
+      if (!c || c.z <= 1.001) return;
+      const W = RF.CONFIG.WIDTH, pivotY = this.stageDef.floorY + 14; // zoom toward the floor so feet stay in view
+      ctx.translate(W / 2, pivotY);
+      ctx.scale(c.z, c.z);
+      ctx.translate(-c.x, -pivotY);
+    }
+
+    // ---- stage transitions ----
+
+    setStage(def) {
+      this.stageDef = def;
+      this.stage = new RF.StageRenderer(def);
+      RF.audio.playSong(def.music);
+    }
+
+    // Smashed through the wall into the next stage.
+    startTransition(att, def, dir, to) {
+      this.transition = { att, def, dir, to, t: 0 };
+      this.projectiles = [];
+      def.pushVx = 0; def.vx = dir * 3; def.vy = 3;
+      this.setPhase('transition');
+      RF.announcer.say('STAGE TRANSITION!');
+      this.game.kb.rumble(def.side, 1, 500);
+    }
+
+    updateTransition() {
+      const tr = this.transition, { att, def, dir } = tr, b = this.stageDef.bounds;
+      tr.t++;
+      if (tr.t === 1) { this.shake = 18; this.flash = 6; RF.audio.sfx('boom'); RF.audio.sfx('heavy'); }
+      if (tr.t === 6) { def.hidden = true; RF.audio.sfx('clang'); tr.wallX = dir > 0 ? b.right : b.left; }
+      if (tr.t === 40) {
+        this.setStage(RF.getStage(tr.to));
+        this.effects.clear();
+        const nb = this.stageDef.bounds, entry = dir > 0 ? nb.left + 70 : nb.right - 70;
+        def.hidden = false; def.x = entry; def.y = 190; def.vx = dir * 0.8; def.vy = 0;
+        def.state = null; def.setState('hitstun'); def.stun = 30; def.juggle = 1;
+        att.x = entry - dir * 70; att.y = 160; att.vx = 0; att.vy = 0; att.state = null; att.setState('jump'); att.airAttackUsed = true;
+        att.facing = dir; def.facing = -dir;
+        this.hazardCooldown = 180;
+        if (this.cam) this.cam.x = entry;
+      }
+      if (tr.t > 40 && !tr.landed && def.grounded) { // crashes down into the new stage
+        tr.landed = tr.t;
+        this.shake = 14; RF.audio.sfx('boom');
+        const dmg = 10 * (1 - def.stats.damageReduction);
+        def.health = Math.max(this.training ? 1 : 0, def.health - dmg);
+        att.gainMeter(dmg);
+        this.effects.spawn('dust', def.x - 8, 1); this.effects.spawn('dust', def.x + 8, 1);
+        this.effects.spawnText(this.stageDef.name.toUpperCase() + '!', RF.CONFIG.WIDTH / 2, 150, '#ffd030');
+        RF.announcer.say(this.stageDef.name);
+      }
+      if (tr.landed && tr.t - tr.landed > 24) {
+        this.transition = null;
+        this.setPhase('fight');
+        if (def.health <= 0) def.knockOut(dir);
+      }
+    }
+
+    drawTransition(ctx, W, H) {
+      const tr = this.transition;
+      if (!tr) return;
+      const t = tr.t;
+      if (t < 40 && tr.wallX != null) { // the wall bursting: chunks flying out
+        for (let i = 0; i < 24; i++) {
+          const u = (t - 6) / 34, a = (i / 24) * Math.PI - Math.PI / 2;
+          const x = tr.wallX + tr.dir * (u * (30 + (i % 5) * 18)), y = 120 + Math.sin(a) * 60 * u + u * u * 90 - (i % 7) * 8;
+          ctx.fillStyle = ['#8a7a6a', '#5a4a3a', '#c8b8a0'][i % 3];
+          ctx.fillRect(Math.round(x), Math.round(y), 3 + (i % 3), 3 + (i % 2));
+        }
+      }
+      const fade = t < 20 ? 0 : t < 40 ? (t - 20) / 20 : t < 56 ? 1 - (t - 40) / 16 : 0; // wipe to black and back
+      if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${fade})`; ctx.fillRect(0, 0, W, H); }
+      if (t > 6 && t < 40) T(ctx, 'STAGE TRANSITION!', W / 2, 70, { scale: 2, align: 'center', color: BIG, outline: '#000' });
     }
 
     // ---- supers ----
@@ -489,6 +611,23 @@
     applyHit(att, def, move, spark, ex, ey) {
       if ((this.phase !== 'fight' && this.phase !== 'finish') || def.isKO) return null;
       if (this.phase === 'finish' && def === this.finishVictim && !this.finisher) return this.brutalHit(att, def, ex, ey);
+      // Counter stance (e.g. Astuto's OBJECTION!): the hit is caught and answered.
+      if (def.state === 'special' && def.special.kind === 'counter' && !def.specialData.countered) {
+        const s = def.special, t = def.stateTime;
+        if (t >= s.startup && t < s.startup + s.window) {
+          def.specialData.countered = t;
+          this.flash = 4; this.hitstop = Math.max(this.hitstop, 10);
+          this.effects.spawn('perfect', ex, ey);
+          this.effects.spawnText(s.callout || 'COUNTERED!', def.x, def.body.height + 16, s.color || '#fff');
+          RF.audio.sfx('perfect');
+          if (Math.abs(att.x - def.x) < 100 && !att.isKO && att !== def) {
+            def.faceOpponent(att);
+            att.stagger(6);
+            this.applyHit(def, att, RF.specialMove(def, s), 'heavy', att.x, att.body.height * 0.5);
+          }
+          return 'perfect';
+        }
+      }
       const bounds = this.stageDef.bounds;
 
       if (def.isPerfectBlockAgainst(att, move)) {
@@ -709,6 +848,7 @@
       const floorY = this.stageDef.floorY;
       ctx.save();
       if (this.shake) ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake * 0.5));
+      this.applyCamera(ctx);
       this.stage.draw(ctx, this.frame);
       if (this.superFreeze) { // the world goes dark around the super
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -737,6 +877,7 @@
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
       ctx.restore();
+      this.drawTransition(ctx, W, H);
 
       if (this.flash) {
         ctx.fillStyle = `rgba(200,240,255,${this.flash * 0.06})`;
@@ -749,6 +890,7 @@
       if (this.toasty) this.drawToasty(ctx, W, H);
       this.drawAnnouncements(ctx, W, H);
 
+      if (this.paused && this.showMoveList) { this.drawMoveList(ctx, W, H); return; }
       if (this.paused) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(0, 0, W, H);
@@ -836,6 +978,37 @@
         T(ctx, 'SUPER!', tx, y + 10, { scale: 3, align, color: BIG, outline: '#200000' });
         T(ctx, f.special.name.toUpperCase(), tx, y + 40, { scale: 1, align, color: '#fff', outline: '#000' });
       }
+    }
+
+    // Pause -> MOVE LIST: both fighters' moves side by side.
+    drawMoveList(ctx, W, H) {
+      ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, W, H);
+      T(ctx, 'MOVE LIST', W / 2, 6, { scale: 2, align: 'center', color: BIG, outline: '#000' });
+      this.fighters.forEach((f, i) => {
+        const d = f.def, x = i === 0 ? 8 : W / 2 + 4, w = W / 2 - 12;
+        RF.drawPanel(ctx, x, 26, w, 178, i === 0 ? '#c03020' : '#3060c0');
+        const C = d.commands || {}, cmd = (k) => (RF.COMMANDS[C[k]] || {}).name || '-';
+        const rows = [
+          ['', d.name, '#ffd030'],
+          ['LIGHT / HEAVY', 'COMBO: LIGHT, LIGHT, HEAVY', '#e0d8d0'],
+          ['DOWN, FWD + ATK', cmd('qcf'), '#60e0ff'],
+          ['DOWN, BACK + ATK', cmd('qcb'), '#60e0ff'],
+          ['UP + HEAVY', 'LAUNCHER (HOLD UP)', '#ff9a40'],
+          ['PERFECT BLOCK', f.baseSpecial.name, '#ffd030'],
+          ['THROW (1 BAR IN COMBO)', 'EX ' + f.baseSpecial.name, '#60c0ff'],
+          ['LIGHT + HEAVY (3 BARS)', 'SUPER ' + f.baseSpecial.name, '#ffd030'],
+          ['THROW (CLOSE)', f.throwCfg ? f.throwCfg.name : '-', '#ff9a40'],
+          ['TAUNT', '"' + (d.taunt || 'COME ON!') + '"', '#c0ff80'],
+          ['FINISH THEM: THROW', (RF.FINISHERS[d.finisher] || {}).name || '-', '#ff6050'],
+          ['FINISH THEM: HIT 5X', (d.brutality || {}).name || 'BRUTALITY', '#ff6050'],
+        ];
+        rows.forEach(([k, v, col], j) => {
+          const y = 32 + j * 14;
+          if (k) T(ctx, k, x + 6, y, { color: '#a89888', outline: '#000' });
+          T(ctx, String(v).toUpperCase(), x + 6, y + (k ? 7 : 0), { color: col, outline: '#000', scale: k ? 1 : 1 });
+        });
+      });
+      T(ctx, 'ENTER / ESC TO GO BACK', W / 2, H - 12, { align: 'center', color: '#a08878', outline: '#000' });
     }
 
     // Easter egg: Dr. Weissenberg's head pops up in the corner.
