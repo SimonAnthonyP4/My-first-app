@@ -502,7 +502,19 @@ sprint** with dust kicking up behind him (`sprint`).
 - **Bro Batch:** special lines with Anthony on entrance, taunt and win, matching banter, and when
   the two meet the announcer calls it a **BRO BATCH CIVIL WAR!**
 
-The roster is now 16 fighters and the 8 x 2 character select is full.
+The roster is now 16 fighters and the 4 x 4 character select is full.
+
+## Menus
+
+The main menu and character select use a modern fighting-game look (`js/scenes/ui.js` has the
+shared helpers: `slantRect`, `slantText`, `drawSpeedBackdrop`, `drawTicker`, `drawScreenFinish`).
+
+- **Main menu:** glitching chrome logo with a red/cyan split, slanted menu bars that slide out
+  with a one-line description, a featured fighter on a red slash (left/right browses the roster),
+  speed stripes, embers, scanlines and a ticker with your records.
+- **Character select:** a 4 x 4 grid in the middle, each player's column on either side (red P1,
+  blue P2) with a big portrait, archetype tags, segmented stat bars and their special. Locking in
+  flashes the fighter white and stamps READY!; when both are in, the VS slams down.
 
 ## Adding a character drawn in Piskel
 
