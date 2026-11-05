@@ -37,6 +37,18 @@ RF.SPECIALS = {
     hitstun: 34, blockstun: 16, pushback: 3, hitstop: 10,
     colors: ['#ffffff', '#9ff0ff', '#3a8cff'],
   },
+  flyingKnee: {
+    name: 'Flying Knee',
+    description: 'Launches off the back foot and flies across the stage knee-first.',
+    kind: 'flyingKnee',
+    startup: 6,          // crouch, then spring
+    speed: 7,            // forward speed of the leap
+    rise: 6.5,           // upward speed of the leap
+    recovery: 10,        // after landing
+    damage: 15,
+    hitstun: 32, blockstun: 14, pushback: 6, hitstop: 12,
+    launch: 7,
+  },
   continentalDrift: {
     name: 'Continental Drift',
     description: 'The ground splits and a whole continent slides across the floor like a tectonic plate, flattening the opponent.',

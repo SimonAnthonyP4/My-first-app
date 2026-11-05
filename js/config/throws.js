@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  thaiClinch: {
+    name: 'Thai Clinch',
+    description: 'Locks both hands behind the head and drives in five rapid knees, then pushes them off with a teep kick.',
+    kind: 'flurry',
+    hits: 5,
+    damagePerHit: 2.5,
+    finisherDamage: 6,
+  },
   mercatorProjection: {
     name: 'Mercator Projection',
     description: 'Wraps the opponent around a giant spinning globe, then flattens them onto a map and kicks them off the edge of the world.',

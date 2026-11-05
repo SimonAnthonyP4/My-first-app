@@ -22,6 +22,8 @@
 //     weapon: { color, length }  // something held in the posed hand (e.g. a ruler)
 //     sleeveColor, sleeveShade   // colour of added sleeves
 //     poses: { walk: [...] }     // replace any animation's frame recipes (e.g. a hobbling walk)
+//     liftLeg: '^(pantslift|shoeslift)' // palette names of a raised leg (Simon): it moves on its own
+//                                // with a recipe's liftOff: [dx, dy], and becomes the kicking leg
 //   Any palette name starting with 'pants' or 'shoes' counts as legs.
 //   }
 (function () {
@@ -106,13 +108,14 @@
       this.cells = { head: [], torso: [], legs: [] };
       const hand = new Set((s.sideHand || []).map(([c, r]) => c + ',' + r));
       const hide = new Set(s.hideWhenPosed || []);
+      const liftRe = s.liftLeg ? new RegExp(s.liftLeg) : null;
       this.minCol = Infinity;
       s.grid.forEach((row, r) => {
         [...row].forEach((ch, c) => {
           if (ch === '.' || ch === ' ') return;
           const name = s.legend[ch];
           const color = s.palette[name];
-          const cell = { c, r, color, hand: hand.has(c + ',' + r), prop: hide.has(name), shoe: /^shoes/.test(name) };
+          const cell = { c, r, color, hand: hand.has(c + ',' + r), prop: hide.has(name), shoe: /^shoes/.test(name), lift: !!(liftRe && liftRe.test(name)) };
           this.minCol = Math.min(this.minCol, c);
           const isLeg = /^(pants|shoes)/.test(name);
           if (r < s.neckRow && !cell.prop) this.cells.head.push(cell);
@@ -123,9 +126,9 @@
       this.rows = s.grid.length;
       this.cols = Math.max(...s.grid.map((r) => r.length));
       this.sleeve = shade(s.palette[s.sleeveColor || 'coat'], s.sleeveShade == null ? -0.28 : s.sleeveShade);
-      this.handColor = s.palette.skin;
-      this.pantsColor = s.palette.pants;
-      this.shoeColor = s.palette.shoes;
+      this.handColor = s.palette[s.handColor || 'skin'];     // palette names; e.g. Simon's wrapped fists
+      this.pantsColor = s.palette[s.legColor || 'pants'];     // colour of an added kicking leg
+      this.shoeColor = s.palette[s.footColor || 'shoes'];
 
       this.frames = {};
       for (const anim in RF.ANIMATIONS) {
@@ -278,10 +281,12 @@
         }
         case 'chamber': // back leg standing; the raised front knee is drawn in the front pass
         case 'kick':    // back leg standing; the kicking leg is drawn in the front pass
-          for (const c of legs) put(c.c, c.r, dark(c.color));
+          for (const c of legs) if (!c.lift) put(c.c, c.r, dark(c.color)); // a raised leg IS the kicking leg
           break;
-        default: // stand
-          for (const c of legs) put(c.c, c.r, c.color, lo[0], lo[1]);
+        default: { // stand (a raised leg can bob on its own)
+          const lf = p.liftOff || [0, 0];
+          for (const c of legs) put(c.c, c.r, c.color, lo[0] + (c.lift ? lf[0] : 0), lo[1] + (c.lift ? lf[1] : 0));
+        }
       }
     }
 

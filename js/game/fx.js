@@ -290,6 +290,29 @@
   }
 
   RF.BLOCK_FX = {
+    // Simon: SHIN CHECK - a raised, glowing shin and crossed forearms wrapped in sacred
+    // Sak Yant-style gold lines. He recovers from blocks fast (blockstunScale).
+    shinCheck(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const fl = g.strength, x = Math.round(g.front + f.facing * 4), top = g.top + 6, h = Math.round(g.hurt.h * 0.85);
+      ctx.save();
+      ctx.globalAlpha = 0.55 + fl * 0.45;
+      // the guard: an X of glowing gold bars (forearms) over a vertical shin bar
+      ctx.strokeStyle = '#ffb030'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x - f.facing * 6, top); ctx.lineTo(x + f.facing * 6, top + h * 0.45); ctx.moveTo(x + f.facing * 6, top); ctx.lineTo(x - f.facing * 6, top + h * 0.45); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, top + h * 0.45); ctx.lineTo(x + f.facing * 3, top + h); ctx.stroke();
+      ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 1; ctx.stroke();
+      // Sak Yant-style dots and lines around it
+      ctx.fillStyle = '#ffd060';
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2 + frame / 20, r = 14 + fl * 6;
+        ctx.fillRect(Math.round(x + Math.cos(a) * r * 0.6), Math.round(top + h * 0.3 + Math.sin(a) * r), 2, 2);
+      }
+      ctx.restore();
+      if (fl > 0.4) RF.font.drawText(ctx, 'CHECKED!', f.x, g.top - 14, { align: 'center', color: '#ffd060', outline: '#000' });
+    },
+
     // Holbrook: SOVEREIGN BORDER - a towering wall of glowing border lines with continent
     // outlines inside it. Attackers who hit it get shoved back across the border.
     sovereignBorder(f, ctx, floorY, frame) {

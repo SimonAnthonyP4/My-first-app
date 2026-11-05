@@ -32,6 +32,38 @@
       },
     },
 
+    // Simon: leaps across the stage knee-first.
+    flyingKnee: {
+      start(f) { f.vx = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (t === s.startup) { f.vy = s.rise; f.vx = f.facing * s.speed; d.air = true; RF.audio.sfx('whoosh'); scene.effects.spawn('dust', f.x, 1); }
+        if (d.air && !d.hit) {
+          const opp = scene.opponentOf(f), hurt = opp.getHurtbox();
+          const kx = f.x + f.facing * f.body.width * 0.6, ky = f.y + f.body.height * 0.45;
+          if (hurt && Math.abs(kx - opp.x) < opp.body.width / 2 + 10 && ky > hurt.y - 6 && ky < hurt.y + hurt.h + 6) {
+            d.hit = true;
+            f.vx *= 0.3;
+            scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', kx, ky);
+          }
+        }
+        if (d.landedAt && t - d.landedAt >= s.recovery) f.setState('idle');
+        if (d.air && t > s.startup + 2 && f.grounded && !d.landedAt) { d.landedAt = t; f.vx = 0; scene.effects.spawn('dust', f.x, 1); }
+        if (t > 120) f.setState('idle'); // safety
+      },
+      anim(f) { return f.stateTime < f.special.startup ? ['crouch', 0] : f.specialData.landedAt ? ['crouch', 0] : ['uppercut', 1]; },
+      draw(f, ctx, floorY, frame) { // speed lines + a flash on the knee
+        if (!f.specialData.air || f.specialData.landedAt) return;
+        const kx = f.x + f.facing * f.body.width * 0.6, ky = floorY - f.y - f.body.height * 0.45;
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = `rgba(255,${200 - i * 20},80,${0.7 - i * 0.1})`;
+          ctx.fillRect(Math.round(kx - f.facing * (8 + i * 7)), Math.round(ky - 8 + i * 3), 6, 1);
+        }
+        ctx.fillStyle = frame % 4 < 2 ? '#ffffff' : '#ffd060';
+        ctx.fillRect(Math.round(kx) - 2, Math.round(ky) - 2, 4, 4);
+      },
+    },
+
     // Holbrook: a continent-sized tectonic plate slides across the floor.
     plate: {
       start(f) { f.vx = 0; },

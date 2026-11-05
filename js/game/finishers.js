@@ -198,6 +198,46 @@
   }
 
   RF.FINISHERS = {
+    // Simon: THE ART OF EIGHT LIMBS - fists, elbows, knees and shins, counted out
+    // one by one, then a final kick that sends them into the sky.
+    eightLimbs: {
+      name: 'Art of Eight Limbs',
+      duration: 210,
+      update(att, vic, t, scene) {
+        const LIMBS = [['FIST', 'light'], ['FIST', 'light'], ['ELBOW', 'light'], ['ELBOW', 'light'], ['KNEE', 'uppercut'], ['KNEE', 'uppercut'], ['SHIN', 'heavy'], ['SHIN', 'heavy']];
+        const i = Math.floor((t - 20) / 11), sub = (t - 20) % 11;
+        att.finisherAnim = t < 20 ? ['idle', (t >> 2) % 4] : i < 8 ? [LIMBS[i][1], sub < 4 ? 1 : 2] : t < 150 ? ['heavy', 1] : ['victory', (t >> 3) % 2];
+        if (t >= 20 && i < 8 && sub === 0) {
+          scene.effects.spawn(i >= 6 ? 'heavy' : 'hit', vic.x - att.facing * 6, 30 + (i % 3) * 12);
+          scene.effects.spawnText((i + 1) + '! ' + LIMBS[i][0], vic.x, vic.body.height + 8 + (i % 2) * 10, i >= 6 ? '#ff4040' : '#ffd060');
+          scene.shake = 4 + i; scene.hitstop = 0;
+          RF.audio.sfx(i >= 6 ? 'heavy' : 'hit');
+        }
+        if (t === 110) { RF.audio.sfx('boom'); scene.shake = 16; scene.flash = 6; scene.effects.spawnText('ART OF EIGHT LIMBS!', att.x, att.body.height + 28, '#ffb030'); }
+        if (t === 170) RF.audio.sfx('perfect'); // ding - a star in the sky
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 110) {
+          const jolt = t >= 20 && (t - 20) % 11 < 3 ? -3 : 0;
+          return drawPose(vic, ctx, vic.x + jolt * Math.sign(vic.facing || 1) * -1, floorY, ['hit', 0]);
+        }
+        // kicked into orbit, spinning
+        const u = t - 110, x = vic.x - vic.facing * u * 2.2, y = floorY - u * u * 0.22 - u * 3;
+        if (y < -60) return;
+        ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(u * 0.35);
+        vic.sprite.draw(ctx, 'hit', 0, 0, vic.body.height / 2, vic.facing);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t >= 160 && t < 205) { // the twinkle where they disappeared
+          const x = Math.round(vic.x - vic.facing * 110), y = 18, r = (t % 10 < 5) ? 5 : 3;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x - r, y, r * 2 + 1, 1); ctx.fillRect(x, y - r, 1, r * 2 + 1);
+          ctx.fillStyle = '#ffd060'; ctx.fillRect(x - 1, y - 1, 3, 3);
+        }
+      },
+    },
+
     // Holbrook: a world map unrolls, a giant pushpin skewers the loser into it, and the
     // map is rolled up and filed away. ANNEXED.
     annexation: {

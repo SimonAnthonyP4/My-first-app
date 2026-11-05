@@ -84,6 +84,24 @@
     },
     // Hobbles in with his cane; the Liberty Bell tolls (Dr. Astuto).
     cane: { update(f, t, scene) { walkIn(f, t, 50, 0, scene); if (t === 50) RF.audio.sfx('bell'); } },
+    // Wai Kru: kneels and bows in the pre-fight ritual, then rises into his stance (Simon).
+    waikru: {
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('bell');
+        f.state = t < 34 ? 'crouch' : 'idle';
+        f.crouching = t < 34;
+        if (t === 34) { RF.audio.sfx('whoosh'); scene.effects.spawn('dust', f.x, 1); }
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 40) return;
+        const a = t < 30 ? 1 : (40 - t) / 10;
+        for (let i = 0; i < 10; i++) { // incense-like golden sparkles rising around him
+          const u = ((t * 1.5 + i * 11) % 40) / 40;
+          ctx.fillStyle = `rgba(255,${200 + (i % 3) * 18},90,${a * (1 - u)})`;
+          ctx.fillRect(Math.round(f.x - 14 + (i % 5) * 7), Math.round(floorY - 10 - u * 60), 2, 2);
+        }
+      },
+    },
     // Flies in along a dotted flight path on a little plane, like a route on a map (Holbrook).
     flight: {
       update(f, t, scene) {

@@ -329,6 +329,30 @@ desk globe that moves into his attacking hand.
 - **Entrance:** flies in along a dotted flight path on a little plane. **Brutality:** Tectonic
   Shift.
 
+## Simon
+
+The Muay Thai fighter (light, 100% health, from The Gym, After School). Fights from the classic
+bouncing stance with his **front leg lifted**: it bobs up and down on its own while he bounces on
+his back foot (`liftLeg` + `liftOff` in the sprite, a fast 4-frame idle), and it's the leg that
+throws his kicks.
+
+- **Agile:** the fastest walk and attacks in the game (`attackSpeed 1.4`), a longer dash
+  (`dashBoost`) and a **double jump** (press UP again in the air; `doubleJump`).
+- **Light:** jab / cross / elbow, very fast and very close; strings chain up to **5 cancels**
+  (`maxChain: 5`) instead of 3.
+- **Heavy:** a Thai roundhouse off the raised leg: fast for a heavy, close range, big knockback.
+  Down + heavy is a low kick.
+- **Block: Shin Check.** Crossed forearms and a raised shin glowing with Sak Yant-style gold.
+  He recovers from blocks 40% faster (`blockstunScale`), so he can block and strike right back.
+- **Special: Flying Knee.** Springs off the back foot and flies across the stage knee-first.
+- **Throw: Thai Clinch.** Five knees in the clinch, then a push kick.
+- **Finisher: Art of Eight Limbs.** Fists, elbows, knees and shins counted out one by one
+  (1! FIST ... 8! SHIN), then a kick into orbit: a twinkle in the sky.
+- **Entrance:** kneels in the Wai Kru ritual among rising golden sparks, then rises into his
+  stance. **Brutality:** Elbow Storm.
+
+Character select is now a 6 x 2 grid (12 slots).
+
 ## Adding a character drawn in Piskel
 
 You only need to draw **one standing frame, facing right**. The game animates

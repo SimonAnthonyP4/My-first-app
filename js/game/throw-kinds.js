@@ -69,7 +69,6 @@
       },
     },
 
-    // King Sirven: their permanent record, opened, written in, slammed shut on them.
     // Holbrook: wrapped around a spinning globe, then flattened into a Mercator map.
     mercator: {
       update(att, def, t, scene) {
@@ -119,6 +118,7 @@
       },
     },
 
+    // King Sirven: their permanent record, opened, written in, slammed shut on them.
     record: {
       update(att, def, t, scene) {
         const T = att.throwCfg;

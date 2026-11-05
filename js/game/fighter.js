@@ -129,6 +129,17 @@
           break;
         case 'jump':
           this.crouching = false;
+          // Double jump (agile fighters): press UP again in the air.
+          if (canAct && this.def.doubleJump && !this.doubleJumped && this.stateTime > 4 && input.lastPress('up') > this.jumpPressAt && input.pressed('up')) {
+            input.consume('up');
+            this.doubleJumped = true;
+            const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
+            this.vy = Math.max(this.vy, 5.5); // a short extra hop (and a change of direction)
+            if (dir) this.vx = dir * Math.max(this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR, RF.CONFIG.JUMP_MIN_SPEED);
+            this.airAttackUsed = false;
+            if (this.scene) { this.scene.effects.spawn('dust', this.x, this.y); this.scene.effects.spawn('dust', this.x + 6, this.y); }
+            RF.audio.sfx('whoosh');
+          }
           if (canAct && !this.airAttackUsed) {
             if (input.pressed('light')) { input.consume('light'); this.startAttack('airLight'); }
             else if (input.pressed('heavy')) { input.consume('heavy'); this.startAttack('airHeavy'); }
@@ -235,7 +246,7 @@
       this.dashDir = dir;
       this.state = null;
       this.setState('dash');
-      this.vx = dir * (dir === this.facing ? 7.5 : 6);
+      this.vx = dir * (dir === this.facing ? 7.5 : 6) * (this.def.dashBoost || 1);
       RF.audio.sfx('whoosh');
       if (this.scene) this.scene.effects.spawn('dust', this.x - dir * 8, 1);
     }
@@ -292,6 +303,8 @@
 
     doJump(input) {
       const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
+      this.jumpPressAt = input.lastPress('up');
+      this.doubleJumped = false;
       this.state = null;
       this.setState('jump');
       this.vy = this.stats.jumpPower;
@@ -386,7 +399,7 @@
 
     canCancel() {
       return this.move.cancel && this.moveHasHit &&
-        this.chain < (this.attackAirborne ? RF.CONFIG.MAX_AIR_CHAIN : RF.CONFIG.MAX_CHAIN) && this.stateTime >= this.move.startup;
+        this.chain < (this.attackAirborne ? RF.CONFIG.MAX_AIR_CHAIN : this.def.maxChain || RF.CONFIG.MAX_CHAIN) && this.stateTime >= this.move.startup;
     }
 
     startAttack(kind, chained = false) {
@@ -575,7 +588,7 @@
       if (blocked) {
         dmg *= RF.CONFIG.CHIP_DAMAGE;
         this.shieldHit = 12;
-        this.stun = move.blockstun;
+        this.stun = Math.max(1, Math.round(move.blockstun * (this.def.blockstunScale || 1))); // Simon's checks recover fast
         this.state = null;
         this.setState('blockstun');
         this.pushVx = dir * move.pushback * 0.8;
@@ -640,7 +653,7 @@
         case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
         case 'victory': return ['victory', Math.floor(this.stateTime / 15) % 2];
-        default: return ['idle', Math.floor(this.stateTime / 20) % 2];
+        default: return ['idle', Math.floor(this.stateTime / (this.def.idleRate || 20)) % (this.def.idleFrames || 2)];
       }
     }
 
