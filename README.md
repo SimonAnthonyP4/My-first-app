@@ -45,9 +45,12 @@ player 1, the second is player 2, and the keyboard keeps working, so you can mix
 | D-pad / left stick | move, up = jump, down = crouch |
 | Square | light |
 | Triangle | heavy (Up + Triangle = launcher) |
-| Circle or R1 | block |
-| Cross or L1 | throw |
-| R2 | super (light + heavy together) |
+| Circle or L1 | block |
+| Cross | throw |
+| R1 | dash (hold back for a backdash) |
+| L2 | EX special (1 bar), no motion needed |
+| R2 | super (light + heavy together); combo breaker while you're being hit |
+| Create or touchpad | taunt |
 | Options | pause |
 | Menus | Cross = OK, Circle = back |
 
@@ -506,15 +509,19 @@ The roster is now 16 fighters and the 4 x 4 character select is full.
 
 ## Menus
 
-The main menu and character select use a modern fighting-game look (`js/scenes/ui.js` has the
-shared helpers: `slantRect`, `slantText`, `drawSpeedBackdrop`, `drawTicker`, `drawScreenFinish`).
+The classic fire main menu and character select, polished: the main menu shows a one-line
+description of the highlighted option and name tags under the two featured fighters (who rise
+in with a flash when they change). On character select, the slot each player is on lights up in
+their colour (others dim), each portrait has a fighter-type colour stripe, previews get a
+spotlight, locking in flashes the fighter and stamps READY!, and a VS flashes up when both are in.
 
-- **Main menu:** glitching chrome logo with a red/cyan split, slanted menu bars that slide out
-  with a one-line description, a featured fighter on a red slash (left/right browses the roster),
-  speed stripes, embers, scanlines and a ticker with your records.
-- **Character select:** a 4 x 4 grid in the middle, each player's column on either side (red P1,
-  blue P2) with a big portrait, archetype tags, segmented stat bars and their special. Locking in
-  flashes the fighter white and stamps READY!; when both are in, the VS slams down.
+## Rage, Clash and First Attack
+
+- **RAGE:** drop below 30% health and you glow red: 10% more damage and 35% faster super meter
+  (`RAGE_HEALTH`, `RAGE_DAMAGE`, `RAGE_METER` in `js/config/game.js`).
+- **CLASH!:** when two grounded normal attacks meet head-on (hitboxes collide, or both land on the
+  same frame) they cancel: no damage, both bounce apart, both get a little meter.
+- **FIRST ATTACK!:** the first clean hit of each round is announced and pays 20 meter.
 
 ## Adding a character drawn in Piskel
 

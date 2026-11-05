@@ -7,9 +7,10 @@
 // Pad1L1, Pad1R1, Pad1L2, Pad1R2, Pad1Up/Down/Left/Right (D-pad or left stick).
 // Default layout:
 //   D-pad / left stick  move, up = jump, down = crouch
-//   SQUARE  light       TRIANGLE  heavy       CIRCLE / R1  block
-//   CROSS / L1  throw   R2  SUPER (light + heavy at once)   OPTIONS  pause
-//   CREATE (share)  taunt
+//   SQUARE  light       TRIANGLE  heavy       CIRCLE / L1  block      CROSS  throw
+//   R1  dash (hold back for a backdash)      L2  EX special (1 bar)
+//   R2  SUPER (light + heavy at once; also the combo breaker while you're being hit)
+//   CREATE / touchpad  taunt                  OPTIONS  pause
 const pad = (n, ...names) => names.map((b) => 'Pad' + n + b);
 RF.CONTROLS = {
   p1: {
@@ -19,9 +20,11 @@ RF.CONTROLS = {
     down: ['KeyS', ...pad(1, 'Down')],
     light: ['KeyF', ...pad(1, 'Square', 'R2')],
     heavy: ['KeyG', ...pad(1, 'Triangle', 'R2')],
-    block: ['KeyH', ...pad(1, 'Circle', 'R1')],
-    throw: ['KeyT', ...pad(1, 'Cross', 'L1')],
-    taunt: ['KeyR', ...pad(1, 'Create')],
+    block: ['KeyH', ...pad(1, 'Circle', 'L1')],
+    throw: ['KeyT', ...pad(1, 'Cross')],
+    taunt: ['KeyR', ...pad(1, 'Create', 'Touchpad')],
+    dash: ['KeyQ', ...pad(1, 'R1')],
+    ex: ['KeyE', ...pad(1, 'L2')],
   },
   p2: {
     left: ['ArrowLeft', ...pad(2, 'Left')],
@@ -31,8 +34,10 @@ RF.CONTROLS = {
     // Numpad for full keyboards, , . / as a laptop-friendly alternative.
     light: ['Numpad1', 'Comma', ...pad(2, 'Square', 'R2')],
     heavy: ['Numpad2', 'Period', ...pad(2, 'Triangle', 'R2')],
-    block: ['Numpad3', 'Slash', ...pad(2, 'Circle', 'R1')],
-    throw: ['Numpad4', 'KeyL', ...pad(2, 'Cross', 'L1')],
-    taunt: ['Numpad5', 'KeyK', ...pad(2, 'Create')],
+    block: ['Numpad3', 'Slash', ...pad(2, 'Circle', 'L1')],
+    throw: ['Numpad4', 'KeyL', ...pad(2, 'Cross')],
+    taunt: ['Numpad5', 'KeyK', ...pad(2, 'Create', 'Touchpad')],
+    dash: ['Numpad0', 'Quote', ...pad(2, 'R1')],
+    ex: ['Numpad6', 'Semicolon', ...pad(2, 'L2')],
   },
 };

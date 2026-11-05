@@ -72,6 +72,7 @@
       this.thrownPose = null;
       this.lastBlockPress = -Infinity;
       this.power = 0;       // Nicholas's power-punch meter (0..100, per round)
+      this.rageShown = false; // RAGE! announced this round
       this.juggle = 0;      // hits taken while airborne in this combo
       this.bounced = false; // already floor-bounced in this combo
       this.superActive = false;
@@ -162,7 +163,7 @@
           // Command special cancel: a ground attack that connected -> DOWN, FORWARD/BACK + attack.
           if (canAct && confirmed && this.def.commands) { const cmd = this.commandPressed(input); if (cmd) { this.startCommand(cmd); break; } }
           // EX special: THROW during a ground attack that connected (1 bar).
-          if (canAct && confirmed && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); this.startEX(); break; }
+          if (canAct && confirmed && this.meter >= RF.CONFIG.EX_COST && (input.pressed('throw') || input.pressed('ex'))) { input.consume('throw'); input.consume('ex'); this.startEX(); break; }
           // Heavy that connected + UP + HEAVY: cancel into the launcher (great after a wall bounce).
           if (canAct && confirmed && this.moveKind === 'heavy' && this.chain < RF.CONFIG.MAX_CHAIN + 1 && input.held('up') && input.pressed('heavy')) {
             input.consume('heavy'); this.startAttack('launcher', true); break;
@@ -355,7 +356,13 @@
       this.scene.startSuperFreeze(this);
     }
 
+    // RAGE: a comeback boost at low health (more damage, faster meter).
+    get raging() {
+      return this.health > 0 && this.health <= this.maxHealth * RF.CONFIG.RAGE_HEALTH && !!this.scene && this.scene.phase === 'fight';
+    }
+
     gainMeter(n) {
+      if (this.raging) n *= RF.CONFIG.RAGE_METER;
       if (!this.scene || this.scene.phase !== 'fight' || this.superActive) return;
       const was = this.meter;
       this.meter = Math.min(RF.CONFIG.SUPER_MAX, this.meter + n * (RF.CONFIG.METER_RATE || 1) * ((RF.CONFIG.METER_GAIN || {})[this.def.archetype] || 1) * (this.def.meterRate || 1));
@@ -424,11 +431,20 @@
       if (cmd) return this.startCommand(cmd);
       if (input.pressed('taunt')) { input.consume('taunt'); return this.startTaunt(); }
       if (down && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); return this.startEX(); } // DOWN + THROW = EX special
+      if (input.pressed('ex')) { // EX button (L2): one press, no motion needed
+        input.consume('ex');
+        if (this.meter >= RF.CONFIG.EX_COST) return this.startEX();
+      }
       if (this.throwCfg && input.pressed('throw')) { input.consume('throw'); return this.startThrow(); }
       if (input.pressed('light')) { input.consume('light'); return this.startAttack(down ? 'lowLight' : 'light'); }
       if (input.pressed('heavy')) { input.consume('heavy'); return this.startAttack(down ? 'lowHeavy' : up ? 'launcher' : 'heavy'); }
       const dr = this.dashReq;
       if (dr && input.kb.frame - dr.at <= 2 && !down) return this.startDash(dr.dir);
+      if (input.pressed('dash')) { // dash button (R1): forward, or a backdash while holding back
+        input.consume('dash');
+        const back = input.held(this.facing > 0 ? 'left' : 'right');
+        return this.startDash(back ? -this.facing : this.facing);
+      }
       if (input.held('block')) {
         this.setState('block');
         this.crouching = down; // down + block = crouch block (stops lows, not jump-ins)
@@ -680,6 +696,7 @@
       const airborne = !this.grounded;
       let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
+      if (attacker && attacker.raging) dmg *= RF.CONFIG.RAGE_DAMAGE;
       if (blocked) {
         dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
         if (this.def.blockHeal) this.health = Math.min(this.maxHealth, this.health + this.def.blockHeal); // Ruano's GRACE
@@ -789,6 +806,13 @@
         ctx.restore();
       }
       if (this.superActive || this.exActive) RF.MOVE_FX.superAura(this, ctx, floorY, this.scene ? this.scene.frame : 0);
+      if (this.raging && !this.hidden) { // RAGE: a pulsing red glow around them
+        const ft = this.scene ? this.scene.frame : 0;
+        ctx.save();
+        ctx.globalAlpha = 0.22 + Math.sin(ft / 5) * 0.12;
+        for (const [dx, dy] of [[-2, 0], [2, 0], [0, 2]]) this.sprite.draw(ctx, anim, frame, x + dx, floorY - this.y + dy, this.facing, '#ff2010');
+        ctx.restore();
+      }
       this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
       if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
       const t = this.scene ? this.scene.frame : 0;

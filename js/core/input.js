@@ -2,7 +2,7 @@
 // split layout works the same on QWERTY/AZERTY/etc.
 (function () {
   // Standard-layout button numbers -> names (PlayStation names; Xbox A/B/X/Y = Cross/Circle/Square/Triangle).
-  const PAD_BUTTONS = [[0, 'Cross'], [1, 'Circle'], [2, 'Square'], [3, 'Triangle'], [4, 'L1'], [5, 'R1'], [6, 'L2'], [7, 'R2'], [8, 'Create']];
+  const PAD_BUTTONS = [[0, 'Cross'], [1, 'Circle'], [2, 'Square'], [3, 'Triangle'], [4, 'L1'], [5, 'R1'], [6, 'L2'], [7, 'R2'], [8, 'Create'], [10, 'L3'], [11, 'R3'], [17, 'Touchpad']];
   const BLOCK_DEFAULT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Slash', 'Quote', 'Backquote']);
 
   class Keyboard {

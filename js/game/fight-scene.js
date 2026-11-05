@@ -663,6 +663,28 @@
         const hb = att.getHitbox(), hurt = def.getHurtbox();
         if (hb && hurt && rectsOverlap(hb, hurt)) hits.push([att, def, hb, hurt]);
       }
+      // CLASH: two grounded normal attacks whose hitboxes collide cancel each other out.
+      const [f0, f1] = this.fighters;
+      const canClash = (f) => f.state === 'attack' && f.move && !f.attackAirborne && !f.moveHasHit;
+      const h0 = canClash(f0) && f0.getHitbox(), h1 = canClash(f1) && f1.getHitbox();
+      const trade = hits.length === 2 && canClash(f0) && canClash(f1);
+      if ((h0 && h1 && rectsOverlap(h0, h1)) || trade) {
+        const [a, b] = this.fighters;
+        const cx = (a.x + b.x) / 2, cy = Math.min(a.body.height, b.body.height) * 0.6;
+        for (const f of this.fighters) {
+          const o = this.opponentOf(f);
+          f.moveHasHit = true;
+          f.stagger(8);
+          f.pushVx = -sign(o.x - f.x) * 5;
+          f.gainMeter(8);
+        }
+        this.effects.spawn('perfect', cx, cy);
+        this.effects.spawnText('CLASH!', cx, cy + 24, '#ffffff');
+        this.hitstop = Math.max(this.hitstop, 12);
+        this.flash = 4; this.shake = Math.max(this.shake, 5);
+        RF.audio.sfx('perfect');
+        return;
+      }
       for (const [att, def, hb, hurt] of hits) {
         if (!att.move) continue; // a trade where the first hit was perfect-blocked: this attack was cancelled
         att.moveHasHit = true;
@@ -746,7 +768,9 @@
       }
       if (!blocked && !this.firstHit) {
         this.firstHit = true;
-        this.effects.spawnText('FIRST HIT!', att.x, att.body.height + 20, '#ff6050');
+        this.effects.spawnText('FIRST ATTACK!', att.x, att.body.height + 20, '#ff6050');
+        att.gainMeter(RF.CONFIG.FIRST_ATTACK_METER);
+        RF.announcer.say('FIRST ATTACK!');
       }
       // Rare easter egg on a big hit
       if (!blocked && !this.toastyShown && (move.special || move.knockback) && Math.random() < 0.08) {
@@ -763,6 +787,14 @@
         if (RF.CONFIG.MOD_PROTEIN) att.health = Math.min(att.maxHealth, att.health + (hpBefore - def.health) * 0.5);
         const PRAISE = { 5: 'BRUTAL!', 7: 'SAVAGE!', 9: 'INSANE!', 12: 'TERRAMANIA!' };
         if (PRAISE[def.combo]) { RF.audio.sfx('ready'); RF.announcer.say(PRAISE[def.combo], { rate: 0.95 }); }
+      }
+      // RAGE: dropping low for the first time this round lights them up.
+      if (!blocked && def.raging && !def.rageShown) {
+        def.rageShown = true;
+        this.effects.spawnText('RAGE!', def.x, def.body.height + 30, '#ff3020');
+        this.shake = Math.max(this.shake, 6);
+        RF.audio.sfx('super');
+        if (this.isHuman(def) || this.isHuman(att)) RF.announcer.say('RAGE!');
       }
       // Cocky defenders laugh at you when you hit their guard (Tamayo), and blocking pays.
       if (blocked && def.def.blockMeter) def.gainMeter(def.def.blockMeter);

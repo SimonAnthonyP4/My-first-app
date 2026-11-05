@@ -1,13 +1,10 @@
-// Main menu: a modern fighting-game front end. Glitching chrome logo, slanted
-// menu bars that slide out, a big featured fighter on a red slash (left/right
-// browses the roster), speed stripes, embers and a scrolling ticker.
+// Main menu: the TERRAMANIA logo burning in real pixel fire, fighters lit by the
+// flames on either side, and a flaming cursor.
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
-  const LOGO_X = 12, LOGO_Y = 10, LOGO_S = 3;
-  const ITEM_X = 10, ITEM_Y = 52, ITEM_GAP = 14, ITEM_W = 112, ITEM_H = 11;
-  const SWAP = 270; // frames each featured fighter stays up
-  const HOT = ['#ffffff', '#ffffff', '#ffe8e0', '#ffb0a0', '#ff6060', '#ff2a3a', '#c00818'];
+  const LOGO_SCALE = 5, LOGO_Y = 26;
+  const ITEM_Y = 98, ITEM_GAP = 12;
 
   class TitleScene {
     constructor(game) {
@@ -15,175 +12,163 @@
       this.game = game;
       this.t = 0;
       this.shake = 0;
-      const go = (s) => () => this.go(s());
       this.menu = new RF.ListMenu([
-        { label: 'FIGHT NOW', desc: 'TWO PLAYERS. ONE KEYBOARD. SETTLE IT.', onSelect: go(() => new RF.SelectScene(game)) },
-        { label: 'VS CPU', desc: 'YOU AGAINST THE MACHINE.', onSelect: go(() => new RF.SelectScene(game, { cpu: true })) },
-        { label: 'ARCADE', desc: 'CLIMB THE TOWER. TOPPLE THE KING.', onSelect: go(() => new RF.SelectScene(game, { cpu: true, arcade: true })) },
-        { label: 'SURVIVAL', desc: 'ONE LIFE BAR. HOW LONG CAN YOU LAST?', onSelect: go(() => new RF.SelectScene(game, { cpu: true, survival: true })) },
-        { label: 'TRAINING', desc: 'LAB TIME: COMBO TRIALS AND A DUMMY.', onSelect: go(() => new RF.SelectScene(game, { cpu: true, training: true })) },
-        { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY, TURBO...', onSelect: go(() => new RF.ModsScene(game)) },
-        { label: 'RECORDS', desc: 'YOUR STATS AND ACHIEVEMENTS.', onSelect: go(() => new RF.RecordsScene(game)) },
-        { label: 'HOW TO PLAY', desc: 'CONTROLS, COMBOS AND SPECIAL MOVES.', onSelect: go(() => new RF.InfoScene(game, 'howto')) },
-        { label: 'SETTINGS', desc: 'TWEAK THE GAME TO YOUR TASTE.', onSelect: go(() => new RF.SettingsScene(game)) },
-        { label: 'CREDITS', desc: 'THE PEOPLE BEHIND TERRAMANIA.', onSelect: go(() => new RF.InfoScene(game, 'credits')) },
+        { label: 'FIGHT NOW', desc: 'TWO PLAYERS, ONE KEYBOARD', onSelect: () => this.go(new RF.SelectScene(game)) },
+        { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
+        { label: 'ARCADE', desc: 'CLIMB THE TOWER, BEAT THE BOSS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
+        { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
+        { label: 'TRAINING', desc: 'PRACTICE COMBOS AND TRIALS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
+        { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY AND MORE', onSelect: () => this.go(new RF.ModsScene(game)) },
+        { label: 'RECORDS', desc: 'YOUR STATS AND ACHIEVEMENTS', onSelect: () => this.go(new RF.RecordsScene(game)) },
+        { label: 'HOW TO PLAY', desc: 'CONTROLS, COMBOS AND SPECIALS', onSelect: () => this.go(new RF.InfoScene(game, 'howto')) },
+        { label: 'SETTINGS', desc: 'DIFFICULTY, SOUND, CONTROLLER', onSelect: () => this.go(new RF.SettingsScene(game)) },
+        { label: 'CREDITS', desc: 'WHO MADE TERRAMANIA', onSelect: () => this.go(new RF.InfoScene(game, 'credits')) },
       ]);
-      this.slide = this.menu.items.map((_, i) => (i === 0 ? 1 : 0));
-      this.lastIndex = 0;
-      this.descT = 0;
+      this.fire = new RF.FireField(W, H, 2); // decay 2 = flames about a quarter of the screen tall
+      this.logoPixels = this.buildLogoMask();
+      // Two fighters flank the menu, changing every few seconds.
       this.showcase = RF.CHARACTERS.map((d) => RF.createSprite(d));
-      this.feature = Math.floor(Math.random() * RF.CHARACTERS.length);
-      this.featureT = 0;
+      this.pair = [0, Math.min(1, RF.CHARACTERS.length - 1)];
+      this.swapT = 0; // frames left of the flash when the pair changes
+      // Let the fire build up before the first frame is shown.
+      for (let i = 0; i < 60; i++) this.stepFire(0);
     }
 
     go(scene) {
       this.game.setScene(scene);
     }
 
-    setFeature(i) {
-      const n = RF.CHARACTERS.length;
-      this.feature = ((i % n) + n) % n;
-      this.featureT = 0;
+    // Pixels of the logo, used as a fire source so the flames rise off the letters.
+    buildLogoMask() {
+      const [c, ctx] = RF.util.makeCanvas(W, 60);
+      RF.font.drawText(ctx, RF.CONFIG.TITLE, W / 2, 2, { scale: LOGO_SCALE, align: 'center', color: '#ffffff' });
+      const data = ctx.getImageData(0, 0, W, 60).data;
+      const pts = [];
+      for (let y = 0; y < 60; y++) {
+        for (let x = 0; x < W; x++) {
+          // Only the top edge of each letter stroke burns; looks like flames licking upward.
+          const on = data[(y * W + x) * 4 + 3] > 0, above = y > 0 && data[((y - 1) * W + x) * 4 + 3] > 0;
+          if (on && !above) pts.push([x, y]);
+        }
+      }
+      return pts;
+    }
+
+    stepFire(logoDrop) {
+      this.fire.igniteBottom();
+      if (logoDrop === 0) for (const [x, y] of this.logoPixels) this.fire.ignite(x, y + LOGO_Y, 12 + ((Math.random() * 12) | 0)); // short licks off the letters
+      this.fire.step();
     }
 
     update() {
       this.t++;
-      const kb = this.game.kb;
       // Attract mode: leave the menu alone and the CPU plays a demo match.
-      this.idle = kb.down.size > 0 ? 0 : (this.idle || 0) + 1;
+      this.idle = this.game.kb.down.size > 0 ? 0 : (this.idle || 0) + 1;
       if (this.idle > 60 * 20) {
         const pick = () => RF.CHARACTERS[Math.floor(Math.random() * RF.CHARACTERS.length)];
         const p1 = pick(), p2 = pick();
         return this.go(new RF.FightScene(this.game, { p1, p2, p2Alt: p1.id === p2.id, cpu: true, demo: true, cpuLevel: 'hard',
           stage: RF.STAGES[Math.floor(Math.random() * RF.STAGES.length)].id }));
       }
-      if (this.t === 16) { this.shake = 12; RF.audio.sfx('ko'); }
+      const drop = this.logoDrop();
+      if (this.t === 22) { this.shake = 14; RF.audio.sfx('ko'); }
       if (this.shake > 0) this.shake--;
-      // Featured fighter: rotates on its own; left/right browse the roster.
-      this.featureT++;
-      if (RF.menuPressed(kb, 'left')) { this.setFeature(this.feature - 1); RF.audio.sfx('move'); }
-      else if (RF.menuPressed(kb, 'right')) { this.setFeature(this.feature + 1); RF.audio.sfx('move'); }
-      else if (this.featureT > SWAP) this.setFeature(this.feature + 1);
-      this.menu.update(kb);
-      if (this.menu.index !== this.lastIndex) { this.lastIndex = this.menu.index; this.descT = this.t; }
-      this.slide = this.slide.map((s, i) => s + ((i === this.menu.index ? 1 : 0) - s) * 0.35);
+      this.stepFire(drop);
+      if (this.swapT > 0) this.swapT--;
+      if (this.t % 240 === 0 && RF.CHARACTERS.length > 1) {
+        this.swapT = 10;
+        const n = RF.CHARACTERS.length;
+        this.pair = [(this.pair[0] + 1) % n, (this.pair[1] + 1) % n];
+        if (this.pair[0] === this.pair[1]) this.pair[1] = (this.pair[1] + 1) % n;
+      }
+      this.menu.update(this.game.kb);
     }
 
-    logoDrop() { return Math.max(0, 16 - this.t) * 8; } // logo slams down from above
+    logoDrop() { return Math.max(0, 22 - this.t) * 7; } // logo slams down from above
 
     render(ctx) {
       ctx.save();
       if (this.shake) ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake * 0.6));
-      RF.drawSpeedBackdrop(ctx, this.t, { dir: -1 });
-      this.drawFeature(ctx);
-      this.drawLogo(ctx);
-      this.drawMenu(ctx);
+      // Backdrop: the cafeteria in deep shadow, then fire over it.
+      RF.drawMenuBackdrop(ctx, this.t, 0.86);
+      ctx.drawImage(this.fire.render(), 0, 0);
+
+      // Fighters lit by the fire
+      for (let i = 0; i < 2; i++) {
+        const idx = this.pair[i], def = RF.CHARACTERS[idx];
+        if (!def) continue;
+        const x = i === 0 ? 52 : W - 52, y = 206;
+        const bob = Math.floor(this.t / 18) % 2;
+        ctx.save();
+        const rise = this.swapT ? this.swapT * 3 : 0; // new fighters rise into place
+        ctx.translate(x, y + rise);
+        ctx.scale(1.35, 1.35);
+        this.showcase[idx].draw(ctx, i === 0 ? 'victory' : 'idle', bob, 0, 0, i === 0 ? 1 : -1, this.swapT > 6 ? '#ffd080' : null);
+        ctx.restore();
+        // name tag under each fighter
+        const tw = RF.font.textWidth(def.name) + 8;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(Math.round(x - tw / 2), 209, tw, 11);
+        ctx.fillStyle = '#ff7a2a'; ctx.fillRect(Math.round(x - tw / 2), 209, tw, 1);
+        T(ctx, def.name, x, 211, { align: 'center', color: '#ffe0b0', outline: '#000' });
+      }
+      const glow = ctx.createLinearGradient(0, H - 90, 0, H);
+      glow.addColorStop(0, 'rgba(255,90,0,0)');
+      glow.addColorStop(1, 'rgba(255,90,0,0.25)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, H - 90, W, 90);
+
+      // Logo: dark outline, molten gradient, white-hot flicker
+      const drop = this.logoDrop();
+      const molten = ['#ffffff', '#fff6b0', '#ffd040', '#ff9a10', '#ff5a00', '#d02000', '#7a0800'];
+      T(ctx, RF.CONFIG.TITLE, W / 2, LOGO_Y - drop + 1, { scale: LOGO_SCALE, align: 'center', color: '#1a0000' });
+      T(ctx, RF.CONFIG.TITLE, W / 2, LOGO_Y - drop, { scale: LOGO_SCALE, align: 'center', color: molten, outline: '#2a0000' });
+      if (this.t < 30 && this.t > 20) {
+        ctx.fillStyle = `rgba(255,220,150,${(30 - this.t) / 12})`;
+        ctx.fillRect(0, 0, W, H); // impact flash
+      }
+      T(ctx, 'NO RULES. NO MERCY. NO LUNCH.', W / 2, LOGO_Y + 42, { align: 'center', color: '#ffb060', outline: '#000' });
+      const desc = this.menu.items[this.menu.index].desc;
+      if (desc) T(ctx, desc, W / 2, LOGO_Y + 56, { align: 'center', color: '#c8a090', outline: '#000' });
+
+      // Menu plate + items
+      ctx.fillStyle = 'rgba(10,0,0,0.65)';
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, ITEM_GAP * this.menu.items.length + 6);
+      ctx.fillStyle = '#8a2a0a';
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, 1);
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 2 + ITEM_GAP * this.menu.items.length - 1, 148, 1);
+      this.menu.items.forEach((item, i) => {
+        const sel = i === this.menu.index, y = ITEM_Y + i * ITEM_GAP;
+        if (sel) {
+          // Burning highlight bar behind the chosen item
+          const g = ctx.createLinearGradient(W / 2 - 70, 0, W / 2 + 70, 0);
+          g.addColorStop(0, 'rgba(255,60,0,0)');
+          g.addColorStop(0.5, 'rgba(255,90,0,0.45)');
+          g.addColorStop(1, 'rgba(255,60,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(W / 2 - 70, y - 4, 140, 15);
+          this.drawFlame(ctx, W / 2 - RF.font.textWidth(item.label) / 2 - 12, y + 7);
+          this.drawFlame(ctx, W / 2 + RF.font.textWidth(item.label) / 2 + 12, y + 7);
+        }
+        T(ctx, item.label, W / 2 + (sel ? Math.round(Math.sin(this.t / 5)) : 0), y, {
+          align: 'center', outline: '#000',
+          color: sel ? ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#ff9a10', '#ff7000', '#e04000'] : '#b8a090',
+        });
+      });
       ctx.restore();
 
       const mods = RF.MOD_SETTINGS.filter((m) => RF.CONFIG[m.id]).length;
-      if (mods) RF.slantText(ctx, mods + ' PARTY MOD' + (mods > 1 ? 'S' : '') + ' ON', W - 8, H - 24, { align: 'right', color: '#ffd040', outline: '#000' });
-      const r = RF.records.data, got = Object.keys(r.unlocked).length;
-      RF.drawTicker(ctx, this.t, `${RF.CHARACTERS.length} FIGHTERS   ///   BEST COMBO ${r.best.combo} HITS   ///   BEST SURVIVAL STREAK ${r.best.survival}   ///   ACHIEVEMENTS ${got}/${RF.ACHIEVEMENTS.length}   ///   NO RULES. NO MERCY. NO LUNCH.   ///   `);
-      RF.drawScreenFinish(ctx);
-      if (this.t > 14 && this.t < 26) { // impact flash when the logo lands
-        ctx.fillStyle = `rgba(255,255,255,${(26 - this.t) / 14})`;
-        ctx.fillRect(0, 0, W, H);
-      }
+      if (mods) T(ctx, mods + ' PARTY MOD' + (mods > 1 ? 'S' : '') + ' ON', W - 6, H - 10, { align: 'right', color: '#ff9a40', outline: '#000' });
     }
 
-    // A big red slash on the right with the featured fighter sliding in on it.
-    drawFeature(ctx) {
-      const def = RF.CHARACTERS[this.feature];
-      if (!def) return;
-      const ft = this.featureT;
-      // the slash
-      const g = ctx.createLinearGradient(230, 0, W, H);
-      g.addColorStop(0, 'rgba(220,20,40,0.75)'); g.addColorStop(1, 'rgba(70,0,12,0.35)');
-      ctx.fillStyle = g; RF.slantRect(ctx, 244, 0, 200, H, 56);
-      ctx.fillStyle = '#ff3040'; RF.slantRect(ctx, 238, 0, 3, H, 56);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'; RF.slantRect(ctx, 234, 0, 1, H, 56);
-      // their name, huge and faint, scrolling behind them
-      ctx.save();
-      ctx.beginPath(); ctx.rect(240, 0, W - 240, H); ctx.clip();
-      ctx.globalAlpha = 0.13;
-      const big = def.name + '  ', bw = RF.font.textWidth(big, 6), off = (this.t * 0.5) % bw;
-      for (let x = 240 - off; x < W; x += bw) T(ctx, big, Math.round(x), 74, { scale: 6, color: '#ffffff' });
-      ctx.restore();
-      // the fighter: slides in from the right, flashes white as they land
-      const p = Math.min(1, ft / 14), e = 1 - Math.pow(1 - p, 3);
-      const x = 308 + (1 - e) * 110, s = Math.min(1.7, 150 / def.body.height);
-      const frame = Math.floor(this.t / 12);
-      ctx.save();
-      ctx.translate(Math.round(x), 207);
-      ctx.scale(s, s);
-      ctx.globalAlpha = 0.5;
-      this.showcase[this.feature].draw(ctx, 'idle', frame, 7, 0, -1, '#ff1830'); // red afterimage
-      ctx.globalAlpha = 1;
-      this.showcase[this.feature].draw(ctx, ft < 18 && ft > 10 ? 'victory' : 'idle', frame, 0, 0, -1, ft < 5 ? 'white' : undefined);
-      ctx.restore();
-      // name plate
-      const nameScale = RF.font.textWidth(def.name, 2) <= 128 ? 2 : 1;
-      ctx.fillStyle = '#000'; RF.slantRect(ctx, 236, 8, 160, 19, 8);
-      ctx.fillStyle = '#ff2a3a'; RF.slantRect(ctx, 236, 27, 160, 2, 1);
-      RF.slantText(ctx, def.name, W - 8 - (1 - e) * 30, nameScale === 2 ? 11 : 14, { scale: nameScale, align: 'right', color: HOT, outline: '#000' });
-      const arch = (RF.ARCHETYPES && RF.ARCHETYPES[def.archetype]) || [String(def.archetype).toUpperCase(), '#ffd040'];
-      const aw = RF.font.textWidth(arch[0]) + 8;
-      ctx.fillStyle = arch[1]; RF.slantRect(ctx, W - 10 - aw, 33, aw, 10, 3);
-      T(ctx, arch[0], W - 10 - aw / 2 + 1, 35, { align: 'center', color: '#000' });
-      T(ctx, def.origin.length > 26 ? def.origin.slice(0, 25) + '.' : def.origin, W - 8, 47, { align: 'right', color: '#ffd0c8', outline: '#000' });
-      if (Math.floor(this.t / 40) % 2) T(ctx, '< >  BROWSE FIGHTERS', W - 8, H - 24, { align: 'right', color: '#ffb0a0', outline: '#000' });
-    }
-
-    // Chrome logo with a red/cyan split and the odd glitch.
-    drawLogo(ctx) {
-      const y = LOGO_Y - this.logoDrop(), title = RF.CONFIG.TITLE, o = { scale: LOGO_S };
-      ctx.globalAlpha = 0.75;
-      T(ctx, title, LOGO_X - 2, y, Object.assign({ color: '#00d8ff' }, o));
-      T(ctx, title, LOGO_X + 2, y + 1, Object.assign({ color: '#ff1030' }, o));
-      ctx.globalAlpha = 1;
-      T(ctx, title, LOGO_X, y, Object.assign({ color: HOT, outline: '#1a0004' }, o));
-      // glitch: every few seconds a few slices of the logo jump sideways
-      const gt = this.t % 200;
-      if (this.t > 40 && gt < 7) {
-        for (let k = 0; k < 3; k++) {
-          const band = y + ((k * 7 + gt * 3) % 21), dx = (((k + gt) % 2) ? 1 : -1) * (3 + k * 2);
-          ctx.save(); ctx.beginPath(); ctx.rect(0, band, W / 2 + 20, 2 + k); ctx.clip();
-          T(ctx, title, LOGO_X + dx, y, Object.assign({ color: k % 2 ? '#00e8ff' : '#ffffff' }, o));
-          ctx.restore();
-        }
-      }
-      // tagline bar
-      ctx.fillStyle = '#d01024'; RF.slantRect(ctx, LOGO_X - 6, 36, 188, 10, 5);
-      ctx.fillStyle = '#000'; RF.slantRect(ctx, LOGO_X - 6, 46, 188, 1, 0);
-      RF.slantText(ctx, 'NO RULES. NO MERCY. NO LUNCH.', LOGO_X + 2, 38, { color: '#ffffff' });
-    }
-
-    // Slanted bars: the chosen one slides out, glows red and gets chevrons.
-    drawMenu(ctx) {
-      this.menu.items.forEach((item, i) => {
-        const s = this.slide[i], sel = i === this.menu.index;
-        const y = ITEM_Y + i * ITEM_GAP, x = ITEM_X + Math.round(s * 8), w = ITEM_W + Math.round(s * 20);
-        ctx.fillStyle = 'rgba(0,0,0,0.6)'; RF.slantRect(ctx, x + 2, y + 2, w, ITEM_H, 4);
-        if (s > 0.05) {
-          const g = ctx.createLinearGradient(x, 0, x + w, 0);
-          g.addColorStop(0, `rgba(255,42,58,${s})`); g.addColorStop(1, `rgba(120,0,16,${s * 0.8})`);
-          ctx.fillStyle = g; RF.slantRect(ctx, x, y, w, ITEM_H, 4);
-        } else {
-          ctx.fillStyle = 'rgba(24,6,10,0.85)'; RF.slantRect(ctx, x, y, w, ITEM_H, 4);
-        }
-        ctx.fillStyle = sel ? '#ffffff' : '#5a1a24'; RF.slantRect(ctx, x, y, 2, ITEM_H, 4);
-        T(ctx, String(i + 1).padStart(2, '0'), x + 6, y + 2, { color: sel ? '#ffd0d0' : '#6a4048' });
-        RF.slantText(ctx, item.label, x + 22, y + 2, { color: sel ? '#ffffff' : '#c8b0b4', outline: '#000' });
-        if (sel) {
-          const c = Math.floor(this.t / 5) % 3;
-          for (let k = 0; k < 3; k++) T(ctx, '>', x + w - 20 + k * 5, y + 2, { color: k === c ? '#ffffff' : '#ff8090' });
-        }
-      });
-      // description of the highlighted item, typed out
-      const desc = this.menu.items[this.menu.index].desc || '', n = Math.floor((this.t - this.descT) * 1.5);
-      const dy = ITEM_Y + this.menu.items.length * ITEM_GAP + 3;
-      ctx.fillStyle = '#ff2a3a'; ctx.fillRect(ITEM_X, dy + 1, 3, 7);
-      T(ctx, desc.slice(0, n), ITEM_X + 7, dy + 1, { color: '#ffc8c0', outline: '#000' });
+    // Tiny animated flame used as the menu cursor.
+    drawFlame(ctx, x, y) {
+      const f = Math.floor(this.t / 4) % 3;
+      const shapes = [[[0, -9], [-2, -6], [2, -5]], [[1, -10], [-2, -5], [2, -6]], [[-1, -9], [-2, -6], [2, -4]]][f];
+      ctx.fillStyle = '#c42000'; ctx.fillRect(x - 3, y - 6, 6, 6);
+      ctx.fillStyle = '#ff7a10'; ctx.fillRect(x - 2, y - 7, 4, 6);
+      ctx.fillStyle = '#ffd040'; ctx.fillRect(x - 1, y - 5, 2, 4);
+      ctx.fillStyle = '#ff7a10';
+      for (const [dx, dy] of shapes) ctx.fillRect(x + dx, y + dy, 1, 2);
     }
   }
 

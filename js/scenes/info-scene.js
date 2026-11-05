@@ -4,7 +4,7 @@
 
   function keyName(code) {
     return code.replace(/^Key/, '').replace(/^Numpad/, 'NUM').replace(/^Arrow/, '')
-      .replace('Comma', ',').replace('Period', '.').replace('Slash', '/');
+      .replace('Comma', ',').replace('Period', '.').replace('Slash', '/').replace('Semicolon', ';').replace('Quote', "'");
   }
   const keys = (p, action) => RF.CONTROLS[p][action].filter((c) => !c.startsWith('Pad')).map(keyName).join(' OR ');
 
@@ -14,11 +14,11 @@
       next: 'combos',
       draw(ctx, W) {
         RF.drawPanel(ctx, 12, 34, W - 24, 98);
-        const rows = [['MOVE', 'left'], ['JUMP', 'up'], ['CROUCH', 'down'], ['LIGHT ATTACK', 'light'], ['HEAVY ATTACK', 'heavy'], ['BLOCK (HOLD)', 'block'], ['THROW (UP CLOSE)', 'throw']];
+        const rows = [['MOVE', 'left'], ['JUMP', 'up'], ['CROUCH', 'down'], ['LIGHT ATTACK', 'light'], ['HEAVY ATTACK', 'heavy'], ['BLOCK (HOLD)', 'block'], ['THROW (UP CLOSE)', 'throw'], ['DASH', 'dash'], ['EX SPECIAL (1 BAR)', 'ex']];
         T(ctx, 'PLAYER 1', 170, 38, { align: 'center', color: '#ff6050', outline: '#000' });
         T(ctx, 'PLAYER 2', 296, 38, { align: 'center', color: '#60a0ff', outline: '#000' });
         rows.forEach(([label, action], i) => {
-          const y = 49 + i * 11;
+          const y = 48 + i * 9;
           T(ctx, label, 22, y, { color: '#d8c8c0', outline: '#000' });
           const fmt = (p) => (action === 'left' ? keys(p, 'left') + ' / ' + keys(p, 'right') : keys(p, action));
           T(ctx, fmt('p1'), 170, y, { align: 'center', color: '#fff', outline: '#000' });
@@ -43,15 +43,18 @@
           ['D-PAD / L-STICK', 'MOVE, UP JUMP, DOWN CROUCH', '#fff'],
           ['SQUARE', 'LIGHT ATTACK', '#ff7ac8'],
           ['TRIANGLE', 'HEAVY ATTACK', '#40e0a0'],
-          ['CIRCLE OR R1', 'BLOCK', '#ff5050'],
-          ['CROSS OR L1', 'THROW', '#6aa0ff'],
-          ['R2', 'SUPER (LIGHT + HEAVY)', '#ffd030'],
+          ['CIRCLE OR L1', 'BLOCK', '#ff5050'],
+          ['CROSS', 'THROW', '#6aa0ff'],
+          ['R1', 'DASH (HOLD BACK = BACKDASH)', '#ffffff'],
+          ['L2', 'EX SPECIAL (1 BAR)', '#60e0ff'],
+          ['R2', 'SUPER / COMBO BREAKER', '#ffd030'],
           ['UP + TRIANGLE', 'LAUNCHER', '#ff9a40'],
+          ['CREATE / TOUCHPAD', 'TAUNT', '#fff'],
           ['OPTIONS', 'PAUSE', '#fff'],
           ['MENUS', 'CROSS = OK, CIRCLE = BACK', '#fff'],
         ];
         rows.forEach(([b, what, col], i) => {
-          const y = 66 + i * 12;
+          const y = 62 + i * 9;
           T(ctx, b, W / 2 - 30, y, { align: 'right', color: col, outline: '#000' });
           T(ctx, what, W / 2 - 16, y, { color: '#e8e0d8', outline: '#000' });
         });
