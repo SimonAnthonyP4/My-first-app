@@ -11,6 +11,7 @@
       this.pressedAt = new Map(); // code -> frame number when last pressed
       this.frame = 0;
       target.addEventListener('keydown', (e) => {
+        if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return; // typing a room code
         if (BLOCK_DEFAULT.has(e.code) || this.gameKeys.has(e.code)) e.preventDefault();
         if (!this.down.has(e.code)) this.pressedAt.set(e.code, this.frame);
         this.down.add(e.code);

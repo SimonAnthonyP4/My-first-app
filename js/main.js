@@ -67,10 +67,11 @@
     if (Math.abs(dt - STEP) < 2) dt = STEP;
     acc += dt;
     while (acc >= STEP) {
-      if (!game.manualStep) safely(() => game.step());
+      if (!game.manualStep) safely(() => (RF.online && RF.online.active ? RF.online.tick() : game.step()));
       acc -= STEP;
     }
     safely(() => game.scene.render(ctx));
+    if (RF.online) safely(() => RF.online.drawOverlay(ctx));
     if (game.achievement) { // ACHIEVEMENT UNLOCKED pop-up (top centre)
       const a = game.achievement, tIn = Math.min(1, (240 - a.t) / 12), tOut = Math.min(1, a.t / 12), y = Math.round(-30 + 34 * Math.min(tIn, tOut));
       ctx.fillStyle = '#000'; ctx.fillRect(WIDTH / 2 - 92, y - 1, 184, 26);

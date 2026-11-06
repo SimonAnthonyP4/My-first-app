@@ -32,6 +32,22 @@ python3 -m http.server 8000
 | Super      | `F` + `G` together (meter full) | light + heavy together |
 | Dash       | double-tap `A` / `D` | double-tap `←` / `→`         |
 
+### Online play
+
+Title menu -> **ONLINE**. One player presses **HOST A MATCH** and gets a 4-letter code; the other
+types it and presses **JOIN**. The host is P1 (left), the guest P2 (right); each of you plays with
+your own keyboard (either key set) or controller. Everything after that - character select, stage
+select, the fight, rematches - is shared. Pick ONLINE again (or close the tab) to leave.
+
+- Works in the **published game page on claude.ai**: both players signed in, and your friend needs
+  access to the artifact (invite them from the Share menu, or be in the same organization). People
+  opening a public link can't join rooms.
+- How it works (`js/net/online.js`): lockstep netcode over the artifact's live room. Both computers
+  run the same game; each sends only its button presses for each frame, a few frames ahead (the input
+  delay adapts to the connection, ~0.1-0.25 s). Randomness during a frame comes from a shared seed and
+  the host's match settings are copied to the guest, so both games stay identical; a checksum each
+  second shows OUT OF SYNC if they ever drift.
+
 ### PS5 (and other) controllers
 
 Plug a PS5 DualSense in by USB or pair it over Bluetooth **before** opening the game, then

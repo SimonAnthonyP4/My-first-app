@@ -4,7 +4,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 98, ITEM_GAP = 12;
+  const ITEM_Y = 94, ITEM_GAP = 11;
 
   class TitleScene {
     constructor(game) {
@@ -14,6 +14,7 @@
       this.shake = 0;
       this.menu = new RF.ListMenu([
         { label: 'FIGHT NOW', desc: 'TWO PLAYERS, ONE KEYBOARD', onSelect: () => this.go(new RF.SelectScene(game)) },
+        { label: 'ONLINE', desc: 'PLAY A FRIEND ON ANOTHER COMPUTER', onSelect: () => (RF.online.active ? RF.online.end('LEFT ONLINE MATCH') : RF.online.openMenu(game)) },
         { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
         { label: 'ARCADE', desc: 'CLIMB THE TOWER, BEAT THE BOSS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
@@ -62,6 +63,7 @@
 
     update() {
       this.t++;
+      if (RF.online && RF.online.menuOpen) return; // the ONLINE panel is open on top
       // Attract mode: leave the menu alone and the CPU plays a demo match.
       this.idle = this.game.kb.down.size > 0 ? 0 : (this.idle || 0) + 1;
       if (this.idle > 60 * 20) {
@@ -128,7 +130,7 @@
       }
       T(ctx, 'NO RULES. NO MERCY. NO LUNCH.', W / 2, LOGO_Y + 42, { align: 'center', color: '#ffb060', outline: '#000' });
       const desc = this.menu.items[this.menu.index].desc;
-      if (desc) T(ctx, desc, W / 2, LOGO_Y + 56, { align: 'center', color: '#c8a090', outline: '#000' });
+      if (desc) T(ctx, desc, W / 2, LOGO_Y + 52, { align: 'center', color: '#c8a090', outline: '#000' });
 
       // Menu plate + items
       ctx.fillStyle = 'rgba(10,0,0,0.65)';
@@ -145,7 +147,7 @@
           g.addColorStop(0.5, 'rgba(255,90,0,0.45)');
           g.addColorStop(1, 'rgba(255,60,0,0)');
           ctx.fillStyle = g;
-          ctx.fillRect(W / 2 - 70, y - 4, 140, 15);
+          ctx.fillRect(W / 2 - 70, y - 3, 140, 13);
           this.drawFlame(ctx, W / 2 - RF.font.textWidth(item.label) / 2 - 12, y + 7);
           this.drawFlame(ctx, W / 2 + RF.font.textWidth(item.label) / 2 + 12, y + 7);
         }
