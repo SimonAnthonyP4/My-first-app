@@ -70,6 +70,29 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Tyler: SAND TRAP - buries them in a bunker, rakes it, "PLAY IT WHERE IT LIES", blasts them out.
+    sandTrap: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        def.x = att.x + att.facing * 30; def.facing = -att.facing;
+        def.y = t < 70 ? -Math.min(1, t / 14) * def.body.height * 0.55 : 0;   // sinking into the sand
+        def.thrownPose = ['hit', 0];
+        if (t === 2) RF.audio.sfx('stomp');
+        if (t === 24 || t === 42) { scene.throwHit(att, def, T.rakeDamage); scene.effects.spawnText('RAKE', def.x, 40, '#e8d090'); RF.audio.sfx('scribble'); }
+        if (t === 54) scene.effects.spawnText('PLAY IT WHERE IT LIES.', att.x, att.body.height + 22, '#ffffff');
+        if (t === 72) { scene.throwHit(att, def, T.blastDamage, { vx: att.facing * 5, vy: 6 }); scene.effects.spawnText('SAND SAVE!', def.x, 60, '#80ffb0'); RF.audio.sfx('heavy'); }
+        return t >= 86;
+      },
+      anim(att, t) { return t < 20 ? ['throw', 0] : t < 70 ? ['lowHeavy', (t >> 3) % 2 ? 1 : 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        // the bunker: a mound of sand around their legs
+        const x = Math.round(def.x);
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x, floorY, 30, 13, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#d8c080'; ctx.beginPath(); ctx.ellipse(x, floorY, 29, 12, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e8d8a0'; for (let i = -3; i <= 3; i++) ctx.fillRect(x + i * 7, floorY - 6 - Math.abs(i), 3, 1);
+      },
+    },
+
     benchPress: {
       update(att, def, t, scene) {
         const T = att.throwCfg;

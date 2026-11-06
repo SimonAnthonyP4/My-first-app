@@ -32,6 +32,32 @@
       },
     },
 
+    // Tyler: HOLE IN ONE - tees the ball up, waggles three times, FORE!, then drives it.
+    teeShot: {
+      start(f) { f.vx = 0; f.specialData.teeX = f.x + f.facing * 20; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime;
+        if (t === 2 || t === 7) RF.audio.sfx('move');                   // waggle... waggle...
+        if (t === s.startup - 6) scene.effects.spawnText('FORE!', f.x, f.body.height + 18, '#ffffff');
+        if (t === s.startup) { scene.spawnProjectile(f, s); RF.audio.sfx('heavy'); }
+        if (t >= s.startup + s.recovery) f.setState('idle');
+      },
+      anim(f) {
+        const t = f.stateTime, s = f.special;
+        if (t < s.startup - 8) return ['light', (t >> 2) % 2 ? 0 : 2];  // the waggle
+        if (t < s.startup) return ['special', 0];                       // backswing
+        return ['special', t < s.startup + 8 ? 1 : 2];                  // and through
+      },
+      draw(f, ctx, floorY) {
+        const t = f.stateTime, s = f.special;
+        if (t >= s.startup) return;
+        const x = Math.round(f.specialData.teeX);
+        ctx.fillStyle = '#e8d8a0'; ctx.fillRect(x, floorY - 4, 1, 4);            // the tee
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 2, floorY - 8, 5, 5);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, floorY - 7, 3, 3);        // the ball
+      },
+    },
+
     // Nicholas: PROBLEM SET - sprint in, a doubling flurry of punches, an exponential uppercut.
     punchRush: {
       start(f) { f.vx = 0; f.specialData.phase = 'wind'; },

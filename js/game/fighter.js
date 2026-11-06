@@ -73,6 +73,7 @@
       this.lastBlockPress = -Infinity;
       this.power = 0;       // Nicholas's power-punch meter (0..100, per round)
       this.rageShown = false; // RAGE! announced this round
+      this.mulliganUsed = false; // Tyler: the first clean hit each round doesn't count
       this.juggle = 0;      // hits taken while airborne in this combo
       this.bounced = false; // already floor-bounced in this combo
       this.superActive = false;
@@ -290,7 +291,8 @@
       this.state = null; this.setState('taunt');
       const jokes = this.def.jokes, opp = this.scene && this.scene.opponentOf(this);
       const rival = opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
-      const line = rival || (jokes ? jokes[Math.floor(Math.random() * jokes.length)] : this.def.taunt || 'COME ON!');
+      const pool = jokes || this.def.tauntLines; // a random line each time (Tamayo's jokes, Tyler's chill lines)
+      const line = rival || (pool ? pool[Math.floor(Math.random() * pool.length)] : this.def.taunt || 'COME ON!');
       if (jokes) { RF.audio.sfx('laugh'); this.scene && this.scene.effects.spawnText('HA HA HA!', this.x, this.body.height + 26, '#ff9a40'); }
       if (this.scene) this.scene.effects.spawnText(line, this.x, this.body.height + 14, '#ffffff');
       if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
@@ -727,6 +729,13 @@
           this.vy = airAttacker ? (this.y > 85 ? 0.5 : 2.4) : 3;
           this.vx = dir * (airAttacker ? 0.6 : 1.5);
         }
+      }
+      // MULLIGAN (Tyler): the first clean hit he takes each round doesn't count. Do-over!
+      if (!blocked && this.def.mulligan && !this.mulliganUsed && dmg > 0 && this.scene && this.scene.phase === 'fight') {
+        this.mulliganUsed = true;
+        dmg = 0;
+        this.scene.effects.spawnText('MULLIGAN!', this.x, this.body.height + 22, '#80ffb0');
+        RF.audio.sfx('perfect');
       }
       this.health = Math.max(this.scene && this.scene.training ? 1 : 0, this.health - dmg); // training: nobody dies
       if (this.health <= 0) this.knockOut(dir);

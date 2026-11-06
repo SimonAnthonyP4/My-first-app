@@ -881,7 +881,8 @@
               continue;
             }
             p.dead = true;
-            this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
+            const res = this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
+            if (res === 'hit' && p.cfg.hitText) this.effects.spawnText(p.cfg.hitText, target.x, target.body.height + 30, '#ffffff');
           }
         }
       }

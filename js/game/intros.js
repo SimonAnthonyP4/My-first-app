@@ -142,6 +142,33 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Rolls in on a golf cart with his earbuds in, hops out, cart keeps going (Tyler).
+    golfCart: {
+      cartX(f, t) {
+        const W = RF.CONFIG.WIDTH, from = f.facing > 0 ? -40 : W + 40, stop = f.homeX;
+        const u = t < 26 ? t / 26 : t < 40 ? 1 : 1 + (t - 40) / 14;
+        return from + (stop - from) * Math.min(u, 1) + f.facing * (u > 1 ? (u - 1) * 220 : 0);
+      },
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('engine');
+        if (t < 30) { f.x = this.cartX(f, t) - f.facing * 6; f.state = 'idle'; f.y = 8; } // riding along
+        if (t === 30) { f.x = f.homeX; f.y = 0; RF.audio.sfx('jump'); scene.effects.spawn('dust', f.x, 1); }
+        if (t === 34) scene.effects.spawnText('NO STRESS, BRO.', f.homeX, f.body.height + 24, '#80ffb0');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 70) return;
+        const x = Math.round(this.cartX(f, t)), len = 50, l = x - len / 2, y = floorY - 22;
+        ctx.fillStyle = '#111'; ctx.fillRect(l - 1, y - 1, len + 2, 16);
+        ctx.fillStyle = '#f4f4ec'; ctx.fillRect(l, y, len, 14);                          // body
+        ctx.fillStyle = '#20a050'; ctx.fillRect(l, y + 9, len, 2);                        // green stripe
+        ctx.fillStyle = '#111'; ctx.fillRect(l + 4, y - 30, 2, 30); ctx.fillRect(l + len - 6, y - 30, 2, 30); // canopy posts
+        ctx.fillStyle = '#20a050'; ctx.fillRect(l, y - 34, len, 5);                       // canopy
+        ctx.fillStyle = '#c8b090'; ctx.fillRect(f.facing > 0 ? l + 1 : l + len - 9, y - 12, 8, 12); // golf bag
+        ctx.fillStyle = '#d4d8e0'; for (let i = 0; i < 3; i++) ctx.fillRect((f.facing > 0 ? l + 2 : l + len - 8) + i * 2, y - 18, 1, 7);
+        ctx.fillStyle = '#111'; for (const wx of [l + 9, l + len - 9]) { ctx.beginPath(); ctx.arc(wx, floorY - 4, 5, 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 9, l + len - 9]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
+      },
+    },
     // Rises out of a glowing summoning circle (Anthony).
     portal: {
       update(f, t, scene) {

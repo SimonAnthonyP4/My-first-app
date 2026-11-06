@@ -199,6 +199,58 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Tyler: TEE TIME - they shrink down into a golf ball on a tee. Waggle, waggle... FORE!
+    // A huge drive into the sky, and it drops into the cup across the screen. HOLE IN ONE!
+    teeTime: {
+      name: 'Tee Time',
+      duration: 230,
+      update(att, vic, t, scene) {
+        if (t === 1) { this.startX = att.x; this.ballX = vic.x; }
+        if (t < 40) att.x = this.startX + (this.ballX - att.facing * 26 - this.startX) * Math.min(1, t / 30);
+        att.finisherAnim = t < 30 ? ['walk', (t >> 3) % 4] : t < 72 ? ['light', (t >> 3) % 2 ? 0 : 2] : t < 78 ? ['special', 0] : t < 150 ? ['special', 1] : ['victory', (t >> 3) % 2];
+        if (t === 12) RF.audio.sfx('special');
+        if (t === 45 || t === 55 || t === 65) RF.audio.sfx('move');
+        if (t === 72) scene.effects.spawnText('FORE!', att.x, att.body.height + 24, '#ffffff');
+        if (t === 80) { RF.audio.sfx('heavy'); RF.audio.sfx('boom'); scene.shake = 10; scene.flash = 4; }
+        if (t === 150) { RF.audio.sfx('applause'); RF.announcer.say('HOLE IN ONE!'); }
+        if (t === 150) scene.effects.spawnText('HOLE IN ONE!', RF.CONFIG.WIDTH / 2, 120, '#80ffb0');
+        if (t === 175) scene.effects.spawnText('NO STRESS, BRO.', att.x, att.body.height + 24, '#ffffff');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 40) { // shrinking down...
+          const k = Math.max(0.08, 1 - t / 40);
+          ctx.save(); ctx.translate(Math.round(vic.x), floorY); ctx.scale(k, k);
+          vic.sprite.draw(ctx, 'dazed', 0, 0, 0, vic.facing);
+          ctx.restore();
+          return;
+        }
+        const ball = (x, y) => {
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+        };
+        const x0 = this.ballX || vic.x;
+        if (t < 80) { // ...into a golf ball on a tee
+          ctx.fillStyle = '#e8d8a0'; ctx.fillRect(Math.round(x0), floorY - 4, 1, 4);
+          return ball(Math.round(x0), floorY - 7);
+        }
+        const u = t - 80, dir = Math.sign(vic.x - (this.startX || 0)) || 1;
+        const holeX = Math.max(20, Math.min(RF.CONFIG.WIDTH - 20, x0 + dir * 90));
+        if (u < 70) { // up into the sky and down into the cup
+          const p = u / 70, x = x0 + (holeX - x0) * p, y = floorY - 7 - Math.sin(p * Math.PI) * 170;
+          ball(Math.round(x), Math.round(y));
+        }
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 80) return;
+        const x0 = this.ballX || vic.x, dir = Math.sign(vic.x - (this.startX || 0)) || 1;
+        const hx = Math.round(Math.max(20, Math.min(RF.CONFIG.WIDTH - 20, x0 + dir * 90)));
+        // the flag and the cup
+        ctx.fillStyle = '#111'; ctx.fillRect(hx - 6, floorY - 2, 12, 3);
+        ctx.fillStyle = '#e8e8e8'; ctx.fillRect(hx, floorY - 40, 1, 40);
+        ctx.fillStyle = '#e02020'; ctx.beginPath(); ctx.moveTo(hx + 1, floorY - 40); ctx.lineTo(hx + 15, floorY - 35 + Math.sin(t / 5)); ctx.lineTo(hx + 1, floorY - 30); ctx.fill();
+      },
+    },
+
     finalBell: {
       name: 'Final Bell',
       duration: 240,

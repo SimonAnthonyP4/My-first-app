@@ -39,6 +39,55 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Tyler's aura: little music notes drifting out of his earbuds. He's vibing.
+    chillAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || f.isKO || f.state === 'finished' || f.state === 'thrown' || f.state === 'hitstun') return;
+      for (let i = 0; i < 2; i++) {
+        const age = (frame + i * 45) % 90;
+        if (age > 60) continue;
+        const x = Math.round(f.x - f.facing * 6 + Math.sin((frame + i * 30) / 9) * 4 - f.facing * age * 0.15);
+        const y = Math.round(floorY - f.y - f.body.height + 4 - age * 0.4);
+        ctx.globalAlpha = 1 - age / 60;
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 1, y + 2, 4, 3); ctx.fillRect(x + 2, y - 4, 2, 7);
+        ctx.fillStyle = i ? '#80ffb0' : '#ffffff'; ctx.fillRect(x, y + 3, 2, 1); ctx.fillRect(x + 2, y - 3, 1, 6); ctx.fillRect(x + 3, y - 3, 2, 1);
+        ctx.globalAlpha = 1;
+      }
+    },
+
+    // Tyler's PUTT: a short silver streak along the swing.
+    puttSwing(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 4) return;
+      const a = t - m.startup, y = Math.round(floorY - f.y - m.hitbox.y - m.hitbox.h / 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(f.x + f.facing * (14 + i * 8 + a * 2)), y + i, 6, 1);
+    },
+
+    // Tyler's DRIVER: a big white arc around the swing, and a "THWACK".
+    driverSwing(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup - 2 || t > m.startup + m.active + 6) return;
+      const a = Math.max(0, t - m.startup + 2), cx = f.x + f.facing * 6, cy = floorY - f.y - 46;
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      const a0 = f.facing > 0 ? -Math.PI * 0.6 : -Math.PI * 0.4, a1 = a0 + f.facing * Math.min(Math.PI * 1.1, a * 0.35);
+      ctx.arc(cx, cy, 38, Math.min(a0, a1), Math.max(a0, a1));
+      ctx.stroke(); ctx.lineWidth = 1;
+      if (f.moveHasHit && a < 10) RF.font.drawText(ctx, 'THWACK!', f.x + f.facing * 40, cy - 30, { align: 'center', color: '#ffffff', outline: '#000' });
+    },
+
+    // Tyler's SAND WEDGE: a spray of sand off the ground.
+    sandWedge(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 12) return;
+      const a = t - m.startup;
+      for (let i = 0; i < 9; i++) {
+        const d = a * (1.2 + (i % 3) * 0.5), x = f.x + f.facing * (20 + i * 4 + d), y = floorY - (a * 2.4 - a * a * 0.12) * (0.5 + (i % 4) * 0.25);
+        ctx.fillStyle = i % 2 ? '#e8d090' : '#c8a860';
+        ctx.fillRect(Math.round(x), Math.round(Math.min(floorY - 1, y)), 2, 2);
+      }
+    },
+
     // Nicholas's aura: his power meter as a tiny bar over his head; a spinning gold star when full.
     boxerAura(f, ctx, floorY, frame, layer) {
       if (layer !== 'front' || f.isKO || f.state === 'finished' || f.state === 'thrown') return;
@@ -437,6 +486,14 @@
     ctx.restore();
   };
 
+  // Tyler: a dimpled golf ball with a speed trail.
+  RF.PROJECTILE_ART.golfBall = function (ctx, x, y, t, dir) {
+    for (let i = 1; i <= 4; i++) { ctx.fillStyle = `rgba(255,255,255,${0.5 - i * 0.1})`; ctx.fillRect(Math.round(x - dir * i * 7), Math.round(y - 1), 6, 2); }
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#c8c8c8'; ctx.fillRect(Math.round(x - 1), Math.round(y), 1, 1); ctx.fillRect(Math.round(x + 1), Math.round(y - 2), 1, 1); ctx.fillRect(Math.round(x + 2), Math.round(y + 1), 1, 1);
+  };
+
   // Chris: a black card (spins as it flies) and a gold coin.
   RF.PROJECTILE_ART.card = function (ctx, x, y, t, dir) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.5 * dir); ctx.scale(1, Math.abs(Math.cos(t * 0.25)) * 0.6 + 0.4);
@@ -556,6 +613,21 @@
   }
 
   RF.BLOCK_FX = {
+    // Tyler: pops open a huge striped golf umbrella in front of him.
+    golfUmbrella(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const R = 24, cx = Math.round(g.front + f.facing * 8), cy = Math.round(g.mid - 6);
+      const a0 = f.facing > 0 ? -Math.PI / 2 : Math.PI / 2;           // a half-dome facing the attacker
+      ctx.fillStyle = '#111'; ctx.fillRect(Math.min(cx, cx - f.facing * 14), cy - 1, 14, 2);        // the handle back to his hand
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R + 1, a0, a0 + Math.PI); ctx.closePath(); ctx.fill();
+      for (let i = 0; i < 6; i++) {
+        ctx.fillStyle = i % 2 ? '#ffffff' : '#20a050';
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0 + i * Math.PI / 6, a0 + (i + 1) * Math.PI / 6); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = '#111'; ctx.fillRect(cx + f.facing * (R + 1) - 1, cy - 1, 3, 2);               // the tip
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'NO STRESS', f.x, g.top - 26, { align: 'center', color: '#80ffb0', outline: '#000' });
+    },
     // Nicholas: PEEK-A-BOO - gloves up tight, bobbing; motion lines as he rolls with it.
     peekaboo(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

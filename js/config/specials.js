@@ -220,6 +220,20 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  holeInOne: {
+    name: 'Hole in One',
+    description: 'Tees up, waggles, yells FORE! and drives a golf ball straight at your face.',
+    kind: 'teeShot',
+    startup: 18,         // a quick double waggle first (it's part of the joke)
+    recovery: 20,
+    speed: 8,
+    size: 8,
+    height: 0.55,
+    damage: 15,
+    hitstun: 28, blockstun: 14, pushback: 5, hitstop: 10,
+    art: 'golfBall', sound: 'whoosh', hitText: 'HOLE IN ONE!',
+    colors: ['#ffffff', '#e8e8e8', '#a0a0a0'],
+  },
   venomSpit: {
     name: 'Venom Spit',
     description: 'Spits a glob of venom that streaks across the screen.',

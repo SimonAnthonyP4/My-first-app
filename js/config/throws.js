@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  sandTrap: {
+    name: 'Sand Trap',
+    description: 'Buries the opponent in a bunker, rakes it twice, then blasts them out with a sand wedge.',
+    kind: 'sandTrap',
+    rakeDamage: 3,
+    blastDamage: 9,
+  },
   spotMe: {
     name: 'Spot Me',
     description: 'Hoists the opponent overhead like a barbell, presses them for three reps, sets a NEW PR, then throws them.',

@@ -507,6 +507,27 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Tyler
+
+The American golfer (golfer, **110% health**, from The Back Nine). Funny and totally relaxed:
+music notes drift out of his earbuds, he strolls instead of walking, and every taunt is a random
+chill line ("NO STRESS, BRO.", "WAKE ME UP AT THE 19TH HOLE.", "IS THIS ON THE PGA TOUR?").
+
+- **Mulligan:** the first clean hit he takes each round doesn't count. MULLIGAN!
+- **Light: Putt.** A tidy tap with the club. Long reach for a light.
+- **Heavy: Driver.** Big backswing, all the way through - THWACK! - sends them down the fairway.
+- **Low heavy: Sand Wedge.** A low chip that sprays sand.
+- **Block: Golf Umbrella.** Pops open a huge green-and-white umbrella. NO STRESS.
+- **Special: Hole in One.** Tees up, waggles, FORE!, and drives a golf ball across the screen.
+- **Command specials:** Cart Path (BEEP BEEP!) and Caddie Counter (NICE TRY, BRO.).
+- **Throw: Sand Trap.** Buries them in a bunker, rakes it twice, PLAY IT WHERE IT LIES, then
+  blasts them out. SAND SAVE!
+- **Finisher: Tee Time.** They shrink into a golf ball on a tee; waggle, waggle, FORE! - into the sky
+  and down into the cup. HOLE IN ONE!
+- **Entrance:** rolls in on a golf cart and hops out. **Brutality:** FORE!
+
+The roster is now 17 fighters; character select is 9 x 2.
+
 ## Menus
 
 The classic fire main menu and character select, polished: the main menu shows a one-line

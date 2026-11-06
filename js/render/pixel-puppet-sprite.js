@@ -198,6 +198,17 @@
           ctx.strokeStyle = '#b8742a'; ctx.lineWidth = Math.max(1, U);
           ctx.beginPath(); ctx.arc(gx, gy, (R + 1.5) * U, -Math.PI * 0.75, Math.PI * 0.6); ctx.stroke();
           ctx.lineWidth = 1;
+        } else if (s.weapon && s.weapon.kind === 'club' && !dark) {
+          // A golf club (Tyler): black grip, silver shaft along the arm, iron head at the end.
+          const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
+          const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
+          const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2, L = s.weapon.length;
+          const at = (wx, wy, col, w = 1, h = 1) => { ctx.fillStyle = col; ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * w, U * h); };
+          for (let i = 0; i < L; i++) at(cx0 + dirX * i - (dirY ? 1 : 0), cy0 + dirY * i - (dirX ? 1 : 0), i < 3 ? '#1c1818' : i % 4 === 0 ? '#8c9098' : '#d4d8e0', dirY ? 2 : 1, dirX ? 2 : 1);
+          const ex = cx0 + dirX * L, ey = cy0 + dirY * L, sx = dirY ? 1 : 0, sy = dirY ? 0 : 1; // the head sticks out sideways
+          at(ex - 1, ey - 1, '#111', 2 + sx * 3, 2 + sy * 3);
+          at(ex, ey, '#a8acb4', 1 + sx * 3, 1 + sy * 3);
+          at(ex, ey, '#e8ecf0', 1 + sx, 1 + sy);
         } else if (s.weapon && !dark) {
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
           const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
