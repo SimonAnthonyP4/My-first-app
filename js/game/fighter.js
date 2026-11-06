@@ -74,6 +74,7 @@
       this.power = 0;       // Nicholas's power-punch meter (0..100, per round)
       this.rageShown = false; // RAGE! announced this round
       this.mulliganUsed = false; // Tyler: the first clean hit each round doesn't count
+      this.alterT = 0;        // Gabriel: frames left as MR. SUPPLIER
       this.juggle = 0;      // hits taken while airborne in this combo
       this.bounced = false; // already floor-bounced in this combo
       this.superActive = false;
@@ -110,6 +111,7 @@
 
     update(input, opp, canAct, bounds) {
       this.stateTime++;
+      if (this.alterT > 0 && --this.alterT === 0 && this.scene) this.scene.effects.spawnText('SUPPLY RAN OUT.', this.x, this.body.height + 16, '#a0a0a0');
       this.trackBlockPress(input);
       this.trackDash(input);
       this.trackMotion(input);
@@ -291,6 +293,17 @@
       this.state = null; this.setState('taunt');
       const jokes = this.def.jokes, opp = this.scene && this.scene.opponentOf(this);
       const rival = opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
+      // Gabriel: taunting with 2 bars turns him into his alter ego, MR. SUPPLIER.
+      if (this.def.alterEgo && !this.alterT && this.meter >= 200 && this.scene && this.scene.phase === 'fight') {
+        this.meter -= 200;
+        this.alterT = this.def.alterEgo.frames;
+        this.scene.effects.spawnText(this.def.alterEgo.name + '!', this.x, this.body.height + 26, '#ffd040');
+        this.scene.flash = 6; this.scene.shake = Math.max(this.scene.shake, 6);
+        RF.audio.sfx('super');
+        if (RF.announcer) RF.announcer.say(this.def.alterEgo.name + '!', { rate: 1.05 });
+        if (this.scene) this.scene.effects.spawnText(this.def.alterEgo.line, this.x, this.body.height + 14, '#ffffff');
+        return;
+      }
       const pool = jokes || this.def.tauntLines; // a random line each time (Tamayo's jokes, Tyler's chill lines)
       const line = rival || (pool ? pool[Math.floor(Math.random() * pool.length)] : this.def.taunt || 'COME ON!');
       if (jokes) { RF.audio.sfx('laugh'); this.scene && this.scene.effects.spawnText('HA HA HA!', this.x, this.body.height + 26, '#ff9a40'); }
@@ -469,7 +482,7 @@
       if (dir) {
         const forward = dir === this.facing;
         this.setState('walk');
-        this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR);
+        this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR) * (this.alterT > 0 ? this.def.alterEgo.speed : 1);
         this.walkTime += forward ? 1 : -1;
         // Sprinters (Nicholas) kick up dust as they run.
         if (this.def.sprint && this.scene && Math.abs(this.walkTime) % 5 === 1) this.scene.effects.spawn('dust', this.x - dir * 10, 1);
@@ -699,6 +712,7 @@
       let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (attacker && attacker.raging) dmg *= RF.CONFIG.RAGE_DAMAGE;
+      if (attacker && attacker.alterT > 0) dmg *= attacker.def.alterEgo.damage; // MR. SUPPLIER hits harder
       if (blocked) {
         dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
         if (this.def.blockHeal) this.health = Math.min(this.maxHealth, this.health + this.def.blockHeal); // Ruano's GRACE

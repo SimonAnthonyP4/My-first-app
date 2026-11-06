@@ -507,6 +507,25 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Gabriel
+
+Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, a double jump,
+5-hit strings, and he bounces on his toes; psychic sparks crackle around him. Gym rat.
+
+- **MR. SUPPLIER (alter ego):** taunt with **2 bars** to transform for 8 seconds - shades on, gold
+  glow, a MR. SUPPLIER tag with a timer, **25% more damage** and **30% more speed**
+  (`alterEgo` in characters.js). "YOU NEED IT? I GOT IT."
+- **Light: Energy Jab.** A crackling cyan jab. **Heavy: Psi Punch.** A telekinesis-boosted punch.
+- **Block: Mind Shield.** A rippling force field. NOPE!
+- **Special: Mind Slam (telekinesis).** Grabs them from across the screen with his mind, floats
+  them up, then SLAMS them into the floor. Blocking breaks the grip.
+- **Command specials:** Ocean Drive (neon rush) and Mind Lift (psychic uppercut).
+- **Throw: Mind Spin.** Lifts them overhead and spins them like a ceiling fan, then hurls them.
+- **Fatality: Mind Blown.** A Miami sunset fades in; he lifts them, squeezes... they explode.
+  WELCOME TO MIAMI. **Entrance:** blinks in with psychic energy - LET'S GOOOOO!
+
+Character select is now 10 x 2.
+
 ## Fatalities (gore)
 
 Every finisher is now a **FATALITY** (`js/game/gore.js`). Whenever a fatality lands an impact

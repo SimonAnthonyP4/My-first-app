@@ -199,6 +199,45 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Gabriel: MIND BLOWN - a Miami sunset fades in, he lifts them with telekinesis,
+    // squeezes... and they pop. WELCOME TO MIAMI.
+    mindBlown: {
+      name: 'Mind Blown',
+      duration: 200,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 100 ? ['special', 0] : t < 150 ? ['special', 1] : ['victory', (t >> 3) % 2];
+        vic.y = t < 20 ? 0 : Math.min(60, (t - 20) * 1.2);   // floating up
+        if (t === 8) { RF.audio.sfx('arcane'); scene.effects.spawnText('COME HERE.', att.x, att.body.height + 22, '#40e8ff'); }
+        if (t >= 50 && t < 100 && t % 10 === 0) RF.audio.sfx('rumble');
+        if (t === 70) scene.effects.spawnText('SQUEEEEEZE...', vic.x, 150, '#ff4fb0');
+        if (t === 100) { RF.audio.sfx('boom'); scene.shake = 16; scene.flash = 6; }
+        if (t === 120) scene.effects.spawnText('MIND BLOWN.', RF.CONFIG.WIDTH / 2, 120, '#40e8ff');
+        if (t === 150) scene.effects.spawnText('WELCOME TO MIAMI.', att.x, att.body.height + 24, '#ff4fb0');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        const sq = t < 50 ? 1 : Math.max(0.6, 1 - (t - 50) * 0.008), shake = t >= 50 ? (t % 2 ? 2 : -2) : 0;
+        ctx.save(); ctx.translate(Math.round(vic.x + shake), Math.round(floorY - vic.y)); ctx.scale(sq, 2 - sq);
+        vic.sprite.draw(ctx, 'hit', 0, 0, 0, vic.facing);
+        ctx.globalAlpha = 0.35; vic.sprite.draw(ctx, 'hit', 0, 0, 0, vic.facing, '#40e8ff'); ctx.globalAlpha = 1;
+        ctx.restore();
+      },
+      drawBack(att, vic, ctx, floorY, t) { // Miami sunset: pink sky, big striped sun, palm trees
+        const W = RF.CONFIG.WIDTH, a = Math.min(1, t / 20) * 0.85;
+        ctx.globalAlpha = a;
+        const g = ctx.createLinearGradient(0, 0, 0, floorY);
+        g.addColorStop(0, '#2a0a4a'); g.addColorStop(0.6, '#ff4fb0'); g.addColorStop(1, '#ffb040');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, floorY);
+        ctx.fillStyle = '#ffd040'; ctx.beginPath(); ctx.arc(W / 2, floorY - 40, 46, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff4fb0'; for (let i = 0; i < 4; i++) ctx.fillRect(W / 2 - 50, floorY - 44 + i * 9, 100, 3);
+        ctx.fillStyle = '#1a0828';
+        for (const px of [40, 70, W - 60, W - 30]) {
+          ctx.fillRect(px, floorY - 90, 4, 90);
+          for (let k = 0; k < 5; k++) { ctx.save(); ctx.translate(px + 2, floorY - 90); ctx.rotate(-1.4 + k * 0.7); ctx.fillRect(0, -2, 26, 4); ctx.restore(); }
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
     // Fernando: LAST DRAG - one long drag, flicks the cigarette onto them, they catch fire... BOOM.
     // He lights a fresh one off what's left. HEH HEH HEH.
     lastDrag: {

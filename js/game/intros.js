@@ -142,6 +142,22 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Blinks in with a crackle of psychic energy, bouncing on his toes (Gabriel).
+    hyperIn: {
+      update(f, t, scene) {
+        f.hidden = t < 12;
+        if (t === 12) { RF.audio.sfx('arcane'); scene.flash = 4; scene.effects.spawn('perfect', f.x, f.body.height / 2); }
+        if (t > 12 && t < 40) { f.state = (t >> 3) % 2 ? 'jump' : 'idle'; f.y = (t >> 3) % 2 ? 6 : 0; }
+        if (t === 40) { f.state = 'idle'; f.y = 0; }
+        if (t === 20) scene.effects.spawnText('LET\'S GOOOOO!', f.homeX, f.body.height + 24, '#40e8ff');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t < 4 || t > 20) return;
+        ctx.strokeStyle = '#40e8ff'; ctx.globalAlpha = 1 - (t - 4) / 16;
+        ctx.beginPath(); ctx.ellipse(f.homeX, floorY - 40, (t - 4) * 4, (t - 4) * 6, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      },
+    },
     // Pops a wheelie in on his motorcycle, skids sideways, the bike tips over, he steps off laughing (Fernando).
     motorcycle: {
       bikeX(f, t) {

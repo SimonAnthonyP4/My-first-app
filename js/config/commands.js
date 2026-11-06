@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Gabriel ----
+    oceanDrive: Object.assign({ name: 'Ocean Drive', kind: 'rush', startup: 6, speed: 9.5, duration: 14, reach: 16, recovery: 14, color: '#ff4fb0', callout: 'OCEAN DRIVE!', anim: 'heavy' }, hit(10, { pushback: 8 })),
+    mindLift: Object.assign({ name: 'Mind Lift', kind: 'rising', startup: 5, rise: 9.5, forward: 1.2, reach: 22, recovery: 20, invuln: 8, color: '#40e8ff', sound: 'arcane' }, hit(12, { launch: 7 })),
     // ---- Fernando ----
     smokeScreen: Object.assign({ name: 'Smoke Screen', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 12, color: '#b0b0b0', callout: 'POOF. HEH HEH.' }, hit(11)),
     wheelie: Object.assign({ name: 'Wheelie', kind: 'rush', startup: 8, speed: 9, duration: 16, reach: 16, recovery: 16, color: '#ff7020', callout: 'VROOOOM!', anim: 'light' }, hit(12, { pushback: 9 })),
@@ -90,6 +93,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
   };

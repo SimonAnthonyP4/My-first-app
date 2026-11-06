@@ -32,6 +32,56 @@
       },
     },
 
+    // Gabriel: MIND SLAM - telekinesis. Grabs them from across the screen with his mind,
+    // lifts them into the air, then slams them into the floor. Blocking breaks the grip.
+    telekinesis: {
+      start(f) { f.vx = 0; f.specialData.target = null; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t === s.startup) {
+          const dist = Math.abs(opp.x - f.x), ok = !opp.isKO && !['finished', 'thrown', 'ko', 'knockdown'].includes(opp.state);
+          if (dist <= s.range && ok && !opp.isBlockingAgainst(f, RF.specialMove(f, s))) {
+            d.target = opp; RF.audio.sfx('arcane');
+            scene.effects.spawnText(s.callout, f.x, f.body.height + 18, s.color);
+          } else if (dist <= s.range && ok) { scene.effects.spawnText('MIND BLOCKED', opp.x, opp.body.height + 10, '#ffffff'); RF.audio.sfx('shield'); }
+        }
+        const tg = d.target;
+        if (tg) {
+          const u = t - s.startup;
+          if (u < s.lift) { // floating, helpless, drifting toward him
+            tg.state = null; tg.setState('hitstun'); tg.stun = 30; tg.vx = tg.vy = 0; tg.pushVx = 0;
+            tg.y = Math.min(s.height, u * 3);
+            tg.x += (f.x + f.facing * 70 - tg.x) * 0.04;
+          } else if (u === s.lift) { // SLAM
+            scene.applyHit(f, tg, RF.specialMove(f, s), 'heavy', tg.x, tg.y + tg.body.height / 2);
+            tg.vy = -12;
+            scene.shake = Math.max(scene.shake, 12); RF.audio.sfx('boom');
+            d.target = null;
+          }
+        }
+        if (t >= s.startup + s.lift + s.recovery) f.setState('idle');
+      },
+      anim(f) { const t = f.stateTime, s = f.special; return t < s.startup ? ['special', 0] : t < s.startup + s.lift ? ['block', 0] : ['special', 1]; },
+      draw(f, ctx, floorY, frame) {
+        const tg = f.specialData.target, s = f.special;
+        if (f.stateTime < s.startup) { // charging: a cyan glow around his hand
+          ctx.fillStyle = `rgba(64,232,255,${0.3 + 0.2 * Math.sin(frame / 2)})`;
+          ctx.beginPath(); ctx.arc(f.x + f.facing * 18, floorY - f.y - 62, 6 + (frame % 4), 0, Math.PI * 2); ctx.fill();
+        }
+        if (!tg) return;
+        const hx = f.x + f.facing * 18, hy = floorY - f.y - 62, tx = tg.x, ty = floorY - tg.y - tg.body.height / 2;
+        ctx.strokeStyle = '#40e8ff'; ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 3; i++) { // wavy psychic beams from hand to target
+          ctx.beginPath(); ctx.moveTo(hx, hy);
+          for (let k = 1; k <= 8; k++) { const u = k / 8; ctx.lineTo(hx + (tx - hx) * u, hy + (ty - hy) * u + Math.sin(frame / 2 + k + i * 2) * 4); }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 0.35; ctx.fillStyle = '#40e8ff';
+        ctx.beginPath(); ctx.ellipse(tx, ty, tg.body.width * 0.9, tg.body.height * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      },
+    },
+
     // Tyler: HOLE IN ONE - tees the ball up, waggles three times, FORE!, then drives it.
     teeShot: {
       start(f) { f.vx = 0; f.specialData.teeX = f.x + f.facing * 20; },

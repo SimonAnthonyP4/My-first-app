@@ -37,6 +37,8 @@
       const now = this.kb.frame, L = this.level;
       const me = this.scene.fighters[this.side], opp = this.scene.opponentOf(me);
       if (this.scene.phase !== 'finish') this.finishPlan = undefined;
+      // Gabriel: with 2 bars and some room, become MR. SUPPLIER.
+      if (this.scene.phase === 'fight' && me.def.alterEgo && !me.alterT && me.meter >= 200 && me.state === 'idle' && Math.abs(opp.x - me.x) > 110) { this.tap('taunt'); return; }
       // FINISH THEM!: walk up and finish (harder CPUs never miss the chance).
       if (this.scene.phase === 'finish' && !this.scene.finisher && this.scene.finishVictim === opp) {
         const gap = Math.abs(opp.x - me.x) - (me.body.width + opp.body.width) / 2;

@@ -70,6 +70,28 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Gabriel: MIND SPIN - telekinesis: up over his head, spun around, hurled.
+    tkSpin: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, a = t * 0.35;
+        if (t < 64) {
+          def.x = att.x + Math.cos(a) * 34; def.y = 60 + Math.sin(a) * 12;
+          def.facing = Math.cos(a) > 0 ? -1 : 1; def.thrownPose = ['hit', 0];
+        }
+        if (t === 4) RF.audio.sfx('arcane');
+        if (t === 22 || t === 42) { scene.throwHit(att, def, T.spinDamage); RF.audio.sfx('whoosh'); }
+        if (t === 50) scene.effects.spawnText('WHEEEE!', def.x, 160, '#40e8ff');
+        if (t === 64) { def.x = att.x + att.facing * 30; scene.throwHit(att, def, T.hurlDamage, { vx: att.facing * 9, vy: 4 }); RF.audio.sfx('heavy'); }
+        return t >= 78;
+      },
+      anim(att, t) { return t < 64 ? ['victory', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        ctx.strokeStyle = '#40e8ff'; ctx.globalAlpha = 0.5;
+        ctx.beginPath(); ctx.ellipse(att.x, floorY - 60 - def.body.height / 2, 40, 14, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      },
+    },
+
     // Fernando: SMOKE BREAK - three clouds of smoke to the face (COUGH!), a gross line, a boot.
     smokeBreak: {
       update(att, def, t, scene) {

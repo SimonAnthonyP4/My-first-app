@@ -220,6 +220,19 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  mindSlam: {
+    name: 'Mind Slam',
+    description: 'Telekinesis! Grabs them with his mind from across the screen, lifts them up and SLAMS them. Blocking breaks the grip.',
+    kind: 'telekinesis',
+    startup: 12,
+    range: 200,          // how far his mind reaches
+    lift: 34,            // frames they float before the slam
+    height: 70,
+    recovery: 16,
+    damage: 17,
+    hitstun: 30, blockstun: 14, pushback: 3, hitstop: 12,
+    callout: 'COME HERE!', color: '#40e8ff',
+  },
   cigToss: {
     name: 'Cig Toss',
     description: 'Takes one last drag and flicks his lit cigarette straight at your face. TSSSS!',

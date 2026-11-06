@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  mindSpin: {
+    name: 'Mind Spin',
+    description: 'Lifts them over his head with telekinesis, spins them around like a ceiling fan, then hurls them across the screen.',
+    kind: 'tkSpin',
+    spinDamage: 3,
+    hurlDamage: 10,
+  },
   smokeBreak: {
     name: 'Smoke Break',
     description: 'Grabs them, blows three big clouds of smoke in their face, says something gross, then boots them away.',

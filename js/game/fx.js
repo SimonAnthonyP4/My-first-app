@@ -39,6 +39,52 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Gabriel's aura: crackles of psychic energy. As MR. SUPPLIER: a gold glow, shades,
+    // a name tag over his head and a timer.
+    hyperAura(f, ctx, floorY, frame, layer) {
+      if (f.isKO || f.state === 'finished' || f.state === 'thrown') return;
+      const sup = f.alterT > 0;
+      if (layer === 'back' && sup) {
+        ctx.globalAlpha = 0.35 + 0.15 * Math.sin(frame / 4);
+        ctx.fillStyle = '#ffd040'; ctx.beginPath(); ctx.ellipse(f.x, floorY - f.y - f.body.height / 2, f.body.width, f.body.height * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        return;
+      }
+      if (layer !== 'front') return;
+      for (let i = 0; i < 3; i++) { // little electric crackles around him
+        if ((frame + i * 7) % 16 > 3) continue;
+        const a = (frame * 0.7 + i * 2.1) % (Math.PI * 2), x = f.x + Math.cos(a) * f.body.width * 0.8, y = floorY - f.y - f.body.height * (0.3 + 0.5 * Math.abs(Math.sin(a)));
+        ctx.fillStyle = sup ? '#ffd040' : '#40e8ff';
+        ctx.fillRect(Math.round(x), Math.round(y), 1, 3); ctx.fillRect(Math.round(x + 1), Math.round(y + 2), 2, 1);
+      }
+      if (!sup) return;
+      const hy = floorY - f.y - f.body.height + 8;                      // shades
+      for (let dx = -1; dx <= 8; dx++) { ctx.fillStyle = dx === 3 || dx === 4 ? '#333' : '#050505'; ctx.fillRect(Math.round(f.x + f.facing * dx), hy, 1, 3); }
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(f.x + f.facing * 6), hy, 1, 1);
+      RF.font.drawText(ctx, 'MR. SUPPLIER', f.x, floorY - f.y - f.body.height - 20, { align: 'center', color: '#ffd040', outline: '#000' });
+      ctx.fillStyle = '#000'; ctx.fillRect(Math.round(f.x - 16), Math.round(floorY - f.y - f.body.height - 10), 32, 3);
+      ctx.fillStyle = '#ffd040'; ctx.fillRect(Math.round(f.x - 15), Math.round(floorY - f.y - f.body.height - 9), Math.round(30 * f.alterT / f.def.alterEgo.frames), 1);
+    },
+
+    // Gabriel's ENERGY JAB: a cyan spark burst on the fist.
+    energyJab(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 3) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.7), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.fillStyle = f.alterT > 0 ? '#ffd040' : '#40e8ff';
+      for (let i = 0; i < 6; i++) { const an = i * Math.PI / 3 + a; ctx.fillRect(Math.round(x + Math.cos(an) * (3 + a * 2)), Math.round(y + Math.sin(an) * (3 + a * 2)), 2, 2); }
+    },
+
+    // Gabriel's PSI PUNCH: the punch lands with an expanding psychic ring.
+    psiPunch(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 10) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.6), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.strokeStyle = f.alterT > 0 ? '#ffd040' : '#40e8ff'; ctx.lineWidth = 2; ctx.globalAlpha = Math.max(0, 1 - a / 14);
+      ctx.beginPath(); ctx.ellipse(x, y, 4 + a * 2, 6 + a * 3, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    },
+
     // Fernando's aura: smoke curling up off the cigarette in his raised hand.
     smokeAura(f, ctx, floorY, frame, layer) {
       if (layer !== 'front' || !['idle', 'walk', 'taunt'].includes(f.state)) return;
@@ -672,6 +718,19 @@
   }
 
   RF.BLOCK_FX = {
+    // Gabriel: a telekinetic force field, rippling where hits land.
+    mindShield(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const x = g.front + f.facing * 4, cy = g.mid, sup = f.alterT > 0;
+      ctx.strokeStyle = sup ? '#ffd040' : '#40e8ff';
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.6 - i * 0.15 + g.strength * 0.3;
+        ctx.beginPath(); ctx.ellipse(x + f.facing * i * 3, cy, 6 + i * 3 + g.strength * 4, g.hurt.h * 0.5 + i * 2, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'NOPE!', f.x, g.top - 26, { align: 'center', color: sup ? '#ffd040' : '#40e8ff', outline: '#000' });
+    },
     // Fernando: blows a big cloud of smoke in front of him. Hits get lost in it.
     smokeCloud(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);
