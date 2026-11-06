@@ -33,6 +33,10 @@
       options: [[true, 'ON'], [false, 'OFF']],
     },
     {
+      id: 'BLOOD', label: 'BLOOD',
+      options: [[true, 'ON'], [false, 'OFF']],
+    },
+    {
       id: 'ANNOUNCER', label: 'ANNOUNCER VOICE',
       options: [[true, 'ON'], [false, 'OFF']],
     },

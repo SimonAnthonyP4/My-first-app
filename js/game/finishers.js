@@ -1097,6 +1097,8 @@
         const br = att.def.brutality || {};
         vic.brutalParts = explode(vic, br.color || '#e02020');
         scene.shake = 18; scene.flash = 8; scene.hitstop = 0;
+        scene.gore.burst(vic.x, vic.body.height * 0.5, 0, 5); scene.gore.chunks(vic, vic.x, vic.body.height * 0.5, 24, 1.4);
+        scene.gore.splatter(14); scene.gore.pool(vic.x, 2.2); scene.redFlash = 14;
         RF.audio.sfx('boom'); RF.audio.sfx('heavy'); RF.audio.sfx('ko');
         RF.announcer.say('BRUTALITY!');
         scene.game.kb.rumble(att.side, 1, 600);

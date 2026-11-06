@@ -507,6 +507,17 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Fatalities (gore)
+
+Every finisher is now a **FATALITY** (`js/game/gore.js`). Whenever a fatality lands an impact
+(hit, heavy, boom, stomp, clang, zap...), the victim sprays pixel blood and chunks of themselves
+(coloured from their own sprite) fly off; explosions splatter blood across the screen. Each fatality
+also has one big climax (`RF.FATALITY_CLIMAX`): a huge burst, chunks, blood running down the screen,
+a red flash, a scream and a slow-motion hit. Blood that lands stains the floor and pools under the
+victim. Brutalities bleed on every hit and blow the victim apart in a shower of gore.
+
+Turn it all off under **Settings -> BLOOD** (e.g. for showing the game at school).
+
 ## Fernando
 
 Legit crazy (menace, **125% health**, from Behind the Gym) and deliberately **overpowered**: big

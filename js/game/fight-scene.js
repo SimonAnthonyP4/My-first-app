@@ -43,6 +43,7 @@
       if (opts.demo) this.inputs[0] = new RF.AIInput(game.kb, this, 0); // attract demo: CPU vs CPU
       if (this.training) this.setupDummy();
       this.effects = new RF.Effects();
+      this.gore = new RF.Gore();     // blood and chunks for finishers (Settings -> BLOOD)
       this.hud = new RF.HUD();
       this.frame = 0;
       this.paused = false;
@@ -103,6 +104,8 @@
       this.flawless = false;
       this.projectiles = [];
       this.effects.clear();
+      this.gore.reset();
+      this.redFlash = 0;
       this.hud.reset();
       this.brutal = 0;
       this.hazardCooldown = 0;
@@ -153,6 +156,8 @@
       this.phaseTime++;
       this.hud.update(this.fighters);
       this.effects.update();
+      this.gore.update();
+      if (this.redFlash > 0) this.redFlash--;
       if (this.shake > 0) this.shake--;
       if (this.flash > 0) this.flash--;
       if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
@@ -206,7 +211,21 @@
           if (this.finisher) {
             const fin = this.finisher;
             fin.t++;
-            fin.kind.update(fin.att, fin.vic, fin.t, this);
+            // Listen to the finisher's sounds: every impact sprays blood and chunks (see game/gore.js).
+            const sfx = RF.audio.sfx, scene = this;
+            RF.audio.sfx = function (name, ...rest) {
+              if (fin.kind !== RF.FINISHERS.brutality) scene.goreImpact(name, fin);
+              return sfx.call(this, name, ...rest);
+            };
+            try { fin.kind.update(fin.att, fin.vic, fin.t, this); } finally { RF.audio.sfx = sfx; }
+            if (fin.t === fin.kind.duration - 30 && !fin.vic.hidden) this.gore.pool(fin.vic.x, 1.6); // and they bleed out
+            fin.id = fin.id || Object.keys(RF.FINISHERS).find((k) => RF.FINISHERS[k] === fin.kind);
+            if (RF.FATALITY_CLIMAX[fin.id] === fin.t && this.gore.on) { // the big moment
+              this.gore.climax(fin.vic, fin.att);
+              this.redFlash = 16; this.shake = Math.max(this.shake, 16); this.hitstop = Math.max(this.hitstop, 10);
+              sfx.call(RF.audio, 'heavy'); sfx.call(RF.audio, 'scream');
+              this.game.kb.rumble(fin.att.side, 1, 400);
+            }
             if (fin.t >= fin.kind.duration) this.endRound('finisher');
           } else if (this.brutal && this.frame - this.brutalLast > 50 && this.finishVictim.state === 'dazed') {
             this.finishVictim.knockOut(-this.finishVictim.facing); // the combo dropped: a plain K.O.
@@ -586,8 +605,17 @@
     }
 
     // A hit on a dazed opponent during FINISH THEM!: 5 in a row = BRUTALITY.
+    // A finisher impact: blood, chunks, a red flash and more weight on the big ones.
+    goreImpact(name, fin) {
+      if (!this.gore.on) return;
+      this.gore.impact(name, fin.vic, fin.att);
+      if (name === 'boom' || name === 'ko') { this.redFlash = 10; this.shake = Math.max(this.shake, 14); }
+      else if (name === 'heavy' || name === 'stomp' || name === 'clang') { this.redFlash = Math.max(this.redFlash, 4); this.shake = Math.max(this.shake, 6); }
+    }
+
     brutalHit(att, def, ex, ey) {
       this.brutal++;
+      this.gore.burst(def.x, ey, Math.sign(def.x - att.x) || 1, 0.6 + this.brutal * 0.25); // every brutality hit bleeds
       this.brutalLast = this.frame;
       def.flash = 4;
       this.hitstop = Math.max(this.hitstop, 5);
@@ -934,8 +962,8 @@
       let winner = null;
       if (reason === 'finisher') {
         winner = this.finisher.att.side;
-        this.banner = this.finisher.kind.banner || 'FINISHER!';
-        if (!this.finisher.kind.banner) RF.announcer.say('FINISHER!');
+        this.banner = this.finisher.kind.banner || 'FATALITY!';
+        if (!this.finisher.kind.banner) RF.announcer.say('FATALITY!');
       } else if (reason === 'ko') {
         RF.audio.sfx('ko');
         RF.announcer.say(a.isKO && b.isKO ? 'DOUBLE K O' : 'K O!');
@@ -992,9 +1020,12 @@
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);
       }
+      this.gore.draw(ctx, floorY);
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
       ctx.restore();
+      this.gore.drawScreen(ctx);
+      if (this.redFlash && this.gore.on) { ctx.fillStyle = `rgba(160,0,0,${this.redFlash * 0.04})`; ctx.fillRect(0, 0, W, H); }
       this.drawTransition(ctx, W, H);
 
       if (this.flash) {
@@ -1033,7 +1064,7 @@
       } else if (this.phase === 'finish' && !this.finisher) {
         band(66, 60);
         if (Math.floor(this.phaseTime / 8) % 4 !== 3) big('FINISH THEM!', 74, 4);
-        T(ctx, 'THROW = FINISHER   OR HIT THEM ' + BRUTAL_HITS + 'X = BRUTALITY', W / 2, 110, { align: 'center', color: '#ffd030', outline: '#000' });
+        T(ctx, 'THROW = FATALITY   OR HIT THEM ' + BRUTAL_HITS + 'X = BRUTALITY', W / 2, 110, { align: 'center', color: '#ffd030', outline: '#000' });
       } else if (this.phase === 'roundOver') {
         big(this.banner);
         if (this.phaseTime > 70) T(ctx, this.subBanner, W / 2, 118, { scale: 2, align: 'center', color: '#fff', outline: '#000' });

@@ -41,6 +41,7 @@ RF.CONFIG = {
   JUGGLE_LIMIT: 8,        // after this many hits in the air they fall out of the combo
   MAX_AIR_CHAIN: 4,       // air attacks that connect can be chained this many times
   DASH_WINDOW: 12,        // double-tap a direction within this many frames to dash
+  BLOOD: true,            // gore in finishers and brutalities (Settings -> BLOOD)
   COUNTER_DAMAGE: 1.25,   // hitting someone during their attack's startup = COUNTER!
   RAGE_HEALTH: 0.3,     // below this much health a fighter enters RAGE (comeback boost)
   RAGE_DAMAGE: 1.1,     // ...dealing 10% more damage
