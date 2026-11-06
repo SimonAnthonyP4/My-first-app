@@ -788,6 +788,7 @@
     }
 
     draw(ctx, floorY) {
+      if (this.dismembered) return; // in pieces (a fatality) - the gore system draws them
       const [anim, frame] = this.animFrame();
       let x = this.x;
       if (this.state === 'dazed') x += Math.sin(this.stateTime / 9) * 2; // wobbling on their feet

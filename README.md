@@ -516,6 +516,16 @@ also has one big climax (`RF.FATALITY_CLIMAX`): a huge burst, chunks, blood runn
 a red flash, a scream and a slow-motion hit. Blood that lands stains the floor and pools under the
 victim. Brutalities bleed on every hit and blow the victim apart in a shower of gore.
 
+At the climax the victim is also **taken apart** (`RF.FATALITY_STYLE`):
+
+| Style | What happens | Fatalities |
+|---|---|---|
+| decapitate | head flies off, the headless body sprays blood and topples | Royal Decree, Art of Eight Limbs, Masterpiece, Final Bell |
+| split | sliced in half; both halves fall apart | Final Grade: F, Exit Pursued by a Bear, Annexation |
+| crush | squashed flat into a pool of blood | Pile Driver, Liberty Bell, Bulk Order, Bought Out, Impeachment |
+| skeleton | flesh burns/melts away, the skeleton stands... then collapses into bones | Venom Melt, Overcharge, Last Drag |
+| explode | blown into four big pieces and a shower of gore | Havana Classic, Specimen Jar, Tee Time |
+
 Turn it all off under **Settings -> BLOOD** (e.g. for showing the game at school).
 
 ## Fernando

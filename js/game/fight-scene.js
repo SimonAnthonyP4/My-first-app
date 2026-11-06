@@ -105,6 +105,7 @@
       this.projectiles = [];
       this.effects.clear();
       this.gore.reset();
+      for (const f of this.fighters) f.dismembered = false;
       this.redFlash = 0;
       this.hud.reset();
       this.brutal = 0;
@@ -222,6 +223,7 @@
             fin.id = fin.id || Object.keys(RF.FINISHERS).find((k) => RF.FINISHERS[k] === fin.kind);
             if (RF.FATALITY_CLIMAX[fin.id] === fin.t && this.gore.on) { // the big moment
               this.gore.climax(fin.vic, fin.att);
+              this.gore.dismember(fin.vic, fin.att, RF.FATALITY_STYLE[fin.id] || 'explode'); // taken apart
               this.redFlash = 16; this.shake = Math.max(this.shake, 16); this.hitstop = Math.max(this.hitstop, 10);
               sfx.call(RF.audio, 'heavy'); sfx.call(RF.audio, 'scream');
               this.game.kb.rumble(fin.att.side, 1, 400);
@@ -1009,7 +1011,7 @@
       if (ent && ent.kind.draw && ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
       RF.drawHazard(this, ctx, floorY);
       for (const f of order) {
-        if (fin && f === fin.vic) fin.kind.drawVictim(f, ctx, floorY, fin.t, this.frame, fin.att);
+        if (fin && f === fin.vic && !f.dismembered) fin.kind.drawVictim(f, ctx, floorY, fin.t, this.frame, fin.att);
         else f.draw(ctx, floorY);
       }
       if (fin && fin.kind.drawFx) fin.kind.drawFx(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
