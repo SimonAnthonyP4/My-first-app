@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Fernando ----
+    smokeScreen: Object.assign({ name: 'Smoke Screen', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 12, color: '#b0b0b0', callout: 'POOF. HEH HEH.' }, hit(11)),
+    wheelie: Object.assign({ name: 'Wheelie', kind: 'rush', startup: 8, speed: 9, duration: 16, reach: 16, recovery: 16, color: '#ff7020', callout: 'VROOOOM!', anim: 'light' }, hit(12, { pushback: 9 })),
     // ---- Tyler ----
     cartPath: Object.assign({ name: 'Cart Path', kind: 'rush', startup: 10, speed: 7, duration: 16, reach: 16, recovery: 18, color: '#80ffb0', callout: 'BEEP BEEP!', anim: 'heavy' }, hit(10, { pushback: 8 })),
     caddieCounter: Object.assign({ name: 'Caddie Counter', kind: 'counter', startup: 3, window: 24, recovery: 18, color: '#80ffb0', callout: 'NICE TRY, BRO.' }, hit(12, { launch: 5 })),
@@ -87,6 +90,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
   };
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }

@@ -142,6 +142,37 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Pops a wheelie in on his motorcycle, skids sideways, the bike tips over, he steps off laughing (Fernando).
+    motorcycle: {
+      bikeX(f, t) {
+        const W = RF.CONFIG.WIDTH, from = f.facing > 0 ? -50 : W + 50, stop = f.homeX;
+        const u = Math.min(1, t / 22);
+        return from + (stop - from) * (1 - (1 - u) * (1 - u));
+      },
+      update(f, t, scene) {
+        if (t === 0) RF.audio.sfx('engine');
+        if (t < 30) { f.x = this.bikeX(f, t); f.state = 'idle'; f.y = 12; }
+        if (t > 14 && t < 26 && t % 2 === 0) scene.effects.spawn('dust', f.x - f.facing * 10, 1);
+        if (t === 22) { RF.audio.sfx('stomp'); scene.shake = 4; }
+        if (t === 30) { f.x = f.homeX + f.facing * 10; f.y = 0; RF.audio.sfx('whoosh'); }
+        if (t === 36) { RF.audio.sfx('laugh'); scene.effects.spawnText('HEH HEH. NICE.', f.homeX, f.body.height + 24, '#ff9ac8'); }
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 90) return;
+        const x = Math.round(t < 30 ? this.bikeX(f, t) : f.homeX - f.facing * 22), dir = f.facing;
+        const lean = t < 14 ? -0.35 * dir : t < 30 ? 0 : Math.min(1.35, (t - 30) * 0.12) * -dir; // wheelie, then it tips over
+        ctx.save(); ctx.translate(x, floorY - 2); ctx.rotate(lean);
+        const wheel = (wx) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(wx, -6, 7, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#707078'; ctx.beginPath(); ctx.arc(wx, -6, 3, 0, Math.PI * 2); ctx.fill(); };
+        wheel(-16 * dir); wheel(16 * dir);
+        ctx.fillStyle = '#111'; ctx.fillRect(-14, -18, 28, 9);
+        ctx.fillStyle = '#c01818'; ctx.fillRect(-12, -17, 20, 6);                 // tank
+        ctx.fillStyle = '#c0c0c8'; ctx.fillRect(-10 * dir - 4, -10, 12, 3);      // pipes
+        ctx.fillStyle = '#111'; ctx.fillRect(12 * dir - 1, -26, 2, 10);           // handlebars
+        ctx.fillRect(12 * dir - 4, -27, 8, 2);
+        ctx.restore();
+        if (t >= 30 && t < 60 && t % 6 < 3) RF.font.drawText(ctx, 'VROOM', x, floorY - 34, { align: 'center', color: '#ff7020', outline: '#000' });
+      },
+    },
     // Rolls in on a golf cart with his earbuds in, hops out, cart keeps going (Tyler).
     golfCart: {
       cartX(f, t) {
@@ -152,7 +183,7 @@
       update(f, t, scene) {
         if (t === 0) RF.audio.sfx('engine');
         if (t < 30) { f.x = this.cartX(f, t) - f.facing * 6; f.state = 'idle'; f.y = 8; } // riding along
-        if (t === 30) { f.x = f.homeX; f.y = 0; RF.audio.sfx('jump'); scene.effects.spawn('dust', f.x, 1); }
+        if (t === 30) { f.x = f.homeX; f.y = 0; RF.audio.sfx('whoosh'); scene.effects.spawn('dust', f.x, 1); }
         if (t === 34) scene.effects.spawnText('NO STRESS, BRO.', f.homeX, f.body.height + 24, '#80ffb0');
       },
       draw(f, ctx, floorY, t) {

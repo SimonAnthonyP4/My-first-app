@@ -507,6 +507,27 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Fernando
+
+Legit crazy (menace, **125% health**, from Behind the Gym) and deliberately **overpowered**: big
+damage, high defence, fast meter and armor on his shotgun (he beats about 3 out of 4 opponents on
+the hard CPU). Always smoking - smoke curls off the cigarette in his raised hand. He laughs at you
+when you hit his guard, and every taunt is a random dirty-minded line ("THAT IS WHAT SHE SAID.",
+"HEH. YOU SAID HARD.", "69? NICE.").
+
+- **Light: Ash Flick.** Flicks hot embers off the cigarette.
+- **Heavy: Shotgun.** Pulls out a pump shotgun - muzzle flash, pellets, BOOM! Plows through one hit.
+- **Block: Smoke Cloud.** Hits get lost in a cloud of smoke. HEH HEH.
+- **Special: Cig Toss.** Flicks his lit cigarette at your face. TSSSSS!
+- **Command specials:** Wheelie (VROOOOM!) and Smoke Screen (vanishes, appears behind you: POOF).
+- **Throw: Smoke Break.** Three clouds of smoke to the face (COUGH!), THAT IS WHAT SHE SAID., a boot.
+- **Finisher: Last Drag.** One long drag, flicks the cigarette onto them, they catch fire... KABOOM!
+  SMOKING HOT. HEH HEH HEH HEH.
+- **Entrance:** pops a wheelie in on his motorcycle, the bike tips over, he steps off laughing.
+  **Brutality:** SMOKED.
+
+Pose recipes can now swap the held item (`weapon: 'shotgun'` / `false` with `sprite.weapons`).
+
 ## Tyler
 
 The American golfer (golfer, **110% health**, from The Back Nine). Funny and totally relaxed:
@@ -526,7 +547,7 @@ chill line ("NO STRESS, BRO.", "WAKE ME UP AT THE 19TH HOLE.", "IS THIS ON THE P
   and down into the cup. HOLE IN ONE!
 - **Entrance:** rolls in on a golf cart and hops out. **Brutality:** FORE!
 
-The roster is now 17 fighters; character select is 9 x 2.
+Character select is 9 x 2 (18 slots, now full with Fernando).
 
 ## Menus
 

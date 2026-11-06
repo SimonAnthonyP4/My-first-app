@@ -39,6 +39,53 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Fernando's aura: smoke curling up off the cigarette in his raised hand.
+    smokeAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || !['idle', 'walk', 'taunt'].includes(f.state)) return;
+      const tipX = f.x + f.facing * 16, tipY = floorY - f.y - 78;
+      for (let i = 0; i < 6; i++) {
+        const age = (frame + i * 12) % 72;
+        const x = tipX + Math.sin((frame + i * 20) / 10) * (2 + age * 0.08), y = tipY - age * 0.6;
+        ctx.globalAlpha = 0.5 * (1 - age / 72);
+        ctx.fillStyle = '#c8c8c8';
+        ctx.fillRect(Math.round(x), Math.round(y), age > 30 ? 2 : 1, age > 30 ? 2 : 1);
+      }
+      ctx.globalAlpha = 1;
+    },
+
+    // Fernando's ASH FLICK: a spray of glowing embers.
+    emberFlick(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 8) return;
+      const a = t - m.startup, y0 = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      for (let i = 0; i < 6; i++) {
+        const x = f.x + f.facing * (18 + a * (2 + i * 0.5)), y = y0 + (i - 3) * a * 0.4 + a * a * 0.04;
+        ctx.fillStyle = i % 2 ? '#ffd040' : '#ff6020';
+        ctx.fillRect(Math.round(x), Math.round(y), 2, 1);
+      }
+    },
+
+    // Fernando's SHOTGUN: muzzle flash, a cone of pellets, smoke, BOOM.
+    shotgunBlast(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 12) return;
+      const a = t - m.startup, mx = f.x + f.facing * 36, my = floorY - f.y - 70;
+      if (a === 0) { RF.audio.sfx('boom'); if (f.scene) { f.scene.shake = Math.max(f.scene.shake, 8); f.scene.flash = Math.max(f.scene.flash, 2); } }
+      if (a < 4) { // the flash
+        ctx.fillStyle = '#fff2a0'; ctx.beginPath(); ctx.arc(mx + f.facing * 4, my, 7 - a, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff9020'; ctx.beginPath(); ctx.arc(mx + f.facing * 9, my, 5 - a, 0, Math.PI * 2); ctx.fill();
+      }
+      for (let i = 0; i < 9; i++) { // pellets
+        const spread = (i - 4) * 0.09, d = 10 + a * 9;
+        ctx.fillStyle = '#ffe080';
+        ctx.fillRect(Math.round(mx + f.facing * d), Math.round(my + d * spread), 2, 1);
+      }
+      ctx.globalAlpha = Math.max(0, 0.6 - a / 20); ctx.fillStyle = '#b0b0b0';
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(mx + f.facing * (6 + i * 5), my - a * 0.6 - i, 3 + a * 0.3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      if (a < 10) RF.font.drawText(ctx, 'BOOM!', f.x + f.facing * 46, my - 22, { align: 'center', color: '#ffd040', outline: '#000' });
+    },
+
     // Tyler's aura: little music notes drifting out of his earbuds. He's vibing.
     chillAura(f, ctx, floorY, frame, layer) {
       if (layer !== 'front' || f.isKO || f.state === 'finished' || f.state === 'thrown' || f.state === 'hitstun') return;
@@ -486,6 +533,18 @@
     ctx.restore();
   };
 
+  // Fernando: a lit cigarette tumbling end over end, trailing smoke.
+  RF.PROJECTILE_ART.cigarette = function (ctx, x, y, t, dir) {
+    for (let i = 1; i <= 5; i++) { ctx.globalAlpha = 0.4 - i * 0.06; ctx.fillStyle = '#c8c8c8'; ctx.fillRect(Math.round(x - dir * i * 6), Math.round(y - i), 3, 3); }
+    ctx.globalAlpha = 1;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.45 * dir);
+    ctx.fillStyle = '#111'; ctx.fillRect(-7, -2, 14, 4);
+    ctx.fillStyle = '#f0e8dd'; ctx.fillRect(-6, -1, 9, 2);
+    ctx.fillStyle = '#d89a50'; ctx.fillRect(-6, -1, 3, 2);   // filter
+    ctx.fillStyle = t % 6 < 3 ? '#ff4010' : '#ffd040'; ctx.fillRect(3, -1, 3, 2); // the cherry
+    ctx.restore();
+  };
+
   // Tyler: a dimpled golf ball with a speed trail.
   RF.PROJECTILE_ART.golfBall = function (ctx, x, y, t, dir) {
     for (let i = 1; i <= 4; i++) { ctx.fillStyle = `rgba(255,255,255,${0.5 - i * 0.1})`; ctx.fillRect(Math.round(x - dir * i * 7), Math.round(y - 1), 6, 2); }
@@ -613,6 +672,19 @@
   }
 
   RF.BLOCK_FX = {
+    // Fernando: blows a big cloud of smoke in front of him. Hits get lost in it.
+    smokeCloud(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      ctx.globalAlpha = 0.55 + g.strength * 0.3;
+      ctx.fillStyle = '#c8c8c8';
+      for (let i = 0; i < 6; i++) {
+        const x = g.front + f.facing * (4 + (i % 2) * 6) + Math.sin(frame / 6 + i) * 2, y = g.top + 10 + i * 10;
+        ctx.beginPath(); ctx.arc(x, y, 7 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'HEH HEH', f.x, g.top - 26, { align: 'center', color: '#ff9ac8', outline: '#000' });
+    },
     // Tyler: pops open a huge striped golf umbrella in front of him.
     golfUmbrella(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

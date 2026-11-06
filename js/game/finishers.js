@@ -199,6 +199,53 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Fernando: LAST DRAG - one long drag, flicks the cigarette onto them, they catch fire... BOOM.
+    // He lights a fresh one off what's left. HEH HEH HEH.
+    lastDrag: {
+      name: 'Last Drag',
+      duration: 230,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 40 ? ['taunt', 0] : t < 56 ? ['special', 0] : t < 70 ? ['special', 1] : t < 200 ? ['idle', (t >> 4) % 2] : ['victory', (t >> 3) % 2];
+        if (t === 10) scene.effects.spawnText('*LONG DRAG*', att.x, att.body.height + 24, '#c8c8c8');
+        if (t === 56) { RF.audio.sfx('whoosh'); scene.effects.spawnText('HEH.', att.x, att.body.height + 22, '#ff9ac8'); }
+        if (t === 72) { RF.audio.sfx('hiss'); scene.effects.spawnText('TSSSSS...', vic.x, vic.body.height + 14, '#ff9020'); }
+        if (t === 130) { RF.audio.sfx('boom'); scene.shake = 18; scene.flash = 8; }
+        if (t === 150) scene.effects.spawnText('SMOKING HOT.', att.x, att.body.height + 24, '#ff7020');
+        if (t === 175) { RF.audio.sfx('laugh'); scene.effects.spawnText('HEH HEH HEH HEH.', att.x, att.body.height + 34, '#ff9ac8'); }
+      },
+      drawVictim(vic, ctx, floorY, t, frame, att) {
+        if (t < 130) {
+          drawPose(vic, ctx, vic.x, floorY, ['dazed', 0], t > 72 ? '#ff6010' : null, t > 72 ? 0.3 + 0.2 * Math.sin(t / 2) : 0);
+          if (t > 72) for (let i = 0; i < 10; i++) { // on fire
+            const a = (t * 3 + i * 17) % 40, x = vic.x + ((i * 7) % 24) - 12, y = floorY - ((i * 13) % vic.body.height) - a * 0.5;
+            ctx.fillStyle = a < 15 ? '#ffd040' : a < 28 ? '#ff7020' : '#c02010';
+            ctx.fillRect(Math.round(x), Math.round(y), 2, 3);
+          }
+          if (t >= 56 && t < 72 && att) { // the cigarette arcing over
+            const u = (t - 56) / 16, x = att.x + (vic.x - att.x) * u, y = floorY - 80 - Math.sin(u * Math.PI) * 30 + u * 30;
+            RF.PROJECTILE_ART.cigarette(ctx, x, y, t, Math.sign(vic.x - att.x) || 1);
+          }
+          return;
+        }
+        // after the boom: a charred, smoking silhouette lying there
+        ctx.save(); ctx.translate(Math.round(vic.x), floorY); ctx.scale(1, 0.35);
+        vic.sprite.draw(ctx, 'ko', 1, 0, 0, vic.facing, '#1a1210');
+        ctx.restore();
+        for (let i = 0; i < 4; i++) { const a = (t + i * 15) % 60; ctx.globalAlpha = 0.5 - a / 120; ctx.fillStyle = '#909090'; ctx.fillRect(Math.round(vic.x - 10 + i * 7 + Math.sin(a / 8) * 2), Math.round(floorY - 6 - a * 0.6), 2, 2); }
+        ctx.globalAlpha = 1;
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 130 || t > 160) return;
+        const u = t - 130, r = 10 + u * 2.2;
+        ctx.globalAlpha = Math.max(0, 1 - u / 30);
+        ctx.fillStyle = '#ffd040'; ctx.beginPath(); ctx.arc(vic.x, floorY - 30, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff6010'; ctx.beginPath(); ctx.arc(vic.x, floorY - 30, r * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff6c0'; ctx.beginPath(); ctx.arc(vic.x, floorY - 30, r * 0.35, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        if (u < 25) RF.font.drawText(ctx, 'KABOOM!', vic.x, floorY - 90, { scale: 2, align: 'center', color: '#ffd040', outline: '#000' });
+      },
+    },
+
     // Tyler: TEE TIME - they shrink down into a golf ball on a tee. Waggle, waggle... FORE!
     // A huge drive into the sky, and it drops into the cup across the screen. HOLE IN ONE!
     teeTime: {

@@ -70,6 +70,32 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Fernando: SMOKE BREAK - three clouds of smoke to the face (COUGH!), a gross line, a boot.
+    smokeBreak: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, -2);
+        def.thrownPose = ['hit', 0];
+        if (t === 14 || t === 30 || t === 46) { scene.throwHit(att, def, T.puffDamage); scene.effects.spawnText('COUGH!', def.x, def.body.height + 6, '#c8c8c8'); RF.audio.sfx('whoosh'); }
+        if (t === 54) { scene.effects.spawnText('THAT IS WHAT SHE SAID.', att.x, att.body.height + 22, '#ff9ac8'); RF.audio.sfx('laugh'); }
+        if (t === 74) { scene.throwHit(att, def, T.kickDamage, { vx: att.facing * 7, vy: 4 }); RF.audio.sfx('heavy'); }
+        return t >= 88;
+      },
+      anim(att, t) { return t < 72 ? ['throw', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        for (const t0 of [14, 30, 46]) { // each puff drifts across into their face and grows
+          const a = t - t0 + 6;
+          if (a < 0 || a > 26) continue;
+          const x = att.x + att.facing * (8 + a * 1.4), y = floorY - att.body.height + 12 - a * 0.3, r = 3 + a * 0.35;
+          ctx.globalAlpha = 0.75 - a / 40;
+          ctx.fillStyle = '#d8d8d8';
+          for (const [dx, dy] of [[0, 0], [r * 0.8, -r * 0.4], [-r * 0.6, -r * 0.5]]) { ctx.beginPath(); ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2); ctx.fill(); }
+          ctx.globalAlpha = 1;
+        }
+      },
+    },
+
     // Tyler: SAND TRAP - buries them in a bunker, rakes it, "PLAY IT WHERE IT LIES", blasts them out.
     sandTrap: {
       update(att, def, t, scene) {

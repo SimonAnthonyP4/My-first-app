@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  smokeBreak: {
+    name: 'Smoke Break',
+    description: 'Grabs them, blows three big clouds of smoke in their face, says something gross, then boots them away.',
+    kind: 'smokeBreak',
+    puffDamage: 3,
+    kickDamage: 10,
+  },
   sandTrap: {
     name: 'Sand Trap',
     description: 'Buries the opponent in a bunker, rakes it twice, then blasts them out with a sand wedge.',

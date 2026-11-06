@@ -166,17 +166,35 @@
         const cells = ARMS[name];
         const [sc, sr] = s.shoulder;
         const dx = torsoOff[0] + extra[0], dy = torsoOff[1] + extra[1];
+        // A pose can swap what's in the hand (Fernando: cigarette normally, shotgun for the heavy).
+        const wpn = p.weapon === undefined ? s.weapon : (p.weapon && s.weapons ? s.weapons[p.weapon] : null);
         // Held weapon (e.g. a ruler) sticks out of the hand, continuing the arm's direction.
-        if (s.weapon && s.weapon.kind === 'book' && !dark) {
+        if (wpn && wpn.kind === 'shotgun' && !dark) {
+          // A pump shotgun (Fernando): stock back past the hand, long barrel forward, wooden pump.
+          const n = cells.length, [hx, hy] = cells[n - 1];
+          const gx = ox + (sc + hx * k + k / 2) * U + dx, gy = oy + (sr + hy * k + k / 2) * U + dy;
+          const R = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(gx + x * U), Math.round(gy + y * U), w * U, h * U); };
+          R(-9, -2, 27, 5, '#111');            // outline
+          R(-8, -1, 6, 3, '#6a3a1c');          // stock
+          R(-2, -1, 19, 2, '#3a3a40');         // barrel
+          R(-2, -1, 19, 1, '#8a8a94');         // shine
+          R(5, 1, 7, 2, '#8a5228');            // pump
+        } else if (wpn && wpn.kind === 'cig' && !dark) {
+          // The cigarette between his fingers, glowing.
+          const n = cells.length, [hx, hy] = cells[n - 1];
+          const gx = ox + (sc + hx * k + k) * U + dx, gy = oy + (sr + hy * k) * U + dy;
+          ctx.fillStyle = '#f0e8dd'; ctx.fillRect(Math.round(gx), Math.round(gy), 5 * U, U);
+          ctx.fillStyle = '#ff7020'; ctx.fillRect(Math.round(gx + 5 * U), Math.round(gy), U, U);
+        } else if (wpn && wpn.kind === 'book' && !dark) {
           // A big book gripped in the hand (Mr. Dabalsa's Shakespeare).
-          const [hx, hy] = cells[cells.length - 1], w = s.weapon;
+          const [hx, hy] = cells[cells.length - 1], w = wpn;
           const bx = ox + (sc + hx * k + k / 2) * U + dx - (w.w * U) / 2, by = oy + (sr + hy * k + k / 2) * U + dy - (w.h * U) / 2;
           ctx.fillStyle = '#111'; ctx.fillRect(Math.round(bx - U), Math.round(by - U), (w.w + 2) * U, (w.h + 2) * U);
           ctx.fillStyle = w.color; ctx.fillRect(Math.round(bx), Math.round(by), w.w * U, w.h * U);
           ctx.fillStyle = w.trim; ctx.fillRect(Math.round(bx + U), Math.round(by + U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + U), Math.round(by + (w.h - 2) * U), (w.w - 2) * U, U);
           ctx.fillRect(Math.round(bx + (w.w / 2 - 1) * U), Math.round(by + (w.h / 2 - 2) * U), 3 * U, 4 * U); // the Bard's face
-        } else if (s.weapon && s.weapon.kind === 'cash' && !dark) {
+        } else if (wpn && wpn.kind === 'cash' && !dark) {
           // A fan of hundred-dollar bills (Chris).
           const [hx, hy] = cells[cells.length - 1];
           const gx = ox + (sc + hx * k + k / 2) * U + dx, gy = oy + (sr + hy * k) * U + dy;
@@ -187,9 +205,9 @@
             ctx.fillStyle = '#5a8040'; ctx.fillRect(U, -7 * U, 2 * U, 2 * U);
             ctx.restore();
           }
-        } else if (s.weapon && s.weapon.kind === 'globe' && !dark) {
+        } else if (wpn && wpn.kind === 'globe' && !dark) {
           // A desk globe held up in the hand (Holbrook): ocean, continents, brass meridian.
-          const [hx, hy] = cells[cells.length - 1], R = s.weapon.r;
+          const [hx, hy] = cells[cells.length - 1], R = wpn.r;
           const gx = ox + (sc + hx * k + k / 2) * U + dx, gy = oy + (sr + hy * k + k / 2 - R) * U + dy;
           ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(gx, gy, (R + 1) * U, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = '#335975'; ctx.beginPath(); ctx.arc(gx, gy, R * U, 0, Math.PI * 2); ctx.fill();
@@ -198,23 +216,23 @@
           ctx.strokeStyle = '#b8742a'; ctx.lineWidth = Math.max(1, U);
           ctx.beginPath(); ctx.arc(gx, gy, (R + 1.5) * U, -Math.PI * 0.75, Math.PI * 0.6); ctx.stroke();
           ctx.lineWidth = 1;
-        } else if (s.weapon && s.weapon.kind === 'club' && !dark) {
+        } else if (wpn && wpn.kind === 'club' && !dark) {
           // A golf club (Tyler): black grip, silver shaft along the arm, iron head at the end.
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
           const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
-          const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2, L = s.weapon.length;
+          const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2, L = wpn.length;
           const at = (wx, wy, col, w = 1, h = 1) => { ctx.fillStyle = col; ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * w, U * h); };
           for (let i = 0; i < L; i++) at(cx0 + dirX * i - (dirY ? 1 : 0), cy0 + dirY * i - (dirX ? 1 : 0), i < 3 ? '#1c1818' : i % 4 === 0 ? '#8c9098' : '#d4d8e0', dirY ? 2 : 1, dirX ? 2 : 1);
           const ex = cx0 + dirX * L, ey = cy0 + dirY * L, sx = dirY ? 1 : 0, sy = dirY ? 0 : 1; // the head sticks out sideways
           at(ex - 1, ey - 1, '#111', 2 + sx * 3, 2 + sy * 3);
           at(ex, ey, '#a8acb4', 1 + sx * 3, 1 + sy * 3);
           at(ex, ey, '#e8ecf0', 1 + sx, 1 + sy);
-        } else if (s.weapon && !dark) {
+        } else if (wpn && !dark) {
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
           const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
           const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2;
-          ctx.fillStyle = s.weapon.color;
-          for (let i = 0; i < s.weapon.length; i++) {
+          ctx.fillStyle = wpn.color;
+          for (let i = 0; i < wpn.length; i++) {
             const wx = cx0 + dirX * i - (dirY ? 1 : 0), wy = cy0 + dirY * i - (dirX ? 1 : 0);
             ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * (dirY ? 2 : 1), U * (dirX ? 2 : 1));
           }
