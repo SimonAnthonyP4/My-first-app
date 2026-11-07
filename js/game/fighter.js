@@ -141,6 +141,25 @@
           break;
         case 'jump':
           this.crouching = false;
+          // WALL JUMP (Alejandro): against the edge of the stage, hold toward it to slide down
+          // slowly, press UP to kick off it (up to 3 times before landing).
+          if (this.def.wallJump && bounds && this.atWall(bounds)) {
+            const wallDir = this.x < (bounds.left + bounds.right) / 2 ? -1 : 1;
+            const towards = input.held(wallDir < 0 ? 'left' : 'right');
+            if (towards && this.vy < -1.2) { this.vy = -1.2; if (this.scene && this.stateTime % 6 === 0) this.scene.effects.spawn('dust', this.x + wallDir * 10, this.y + 30); }
+            if (canAct && this.stateTime > 3 && (this.wallJumps || 0) < 3 && input.lastPress('up') > this.jumpPressAt && input.pressed('up')) {
+              input.consume('up');
+              this.wallJumps = (this.wallJumps || 0) + 1;
+              this.jumpPressAt = input.kb.frame;
+              this.vy = this.stats.jumpPower * 0.95;
+              this.vx = -wallDir * 5.5;
+              this.facing = -wallDir;
+              this.airAttackUsed = false;
+              if (this.scene) { this.scene.effects.spawnText('WALL JUMP!', this.x, this.y + this.body.height + 10, '#ff8030'); this.scene.effects.spawn('dust', this.x + wallDir * 10, this.y + 20); }
+              RF.audio.sfx('whoosh');
+              break;
+            }
+          }
           // Double jump (agile fighters): press UP again in the air.
           if (canAct && this.def.doubleJump && !this.doubleJumped && this.stateTime > 4 && input.lastPress('up') > this.jumpPressAt && input.pressed('up')) {
             input.consume('up');
@@ -392,6 +411,7 @@
       const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
       this.jumpPressAt = input.lastPress('up');
       this.doubleJumped = false;
+      this.wallJumps = 0;
       this.state = null;
       this.setState('jump');
       this.vy = this.stats.jumpPower * (RF.CONFIG.MOD_LOWGRAV ? 0.72 : 1); // same height, twice the hang time

@@ -142,6 +142,19 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Rappels down from the ceiling on a rope, lands, unclips (Alejandro).
+    rappelIn: {
+      update(f, t, scene) {
+        f.x = f.homeX;
+        if (t < 26) { f.y = 200 - t * 7.7; f.state = 'jump'; }
+        if (t === 26) { f.y = 0; f.state = 'idle'; RF.audio.sfx('stomp'); scene.effects.spawn('dust', f.x, 1); }
+        if (t === 34) scene.effects.spawnText('SEND IT!', f.homeX, f.body.height + 22, '#ff8030');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 30) return;
+        ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(f.homeX + 4, 0); ctx.lineTo(f.homeX + 4, floorY - f.y - f.body.height * 0.6); ctx.stroke(); ctx.lineWidth = 1;
+      },
+    },
     // A rift in reality tears open; he steps through from another universe (Lopez Tuero).
     riftIn: {
       back: true,

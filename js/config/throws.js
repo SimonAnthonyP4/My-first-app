@@ -24,6 +24,12 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  belayDrop: {
+    name: 'Belay Drop',
+    description: 'Clips them into his rope, hauls them up toward the ceiling... ROCK! ...and lets go.',
+    kind: 'belayDrop',
+    dropDamage: 14,
+  },
   proofByContradiction: {
     name: 'Proof by Contradiction',
     description: 'Grabs them and proves, step by step, that they cannot win. Every line of the proof hurts. Q.E.D.',

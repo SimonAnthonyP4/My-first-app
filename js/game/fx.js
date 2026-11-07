@@ -39,6 +39,41 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Alejandro's aura: puffs of climbing chalk off his hands.
+    chalkAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || f.isKO || ['finished', 'thrown'].includes(f.state)) return;
+      for (let i = 0; i < 3; i++) {
+        const age = (frame + i * 25) % 75;
+        if (age > 40) continue;
+        ctx.globalAlpha = 0.5 * (1 - age / 40);
+        ctx.fillStyle = '#f4f0ea';
+        ctx.fillRect(Math.round(f.x + f.facing * (12 + i * 2) + Math.sin(age / 5 + i) * 3), Math.round(floorY - f.y - 56 - age * 0.4), 2, 2);
+      }
+      ctx.globalAlpha = 1;
+    },
+
+    // Alejandro's CHALK JAB: a white puff of chalk where the fist lands.
+    chalkJab(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 8) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.7), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.globalAlpha = Math.max(0, 0.8 - a / 12); ctx.fillStyle = '#f4f0ea';
+      for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(x + Math.cos(i * 1.3) * a * 1.2, y + Math.sin(i * 1.3) * a, 2 + a * 0.3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    },
+
+    // Alejandro's CARABINER SWING: a whipping arc of rope with a steel carabiner on the end.
+    ropeWhip(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup - 3 || t > m.startup + m.active + 6) return;
+      const a = Math.max(0, t - m.startup + 3), reach = m.hitbox.x + m.hitbox.w, hx = f.x + f.facing * 10, hy = floorY - f.y - 56;
+      const ang = -1.1 + Math.min(1, a / 7) * 1.5, ex = hx + f.facing * Math.cos(ang) * reach, ey = hy + Math.sin(ang) * reach * 0.6;
+      ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, hy);
+      ctx.quadraticCurveTo((hx + ex) / 2, (hy + ey) / 2 - 8, ex, ey); ctx.stroke(); ctx.lineWidth = 1;
+      ctx.fillStyle = '#111'; ctx.fillRect(Math.round(ex) - 3, Math.round(ey) - 4, 7, 9);
+      ctx.fillStyle = '#c8c8d0'; ctx.fillRect(Math.round(ex) - 2, Math.round(ey) - 3, 5, 7);
+    },
+
     // Lopez Tuero's aura: math symbols orbiting him, slowly.
     mathAura(f, ctx, floorY, frame, layer) {
       if (f.isKO || ['finished', 'thrown'].includes(f.state)) return;
@@ -824,6 +859,16 @@
   }
 
   RF.BLOCK_FX = {
+    // Alejandro: a spinning coil of climbing rope held up as a shield. ON BELAY.
+    ropeGuard(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const x = g.front + f.facing * 4, y = g.mid - 8;
+      ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.ellipse(x, y, 5 + i * 2, 14 + i * 4, (frame / 8) * (i % 2 ? 1 : -1) * 0.2, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.lineWidth = 1;
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'ON BELAY.', f.x, g.top - 26, { align: 'center', color: '#ff8030', outline: '#000' });
+    },
     // Lopez Tuero: a graph's axes and an asymptote curve - your attack approaches, never arrives.
     axisShield(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

@@ -534,6 +534,25 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Alejandro
+
+Rock climber and thrill seeker (daredevil, **100% health**, from the Climbing Wall). Fast, a
+double jump, 5-hit strings and a strong air game; chalk puffs off his hands. Taunts: "SEND IT!",
+"THAT WAS A V2. EASY.", "FEAR IS JUST A CHECKPOINT."
+
+- **Wall jumps:** in the air against the edge of the stage, hold toward the wall to slide down it
+  slowly, and press UP to kick off it - up to 3 times in one jump (`wallJump`). WALL JUMP!
+- **Light: Chalk Jab.** **Heavy: Carabiner Swing** - a rope whipped out with a steel carabiner
+  on the end (long reach).
+- **Block: Rope Guard.** A spinning coil of rope. ON BELAY.
+- **Special: Belay Yank.** Throws a rope with a hook across the screen; if it catches them it
+  reels them right in front of him (GOT YOU!) for a follow-up.
+- **Command specials:** Dyno (a leaping lunge punch) and Free Solo (a soaring uppercut).
+- **Throw: Belay Drop.** Clips them to the rope, hauls them up toward the ceiling - ROCK! - and
+  lets go.
+- **Fatality: Summit.** A cliff rises behind them; he hauls them all the way up, plants a flag
+  (SUMMIT!)... OFF BELAY. **Entrance:** rappels down from the ceiling.
+
 ## Lopez Tuero
 
 Calculus genius and multiversal threat (omniscient, **125% health**, from Every Universe). Math

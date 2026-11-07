@@ -220,6 +220,17 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  belayYank: {
+    name: 'Belay Yank',
+    description: 'Throws a climbing rope with a hook across the screen. If it catches them, it reels them right in front of him for a follow-up.',
+    kind: 'grapple',
+    startup: 8,
+    speed: 9,            // pixels the rope flies per frame
+    range: 190,
+    recovery: 14,
+    damage: 7,
+    hitstun: 40, blockstun: 12, pushback: 0, hitstop: 6,
+  },
   riemannSum: {
     name: 'Riemann Sum',
     description: 'A row of glowing rectangles erupts from the floor under them, one after another. The last one launches. SUM = YOU LOSE.',

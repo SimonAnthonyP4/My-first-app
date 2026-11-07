@@ -6,7 +6,7 @@
   const SLOTS = 24, COLS = 8, SLOT = 24, GAP = 2; // 8 x 3 grid
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
   const PCOL = ['#ff4a3a', '#4a8aff'];
-  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'], angel: ['ANGEL', '#fff2a0'], defender: ['DEFENSIVE', '#80c0ff'], boxer: ['BOXER', '#ff6050'], golfer: ['GOLFER', '#80ffb0'], menace: ['MENACE', '#ff4060'], hyper: ['HYPER', '#40e8ff'], maestro: ['MAESTRO', '#c080ff'], genius: ['OMNISCIENT', '#00ffd0'] };
+  const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'], angel: ['ANGEL', '#fff2a0'], defender: ['DEFENSIVE', '#80c0ff'], boxer: ['BOXER', '#ff6050'], golfer: ['GOLFER', '#80ffb0'], menace: ['MENACE', '#ff4060'], hyper: ['HYPER', '#40e8ff'], maestro: ['MAESTRO', '#c080ff'], genius: ['OMNISCIENT', '#00ffd0'], daredevil: ['DAREDEVIL', '#ff8030'] };
 
   // Stat bars normalised to 0..1 for display only.
   const STAT_BARS = [

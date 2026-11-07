@@ -199,6 +199,39 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Alejandro: SUMMIT - a cliff face rises behind them; he ropes them, hauls them all the way
+    // up the wall, plants a flag at the top... SUMMIT! ...then cuts the rope.
+    summit: {
+      name: 'Summit',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 20 ? ['throw', 0] : t < 100 ? ['throw', 1] : t < 120 ? ['victory', 0] : t < 128 ? ['heavy', 1] : ['victory', (t >> 3) % 2];
+        if (t === 6) { scene.effects.spawnText('ON BELAY!', att.x, att.body.height + 22, '#ff8030'); RF.audio.sfx('grab'); }
+        vic.y = t < 20 ? 0 : t < 100 ? Math.min(170, (t - 20) * 2.2) : t < 124 ? 170 : Math.max(0, 170 - (t - 124) * (t - 124) * 0.65);
+        if (t === 100) { scene.effects.spawnText('SUMMIT!', RF.CONFIG.WIDTH / 2, 150, '#ffd030'); RF.audio.sfx('fanfare'); }
+        if (t === 118) scene.effects.spawnText('...OFF BELAY.', att.x, att.body.height + 22, '#ffffff');
+        if (t === 122) RF.audio.sfx('whoosh');
+        if (vic.y === 0 && t > 124 && !this.landed) { this.landed = true; RF.audio.sfx('boom'); scene.shake = 18; }
+        if (t === 1) this.landed = false;
+        if (t === 175) scene.effects.spawnText('SEND IT.', att.x, att.body.height + 24, '#ff8030');
+      },
+      drawBack(att, vic, ctx, floorY, t) { // the cliff: a jagged rock wall rising behind them
+        const rise = Math.min(1, t / 24), x0 = vic.x - 30, top = floorY - 200 * rise;
+        ctx.fillStyle = '#3a2e28'; ctx.beginPath(); ctx.moveTo(x0 - 30, floorY);
+        for (let y = floorY; y >= top; y -= 14) ctx.lineTo(x0 + ((y * 7) % 13) - 6, y);
+        ctx.lineTo(x0 + 60, top); for (let y = top; y <= floorY; y += 14) ctx.lineTo(x0 + 70 + ((y * 5) % 11), y);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#5a463a'; for (let i = 0; i < 12; i++) ctx.fillRect(x0 + ((i * 23) % 60), floorY - ((i * 37) % 190) * rise, 6, 3); // holds
+        if (t >= 100) { ctx.fillStyle = '#ddd'; ctx.fillRect(Math.round(x0 + 50), Math.round(top - 24), 1, 24); ctx.fillStyle = '#ff8030'; ctx.fillRect(Math.round(x0 + 51), Math.round(top - 24), 10, 6); }
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        vic.sprite.draw(ctx, 'hit', 0, vic.x, floorY - vic.y, vic.facing);
+        if (t > 8 && t < 124) { // the rope from the top of the cliff
+          ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(vic.x, 0); ctx.lineTo(vic.x, floorY - vic.y - vic.body.height + 4); ctx.stroke(); ctx.lineWidth = 1;
+        }
+      },
+    },
+
     // Lopez Tuero: DIVIDE BY ZERO - reality falls away into a cosmic void of equations.
     // Copies of them from every universe appear... LET X = YOU. X / 0. UNDEFINED.
     divideByZero: {

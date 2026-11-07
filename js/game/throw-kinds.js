@@ -70,6 +70,27 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Alejandro: BELAY DROP - clipped to the rope, hauled up high, then dropped. ROCK!
+    belayDrop: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        def.x = att.x + att.facing * 26; def.facing = -att.facing; def.thrownPose = ['hit', 0];
+        if (t < 50) def.y = Math.min(130, t < 8 ? 0 : (t - 8) * 3.2);
+        if (t === 4) { scene.effects.spawnText('ON BELAY!', att.x, att.body.height + 20, '#ff8030'); RF.audio.sfx('grab'); }
+        if (t === 50) scene.effects.spawnText('ROCK!', def.x, 170, '#ffffff');
+        if (t >= 54 && t < 66) def.y = Math.max(0, 130 - (t - 54) * 12);    // the drop
+        if (t === 66) { def.y = 0; scene.throwHit(att, def, T.dropDamage, { vx: att.facing * 3, vy: 2 }); RF.audio.sfx('boom'); scene.shake = 12; }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 50 ? ['throw', 1] : ['victory', 0]; },
+      draw(att, def, ctx, floorY) {
+        if (att.stateTime > 66) return;
+        ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(att.x + att.facing * 6, floorY - 60); ctx.lineTo(def.x, 0); ctx.moveTo(def.x, 0); ctx.lineTo(def.x, floorY - def.y - def.body.height + 6);
+        ctx.stroke(); ctx.lineWidth = 1;
+      },
+    },
+
     // Lopez Tuero: PROOF BY CONTRADICTION - each line of the proof stings; Q.E.D. slams them.
     proof: {
       lines: [[8, 'GIVEN: YOU.'], [26, 'ASSUME YOU CAN WIN.'], [44, '∫ YOU dx = 0'], [58, 'CONTRADICTION.']],

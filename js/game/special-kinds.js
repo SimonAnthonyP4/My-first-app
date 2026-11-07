@@ -32,6 +32,47 @@
       },
     },
 
+    // Alejandro: BELAY YANK - throws a rope with a grappling hook across the screen; if it
+    // catches them, it yanks them right in front of him for a follow-up.
+    grapple: {
+      start(f) { f.vx = 0; f.specialData.len = 0; f.specialData.caught = null; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t === s.startup) RF.audio.sfx('whoosh');
+        if (t >= s.startup && !d.caught && !d.back) {
+          d.len = Math.min(s.range, d.len + s.speed);
+          const tip = f.x + f.facing * (12 + d.len), ty = f.y + f.body.height * 0.6;
+          if (Math.abs(opp.x - tip) < opp.body.width / 2 + 4 && ty > opp.y && ty < opp.y + opp.body.height && !opp.isKO && !['finished', 'thrown'].includes(opp.state)) {
+            const r = scene.applyHit(f, opp, RF.specialMove(f, s), 'hit', tip, ty);
+            d.back = true; // one catch per throw
+            if (r === 'hit') { d.caught = opp; RF.audio.sfx('clang'); scene.effects.spawnText('GOT YOU!', f.x, f.body.height + 18, '#ff8030'); }
+          }
+          if (d.len >= s.range) d.back = true;
+        }
+        if (d.back && !d.caught) d.len = Math.max(0, d.len - s.speed * 1.5);
+        if (d.caught) { // reel them in
+          const want = f.x + f.facing * (f.body.width / 2 + d.caught.body.width / 2 + 6);
+          d.caught.x += (want - d.caught.x) * 0.3; d.caught.y = Math.max(0, d.caught.y * 0.7);
+          d.caught.stun = Math.max(d.caught.stun, 16); d.len = Math.abs(d.caught.x - f.x) - 12;
+          if (Math.abs(d.caught.x - want) < 2 || t > s.startup + 50) { d.caught = null; d.done = t; d.len = 0; }
+        }
+        const end = d.done ? d.done + 4 : (d.back && !d.caught && d.len <= 0 ? t : null);
+        if (end != null && t >= end + s.recovery * 0.3) f.setState('idle');
+        if (t > s.startup + 120) f.setState('idle');
+      },
+      anim(f) { return ['special', f.stateTime < f.special.startup ? 0 : 1]; },
+      draw(f, ctx, floorY) {
+        const d = f.specialData;
+        if (!d.len) return;
+        const hx = f.x + f.facing * 12, y = Math.round(floorY - f.y - f.body.height * 0.6), tip = hx + f.facing * d.len;
+        ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, y);
+        ctx.quadraticCurveTo((hx + tip) / 2, y + 6, tip, y); ctx.stroke(); ctx.lineWidth = 1;
+        ctx.fillStyle = '#111'; ctx.fillRect(Math.round(tip) - 3, y - 4, 7, 8);
+        ctx.fillStyle = '#c8c8d0'; ctx.fillRect(Math.round(tip) - 2, y - 3, 5, 6); // the carabiner/hook
+        ctx.fillStyle = '#111'; ctx.fillRect(Math.round(tip) - 1, y - 1, 3, 2);
+      },
+    },
+
     // Lopez Tuero: RIEMANN SUM - a row of glowing rectangles (a Riemann sum under the curve)
     // erupts from the floor under the opponent, one after another; the last one launches.
     riemann: {

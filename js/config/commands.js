@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Alejandro ----
+    dyno: Object.assign({ name: 'Dyno', kind: 'rush', startup: 5, speed: 8.5, duration: 16, reach: 18, recovery: 14, hop: 6, color: '#ff8030', callout: 'DYNO!', anim: 'heavy' }, hit(11, { pushback: 7 })),
+    freeSolo: Object.assign({ name: 'Free Solo', kind: 'rising', startup: 4, rise: 10.5, forward: 1.5, reach: 22, recovery: 18, invuln: 10, color: '#ffffff', sound: 'whoosh' }, hit(12, { launch: 7 })),
     // ---- Lopez Tuero ----
     taylorSeries: Object.assign({ name: 'Taylor Series', kind: 'volley', startup: 8, interval: 5, recovery: 16, heights: [0.8, 0.55, 0.3, 0.7, 0.45], speed: 5.5, size: 12, glyphs: ['∫', 'Σ', '∞', 'Δ', '√'], colors: ['#ffffff', '#a0fff0', '#00b0a0'], sound: 'zap' }, hit(4, { hitstun: 18, blockstun: 10, pushback: 2.5, hitstop: 4 })),
     multiverseSwap: Object.assign({ name: 'Multiverse Swap', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 12, color: '#00ffd0', callout: 'WRONG UNIVERSE.', sound: 'arcane' }, hit(11)),
@@ -99,6 +102,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    alejandro: { commands: { qcf: 'dyno', qcb: 'freeSolo' }, taunt: 'SEND IT!', voicePitch: 1.1 },
     lopez: { commands: { qcf: 'taylorSeries', qcb: 'multiverseSwap' }, taunt: 'SHOW YOUR WORK.', voicePitch: 0.7 },
     wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
     gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
