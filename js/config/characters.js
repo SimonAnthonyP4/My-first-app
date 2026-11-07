@@ -2333,6 +2333,7 @@ RF.CHARACTERS = [
       crouchDrop: 12,
       sleeveColor: 'shirt6',
       sleeveShade: 0.1,
+      sleeveLength: 0.35,          // short-sleeve polo
       handColor: 'skin0',
       legColor: 'pantsh',
       footColor: 'shoes6',
@@ -2726,6 +2727,7 @@ RF.CHARACTERS = [
       crouchDrop: 12,
       sleeveColor: 'colj',
       sleeveShade: 0.05,
+      sleeveLength: 0.35,
       handColor: 'propglovec',     // the white golf glove
       legColor: 'pantsh',
       footColor: 'shoesc',
@@ -2941,6 +2943,8 @@ RF.CHARACTERS = [
       crouchDrop: 12,
       sleeveColor: 'colj',
       sleeveShade: 0.05,
+      sleeveLength: 0.3,
+      armThickness: 1.15,
       handColor: 'skin0',
       legColor: 'pantsi',
       footColor: 'shoesc',
@@ -3150,11 +3154,17 @@ RF.CHARACTERS = [
       crouchDrop: 12,
       sleeveColor: 'colj',
       sleeveShade: 0.05,
+      sleeveLength: 0.3,
       handColor: 'skin0',
       legColor: 'pantsi',
       footColor: 'shoesc',
       hideWhenPosed: ['proparm0', 'proparm1', 'proparm2', 'proparm3', 'proparm4', 'proparm5', 'proparm6', 'proparm8', 'proparma', 'proparmb', 'proparmg'],      // his right arm comes out of his pocket to swing
       poses: {
+        heavy: [
+          { arm: 'back', head: [-2, 0], torso: [-1, 0] },
+          { arm: 'forward', head: [4, 0], torso: [3, 0] },
+          { arm: 'forwardShort', head: [2, 0], torso: [1, 0] },
+        ],
         idle: [{}, { head: [0, -1], torso: [0, -1] }, { head: [0, -2], torso: [0, -2], legs: 'stride', stride: 1 }, { head: [0, -1], torso: [0, -1] }],
       },
     },
@@ -3911,10 +3921,20 @@ RF.CHARACTERS = [
       crouchDrop: 12,
       sleeveColor: 'col0',         // the grey tee
       sleeveShade: 0,
+      sleeveLength: 0.3,           // T-shirt: bare forearms
+      armThickness: 1.4,           // and they're huge
+      legThickness: 1.3,
       handColor: 'colk',
       legColor: 'pants4',
       footColor: 'shoese',
       hideWhenPosed: ['proparm7', 'proparm8', 'proparm9', 'proparma', 'proparmb', 'proparmc', 'proparmi', 'proparmk', 'proparmm'],      // the front fist becomes the punching arm
+      poses: {
+        heavy: [
+          { arm: 'back', head: [-2, 0], torso: [-1, 0] },
+          { arm: 'forward', head: [4, 0], torso: [3, 0] },
+          { arm: 'forwardShort', head: [2, 0], torso: [1, 0] },
+        ],
+      },
     },
   },
 ];

@@ -632,6 +632,15 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Attacking arms and legs
+
+Punching arms and kicking legs on hand-drawn (pixel-puppet) fighters are drawn as real pixel-art
+limbs, not flat blocks: a tapered tube through the joints (shoulder, elbow, wrist / hip, knee,
+ankle) with a dark outline and light/shadow shading, ending in a fist with knuckles or a shoe, all
+in the fighter's own colours. Sprite options: `sleeveLength` (short sleeves: bare forearm below,
+e.g. 0.3 for a T-shirt), `armThickness` / `legThickness` (Mikey's are huge). A cocked-back arm is
+drawn behind the body.
+
 ## Fatalities (gore)
 
 Every finisher is now a **FATALITY** (`js/game/gore.js`). Whenever a fatality lands an impact

@@ -157,6 +157,33 @@
         ctx.fillStyle = color;
         ctx.fillRect(Math.round(ox + c * U + dx), Math.round(oy + r * U + dy), U * k, U * k);
       };
+      // Pixel-art limbs: a tapered tube through joint points (art pixels), with a dark outline
+      // and light/shadow shading so arms and legs look round instead of flat blocks.
+      const stampPass = (pts, rAt, fn) => {
+        const hit = new Map(), segs = [];
+        let total = 0;
+        for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(L); total += L; }
+        let acc = 0;
+        for (let i = 1; i < pts.length; i++) {
+          const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], L = segs[i - 1], n = Math.max(1, Math.ceil(L / 0.8));
+          for (let j = 0; j <= n; j++) {
+            const u = j / n, cx = x0 + (x1 - x0) * u, cy = y0 + (y1 - y0) * u, r = rAt(total ? (acc + L * u) / total : 0), R = Math.ceil(r), rr = r * r + 0.3, inv = 1 / (r || 1);
+            const bx = Math.round(cx), by = Math.round(cy);
+            for (let iy = -R; iy <= R; iy++) for (let ix = -R; ix <= R; ix++) {
+              const px = bx + ix, py = by + iy, ex = px - cx, ey = py - cy;
+              if (ex * ex + ey * ey <= rr) hit.set((px + 2048) * 4096 + py + 2048, [px, py, ex * inv, ey * inv]);
+            }
+          }
+          acc += L;
+        }
+        for (const v of hit.values()) fn(...v);
+      };
+      const limb = (pts, rAt, color, dx = 0, dy = 0) => {
+        const outline = shade(color, -0.68), hi = shade(color, 0.2), lo = shade(color, -0.24);
+        stampPass(pts, (u) => rAt(u) + 1, (px, py) => put(px, py, outline, dx, dy));
+        stampPass(pts, rAt, (px, py, nx, ny) => { const l = -(nx * 0.55 + ny * 0.83); put(px, py, l > 0.42 ? hi : l < -0.5 ? lo : color, dx, dy); });
+      };
+      this.limb = limb;
       const off = (k) => p[k] || [0, 0];
       const torsoOff = [off('torso')[0], off('torso')[1] + drop];
       const headOff = [off('head')[0], off('head')[1] + drop];
@@ -237,16 +264,45 @@
             ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * (dirY ? 2 : 1), U * (dirX ? 2 : 1));
           }
         }
-        cells.forEach(([cx, cy], i) => {
-          const isHand = i === cells.length - 1;
-          let col = isHand ? this.handColor : this.sleeve;
-          if (dark) col = shade(col, -0.3);
-          blk(sc + cx * k, sr + cy * k, col, dx, dy);
-        });
+        if (k < 2) { // tiny-scale sprites keep the simple blocks
+          cells.forEach(([cx, cy], i) => {
+            const isHand = i === cells.length - 1;
+            let col = isHand ? this.handColor : this.sleeve;
+            if (dark) col = shade(col, -0.3);
+            blk(sc + cx * k, sr + cy * k, col, dx, dy);
+          });
+          return;
+        }
+        // Shoulder -> ... -> wrist as a tapered, shaded sleeve; then a fist.
+        const P = ([cx, cy]) => [sc + cx * k + k / 2, sr + cy * k + k / 2];
+        const pts = [P([0, 0]), ...cells.map(P)], n = pts.length, fist = pts[n - 1];
+        const sleeve = dark ? shade(this.sleeve, -0.3) : this.sleeve, hand = dark ? shade(this.handColor, -0.3) : this.handColor;
+        const armPts = pts.slice(0, n - 1).concat([[(pts[n - 2][0] + fist[0]) / 2, (pts[n - 2][1] + fist[1]) / 2]]);
+        const thick = s.armThickness || 1, rArm = (u) => k * thick * (0.6 - 0.16 * u);
+        const sl = s.sleeveLength == null ? 1 : s.sleeveLength;   // short sleeves: bare forearm below
+        if (sl < 1) {
+          limb(armPts, rArm, hand, dx, dy);
+          // the sleeve: the first part of the arm, by length
+          const cut = [armPts[0]]; let total = 0; for (let i = 1; i < armPts.length; i++) total += Math.hypot(armPts[i][0] - armPts[i - 1][0], armPts[i][1] - armPts[i - 1][1]);
+          let need = total * sl;
+          for (let i = 1; i < armPts.length && need > 0; i++) {
+            const L = Math.hypot(armPts[i][0] - armPts[i - 1][0], armPts[i][1] - armPts[i - 1][1]), u = Math.min(1, need / L);
+            cut.push([armPts[i - 1][0] + (armPts[i][0] - armPts[i - 1][0]) * u, armPts[i - 1][1] + (armPts[i][1] - armPts[i - 1][1]) * u]); need -= L;
+          }
+          if (cut.length > 1) limb(cut, (u) => rArm(u * sl) + 0.4, sleeve, dx, dy);
+        } else limb(armPts, rArm, sleeve, dx, dy);
+        const [px, py] = pts[n - 2], dirX = Math.sign(fist[0] - px), dirY = Math.sign(fist[1] - py);
+        limb([[fist[0] - dirX * k * 0.15, fist[1] - dirY * k * 0.15], [fist[0] + dirX * k * 0.15, fist[1] + dirY * k * 0.15]], () => k * 0.62 * Math.max(1, (s.armThickness || 1) * 0.9), hand, dx, dy);
+        if (!dark && k >= 3) { // knuckles: a little darker line across the front of the fist
+          const kn = shade(hand, -0.3), fx = fist[0] + dirX * k * 0.35, fy = fist[1] + dirY * k * 0.35;
+          for (let t = -1; t <= 1; t++) put(Math.round(fx + (dirY ? t : 0)), Math.round(fy + (dirX ? t : 0)), kn, dx, dy);
+        }
       };
 
       // Back arm, legs, body, head, front arm.
       drawArm(p.backArm, true, p.armOff || [0, 0]);
+      const armBehind = p.arm === 'back' || p.arm === 'flail'; // a cocked-back arm sits behind the body
+      if (armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
       this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;
       for (const cell of this.cells.torso) {
@@ -265,7 +321,7 @@
         }
       } else for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
       this.drawLegs(p, put, blk, drop, true); // a kicking leg goes in front of the body
-      drawArm(p.arm, false, p.armOff || [0, 0]);
+      if (!armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
 
       return { canvas, anchorX: Math.round(ox + s.footCol * U), anchorY: oy + this.rows * U };
     }
@@ -284,6 +340,21 @@
 
       const kicking = ['sweep', 'chamber', 'kick'].includes(mode);
       if (front && !kicking) return;
+      if (front && k >= 2 && this.limb) { // a real leg: thigh, knee, shin, and a shoe
+        const H = (x, y) => [hc + k / 2 + x * k, hr + k / 2 + y * k];
+        let leg, shoe;
+        if (mode === 'sweep') {
+          const row = this.rows - k / 2 - (hr + k / 2);
+          leg = [H(0, row / k - 1), H(3.2, row / k), H(6.2, row / k)]; shoe = [H(6.2, row / k), H(7.6, row / k - 0.5)];
+        } else if (mode === 'chamber') {
+          leg = [H(0, 0), H(3, -1.6), H(3.4, 2.2)]; shoe = [H(3.4, 2.4), H(4.8, 2.7)];
+        } else {
+          leg = [H(0, 0), H(3, -2.2), H(5.6, -5.3)]; shoe = [H(5.4, -5.4), H(6.8, -6.5)];
+        }
+        this.limb(leg, (u) => k * (s.legThickness || 1) * (0.78 - 0.2 * u), pants);
+        this.limb(shoe, () => k * 0.52, shoes);
+        return;
+      }
       if (front) {
         if (mode === 'sweep') {
           const row = this.rows - k;
