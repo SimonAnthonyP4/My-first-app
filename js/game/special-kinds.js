@@ -32,6 +32,37 @@
       },
     },
 
+    // Wuttke: GRAND PIANO - conducts a grand piano out of the sky onto them. A shadow
+    // warns where it lands; it smashes into a shower of keys.
+    pianoDrop: {
+      start(f, scene) { f.vx = 0; f.specialData.tx = null; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t === 4) { d.tx = opp.x; RF.audio.sfx('whoosh'); scene.effects.spawnText('FORTISSIMO!', f.x, f.body.height + 18, '#c080ff'); }
+        if (t === s.startup + s.fall) { // impact
+          d.landed = t;
+          scene.shake = Math.max(scene.shake, 14); RF.audio.sfx('boom'); RF.audio.sfx('clang');
+          if (Math.abs(opp.x - d.tx) < s.width / 2 + opp.body.width / 2 && opp.y < 60) scene.applyHit(f, opp, RF.specialMove(f, s), 'heavy', opp.x, 30);
+          scene.effects.spawnText('PLONK!', d.tx, 70, '#ffffff');
+          scene.effects.spawn('dust', d.tx - 16, 1); scene.effects.spawn('dust', d.tx + 16, 1);
+        }
+        if (t >= s.startup + s.fall + s.recovery) f.setState('idle');
+      },
+      anim(f) { const t = f.stateTime, s = f.special; return t < s.startup + s.fall ? ['victory', (t >> 3) % 2] : ['special', 1]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (d.tx == null) return;
+        const u = Math.min(1, (t - 4) / (s.startup + s.fall - 4)), x = d.tx;
+        if (!d.landed) { // shadow growing on the floor
+          ctx.fillStyle = `rgba(0,0,0,${0.2 + u * 0.4})`;
+          ctx.beginPath(); ctx.ellipse(x, floorY, 10 + u * 16, 3, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        const y = d.landed ? floorY : floorY - (1 - u * u) * 220, age = d.landed ? t - d.landed : 0;
+        if (age > 16) return;
+        RF.drawGrandPiano(ctx, x, y, age > 8 ? (age - 8) / 8 : 0);
+      },
+    },
+
     // Gabriel: MIND SLAM - telekinesis. Grabs them from across the screen with his mind,
     // lifts them into the air, then slams them into the floor. Blocking breaks the grip.
     telekinesis: {

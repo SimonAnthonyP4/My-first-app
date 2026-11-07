@@ -39,6 +39,43 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Wuttke's aura: music notes drifting around him, always.
+    maestroAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || f.isKO || ['finished', 'thrown', 'hitstun'].includes(f.state)) return;
+      for (let i = 0; i < 3; i++) {
+        const age = (frame + i * 40) % 120;
+        if (age > 80) continue;
+        const a = (frame / 40 + i * 2.1), x = f.x + Math.cos(a) * (f.body.width * 0.9), y = floorY - f.y - f.body.height * 0.4 - age * 0.45;
+        ctx.globalAlpha = 1 - age / 80;
+        RF.drawNote(ctx, x, y, ['#ffd040', '#e0c0ff', '#ffffff'][i], 1, i === 1);
+      }
+      ctx.globalAlpha = 1;
+    },
+
+    // Wuttke's STACCATO: a quick strum that throws off a spray of little notes.
+    noteStrum(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 8) return;
+      const a = t - m.startup, y0 = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      for (let i = 0; i < 3; i++) RF.drawNote(ctx, f.x + f.facing * (16 + a * 3 + i * 7), y0 - i * 4 + Math.sin(a + i) * 2, i % 2 ? '#ffd040' : '#e0c0ff', 1);
+    },
+
+    // Wuttke's FORTISSIMO: a big chord - rings of sound blasting outward.
+    soundBlast(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 12) return;
+      const a = t - m.startup, x = f.x + f.facing * 14, y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const r = 8 + a * 3 - i * 8;
+        if (r <= 0) continue;
+        ctx.strokeStyle = i % 2 ? '#ffd040' : '#c080ff'; ctx.globalAlpha = Math.max(0, 1 - a / 16);
+        ctx.beginPath(); ctx.arc(x, y, r, f.facing > 0 ? -0.9 : Math.PI - 0.9, f.facing > 0 ? 0.9 : Math.PI + 0.9); ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+      if (a < 8) RF.font.drawText(ctx, 'FF!', x + f.facing * 30, y - 24, { align: 'center', color: '#ffd040', outline: '#000' });
+    },
+
     // Gabriel's aura: crackles of psychic energy. As MR. SUPPLIER: a gold glow, shades,
     // a name tag over his head and a timer.
     hyperAura(f, ctx, floorY, frame, layer) {
@@ -591,6 +628,40 @@
     ctx.restore();
   };
 
+  // Wuttke: a music note (k = size) and a grand piano (breaking = 0..1 as it smashes).
+  RF.drawNote = function (ctx, x, y, color = '#ffffff', k = 1, beamed = false) {
+    x = Math.round(x); y = Math.round(y);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x - 1 * k, y + 2 * k, 5 * k, 4 * k); ctx.fillRect(x + 2 * k, y - 6 * k, 3 * k, 10 * k);
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y + 3 * k, 3 * k, 2 * k); ctx.fillRect(x + 3 * k, y - 5 * k, 1 * k, 8 * k);
+    if (beamed) { ctx.fillRect(x + 3 * k, y - 5 * k, 6 * k, 2 * k); ctx.fillRect(x + 8 * k, y - 5 * k, 1 * k, 8 * k); ctx.fillRect(x + 5 * k, y + 3 * k, 3 * k, 2 * k); }
+    else ctx.fillRect(x + 4 * k, y - 5 * k, 2 * k, 1 * k);
+  };
+  RF.drawGrandPiano = function (ctx, x, y, breaking = 0) {
+    x = Math.round(x); y = Math.round(y);
+    if (breaking > 0) { // flying keys and splinters
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI, d = breaking * 40;
+        ctx.fillStyle = i % 3 ? '#f0f0e8' : '#111';
+        ctx.fillRect(Math.round(x + Math.cos(a) * d * (i % 2 ? 1 : -1)), Math.round(y - 10 - Math.sin(a) * d), 3, 6);
+      }
+      return;
+    }
+    ctx.fillStyle = '#000'; ctx.fillRect(x - 25, y - 27, 50, 19);
+    ctx.fillStyle = '#1c1c22'; ctx.fillRect(x - 24, y - 26, 48, 17);             // the case
+    ctx.fillStyle = '#3a3a48'; ctx.fillRect(x - 22, y - 25, 44, 2);               // shine
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(x - 20, y - 26); ctx.lineTo(x + 14, y - 44); ctx.lineTo(x + 16, y - 26); ctx.fill(); // lid up
+    ctx.fillStyle = '#f0f0e8'; ctx.fillRect(x - 24, y - 12, 48, 4);               // keys
+    ctx.fillStyle = '#111'; for (let i = 0; i < 12; i++) ctx.fillRect(x - 22 + i * 4, y - 12, 2, 2);
+    ctx.fillStyle = '#1c1c22'; ctx.fillRect(x - 21, y - 8, 3, 8); ctx.fillRect(x + 18, y - 8, 3, 8); // legs
+  };
+  RF.PROJECTILE_ART.musicNote = function (ctx, x, y, t, dir) {
+    for (let i = 1; i <= 3; i++) { ctx.globalAlpha = 0.5 - i * 0.12; RF.drawNote(ctx, x - dir * i * 7, y + Math.sin((t + i * 4) / 3) * 3, '#c080ff', 1); }
+    ctx.globalAlpha = 1;
+    RF.drawNote(ctx, x - 4, y + Math.sin(t / 3) * 3 - 2, t % 8 < 4 ? '#ffffff' : '#ffd040', 2, true); // a big beamed eighth-note pair
+  };
+
   // Tyler: a dimpled golf ball with a speed trail.
   RF.PROJECTILE_ART.golfBall = function (ctx, x, y, t, dir) {
     for (let i = 1; i <= 4; i++) { ctx.fillStyle = `rgba(255,255,255,${0.5 - i * 0.1})`; ctx.fillRect(Math.round(x - dir * i * 7), Math.round(y - 1), 6, 2); }
@@ -718,6 +789,17 @@
   }
 
   RF.BLOCK_FX = {
+    // Wuttke: a wall of five-line music staff, notes bouncing off it.
+    musicStaff(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const x = Math.round(g.front + f.facing * 4), top = Math.round(g.top + 8), h = g.hurt.h - 16;
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 1, top, 9, h);
+      ctx.fillStyle = '#e0d0f0'; for (let i = 0; i < 5; i++) ctx.fillRect(x + i * 2 - 1 + (f.facing > 0 ? 0 : -1), top, 1, h);
+      RF.drawNote(ctx, x + f.facing * 8, top + 10 + Math.sin(frame / 4) * 4, '#ffd040', 1);
+      RF.drawNote(ctx, x + f.facing * 6, top + h - 18 + Math.cos(frame / 4) * 4, '#c080ff', 1);
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'REST.', f.x, g.top - 26, { align: 'center', color: '#c080ff', outline: '#000' });
+    },
     // Gabriel: a telekinetic force field, rippling where hits land.
     mindShield(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

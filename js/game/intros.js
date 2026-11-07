@@ -142,6 +142,22 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Strolls in strumming the lute, notes trailing, then a little bow (Wuttke).
+    serenade: {
+      update(f, t, scene) {
+        const from = f.homeX - f.facing * 110, u = Math.min(1, t / 40);
+        f.x = from + (f.homeX - from) * u;
+        f.state = t < 40 ? 'walk' : t < 56 ? 'attack' : 'idle';
+        if (t < 40) f.walkTime = t * 2;
+        if (f.state === 'attack') { f.move = f.moves.light; f.moveKind = 'light'; f.stateTime = 4; } else f.move = null;
+        if (t % 10 === 0 && t < 56) RF.audio.sfx('zap');
+        if (t === 44) scene.effects.spawnText('GOOD MORNING, CLASS.', f.homeX, f.body.height + 22, '#c080ff');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 60) return;
+        for (let i = 0; i < 4; i++) { const a = ((t + i * 12) % 48) / 48; RF.drawNote(ctx, f.x - f.facing * (8 + a * 30), floorY - 60 - a * 30, i % 2 ? '#ffd040' : '#e0c0ff', 1); }
+      },
+    },
     // Blinks in with a crackle of psychic energy, bouncing on his toes (Gabriel).
     hyperIn: {
       update(f, t, scene) {

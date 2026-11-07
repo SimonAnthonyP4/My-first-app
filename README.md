@@ -534,6 +534,26 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Wuttke
+
+The music teacher (maestro, **120% health**, from the Music Room). Piano, orchestra, all of it.
+Music notes drift around him and he sways to the beat; every taunt is a music-teacher line
+("YOU ARE FLAT.", "TEMPO! TEMPO!").
+
+- **Crescendo:** every hit of a combo is louder than the last - +6% damage a hit, up to +42%.
+- **Light: Staccato.** A quick lute strum spraying notes. **Heavy: Fortissimo.** One huge chord, a
+  blast of sound (FF!). Attacks are conducted with a baton.
+- **Block: Music Staff.** A wall of five-line staff - REST.
+- **Special: Grand Piano.** Conducts a grand piano out of the sky onto them (a shadow shows where);
+  PLONK!, and it smashes into flying keys.
+- **Command specials:** Treble Clef (a big flying eighth note) and Rest (counter: TAKE A REST.).
+- **Throw: Lute Solo.** A face-melting solo (every note stings), then ENCORE! with the lute.
+- **Fatality: Grand Finale.** Beethoven's Fifth: DUN, DUN, DUN, DUNNNN - a giant note slams on
+  every beat - then a grand piano crushes them. BRAVO! **Entrance:** strolls in strumming -
+  GOOD MORNING, CLASS.
+
+The roster is 20 fighters; the 10 x 2 select is full.
+
 ## Gabriel
 
 Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, a double jump,

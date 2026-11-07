@@ -70,6 +70,30 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Wuttke: LUTE SOLO - a blistering solo in their face, then ENCORE! (a bonk with the lute).
+    luteSolo: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 4);
+        def.thrownPose = ['hit', (t >> 2) % 2];
+        if (t === 2) scene.effects.spawnText('A-ONE, A-TWO...', att.x, att.body.height + 20, '#c080ff');
+        if (t >= 14 && t < 54 && t % 8 === 0) { scene.throwHit(att, def, T.noteDamage); RF.audio.sfx('zap'); }
+        if (t === 40) scene.effects.spawnText('SOLO!', att.x, att.body.height + 28, '#ffd040');
+        if (t === 62) scene.effects.spawnText('ENCORE!', att.x, att.body.height + 28, '#ff60a0');
+        if (t === 66) { scene.throwHit(att, def, T.encoreDamage, { vx: att.facing * 7, vy: 4 }); RF.audio.sfx('clang'); }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 60 ? ['light', (t >> 2) % 2 ? 0 : 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 14 || t > 56) return;
+        for (let i = 0; i < 5; i++) { // notes flying off the strings into their face
+          const a = ((t * 3 + i * 9) % 30) / 30, x = att.x + (def.x - att.x) * a, y = floorY - 50 - Math.sin(a * Math.PI) * 14 - i * 3;
+          RF.drawNote(ctx, x, y, i % 2 ? '#ffd040' : '#e0c0ff', 1);
+        }
+      },
+    },
+
     // Gabriel: MIND SPIN - telekinesis: up over his head, spun around, hurled.
     tkSpin: {
       update(att, def, t, scene) {

@@ -199,6 +199,45 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Wuttke: GRAND FINALE - conducts Beethoven's Fifth: DUN, DUN, DUN... DUNNNN - giant notes
+    // slam down on them on every beat - then a grand piano. BRAVO!
+    grandFinale: {
+      name: 'Grand Finale',
+      duration: 220,
+      beats: [34, 50, 66, 96],
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 130 ? ['victory', (t >> 3) % 2] : t < 180 ? ['special', 1] : ['victory', (t >> 4) % 2];
+        if (t === 8) { scene.effects.spawnText('FROM THE TOP!', att.x, att.body.height + 22, '#c080ff'); RF.audio.sfx('whoosh'); }
+        this.beats.forEach((b, i) => {
+          if (t === b) { RF.audio.sfx(i === 3 ? 'boom' : 'heavy'); scene.shake = i === 3 ? 12 : 6; scene.effects.spawnText(i === 3 ? 'DUNNNNN!' : 'DUN!', vic.x, 100 + i * 8, i === 3 ? '#ffd040' : '#ffffff'); }
+        });
+        if (t === 112) RF.audio.sfx('whoosh');
+        if (t === 130) { RF.audio.sfx('boom'); RF.audio.sfx('clang'); scene.shake = 18; }
+        if (t === 165) { RF.audio.sfx('applause'); scene.effects.spawnText('BRAVO!', RF.CONFIG.WIDTH / 2, 120, '#ffd040'); }
+        if (t === 190) scene.effects.spawnText('CLASS DISMISSED.', att.x, att.body.height + 24, '#c080ff');
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        // squashed a bit more by every beat
+        const hits = this.beats.filter((b) => t >= b).length, sq = 1 - hits * 0.12;
+        ctx.save(); ctx.translate(Math.round(vic.x), floorY); ctx.scale(1 + hits * 0.06, sq);
+        vic.sprite.draw(ctx, 'hit', 0, 0, 0, vic.facing);
+        ctx.restore();
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        // a giant note falls on each beat
+        for (const b of this.beats) {
+          const u = (t - (b - 12)) / 12;
+          if (u < 0 || t > b + 10) continue;
+          const y = u < 1 ? -20 + u * (floorY - 30) : floorY - 30;
+          RF.drawNote(ctx, vic.x - 8, y, b === this.beats[3] ? '#ffd040' : '#e0c0ff', 4, b === this.beats[3]);
+        }
+        if (t >= 112 && t < 200) { // ...and the grand piano
+          const u = Math.min(1, (t - 112) / 18);
+          RF.drawGrandPiano(ctx, vic.x, t < 130 ? floorY - (1 - u * u) * 220 : floorY, t > 185 ? (t - 185) / 15 : 0);
+        }
+      },
+    },
+
     // Gabriel: MIND BLOWN - a Miami sunset fades in, he lifts them with telekinesis,
     // squeezes... and they pop. WELCOME TO MIAMI.
     mindBlown: {

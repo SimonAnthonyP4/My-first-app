@@ -220,6 +220,17 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  grandPiano: {
+    name: 'Grand Piano',
+    description: 'Conducts a grand piano out of the sky onto their head. FORTISSIMO! PLONK!',
+    kind: 'pianoDrop',
+    startup: 12,
+    fall: 22,            // frames the piano falls (the shadow warns where)
+    recovery: 18,
+    width: 48,
+    damage: 18,
+    hitstun: 34, blockstun: 16, pushback: 3, hitstop: 14,
+  },
   mindSlam: {
     name: 'Mind Slam',
     description: 'Telekinesis! Grabs them with his mind from across the screen, lifts them up and SLAMS them. Blocking breaks the grip.',

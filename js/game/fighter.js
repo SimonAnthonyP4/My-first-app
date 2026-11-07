@@ -718,6 +718,7 @@
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (attacker && attacker.raging) dmg *= RF.CONFIG.RAGE_DAMAGE;
       if (attacker && attacker.alterT > 0) dmg *= attacker.def.alterEgo.damage; // MR. SUPPLIER hits harder
+      if (attacker && attacker.def.crescendo && !blocked) dmg *= 1 + Math.min(attacker.def.crescendo.max, this.combo * attacker.def.crescendo.step); // Wuttke: each hit of a combo louder
       if (blocked) {
         dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
         if (this.def.blockHeal) this.health = Math.min(this.maxHealth, this.health + this.def.blockHeal); // Ruano's GRACE

@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  luteSolo: {
+    name: 'Lute Solo',
+    description: 'Shreds a face-melting lute solo right in their face (every note stings), then an ENCORE over the head.',
+    kind: 'luteSolo',
+    noteDamage: 2,
+    encoreDamage: 10,
+  },
   mindSpin: {
     name: 'Mind Spin',
     description: 'Lifts them over his head with telekinesis, spins them around like a ceiling fan, then hurls them across the screen.',

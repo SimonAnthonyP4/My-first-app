@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Wuttke ----
+    trebleClef: Object.assign({ name: 'Treble Clef', kind: 'projectile', startup: 9, recovery: 18, speed: 5, size: 14, height: 0.6, art: 'musicNote', sound: 'whoosh', colors: ['#ffffff', '#e0c0ff', '#8040c0'] }, hit(10)),
+    restCounter: Object.assign({ name: 'Rest', kind: 'counter', startup: 2, window: 24, recovery: 18, color: '#c080ff', callout: 'TAKE A REST.' }, hit(13, { launch: 5 })),
     // ---- Gabriel ----
     oceanDrive: Object.assign({ name: 'Ocean Drive', kind: 'rush', startup: 6, speed: 9.5, duration: 14, reach: 16, recovery: 14, color: '#ff4fb0', callout: 'OCEAN DRIVE!', anim: 'heavy' }, hit(10, { pushback: 8 })),
     mindLift: Object.assign({ name: 'Mind Lift', kind: 'rising', startup: 5, rise: 9.5, forward: 1.2, reach: 22, recovery: 20, invuln: 8, color: '#40e8ff', sound: 'arcane' }, hit(12, { launch: 7 })),
@@ -93,6 +96,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
     gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
