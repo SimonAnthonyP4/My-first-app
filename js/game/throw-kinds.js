@@ -70,6 +70,24 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Mikey: TOUCHDOWN SPIKE - tucked under his arm, carried downfield, spiked. TOUCHDOWN!
+    touchdown: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        if (t < 44) {
+          att.x += att.facing * (t < 8 ? 0 : 3.2);           // the run (the stage walls stop him)
+          const b = scene.stageDef.bounds; att.x = Math.max(b.left + 16, Math.min(b.right - 16, att.x));
+          def.x = att.x + att.facing * 8; def.y = 42; def.facing = att.facing; def.thrownPose = ['ko', 1];
+          if (t % 8 === 0 && t > 8) scene.effects.spawn('dust', att.x - att.facing * 10, 1);
+        }
+        if (t === 4) scene.effects.spawnText('HUT! HUT!', att.x, att.body.height + 20, '#ffffff');
+        if (t === 44) { def.y = 70; scene.effects.spawnText('TOUCHDOWN!', att.x, att.body.height + 30, '#ffd030'); }
+        if (t === 50) { def.y = 0; def.x = att.x + att.facing * 24; scene.throwHit(att, def, T.spikeDamage, { vx: att.facing * 2, vy: 3 }); RF.audio.sfx('boom'); scene.shake = 14; }
+        return t >= 70;
+      },
+      anim(att, t) { return t < 44 ? ['walk', (t >> 2) % 4] : t < 52 ? ['victory', 0] : ['heavy', 1]; },
+    },
+
     // Alejandro: BELAY DROP - clipped to the rope, hauled up high, then dropped. ROCK!
     belayDrop: {
       update(att, def, t, scene) {

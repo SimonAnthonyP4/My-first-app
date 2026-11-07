@@ -199,6 +199,35 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Mikey: PUNY - turns green, grabs them by the legs and slams them into the floor on one
+    // side, then the other, then the other... then the biggest SMASH of all. PUNY.
+    puny: {
+      name: 'Puny',
+      duration: 210,
+      slams: [44, 62, 80, 98],
+      update(att, vic, t, scene) {
+        if (t === 2) { att.hulkT = 240; RF.audio.sfx('roar'); scene.effects.spawnText('MIKEY SMASH!', att.x, att.body.height + 34, '#60ff60'); scene.shake = 10; }
+        att.finisherAnim = t < 30 ? ['victory', 0] : t < 132 ? [(t >> 3) % 2 ? 'heavy' : 'victory', (t >> 3) % 2] : ['victory', (t >> 4) % 2];
+        // swing them overhead from one side to the other
+        const seg = this.slams.findIndex((s) => t < s), side = (seg < 0 ? 4 : seg) % 2 ? 1 : -1;
+        if (t >= 30 && t < 132) {
+          const s0 = seg <= 0 ? 30 : this.slams[seg - 1], s1 = seg < 0 ? 132 : this.slams[seg], u = Math.min(1, (t - s0) / (s1 - s0));
+          const from = -side, ang = Math.PI * (from < 0 ? 1 - u : u);  // an arc over his head
+          vic.x = att.x + Math.cos(ang) * 34; vic.y = Math.max(0, Math.sin(ang) * 60);
+        }
+        if (this.slams.includes(t)) { RF.audio.sfx('heavy'); RF.audio.sfx('stomp'); scene.shake = 10; scene.effects.spawn('dust', vic.x, 1); }
+        if (t === 132) { vic.x = att.x + att.facing * 30; vic.y = 0; RF.audio.sfx('boom'); scene.shake = 20; scene.flash = 6; }
+        if (t === 150) scene.effects.spawnText('PUNY.', att.x, att.body.height + 34, '#60ff60');
+        if (t === 180) { RF.audio.sfx('applause'); scene.effects.spawnText('TOUCHDOWN!', RF.CONFIG.WIDTH / 2, 120, '#ffd030'); }
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        if (t < 30) return vic.sprite.draw(ctx, 'dazed', 0, vic.x, floorY, vic.facing);
+        ctx.save(); ctx.translate(Math.round(vic.x), Math.round(floorY - vic.y - vic.body.height)); ctx.rotate(Math.PI); // upside down, held by the ankles: head swings into the floor
+        vic.sprite.draw(ctx, 'hit', 0, 0, 0, vic.facing);
+        ctx.restore();
+      },
+    },
+
     // Alejandro: SUMMIT - a cliff face rises behind them; he ropes them, hauls them all the way
     // up the wall, plants a flag at the top... SUMMIT! ...then cuts the rope.
     summit: {

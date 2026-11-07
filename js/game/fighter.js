@@ -75,6 +75,8 @@
       this.rageShown = false; // RAGE! announced this round
       this.mulliganUsed = false; // Tyler: the first clean hit each round doesn't count
       this.alterT = 0;        // Gabriel: frames left as MR. SUPPLIER
+      this.rageMeter = 0;     // Mikey: fills as he gets hit; full = MIKEY SMASH
+      this.hulkT = 0;         // Mikey: frames left smashing
       this.juggle = 0;      // hits taken while airborne in this combo
       this.bounced = false; // already floor-bounced in this combo
       this.superActive = false;
@@ -111,6 +113,7 @@
 
     update(input, opp, canAct, bounds) {
       this.stateTime++;
+      if (this.hulkT > 0 && --this.hulkT === 0 && this.scene) this.scene.effects.spawnText('...CALM.', this.x, this.body.height + 16, '#80c080');
       if (this.alterT > 0 && --this.alterT === 0 && this.scene) this.scene.effects.spawnText('SUPPLY RAN OUT.', this.x, this.body.height + 16, '#a0a0a0');
       this.trackBlockPress(input);
       this.trackDash(input);
@@ -391,6 +394,19 @@
       this.scene.startSuperFreeze(this);
     }
 
+    // MIKEY SMASH (Mikey): a full rage meter turns him huge and green for a few seconds.
+    addRage(n) {
+      if (!this.def.hulk || this.hulkT > 0 || !this.scene || this.scene.phase !== 'fight' || this.health <= 0) return;
+      this.rageMeter = Math.min(100, this.rageMeter + n);
+      if (this.rageMeter < 100) return;
+      this.rageMeter = 0;
+      this.hulkT = this.def.hulk.frames;
+      this.scene.effects.spawnText('MIKEY SMASH!', this.x, this.body.height + 30, '#60ff60');
+      this.scene.shake = Math.max(this.scene.shake, 12); this.scene.flash = 4;
+      RF.audio.sfx('roar'); RF.audio.sfx('boom');
+      if (RF.announcer) RF.announcer.say('MIKEY SMASH!', { rate: 0.9, pitch: 0.5 });
+    }
+
     // RAGE: a comeback boost at low health (more damage, faster meter).
     get raging() {
       return this.health > 0 && this.health <= this.maxHealth * RF.CONFIG.RAGE_HEALTH && !!this.scene && this.scene.phase === 'fight';
@@ -503,7 +519,7 @@
       if (dir) {
         const forward = dir === this.facing;
         this.setState('walk');
-        this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR) * (this.alterT > 0 ? this.def.alterEgo.speed : 1);
+        this.vx = dir * this.stats.walkSpeed * (forward ? 1 : RF.CONFIG.BACKWALK_FACTOR) * (this.alterT > 0 ? this.def.alterEgo.speed : 1) * (this.hulkT > 0 ? 1.15 : 1);
         this.walkTime += forward ? 1 : -1;
         // Sprinters (Nicholas) kick up dust as they run.
         if (this.def.sprint && this.scene && Math.abs(this.walkTime) % 5 === 1) this.scene.effects.spawn('dust', this.x - dir * 10, 1);
@@ -722,7 +738,7 @@
       const wasStunned = this.state === 'hitstun';
       // Hit during the start-up of your own attack or grab: COUNTER!
       // Tank armor: big fighters shrug off ONE hit while winding up / swinging a heavy.
-      if (!blocked && (this.def.archetype === 'tank' || this.def.armor) && this.state === 'attack' && this.moveKind === 'heavy' && !this.armorUsed && this.attackPhase() !== 'recovery') {
+      if (!blocked && (((this.def.archetype === 'tank' || this.def.armor) && this.moveKind === 'heavy') || this.hulkT > 0) && this.state === 'attack' && !this.armorUsed && this.attackPhase() !== 'recovery') {
         this.armorUsed = true;
         this.health = Math.max(0, this.health - move.damage * 0.6 * (1 - this.stats.damageReduction));
         this.flash = 3;
@@ -738,6 +754,7 @@
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (attacker && attacker.raging) dmg *= RF.CONFIG.RAGE_DAMAGE;
       if (attacker && attacker.alterT > 0) dmg *= attacker.def.alterEgo.damage; // MR. SUPPLIER hits harder
+      if (attacker && attacker.hulkT > 0) dmg *= attacker.def.hulk.damage; // MIKEY SMASH
       if (attacker && attacker.def.crescendo && !blocked) dmg *= 1 + Math.min(attacker.def.crescendo.max, this.combo * attacker.def.crescendo.step); // Wuttke: each hit of a combo louder
       if (blocked) {
         dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
@@ -777,6 +794,8 @@
         this.scene.effects.spawnText('MULLIGAN!', this.x, this.body.height + 22, '#80ffb0');
         RF.audio.sfx('perfect');
       }
+      if (this.def.hulk) this.addRage(dmg * this.def.hulk.gain); // getting hit makes Mikey angry
+      if (attacker && attacker.def.hulk && !blocked) attacker.addRage(dmg * attacker.def.hulk.gain * 0.35);
       this.health = Math.max(this.scene && this.scene.training ? 1 : 0, this.health - dmg); // training: nobody dies
       if (this.health <= 0) this.knockOut(dir);
       return blocked;
@@ -863,7 +882,16 @@
         for (const [dx, dy] of [[-2, 0], [2, 0], [0, 2]]) this.sprite.draw(ctx, anim, frame, x + dx, floorY - this.y + dy, this.facing, '#ff2010');
         ctx.restore();
       }
-      this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
+      if (this.hulkT > 0) { // MIKEY SMASH: bigger, glowing green
+        const fy = floorY - this.y, k = 1.15, ft = this.scene ? this.scene.frame : 0;
+        ctx.save(); ctx.translate(x, fy); ctx.scale(k, k); ctx.translate(-x, -fy);
+        ctx.globalAlpha = 0.35 + Math.sin(ft / 4) * 0.12;
+        for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2]]) this.sprite.draw(ctx, anim, frame, x + dx, fy + dy, this.facing, '#30ff40');
+        ctx.globalAlpha = 1;
+        this.sprite.draw(ctx, anim, frame, x, fy, this.facing, this.flash > 1 ? 'white' : null);
+        ctx.globalAlpha = 0.28; this.sprite.draw(ctx, anim, frame, x, fy, this.facing, '#40c040'); ctx.globalAlpha = 1;
+        ctx.restore();
+      } else this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
       if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);

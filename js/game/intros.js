@@ -142,6 +142,28 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // Busts through a paper team banner like it's game day (Mikey).
+    tunnelRun: {
+      update(f, t, scene) {
+        const from = f.homeX - f.facing * 140, u = Math.min(1, t / 20);
+        f.x = from + (f.homeX - from) * u;
+        f.state = t < 20 ? 'walk' : 'idle'; if (t < 20) f.walkTime = t * 4;
+        if (t === 12) { RF.audio.sfx('paper'); RF.audio.sfx('stomp'); scene.shake = 6; }
+        if (t === 26) scene.effects.spawnText('GAME DAY, BABY!', f.homeX, f.body.height + 24, '#ffd030');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 60) return;
+        const bx = Math.round(f.homeX - f.facing * 50);
+        if (t < 12) { // the banner, intact
+          ctx.fillStyle = '#e8e0d0'; ctx.fillRect(bx - 4, floorY - 100, 8, 100);
+          ctx.fillStyle = '#c02020'; ctx.fillRect(bx - 4, floorY - 80, 8, 30);
+          RF.font.drawText(ctx, 'M', bx, floorY - 72, { align: 'center', color: '#fff' });
+        } else for (let i = 0; i < 10; i++) { // torn shreds flying
+          const a = t - 12, sx = bx + f.facing * a * (1 + i * 0.3), sy = floorY - 10 - i * 9 + a * a * 0.05;
+          ctx.fillStyle = i % 3 ? '#e8e0d0' : '#c02020'; ctx.fillRect(Math.round(sx), Math.round(sy), 4, 6);
+        }
+      },
+    },
     // Rappels down from the ceiling on a rope, lands, unclips (Alejandro).
     rappelIn: {
       update(f, t, scene) {

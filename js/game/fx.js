@@ -39,6 +39,42 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Mikey's aura: his rage meter (green bar over his head); when he SMASHES, green steam
+    // pours off him.
+    hulkAura(f, ctx, floorY, frame, layer) {
+      if (layer !== 'front' || f.isKO || ['finished', 'thrown'].includes(f.state)) return;
+      const x = Math.round(f.x), top = Math.round(floorY - f.y - f.body.height * (f.hulkT > 0 ? 1.15 : 1));
+      if (f.hulkT > 0) {
+        for (let i = 0; i < 5; i++) { const a = (frame * 2 + i * 13) % 40; ctx.globalAlpha = 0.5 * (1 - a / 40); ctx.fillStyle = '#80ff80'; ctx.fillRect(x - 14 + i * 7, top + 10 - a, 2, 3); }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 16, top - 9, 32, 4);
+        ctx.fillStyle = '#60ff60'; ctx.fillRect(x - 15, top - 8, Math.round(30 * f.hulkT / f.def.hulk.frames), 2);
+      } else if (f.rageMeter > 0) {
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 12, top - 8, 24, 4);
+        ctx.fillStyle = f.rageMeter > 75 && frame % 10 < 5 ? '#c0ffc0' : '#40c040'; ctx.fillRect(x - 11, top - 7, Math.round(22 * f.rageMeter / 100), 2);
+      }
+    },
+
+    // Mikey's STIFF ARM: a straight-arm shove with speed lines.
+    stiffArm(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 4) return;
+      const x = f.x + f.facing * (m.hitbox.x + m.hitbox.w), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(x - f.facing * (12 + i * 6)), Math.round(y - 6 + i * 4), 8, 1);
+    },
+
+    // Mikey's HAYMAKER: a huge wind-up punch with a ground-shaking shockwave ring.
+    haymaker(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 10) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.7), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.strokeStyle = f.hulkT > 0 ? '#60ff60' : '#ffd8a0'; ctx.lineWidth = 3; ctx.globalAlpha = Math.max(0, 1 - a / 12);
+      ctx.beginPath(); ctx.ellipse(x, y, 6 + a * 3, 10 + a * 4, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1; ctx.globalAlpha = 1;
+      if (a < 8 && f.moveHasHit) RF.font.drawText(ctx, f.hulkT > 0 ? 'SMASH!' : 'POW!', x, y - 30, { align: 'center', color: f.hulkT > 0 ? '#60ff60' : '#ffd030', outline: '#000' });
+    },
+
     // Alejandro's aura: puffs of climbing chalk off his hands.
     chalkAura(f, ctx, floorY, frame, layer) {
       if (layer !== 'front' || f.isKO || ['finished', 'thrown'].includes(f.state)) return;
@@ -686,6 +722,17 @@
     ctx.restore();
   };
 
+  // Mikey: a football in a tight spiral.
+  RF.PROJECTILE_ART.football = function (ctx, x, y, t, dir) {
+    for (let i = 1; i <= 3; i++) { ctx.fillStyle = `rgba(255,255,255,${0.35 - i * 0.1})`; ctx.fillRect(Math.round(x - dir * i * 8), Math.round(y - 1), 6, 2); }
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.62 + Math.abs(Math.sin(t * 0.8)) * 0.15);
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8a4018'; ctx.beginPath(); ctx.ellipse(0, 0, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(-3, -1, 6, 1); for (let k = -2; k <= 2; k += 2) ctx.fillRect(k, -2, 1, 3);
+    ctx.fillRect(-7, -1, 1, 2); ctx.fillRect(6, -1, 1, 2);
+    ctx.restore();
+  };
+
   // Fernando: a lit cigarette tumbling end over end, trailing smoke.
   RF.PROJECTILE_ART.cigarette = function (ctx, x, y, t, dir) {
     for (let i = 1; i <= 5; i++) { ctx.globalAlpha = 0.4 - i * 0.06; ctx.fillStyle = '#c8c8c8'; ctx.fillRect(Math.round(x - dir * i * 6), Math.round(y - i), 3, 3); }
@@ -859,6 +906,16 @@
   }
 
   RF.BLOCK_FX = {
+    // Mikey: blocks with his stomach - it wobbles and bounces them right off. BOING!
+    bellyBlock(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const wob = g.strength > 0 ? Math.sin(frame * 1.5) * 4 * g.strength : 0, x = f.x + f.facing * (f.body.width * 0.45), y = floorY - f.y - f.body.height * 0.48;
+      ctx.strokeStyle = '#ffd8a0'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4 + g.strength * 0.5;
+      ctx.beginPath(); ctx.ellipse(x, y, 8 + Math.abs(wob), 16 - wob, 0, -Math.PI / 2, Math.PI / 2, f.facing < 0); ctx.stroke();
+      ctx.lineWidth = 1; ctx.globalAlpha = 1;
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'BOING!', f.x, g.top - 26, { align: 'center', color: '#ffd8a0', outline: '#000' });
+    },
     // Alejandro: a spinning coil of climbing rope held up as a shield. ON BELAY.
     ropeGuard(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

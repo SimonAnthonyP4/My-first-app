@@ -259,7 +259,7 @@
     libertyBell: 'crush', havanaClassic: 'explode', specimenJar: 'explode', exitBear: 'split',
     royalDecree: 'decapitate', annexation: 'split', eightLimbs: 'decapitate', bulkOrder: 'crush',
     boughtOut: 'crush', masterpiece: 'decapitate', impeachment: 'crush', finalBell: 'decapitate',
-    teeTime: 'explode', lastDrag: 'skeleton', mindBlown: 'explode', grandFinale: 'crush', divideByZero: 'explode', summit: 'split',
+    teeTime: 'explode', lastDrag: 'skeleton', mindBlown: 'explode', grandFinale: 'crush', divideByZero: 'explode', summit: 'split', puny: 'crush',
   };
 
   // The big moment of each fatality (frame of the finisher): the victim gets a huge
@@ -268,7 +268,7 @@
     pileDriver: 44, venomMelt: 70, overcharge: 105, failingGrade: 132, libertyBell: 70,
     havanaClassic: 84, specimenJar: 62, exitBear: 90, royalDecree: 112, annexation: 84,
     eightLimbs: 110, bulkOrder: 94, boughtOut: 110, masterpiece: 130, impeachment: 120,
-    finalBell: 90, teeTime: 80, lastDrag: 130, mindBlown: 100, grandFinale: 130, divideByZero: 130, summit: 141,
+    finalBell: 90, teeTime: 80, lastDrag: 130, mindBlown: 100, grandFinale: 130, divideByZero: 130, summit: 141, puny: 132,
   };
 
   Gore.prototype.climax = function (vic, att) {

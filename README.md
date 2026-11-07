@@ -534,6 +534,24 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Mikey
+
+Sports fanatic, mostly American football (linebacker, **135% health**, from the Football Field).
+Big, very strong and way faster than he looks; every hit he lands shakes the screen, and his
+heavy plows through a hit. Taunts: "HUT! HUT! HIKE!", "I EAT LINEBACKERS FOR BREAKFAST."
+
+- **MIKEY SMASH:** getting hit (and landing hits) fills a green rage meter over his head. When it's
+  full he turns huge and green for 7 seconds - 30% more damage, faster, and super armor on every
+  attack (`hulk` in characters.js).
+- **Light: Stiff Arm.** **Heavy: Haymaker** - a huge wind-up punch (POW! / SMASH!).
+- **Block: Belly Block.** He blocks with his stomach - it wobbles and bounces attackers back. BOING!
+- **Special: Hail Mary.** A football in a perfect spiral at full speed.
+- **Command specials:** Blitz (a linebacker tackle charge) and Hulk Leap (leaps in and smashes the
+  floor; the shockwave launches).
+- **Throw: Touchdown Spike.** Tucks them under his arm, runs downfield, TOUCHDOWN! - spike.
+- **Fatality: Puny.** Turns green, grabs them by the ankles and slams them into the floor side to
+  side, then one last SMASH. PUNY. **Entrance:** busts through a paper team banner.
+
 ## Alejandro
 
 Rock climber and thrill seeker (daredevil, **100% health**, from the Climbing Wall). Fast, a

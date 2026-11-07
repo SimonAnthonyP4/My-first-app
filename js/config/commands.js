@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Mikey ----
+    blitz: Object.assign({ name: 'Blitz', kind: 'rush', startup: 7, speed: 9, duration: 18, reach: 18, recovery: 18, color: '#ffffff', callout: 'BLITZ!', anim: 'heavy' }, hit(14, { pushback: 10, launch: 4 })),
+    hulkLeap: Object.assign({ name: 'Hulk Leap', kind: 'slam', startup: 8, leapPower: 9, maxLeapSpeed: 5, recovery: 22, radius: 52, height: 28, color: '#60ff60' }, hit(16, { launch: 5, hitstun: 30 })),
     // ---- Alejandro ----
     dyno: Object.assign({ name: 'Dyno', kind: 'rush', startup: 5, speed: 8.5, duration: 16, reach: 18, recovery: 14, hop: 6, color: '#ff8030', callout: 'DYNO!', anim: 'heavy' }, hit(11, { pushback: 7 })),
     freeSolo: Object.assign({ name: 'Free Solo', kind: 'rising', startup: 4, rise: 10.5, forward: 1.5, reach: 22, recovery: 18, invuln: 10, color: '#ffffff', sound: 'whoosh' }, hit(12, { launch: 7 })),
@@ -102,6 +105,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    mikey: { commands: { qcf: 'blitz', qcb: 'hulkLeap' }, taunt: 'HUT! HUT! HIKE!', voicePitch: 0.6 },
     alejandro: { commands: { qcf: 'dyno', qcb: 'freeSolo' }, taunt: 'SEND IT!', voicePitch: 1.1 },
     lopez: { commands: { qcf: 'taylorSeries', qcb: 'multiverseSwap' }, taunt: 'SHOW YOUR WORK.', voicePitch: 0.7 },
     wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },

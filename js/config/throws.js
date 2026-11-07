@@ -24,6 +24,12 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  touchdownSpike: {
+    name: 'Touchdown Spike',
+    description: 'Tucks them under his arm like a football, charges downfield, and spikes them into the end zone. TOUCHDOWN!',
+    kind: 'touchdown',
+    spikeDamage: 16,
+  },
   belayDrop: {
     name: 'Belay Drop',
     description: 'Clips them into his rope, hauls them up toward the ceiling... ROCK! ...and lets go.',
