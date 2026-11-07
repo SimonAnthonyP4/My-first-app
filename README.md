@@ -534,6 +534,28 @@ sprint** with dust kicking up behind him (`sprint`).
 
 The roster is now 16 fighters and the 4 x 4 character select is full.
 
+## Lopez Tuero
+
+Calculus genius and multiversal threat (omniscient, **125% health**, from Every Universe). Math
+symbols orbit him; he stands perfectly still, calculating. Taunts: "SHOW YOUR WORK.", "IN EVERY
+UNIVERSE, YOU LOSE.", "I AM THE CONSTANT. YOU ARE THE VARIABLE."
+
+- **Foresight:** 12% of attacks that would hit him while he's idle or walking, he already
+  calculated - he blinks behind you instead. CALCULATED.
+- **Light: Derivative.** A flick that leaves a glowing tangent line - D/DX.
+- **Heavy: Integral Strike.** A giant integral sign slashes down through them.
+- **Block: Asymptote.** Graph axes and a curve your attack approaches but never reaches.
+- **Special: Riemann Sum.** Seven glowing rectangles erupt from the floor under them one after
+  another (each hits); the last launches. SUM = YOU LOSE.
+- **Command specials:** Taylor Series (a volley of math symbols) and Multiverse Swap (teleports
+  behind you: WRONG UNIVERSE.).
+- **Throw: Proof by Contradiction.** GIVEN: YOU. ASSUME YOU CAN WIN. ... CONTRADICTION. Q.E.D.
+- **Fatality: Divide by Zero.** Reality falls away into a cosmic void of equations; copies of them
+  from other universes glitch in; LET X = YOU... X / 0 - reality cracks and they blow apart.
+  UNDEFINED. **Entrance:** steps out of a rift in reality.
+
+Character select is now 8 x 3 (24 slots).
+
 ## Wuttke
 
 The music teacher (maestro, **120% health**, from the Music Room). Piano, orchestra, all of it.

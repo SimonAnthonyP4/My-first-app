@@ -24,6 +24,13 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  proofByContradiction: {
+    name: 'Proof by Contradiction',
+    description: 'Grabs them and proves, step by step, that they cannot win. Every line of the proof hurts. Q.E.D.',
+    kind: 'proof',
+    lineDamage: 3,
+    qedDamage: 10,
+  },
   luteSolo: {
     name: 'Lute Solo',
     description: 'Shreds a face-melting lute solo right in their face (every note stings), then an ENCORE over the head.',

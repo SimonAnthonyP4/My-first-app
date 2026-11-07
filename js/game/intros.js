@@ -142,6 +142,23 @@
         ctx.fillStyle = '#c0c0c8'; for (const wx of [l + 14, l + len - 22]) ctx.fillRect(wx - 2, floorY - 6, 4, 4);
       },
     },
+    // A rift in reality tears open; he steps through from another universe (Lopez Tuero).
+    riftIn: {
+      back: true,
+      update(f, t, scene) {
+        f.hidden = t < 16;
+        if (t === 2) RF.audio.sfx('arcane');
+        if (t === 16) { scene.flash = 3; RF.audio.sfx('zap'); }
+        if (t === 30) scene.effects.spawnText('ANOTHER UNIVERSE. SAME RESULT.', f.homeX, f.body.height + 22, '#00ffd0');
+      },
+      draw(f, ctx, floorY, t) {
+        if (t > 50) return;
+        const open = t < 16 ? t / 16 : t < 34 ? 1 : 1 - (t - 34) / 16, w = 16 * open, x = f.homeX;
+        ctx.fillStyle = '#04000c'; ctx.beginPath(); ctx.ellipse(x, floorY - 50, w + 2, 58, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, floorY - 50, w + 2, 58, 0, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) RF.font.drawText(ctx, ['∫', 'Σ', '∞', 'Δ'][i], x - 4, floorY - 90 + i * 20 + (t % 20), { color: '#00ffd0' });
+      },
+    },
     // Strolls in strumming the lute, notes trailing, then a little bow (Wuttke).
     serenade: {
       update(f, t, scene) {

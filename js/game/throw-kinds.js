@@ -70,6 +70,26 @@
     },
 
     // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Lopez Tuero: PROOF BY CONTRADICTION - each line of the proof stings; Q.E.D. slams them.
+    proof: {
+      lines: [[8, 'GIVEN: YOU.'], [26, 'ASSUME YOU CAN WIN.'], [44, '∫ YOU dx = 0'], [58, 'CONTRADICTION.']],
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 6, t > 20 && t < 70 ? Math.min(30, (t - 20) * 1.5) : 0);  // floated up off the floor
+        def.thrownPose = ['hit', 0];
+        for (const [lt, text] of this.lines) if (t === lt) { scene.effects.spawnText(text, att.x, att.body.height + 18, '#00ffd0'); if (lt > 8) { scene.throwHit(att, def, T.lineDamage); RF.audio.sfx('zap'); } }
+        if (t === 72) { scene.effects.spawnText('Q.E.D.', def.x, 130, '#ffffff'); RF.audio.sfx('boom'); scene.shake = 10; scene.throwHit(att, def, T.qedDamage, { vx: att.facing * 6, vy: -6 }); }
+        return t >= 86;
+      },
+      anim(att, t) { return t < 70 ? ['victory', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 10 || t > 70) return;
+        ctx.strokeStyle = 'rgba(0,255,208,0.5)';
+        ctx.beginPath(); ctx.ellipse(def.x, floorY - def.y - def.body.height / 2, def.body.width, def.body.height * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+      },
+    },
+
     // Wuttke: LUTE SOLO - a blistering solo in their face, then ENCORE! (a bonk with the lute).
     luteSolo: {
       update(att, def, t, scene) {

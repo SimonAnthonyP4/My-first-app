@@ -32,6 +32,46 @@
       },
     },
 
+    // Lopez Tuero: RIEMANN SUM - a row of glowing rectangles (a Riemann sum under the curve)
+    // erupts from the floor under the opponent, one after another; the last one launches.
+    riemann: {
+      start(f) { f.vx = 0; f.specialData.tx = null; f.specialData.hitBars = 0; },
+      update(f, scene) {
+        const s = f.special, t = f.stateTime, d = f.specialData, opp = scene.opponentOf(f);
+        if (t === s.startup) { d.tx = opp.x; RF.audio.sfx('zap'); scene.effects.spawnText('RIEMANN SUM!', f.x, f.body.height + 18, '#00ffd0'); }
+        if (d.tx == null) return;
+        for (let i = 0; i < s.bars; i++) {
+          if (t !== s.startup + 6 + i * s.interval) continue;
+          const bx = d.tx + f.facing * (i - (s.bars - 1) / 2) * 11, h = s.barHeight + i * 5;
+          RF.audio.sfx(i === s.bars - 1 ? 'heavy' : 'move');
+          if (Math.abs(opp.x - bx) < 8 + opp.body.width / 2 && opp.y < h && !opp.isKO) {
+            const last = i === s.bars - 1, mv = RF.specialMove(f, s);
+            scene.applyHit(f, opp, last ? Object.assign({}, mv, { damage: s.finalDamage * f.stats.damage, launch: 7, hitstun: 30 }) : mv, last ? 'heavy' : 'hit', opp.x, Math.min(h, 40));
+          }
+        }
+        if (t === s.startup + 6 + (s.bars - 1) * s.interval + 4) scene.effects.spawnText('Σ = YOU LOSE.', d.tx, 120, '#00ffd0');
+        if (t >= s.startup + 6 + s.bars * s.interval + s.recovery) f.setState('idle');
+      },
+      anim(f) { const t = f.stateTime, s = f.special; return t < s.startup ? ['special', 0] : ['victory', 0]; },
+      draw(f, ctx, floorY, frame) {
+        const s = f.special, t = f.stateTime, d = f.specialData;
+        if (d.tx == null) return;
+        // the curve they're summing under
+        ctx.strokeStyle = 'rgba(0,255,208,0.55)'; ctx.beginPath();
+        for (let k = -45; k <= 45; k += 3) { const x = d.tx + k, y = floorY - (s.barHeight + 18) - Math.cos(k / 30) * 14 + (k * f.facing) * 0.25; k === -45 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+        ctx.stroke();
+        for (let i = 0; i < s.bars; i++) {
+          const t0 = s.startup + 6 + i * s.interval, a = t - t0;
+          if (a < -4 || a > 22) continue;
+          const bx = Math.round(d.tx + f.facing * (i - (s.bars - 1) / 2) * 11), full = s.barHeight + i * 5;
+          const h = a < 0 ? 2 : a < 4 ? full * (a / 4) : a > 14 ? full * Math.max(0, 1 - (a - 14) / 8) : full;
+          ctx.fillStyle = '#05302a'; ctx.fillRect(bx - 6, floorY - h - 1, 12, h + 1);
+          ctx.fillStyle = i % 2 ? '#00ffd0' : '#00b0a0'; ctx.fillRect(bx - 5, Math.round(floorY - h), 10, Math.round(h));
+          ctx.fillStyle = '#e0fff8'; ctx.fillRect(bx - 5, Math.round(floorY - h), 10, 1);
+        }
+      },
+    },
+
     // Wuttke: GRAND PIANO - conducts a grand piano out of the sky onto them. A shadow
     // warns where it lands; it smashes into a shower of keys.
     pianoDrop: {

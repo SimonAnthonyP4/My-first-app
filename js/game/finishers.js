@@ -199,6 +199,54 @@
 
   RF.FINISHERS = {
     // Nicholas: FINAL BELL - ding ding, a blur of punches, a star punch into orbit, a 10-count.
+    // Lopez Tuero: DIVIDE BY ZERO - reality falls away into a cosmic void of equations.
+    // Copies of them from every universe appear... LET X = YOU. X / 0. UNDEFINED.
+    divideByZero: {
+      name: 'Divide by Zero',
+      duration: 220,
+      update(att, vic, t, scene) {
+        att.finisherAnim = t < 120 ? ['victory', 0] : t < 140 ? ['heavy', 1] : ['victory', (t >> 4) % 2];
+        if (t === 4) { RF.audio.sfx('arcane'); scene.flash = 4; }
+        if (t === 14) scene.effects.spawnText('LET X = YOU.', att.x, att.body.height + 22, '#00ffd0');
+        if (t === 50) { RF.audio.sfx('rumble'); scene.effects.spawnText('IN EVERY UNIVERSE...', RF.CONFIG.WIDTH / 2, 150, '#ffffff'); }
+        if (t === 84) scene.effects.spawnText('...YOU LOSE.', RF.CONFIG.WIDTH / 2, 140, '#ff4070');
+        if (t === 110) { RF.audio.sfx('zap'); scene.effects.spawnText('X ÷ 0', vic.x, 140, '#ffffff'); }
+        if (t === 130) { RF.audio.sfx('boom'); scene.shake = 18; scene.flash = 8; }
+        if (t === 150) scene.effects.spawnText('UNDEFINED.', RF.CONFIG.WIDTH / 2, 120, '#00ffd0');
+        if (t === 185) scene.effects.spawnText('CLASS IS OVER. IN ALL UNIVERSES.', att.x, att.body.height + 24, '#ffffff');
+      },
+      drawBack(att, vic, ctx, floorY, t, frame) { // the cosmic void: stars, a spinning grid, floating equations
+        const W = RF.CONFIG.WIDTH, a = Math.min(1, t / 20);
+        ctx.globalAlpha = a * 0.92; ctx.fillStyle = '#04000c'; ctx.fillRect(0, 0, W, floorY + 40); ctx.globalAlpha = a;
+        for (let i = 0; i < 60; i++) { ctx.fillStyle = i % 5 ? '#6050a0' : '#ffffff'; ctx.fillRect((i * 97 + t * (i % 3)) % W, (i * 53) % floorY, 1, 1); }
+        ctx.strokeStyle = 'rgba(0,255,208,0.18)';
+        for (let k = -8; k <= 8; k++) { const sk = Math.sin(t / 40) * 30; ctx.beginPath(); ctx.moveTo(W / 2 + k * 24 + sk, 0); ctx.lineTo(W / 2 + k * 40, floorY); ctx.stroke(); }
+        const eqs = ['∫', 'Σ', '∞', 'Δ', '√', 'Π', '±'];
+        for (let i = 0; i < 9; i++) RF.font.drawText(ctx, eqs[i % eqs.length], (i * 47 + t * 0.4) % W, 20 + ((i * 31 + t * 0.3) % (floorY - 40)), { scale: 2, color: '#3a2a70' });
+        ctx.globalAlpha = 1;
+      },
+      drawVictim(vic, ctx, floorY, t) {
+        // copies of them from other universes, glitching beside the real one
+        if (t > 40) for (let i = 1; i <= 4; i++) {
+          const off = (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 26, al = Math.min(0.4, (t - 40 - i * 8) / 40);
+          if (al <= 0) continue;
+          ctx.globalAlpha = al; vic.sprite.draw(ctx, 'dazed', 0, vic.x + off + (t % 6 < 3 ? 1 : -1), floorY, vic.facing, i % 2 ? '#00ffd0' : '#ff4070');
+        }
+        ctx.globalAlpha = 1;
+        vic.sprite.draw(ctx, 'dazed', 0, vic.x + (t > 100 && t % 4 < 2 ? 2 : 0), floorY, vic.facing);
+      },
+      drawFx(att, vic, ctx, floorY, t) {
+        if (t < 130 || t > 200) return; // reality cracks
+        ctx.strokeStyle = '#e0fff8'; ctx.lineWidth = 1;
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4 + 0.3, len = Math.min(140, (t - 130) * 8);
+          ctx.beginPath(); ctx.moveTo(vic.x, floorY - 40);
+          ctx.lineTo(vic.x + Math.cos(a) * len * 0.5 + (i % 2 ? 6 : -6), floorY - 40 + Math.sin(a) * len * 0.5); ctx.lineTo(vic.x + Math.cos(a) * len, floorY - 40 + Math.sin(a) * len);
+          ctx.stroke();
+        }
+      },
+    },
+
     // Wuttke: GRAND FINALE - conducts Beethoven's Fifth: DUN, DUN, DUN... DUNNNN - giant notes
     // slam down on them on every beat - then a grand piano. BRAVO!
     grandFinale: {

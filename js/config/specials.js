@@ -220,6 +220,19 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  riemannSum: {
+    name: 'Riemann Sum',
+    description: 'A row of glowing rectangles erupts from the floor under them, one after another. The last one launches. SUM = YOU LOSE.',
+    kind: 'riemann',
+    startup: 10,
+    bars: 7,
+    interval: 4,         // frames between bars
+    barHeight: 30,
+    recovery: 16,
+    damage: 3,           // per bar
+    finalDamage: 8,
+    hitstun: 20, blockstun: 8, pushback: 0.5, hitstop: 3,
+  },
   grandPiano: {
     name: 'Grand Piano',
     description: 'Conducts a grand piano out of the sky onto their head. FORTISSIMO! PLONK!',

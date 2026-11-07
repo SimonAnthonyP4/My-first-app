@@ -39,6 +39,41 @@
       if (t === m.startup + 1 && f.scene) RF.audio.sfx('birds');
     },
 
+    // Lopez Tuero's aura: math symbols orbiting him, slowly.
+    mathAura(f, ctx, floorY, frame, layer) {
+      if (f.isKO || ['finished', 'thrown'].includes(f.state)) return;
+      const syms = ['∫', 'Σ', '∞', 'Δ'];
+      for (let i = 0; i < 4; i++) {
+        const a = frame / 50 + i * Math.PI / 2, front = Math.sin(a) > 0;
+        if ((layer === 'front') !== front) continue;
+        const x = f.x + Math.cos(a) * (f.body.width * 0.9), y = floorY - f.y - f.body.height * 0.55 + Math.sin(a * 2) * 6;
+        ctx.globalAlpha = front ? 0.75 : 0.35;
+        RF.font.drawText(ctx, syms[i], x, y, { align: 'center', color: '#00ffd0', outline: front ? '#000' : undefined });
+      }
+      ctx.globalAlpha = 1;
+    },
+
+    // Lopez Tuero's DERIVATIVE: a quick flick that leaves a glowing tangent line and d/dx.
+    derivFlick(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup || t > m.startup + m.active + 8) return;
+      const a = t - m.startup, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.6), y = floorY - f.y - m.hitbox.y - m.hitbox.h / 2;
+      ctx.strokeStyle = '#00ffd0'; ctx.globalAlpha = Math.max(0, 1 - a / 12);
+      ctx.beginPath(); ctx.moveTo(x - f.facing * 16, y + 6); ctx.lineTo(x + f.facing * 16, y - 6); ctx.stroke();
+      RF.font.drawText(ctx, 'D/DX', x, y - 16 - a, { align: 'center', color: '#a0fff0', outline: '#000' });
+      ctx.globalAlpha = 1;
+    },
+
+    // Lopez Tuero's INTEGRAL STRIKE: a giant integral sign slashes down through them.
+    integralSlash(f, ctx, floorY, frame) {
+      const m = f.move, t = f.stateTime;
+      if (t < m.startup - 3 || t > m.startup + m.active + 10) return;
+      const a = t - m.startup + 3, x = f.x + f.facing * (m.hitbox.x + m.hitbox.w * 0.55), y = floorY - f.y - 70 + Math.min(1, a / 6) * 40;
+      ctx.globalAlpha = Math.max(0, 1 - Math.max(0, a - 8) / 10);
+      RF.font.drawText(ctx, '∫', x, y, { scale: 5, align: 'center', color: ['#ffffff', '#e0fff8', '#a0fff0', '#00ffd0', '#00ffd0', '#00b0a0', '#008070'], outline: '#002a24' });
+      ctx.globalAlpha = 1;
+    },
+
     // Wuttke's aura: music notes drifting around him, always.
     maestroAura(f, ctx, floorY, frame, layer) {
       if (layer !== 'front' || f.isKO || ['finished', 'thrown', 'hitstun'].includes(f.state)) return;
@@ -789,6 +824,17 @@
   }
 
   RF.BLOCK_FX = {
+    // Lopez Tuero: a graph's axes and an asymptote curve - your attack approaches, never arrives.
+    axisShield(f, ctx, floorY, frame) {
+      const g = guardBox(f, floorY);
+      if (!g) return;
+      const x = Math.round(g.front + f.facing * 6), top = Math.round(g.top + 4), bot = Math.round(g.base - 4);
+      ctx.fillStyle = '#00ffd0'; ctx.fillRect(x, top, 1, bot - top); ctx.fillRect(x - 8, bot - 2, 16, 1);
+      ctx.strokeStyle = 'rgba(160,255,240,0.8)'; ctx.beginPath();
+      for (let k = 1; k <= 20; k++) { const yy = top + k * (bot - top) / 20, xx = x + f.facing * (2 + 30 / k); k === 1 ? ctx.moveTo(xx, yy) : ctx.lineTo(xx, yy); }
+      ctx.stroke();
+      if (g.strength > 0.4) RF.font.drawText(ctx, 'ASYMPTOTE.', f.x, g.top - 26, { align: 'center', color: '#00ffd0', outline: '#000' });
+    },
     // Wuttke: a wall of five-line music staff, notes bouncing off it.
     musicStaff(f, ctx, floorY, frame) {
       const g = guardBox(f, floorY);

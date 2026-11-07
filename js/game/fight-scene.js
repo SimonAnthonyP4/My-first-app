@@ -764,6 +764,17 @@
         return 'perfect';
       }
 
+      // FORESIGHT (Lopez Tuero): sometimes he already calculated your attack - he blinks behind you.
+      if (def.def.foresight && this.phase === 'fight' && att !== def && ['idle', 'walk', 'crouch'].includes(def.state) && Math.random() < def.def.foresight) {
+        const b = this.stageDef.bounds;
+        def.x = Math.max(b.left + 20, Math.min(b.right - 20, att.x + att.facing * 34));
+        def.faceOpponent(att);
+        att.moveHasHit = true;
+        this.effects.spawnText('CALCULATED.', def.x, def.body.height + 16, '#00ffd0');
+        this.effects.spawn('perfect', def.x, def.body.height / 2);
+        RF.audio.sfx('arcane');
+        return null;
+      }
       // KOMBO STRINGS: lights chained into a heavy make it a string ender.
       //   LIGHT, LIGHT, HEAVY         -> KOMBO!        harder hit, big knockback (into a wall bounce)
       //   LIGHT, LIGHT, LIGHT, HEAVY  -> BRUTAL KOMBO! launches them: hold UP to chase into an air combo

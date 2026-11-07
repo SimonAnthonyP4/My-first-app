@@ -64,6 +64,9 @@
     // ---- Anthony ----
     blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
     barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Lopez Tuero ----
+    taylorSeries: Object.assign({ name: 'Taylor Series', kind: 'volley', startup: 8, interval: 5, recovery: 16, heights: [0.8, 0.55, 0.3, 0.7, 0.45], speed: 5.5, size: 12, glyphs: ['∫', 'Σ', '∞', 'Δ', '√'], colors: ['#ffffff', '#a0fff0', '#00b0a0'], sound: 'zap' }, hit(4, { hitstun: 18, blockstun: 10, pushback: 2.5, hitstop: 4 })),
+    multiverseSwap: Object.assign({ name: 'Multiverse Swap', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 12, color: '#00ffd0', callout: 'WRONG UNIVERSE.', sound: 'arcane' }, hit(11)),
     // ---- Wuttke ----
     trebleClef: Object.assign({ name: 'Treble Clef', kind: 'projectile', startup: 9, recovery: 18, speed: 5, size: 14, height: 0.6, art: 'musicNote', sound: 'whoosh', colors: ['#ffffff', '#e0c0ff', '#8040c0'] }, hit(10)),
     restCounter: Object.assign({ name: 'Rest', kind: 'counter', startup: 2, window: 24, recovery: 18, color: '#c080ff', callout: 'TAKE A REST.' }, hit(13, { launch: 5 })),
@@ -96,6 +99,7 @@
     ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    lopez: { commands: { qcf: 'taylorSeries', qcb: 'multiverseSwap' }, taunt: 'SHOW YOUR WORK.', voicePitch: 0.7 },
     wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
     gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
