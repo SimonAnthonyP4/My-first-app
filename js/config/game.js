@@ -28,10 +28,10 @@ RF.CONFIG = {
   THROW_WHIFF: 22,        // frames you're stuck after a missed grab
   THROW_BREAK_WINDOW: 10, // frames the victim has to press THROW and break free
   FINISH_TIME: 300,       // frames the loser stays dazed waiting for a finisher (5 s)
-  MAX_CHAIN: 3,           // light attacks that connect can be cancelled into another attack this many times
+  MAX_CHAIN: 4,           // light attacks that connect can be cancelled into another attack this many times
   COMBO_SCALING: 0.1,     // each extra hit in a combo does 10% less damage...
   COMBO_MIN_SCALE: 0.5,   // ...down to half damage       // fraction of damage that still gets through a block
-  INPUT_BUFFER: 8,        // frames an attack press is remembered (hit-freeze frames don't count)
+  INPUT_BUFFER: 10,       // frames an attack press is remembered (hit-freeze frames don't count)
 
   // Air combos: a launcher (UP + HEAVY) pops the opponent up; hold UP to jump after
   // them and chain air attacks. Air heavy on an airborne opponent spikes them into a

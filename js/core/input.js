@@ -21,6 +21,7 @@
       this.gameKeys = new Set();
       this.padDown = new Set();
       this.pads = [];
+      this.stickDir = [null, null]; // last 8-way stick sector per controller
     }
 
     tick() { this.frame++; }
@@ -37,10 +38,26 @@
         const btn = (n) => { const b = pad.buttons[n]; return !!b && (b.pressed || b.value > 0.5); };
         const ax = (n) => pad.axes[n] || 0;
         PAD_BUTTONS.forEach(([n, name]) => { if (btn(n)) now.add(P + name); });
-        if (btn(12) || ax(1) < -0.55) now.add(P + 'Up');
-        if (btn(13) || ax(1) > 0.55) now.add(P + 'Down');
-        if (btn(14) || ax(0) < -0.55) now.add(P + 'Left');
-        if (btn(15) || ax(0) > 0.55) now.add(P + 'Right');
+        // D-pad as-is; the left stick is read as a proper 8-way stick (like an arcade
+        // joystick): a small round dead zone, 45-degree sectors, and a little stickiness
+        // so a held direction doesn't flicker while you roll it (down -> down-forward -> forward).
+        if (btn(12)) now.add(P + 'Up');
+        if (btn(13)) now.add(P + 'Down');
+        if (btn(14)) now.add(P + 'Left');
+        if (btn(15)) now.add(P + 'Right');
+        const sx = ax(0), sy = ax(1), mag = Math.hypot(sx, sy), prev = this.stickDir[i];
+        if (mag > (prev != null ? 0.24 : 0.32)) {
+          let sector = Math.round(Math.atan2(sy, sx) / (Math.PI / 4)); // 0=right, 2=down, 4/-4=left, -2=up
+          const exact = Math.atan2(sy, sx) / (Math.PI / 4);
+          if (prev != null && Math.abs(exact - prev) < 0.62) sector = prev;             // stick to the old sector near a border
+          else if (prev != null && Math.abs(Math.abs(exact) - 4) < 0.62 && Math.abs(prev) === 4) sector = prev;
+          this.stickDir[i] = sector;
+          const s = ((sector % 8) + 8) % 8; // 0 right, 1 down-right, 2 down, 3 down-left, 4 left, 5 up-left, 6 up, 7 up-right
+          if (s === 7 || s === 0 || s === 1) now.add(P + 'Right');
+          if (s === 3 || s === 4 || s === 5) now.add(P + 'Left');
+          if (s === 1 || s === 2 || s === 3) now.add(P + 'Down');
+          if (s === 5 || s === 6 || s === 7) now.add(P + 'Up');
+        } else this.stickDir[i] = null;
         if (btn(9)) now.add('Escape'); // OPTIONS = pause / back
       });
       // Turn changes into the same press/release bookkeeping keys get.

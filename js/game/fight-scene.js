@@ -764,6 +764,29 @@
         return 'perfect';
       }
 
+      // KOMBO STRINGS: lights chained into a heavy make it a string ender.
+      //   LIGHT, LIGHT, HEAVY         -> KOMBO!        harder hit, big knockback (into a wall bounce)
+      //   LIGHT, LIGHT, LIGHT, HEAVY  -> BRUTAL KOMBO! launches them: hold UP to chase into an air combo
+      // Mid-string hits push less, so the string stays in range.
+      if (move === att.move && att.state === 'attack' && !att.attackAirborne) {
+        const str = att.string || [], n = str.length, last = str[n - 1] || '';
+        const allLights = n >= 3 && str.slice(0, -1).every((k) => /light/i.test(k));
+        if (allLights && /heavy/i.test(last) && !att.enderShown) {
+          const big = n >= 4;
+          move = Object.assign({}, move, {
+            damage: move.damage * (big ? 1.25 : 1.35), hitstop: (move.hitstop || 6) + 4,
+            knockback: big ? 0 : Math.max(move.knockback || 0, 11), launch: big ? 7.5 : move.launch, launchVx: big ? 0.6 : move.launchVx, launcher: big || move.launcher,
+          });
+          att.move = move; att.enderShown = true;
+          this.effects.spawnText(big ? 'BRUTAL KOMBO!' : 'KOMBO!', att.x, att.body.height + 30, big ? '#ff4040' : '#ffd030');
+          if (big && this.isHuman(att)) this.effects.spawnText('HOLD UP!', att.x, att.body.height + 20, '#ffffff', 6);
+        } else if (att.chain === 0 && /light/i.test(att.moveKind) && !move.launch) {
+          move = Object.assign({}, move, { knockback: 0, hitstun: Math.max((move.hitstun || 14) + 4, att.moves.light.startup + att.moves.light.active + 10), tag: move.tag || att.moveKind });
+        } else if (att.chain > 0 && !move.launch && (/light/i.test(att.moveKind) || !move.knockback)) {
+          const link = Math.max(att.moves.light.startup, att.moves.heavy.startup) + att.moves.light.active + 10; // long enough for this fighter's next hit to link
+          move = Object.assign({}, move, { knockback: /light/i.test(att.moveKind) ? 0 : move.knockback, pushback: move.pushback * 0.55, hitstun: Math.max((move.hitstun || 14) + 6, link), tag: move.tag || att.moveKind });
+        }
+      }
       const hpBefore = def.health;
       const blocked = def.receiveHit(att, move);
       if (!blocked) {

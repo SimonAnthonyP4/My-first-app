@@ -32,6 +32,17 @@ python3 -m http.server 8000
 | Super      | `F` + `G` together (meter full) | light + heavy together |
 | Dash       | double-tap `A` / `D` | double-tap `←` / `→`         |
 
+### Kombos and controller feel
+
+- **Kombo strings:** LIGHT, LIGHT, HEAVY = **KOMBO!** (harder hit, big knockback into a wall bounce).
+  LIGHT x3, HEAVY = **BRUTAL KOMBO!** - it launches them; hold UP to chase into an air combo.
+  Strings hold together for every fighter: chained hits step forward, push less and hold the
+  opponent long enough for that fighter's next hit (even the slow ones). Up to 4 chained hits.
+- **Controller stick:** the left stick reads as an 8-way arcade stick (small round dead zone,
+  45-degree sectors, no flicker), so diagonals and crouch-walking work.
+- **Special-move motions** accept down-back / down / down-forward, with a wider timing window.
+- Attack presses are buffered for 10 frames.
+
 ### Online play
 
 Title menu -> **ONLINE**. One player presses **HOST A MATCH** and gets a 4-letter code; the other

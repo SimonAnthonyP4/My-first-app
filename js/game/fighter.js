@@ -254,16 +254,17 @@
       const h = ((input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0)) * this.facing;
       const v = input.held('down') ? -1 : input.held('up') ? 1 : 0;
       this.motion.push(v < 0 ? (h > 0 ? 3 : h < 0 ? 1 : 2) : v > 0 ? (h > 0 ? 9 : h < 0 ? 7 : 8) : (h > 0 ? 6 : h < 0 ? 4 : 5));
-      if (this.motion.length > 20) this.motion.shift();
+      if (this.motion.length > 28) this.motion.shift();
     }
 
     // Did the stick go DOWN then FORWARD (6) / BACK (4) in the last ~15 frames, ending recently?
     motionDone(end) {
       const m = this.motion, n = m.length;
       let k = n - 1;
-      while (k >= 0 && n - 1 - k <= 6 && m[k] !== end) k--;
-      if (k < 0 || n - 1 - k > 6) return false;
-      for (let j = k - 1; j >= Math.max(0, k - 14); j--) if (m[j] === 2) return true;
+      while (k >= 0 && n - 1 - k <= 8 && m[k] !== end) k--;
+      if (k < 0 || n - 1 - k > 8) return false;
+      // Any DOWN-ish position counts (down-back, down, down-forward): easier on a stick or pad.
+      for (let j = k - 1; j >= Math.max(0, k - 18); j--) if (m[j] === 1 || m[j] === 2 || m[j] === 3) return true;
       return false;
     }
 
@@ -512,6 +513,10 @@
         RF.audio.sfx('super');
       }
       this.chain = chained ? this.chain + 1 : 0;
+      this.string = chained ? [...(this.string || []), kind] : [kind]; // the kombo string so far
+      this.enderShown = false;
+      // Chained attacks step forward a little, so strings stay in range (like arcade kombos).
+      if (chained && this.grounded && !/^air/.test(kind)) this.pushVx = this.facing * 1.7;
       this.armorUsed = false;
       this.fxHitDist = null;
       this.move = this.moves[kind];
