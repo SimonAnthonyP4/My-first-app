@@ -656,6 +656,21 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Smooth animation
+
+Fighters don't snap between a few poses any more:
+
+- **In-between frames:** for hand-drawn (pixel-puppet) fighters, two extra frames are blended
+  between every pair of poses - body and head positions, leg stride, and the actual arm path
+  (resampled joint points), so a punch extends and a club swings through an arc. Idle and walk
+  loops blend back to their first pose (`frameList` / `tween` in pixel-puppet-sprite.js).
+- **Continuous timing:** walk, idle, taunt, victory, jump, dash and hit reactions pick a
+  fractional point in their animation; attacks hold the wind-up, snap through to the hit and ease
+  out of the recovery (`animFrame` in fighter.js).
+- **Squash & stretch:** a squash on landing, a stretch on take-off, and a recoil pop when hit.
+- **No hitches:** sprites are cached per fighter + costume and built during the versus screen,
+  so nothing is generated mid-fight.
+
 ## Attacking arms and legs
 
 Punching arms and kicking legs on hand-drawn (pixel-puppet) fighters are drawn as real pixel-art

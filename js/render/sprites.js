@@ -73,7 +73,12 @@ RF.altCostume = function (def) {
 // Every renderer has the same interface: draw(ctx, anim, frame, x, y, facing).
 RF.createSprite = function (def) {
   const s = def.sprite;
-  if (s.type === 'pixel') return new RF.PixelPuppetSprite(def);
+  if (s.type === 'pixel') { // shared per fighter + costume, so frames are only ever built once
+    const key = def.id + ':' + (def.costume || 0) + ':' + (RF.CONFIG.MOD_BIGHEAD ? 1 : 0);
+    RF.spriteCache = RF.spriteCache || new Map();
+    if (!RF.spriteCache.has(key)) RF.spriteCache.set(key, new RF.PixelPuppetSprite(def));
+    return RF.spriteCache.get(key);
+  }
   if (s.type === 'sheet') {
     return new RF.SheetSprite(s, s.palette ? new RF.ProceduralSprite(def) : null);
   }

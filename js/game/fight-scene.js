@@ -42,6 +42,7 @@
       ];
       if (opts.demo || opts.cpuBoth) this.inputs[0] = new RF.AIInput(game.kb, this, 0); // attract demo / tournament: CPU vs CPU
       if (this.training) this.setupDummy();
+      for (const f of this.fighters) if (f.sprite.warm) f.sprite.warm(); // anything not built yet, before the fight starts
       this.effects = new RF.Effects();
       this.gore = new RF.Gore();     // blood and chunks for finishers (Settings -> BLOOD)
       this.hud = new RF.HUD();

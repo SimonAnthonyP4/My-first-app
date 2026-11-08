@@ -773,6 +773,7 @@
         this.stun = move.hitstun + (this.counterHit ? 10 : 0);
         this.state = null;
         this.setState('hitstun');
+        this.hitPop = 8;       // recoil (visual)
         if (airborne || move.launch) this.juggle++;
         const airAttacker = attacker.state === 'attack' && attacker.attackAirborne;
         this.pushVx = dir * (airborne && airAttacker ? move.pushback * 0.5 : move.knockback || move.pushback);
@@ -813,21 +814,24 @@
 
     animFrame() {
       switch (this.state) {
-        case 'walk': return ['walk', Math.floor(Math.abs(this.walkTime) / Math.round(16 / this.stats.walkSpeed)) % 4];
-        case 'jump': return ['jump', 0];
+        case 'walk': return ['walk', (Math.abs(this.walkTime) / Math.round(16 / this.stats.walkSpeed)) % 4]; // fractional: in-between frames
+        case 'jump': { const jp = this.stats.jumpPower || 10; return ['jump', Math.max(0, Math.min(1, (jp - this.vy) / (jp * 1.6)))]; }
         case 'jumpSquat': return ['crouch', 0];
         case 'knockdown': return ['ko', 1];
-        case 'taunt': return ['victory', Math.floor(this.stateTime / 8) % 2];
+        case 'taunt': return ['victory', Math.min(1, (this.stateTime % 16) / 8)];
         case 'wakeup': return ['crouch', 0];
-        case 'dash': return ['walk', 1];
+        case 'dash': return ['walk', (this.stateTime * 0.35) % 4];
         case 'attack': {
-          const ph = this.attackPhase();
-          return [this.move.anim || this.moveKind, ph === 'startup' ? 0 : ph === 'active' ? 1 : 2];
+          // Wind-up holds, then snaps through to the hit; recovery eases back out.
+          const m = this.move, t = this.stateTime, a = this.move.anim || this.moveKind;
+          if (t < m.startup) { const u = t / Math.max(1, m.startup); return [a, u < 0.55 ? 0 : (u - 0.55) / 0.45]; }
+          if (t < m.startup + m.active) return [a, 1];
+          return [a, 1 + Math.min(1, ((t - m.startup - m.active) / Math.max(1, m.recovery)) * 1.8)];
         }
         case 'crouch': return ['crouch', 0];
         case 'block':
         case 'blockstun': return [this.crouching ? 'crouchBlock' : 'block', 0];
-        case 'hitstun': return ['hit', 0];
+        case 'hitstun': { const r = this.stateTime / (this.stateTime + Math.max(1, this.stun)); return ['hit', this.grounded ? Math.max(0, (r - 0.45) / 0.55) : 0]; }
         case 'throwReach': return ['throw', 0];
         case 'throwing': return this.throwKind.anim(this, this.stateTime);
         case 'thrown': return this.thrownPose || ['hit', 0];
@@ -835,13 +839,19 @@
         case 'finishing': return this.finisherAnim || ['idle', 0];
         case 'special': return this.specialKind.anim(this);
         case 'ko': return ['ko', this.grounded ? 1 : 0];
-        case 'victory': return ['victory', Math.floor(this.stateTime / 15) % 2];
-        default: return ['idle', Math.floor(this.stateTime / (this.def.idleRate || 20)) % (this.def.idleFrames || 2)];
+        case 'victory': { const c = this.stateTime % 30; return ['victory', c < 15 ? c / 15 : (30 - c) / 15]; }
+        default: return ['idle', (this.stateTime / (this.def.idleRate || 20)) % (this.def.idleFrames || 2)]; // breathes smoothly
       }
     }
 
     // Purely visual timers; run even during hit-stop.
     tickVisuals() {
+      // Squash on landing, stretch on take-off, a recoil pop when hit (see draw).
+      const air = this.y > 0.5;
+      if (this.wasAir && !air && !['ko', 'knockdown', 'thrown', 'finished'].includes(this.state)) this.landT = 7;
+      this.wasAir = air;
+      if (this.landT > 0) this.landT--;
+      if (this.hitPop > 0) this.hitPop--;
       if (this.flash > 0) this.flash--;
       if (this.shieldHit > 0) this.shieldHit--;
     }
@@ -859,6 +869,14 @@
       this.lift = this.def.hover && !['ko', 'knockdown', 'thrown', 'finished', 'dazed'].includes(this.state)
         ? Math.round(this.def.hover + Math.sin(t0 / 14) * (this.def.hoverBob || 0)) : 0;
       floorY -= this.lift;
+      // Squash & stretch around the feet (purely visual).
+      let sx = 1, sy = 1;
+      if (this.landT > 0) { const k = this.landT / 7; sx = 1 + 0.07 * k; sy = 1 - 0.09 * k; }
+      else if (this.state === 'jump' && this.vy > 2 && this.stateTime < 10) { sx = 0.95; sy = 1.06; }
+      else if (this.state === 'jumpSquat') { sx = 1.06; sy = 0.92; }
+      if (this.hitPop > 0) { const k = this.hitPop / 8; x -= this.facing * 2.5 * k; sx *= 1 - 0.04 * k; sy *= 1 + 0.03 * k; }
+      ctx.save();
+      if (sx !== 1 || sy !== 1) { const fy = floorY - this.y; ctx.translate(x, fy); ctx.scale(sx, sy); ctx.translate(-x, -fy); }
       const jetOn = this.def.jetpack && this.y > 0 && (this.state === 'jump' || (this.state === 'attack' && this.attackAirborne));
       if (jetOn) RF.MOVE_FX.jetpack(this, ctx, floorY, this.scene ? this.scene.frame : 0); // drawn behind him
       const aura = this.def.aura && RF.MOVE_FX[this.def.aura];
@@ -896,6 +914,7 @@
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);
       if ((this.state === 'block' || this.state === 'blockstun') && this.def.blockFx) RF.BLOCK_FX[this.def.blockFx](this, ctx, floorY, t);
+      ctx.restore();
     }
 
     drawShadow(ctx, floorY) {

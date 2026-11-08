@@ -16,6 +16,7 @@
 
     update() {
       this.t++;
+      for (const s of this.sprites) if (s.warm) s.warm(2); // build the fight's frames during the intro (no hitch later)
       if (this.t === 12) RF.announcer.say(this.opts.p1.name + ' versus ' + this.opts.p2.name, { rate: 0.9 });
       if (this.t > 20 && RF.menuPressed(this.game.kb, 'confirm')) this.t = this.duration;
       if (this.t >= this.duration) this.game.setScene(new RF.FightScene(this.game, this.opts));

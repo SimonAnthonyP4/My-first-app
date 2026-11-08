@@ -54,7 +54,7 @@
       F({ legs: 'stride', stride: -3, head: [0, -1], torso: [0, -1] }),
       F({}),
     ],
-    jump: [F({ legs: 'tuck', arm: 'flail' })],
+    jump: [F({ legs: 'tuck', arm: 'flail' }), F({ arm: 'flail', head: [0, 1] })],   // tucked going up, legs down to land
     light: [
       F({ arm: 'back', head: [-1, 0] }),
       F({ arm: 'forward', head: [2, 0], torso: [1, 0] }),
@@ -66,7 +66,7 @@
       F({ legs: 'chamber', head: [-1, 0] }),
     ],
     block: [F({ arm: 'block', head: [-1, 0] })],
-    hit: [F({ arm: 'flail', head: [-4, 0], torso: [-2, 0] })],
+    hit: [F({ arm: 'flail', head: [-4, 0], torso: [-2, 0] }), F({ head: [-1, 0], torso: [-1, 0] })], // the impact, then recovering
     ko: [F({ arm: 'flail', legs: 'tuck', head: [-5, 0], torso: [-3, 0] }), F({ rotate: true })],
     victory: [F({ arm: 'up' }), F({ arm: 'up', armOff: [0, -2], head: [0, -1] })],
     special: [
@@ -97,6 +97,43 @@
       F({ crouch: true }),
     ],
   };
+
+  // ---- in-between frames ----
+  const SUB = 3;                                     // frames per pose step (1 pose + 2 in-betweens)
+  const LOOPING = new Set(['idle', 'walk']);
+  // An arm as a list of cells; named arms from ARMS, or an already-blended list.
+  const armCells = (a) => (Array.isArray(a) ? a : ARMS[a]);
+  // Resample an arm path (shoulder at [0,0] plus its cells) to n evenly spaced points.
+  function resample(cells, n) {
+    const pts = [[0, 0], ...cells], len = [0];
+    for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const total = len[len.length - 1] || 1, out = [];
+    for (let k = 1; k <= n; k++) {
+      const d = (k / n) * total; let j = 1;
+      while (j < pts.length - 1 && len[j] < d) j++;
+      const u = (d - len[j - 1]) / ((len[j] - len[j - 1]) || 1);
+      out.push([pts[j - 1][0] + (pts[j][0] - pts[j - 1][0]) * u, pts[j - 1][1] + (pts[j][1] - pts[j - 1][1]) * u]);
+    }
+    return out;
+  }
+  const lerp2 = (a, b, u) => [(a ? a[0] : 0) * (1 - u) + (b ? b[0] : 0) * u, (a ? a[1] : 0) * (1 - u) + (b ? b[1] : 0) * u];
+  // A pose part-way (u = 0..1) between recipes p and q.
+  function tween(p, q, u) {
+    const r = Object.assign({}, u < 0.5 ? p : q);
+    if (p.rotate || q.rotate) return r;
+    for (const k of ['head', 'torso', 'armOff', 'legsOff', 'liftOff']) if (p[k] || q[k]) r[k] = lerp2(p[k], q[k], u);
+    const sp = p.legs === 'stride' ? p.stride : (!p.legs ? 0 : null), sq = q.legs === 'stride' ? q.stride : (!q.legs ? 0 : null);
+    if (sp !== null && sq !== null && (p.legs === 'stride' || q.legs === 'stride')) { r.legs = 'stride'; r.stride = sp * (1 - u) + sq * u; }
+    if (p.arm && q.arm) {
+      const a = armCells(p.arm), b = armCells(q.arm);
+      if (a && b) {
+        const n = Math.max(a.length, b.length), ra = resample(a, n), rb = resample(b, n);
+        r.arm = ra.map((c, i) => [c[0] + (rb[i][0] - c[0]) * u, c[1] + (rb[i][1] - c[1]) * u]);
+        r.armName = (u < 0.5 ? p : q).armName || (typeof (u < 0.5 ? p : q).arm === 'string' ? (u < 0.5 ? p : q).arm : null);
+      }
+    }
+    return r;
+  }
 
   class PixelPuppetSprite {
     constructor(def) {
@@ -134,11 +171,29 @@
       this.topPad = this.bigHead ? s.neckRow : 0;      // room above for the giant head
       const hc = this.cells.head.map((c) => c.c);
       this.headPivot = [hc.length ? (Math.min(...hc) + Math.max(...hc)) / 2 : 0, s.neckRow];
-      this.frames = {};
-      for (const anim in RF.ANIMATIONS) {
-        const recipes = (s.poses && s.poses[anim]) || PUPPET_POSES[anim];
-        this.frames[anim] = recipes.map((p) => (p.rotate ? this.bakeLying() : this.bake(p)));
+      // Frames are baked on first use, with in-between frames blended between every
+      // pair of poses so animations flow instead of snapping (see frameList / tween).
+      this.recipes = {};
+      for (const anim in RF.ANIMATIONS) this.recipes[anim] = (s.poses && s.poses[anim]) || PUPPET_POSES[anim];
+      this.baked = {};
+    }
+
+    // All baked frames of an animation: each pose plus SUB-1 blended in-betweens after it
+    // (looping animations also blend the last pose back into the first).
+    frameList(anim) {
+      if (this.baked[anim]) return this.baked[anim];
+      const rec = this.recipes[anim] || this.recipes.idle, n = rec.length, loop = LOOPING.has(anim), out = [];
+      for (let i = 0; i < n; i++) {
+        const p = rec[i], q = rec[(i + 1) % n];
+        out.push(p.rotate ? this.bakeLying() : this.bake(p));
+        if (i === n - 1 && !loop) break;
+        for (let k = 1; k < SUB; k++) {
+          const tw = tween(p, q, k / SUB);
+          out.push(tw.rotate ? this.bakeLying() : this.bake(tw));
+        }
       }
+      this.baked[anim] = out;
+      return out;
     }
 
     // Draw one frame recipe to a canvas.
@@ -190,7 +245,8 @@
 
       const drawArm = (name, dark, extra = [0, 0]) => {
         if (!name) return;
-        const cells = ARMS[name];
+        const cells = Array.isArray(name) ? name : ARMS[name];
+        if (!cells) return;
         const [sc, sr] = s.shoulder;
         const dx = torsoOff[0] + extra[0], dy = torsoOff[1] + extra[1];
         // A pose can swap what's in the hand (Fernando: cigarette normally, shotgun for the heavy).
@@ -301,7 +357,8 @@
 
       // Back arm, legs, body, head, front arm.
       drawArm(p.backArm, true, p.armOff || [0, 0]);
-      const armBehind = p.arm === 'back' || p.arm === 'flail'; // a cocked-back arm sits behind the body
+      const armName = p.armName || p.arm;
+      const armBehind = armName === 'back' || armName === 'flail'; // a cocked-back arm sits behind the body
       if (armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
       this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;
@@ -428,9 +485,19 @@
       return { canvas, anchorX: Math.round((len + 12) / 2), anchorY: thick + 4 };
     }
 
+    // Build up to `n` not-yet-built animations; true once everything is built.
+    warm(n = Infinity) {
+      for (const anim in this.recipes) { if (this.baked[anim]) continue; if (n-- <= 0) return false; this.frameList(anim); }
+      return true;
+    }
+
+    // `frame` may be fractional (e.g. 1.4 = 40% of the way from pose 1 to pose 2).
     draw(ctx, anim, frame, x, y, facing, tint) {
-      const list = this.frames[anim] || this.frames.idle;
-      RF.drawBakedFrame(ctx, list[frame % list.length], x, y, facing, tint);
+      if (!this.recipes[anim]) anim = 'idle';
+      const list = this.frameList(anim), loop = LOOPING.has(anim);
+      let i = Math.round(frame * SUB);
+      i = loop ? ((i % list.length) + list.length) % list.length : Math.max(0, Math.min(list.length - 1, i));
+      RF.drawBakedFrame(ctx, list[i], x, y, facing, tint);
     }
   }
 

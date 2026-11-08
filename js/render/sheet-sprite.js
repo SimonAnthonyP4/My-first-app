@@ -31,7 +31,7 @@
         return;
       }
       const count = a.frames || RF.ANIMATIONS[anim];
-      const sx = (frame % count) * c.frameWidth, sy = a.row * c.frameHeight;
+      const sx = (Math.floor(frame) % count) * c.frameWidth, sy = a.row * c.frameHeight;
       x = Math.round(x);
       y = Math.round(y);
       ctx.save();

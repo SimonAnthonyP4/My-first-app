@@ -160,7 +160,7 @@
 
     draw(ctx, anim, frame, x, y, facing, tint) {
       const list = this.frames[anim] || this.frames.hit || this.frames.idle; // unknown pose: fall back
-      RF.drawBakedFrame(ctx, list[frame % list.length], x, y, facing, tint);
+      RF.drawBakedFrame(ctx, list[Math.floor(frame) % list.length], x, y, facing, tint);
     }
   }
 
