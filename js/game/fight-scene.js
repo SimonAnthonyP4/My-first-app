@@ -40,7 +40,7 @@
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
         opts.cpu ? new RF.AIInput(game.kb, this, 1) : new RF.PlayerInput(game.kb, RF.CONTROLS.p2),
       ];
-      if (opts.demo) this.inputs[0] = new RF.AIInput(game.kb, this, 0); // attract demo: CPU vs CPU
+      if (opts.demo || opts.cpuBoth) this.inputs[0] = new RF.AIInput(game.kb, this, 0); // attract demo / tournament: CPU vs CPU
       if (this.training) this.setupDummy();
       this.effects = new RF.Effects();
       this.gore = new RF.Gore();     // blood and chunks for finishers (Settings -> BLOOD)
@@ -253,6 +253,7 @@
               this.recordMatch();
               if (this.opts.arcade) this.endMenu = this.arcadeMenu();
               if (this.opts.survival) this.endMenu = this.survivalMenu();
+              if (this.opts.tournament) this.endMenu = new RF.ListMenu([{ label: 'BACK TO THE BRACKET', onSelect: () => RF.tournamentResult(this.game, this.opts.tournament, this.wins[0] > this.wins[1]) }]);
               this.setPhase('matchOver');
             }
             else { this.round++; this.startRound(); }

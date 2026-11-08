@@ -129,6 +129,8 @@
     }
   };
 
+  Object.assign(RF.HAZARDS, RF.HOME_HAZARDS || {}); // the home-turf stages' hazards (stages/home-stages.js)
+
   RF.drawHazard = function (scene, ctx, floorY) {
     const hz = RF.HAZARDS[scene.stageDef.id];
     if (hz) hz.draw(ctx, wallX(scene, hz), floorY, scene.frame, !!scene.hazardFx);

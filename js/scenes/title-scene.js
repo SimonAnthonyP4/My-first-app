@@ -4,7 +4,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 94, ITEM_GAP = 11;
+  const ITEM_Y = 92, ITEM_GAP = 10;
 
   class TitleScene {
     constructor(game) {
@@ -17,6 +17,7 @@
         { label: 'ONLINE', desc: 'PLAY A FRIEND ON ANOTHER COMPUTER', onSelect: () => (RF.online.active ? RF.online.end('LEFT ONLINE MATCH') : RF.online.openMenu(game)) },
         { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
         { label: 'ARCADE', desc: 'CLIMB THE TOWER, BEAT THE BOSS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
+        { label: 'TOURNAMENT', desc: 'A BRACKET FOR 4 OR 8 - PARTY MODE', onSelect: () => this.go(new RF.TournamentSetupScene(game)) },
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
         { label: 'TRAINING', desc: 'PRACTICE COMBOS AND TRIALS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
         { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY AND MORE', onSelect: () => this.go(new RF.ModsScene(game)) },
@@ -147,7 +148,7 @@
           g.addColorStop(0.5, 'rgba(255,90,0,0.45)');
           g.addColorStop(1, 'rgba(255,60,0,0)');
           ctx.fillStyle = g;
-          ctx.fillRect(W / 2 - 70, y - 3, 140, 13);
+          ctx.fillRect(W / 2 - 70, y - 2, 140, 11);
           this.drawFlame(ctx, W / 2 - RF.font.textWidth(item.label) / 2 - 12, y + 7);
           this.drawFlame(ctx, W / 2 + RF.font.textWidth(item.label) / 2 + 12, y + 7);
         }

@@ -43,6 +43,30 @@ python3 -m http.server 8000
 - **Special-move motions** accept down-back / down / down-forward, with a wider timing window.
 - Attack presses are buffered for 10 frames.
 
+### Tournament
+
+Title menu -> **TOURNAMENT**: a bracket for a party. Pick **4 or 8 entrants** and how many are
+people; each person picks a fighter, the empty spots are random CPU fighters, and everyone is
+shuffled into a bracket (quarter-finals, semi-finals, final). People take turns on the keyboard /
+controllers: against the CPU a person always plays on the left (P1 keys / controller 1); person vs
+person is left = P1, right = P2. CPU vs CPU matches can be watched or simmed. Every fight is on a
+random stage; the winner gets a CHAMPION screen with a trophy (`js/scenes/tournament-scene.js`).
+
+### Stages
+
+Eleven stages, each with a hazard against one wall (knock someone into it). The newer fighters'
+home turf (`js/stages/home-stages.js`):
+
+| Stage | Home of | Hazard |
+|---|---|---|
+| Friday Night Lights | Mikey | tackling sled - SACKED! |
+| Music Room | Wuttke | a giant gong - GONG! |
+| The Back Nine | Tyler | the pond - WATER HAZARD! |
+| South Beach | Gabriel | lifeguard stand, a crashing wave - WIPEOUT! |
+| Bro Batch HQ | Anthony & Nicholas | the protein-bar press - PRESSED! |
+| The Crag | Alejandro | falling rock - ROCKFALL! |
+| Parking Lot | Fernando | the dumpster - TRASHED! |
+
 ### Online play
 
 Title menu -> **ONLINE**. One player presses **HOST A MATCH** and gets a 4-letter code; the other
