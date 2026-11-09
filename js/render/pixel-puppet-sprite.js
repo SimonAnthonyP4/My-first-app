@@ -182,18 +182,47 @@
     // (looping animations also blend the last pose back into the first).
     frameList(anim) {
       if (this.baked[anim]) return this.baked[anim];
-      const rec = this.recipes[anim] || this.recipes.idle, n = rec.length, loop = LOOPING.has(anim), out = [];
+      const rec = this.recipes[anim] || this.recipes.idle, n = rec.length, loop = LOOPING.has(anim), out = [], recs = [];
       for (let i = 0; i < n; i++) {
         const p = rec[i], q = rec[(i + 1) % n];
-        out.push(p.rotate ? this.bakeLying() : this.bake(p));
+        out.push(p.rotate ? this.bakeLying() : this.bake(p)); recs.push(p);
         if (i === n - 1 && !loop) break;
         for (let k = 1; k < SUB; k++) {
           const tw = tween(p, q, k / SUB);
-          out.push(tw.rotate ? this.bakeLying() : this.bake(tw));
+          out.push(tw.rotate ? this.bakeLying() : this.bake(tw)); recs.push(tw);
         }
       }
       this.baked[anim] = out;
+      (this.recipeLists = this.recipeLists || {})[anim] = recs;
       return out;
+    }
+
+    // Which built frame `draw(anim, frame)` would show: { anim, i }.
+    poseAt(anim, frame) {
+      if (!this.recipes[anim]) anim = 'idle';
+      const list = this.frameList(anim), loop = LOOPING.has(anim);
+      let i = Math.round(frame * SUB);
+      i = loop ? ((i % list.length) + list.length) % list.length : Math.max(0, Math.min(list.length - 1, i));
+      return { anim, i };
+    }
+
+    // A pose part-way between two built frames of (possibly) different animations, for
+    // smooth move-to-move transitions. Cached; u is rounded to quarters.
+    drawBlend(ctx, from, to, u, x, y, facing, tint) {
+      u = Math.max(0.25, Math.min(0.75, Math.round(u * 4) / 4));
+      const key = from.anim + from.i + '>' + to.anim + to.i + '@' + u;
+      this.blends = this.blends || new Map();
+      let f = this.blends.get(key);
+      if (f === undefined) {
+        this.frameList(from.anim); this.frameList(to.anim);
+        const a = this.recipeLists[from.anim][from.i], b = this.recipeLists[to.anim][to.i];
+        f = !a || !b || a.rotate || b.rotate ? null : this.bake(tween(a, b, u));
+        if (this.blends.size > 400) this.blends.clear();
+        this.blends.set(key, f);
+      }
+      if (!f) return false;
+      RF.drawBakedFrame(ctx, f, x, y, facing, tint);
+      return true;
     }
 
     // Draw one frame recipe to a canvas.

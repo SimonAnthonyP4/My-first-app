@@ -19,6 +19,8 @@
     });
   }
 
+  const SNAP = new Set(['hit', 'ko']); // animations that switch instantly (impacts read better)
+
   class Fighter {
     constructor(def, side, alt = false) {
       if (alt) def = RF.costume(def, alt === true ? 1 : alt); // alt = costume number
@@ -844,6 +846,22 @@
       }
     }
 
+    // The body, with a short blend whenever the animation changes (idle -> punch, punch ->
+    // idle, walk -> block...), so moves flow into each other. Hits and knockouts still snap.
+    drawBody(ctx, anim, frame, x, y, tint) {
+      const sp = this.sprite;
+      if (!sp.poseAt) return sp.draw(ctx, anim, frame, x, y, this.facing, tint);
+      const pose = sp.poseAt(anim, frame), now = this.scene ? this.scene.frame : 0;
+      if (this.poseFrame !== now) { // once per game frame, however often we're drawn
+        const prev = this.curPose;
+        if (prev && prev.anim !== pose.anim && !SNAP.has(pose.anim) && !SNAP.has(prev.anim)) this.blend = { from: prev, start: now };
+        this.curPose = pose; this.poseFrame = now;
+      }
+      const b = this.blend, BLEND = this.state === 'attack' ? 2 : 4; // attacks stay snappy
+      if (b && now - b.start < BLEND && sp.drawBlend(ctx, b.from, pose, (now - b.start + 1) / (BLEND + 1), x, y, this.facing, tint)) return;
+      sp.draw(ctx, anim, frame, x, y, this.facing, tint);
+    }
+
     // Purely visual timers; run even during hit-stop.
     tickVisuals() {
       // Squash on landing, stretch on take-off, a recoil pop when hit (see draw).
@@ -906,10 +924,10 @@
         ctx.globalAlpha = 0.35 + Math.sin(ft / 4) * 0.12;
         for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2]]) this.sprite.draw(ctx, anim, frame, x + dx, fy + dy, this.facing, '#30ff40');
         ctx.globalAlpha = 1;
-        this.sprite.draw(ctx, anim, frame, x, fy, this.facing, this.flash > 1 ? 'white' : null);
+        this.drawBody(ctx, anim, frame, x, fy, this.flash > 1 ? 'white' : null);
         ctx.globalAlpha = 0.28; this.sprite.draw(ctx, anim, frame, x, fy, this.facing, '#40c040'); ctx.globalAlpha = 1;
         ctx.restore();
-      } else this.sprite.draw(ctx, anim, frame, x, floorY - this.y, this.facing, this.flash > 1 ? 'white' : null);
+      } else this.drawBody(ctx, anim, frame, x, floorY - this.y, this.flash > 1 ? 'white' : null);
       if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);

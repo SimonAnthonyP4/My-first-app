@@ -58,19 +58,46 @@
 
   game.setScene(new RF.TitleScene(game));
 
+  // HIGH-REFRESH SMOOTHING: the game updates 60 times a second. On a 120/144 Hz screen,
+  // draw the fighters and camera part-way between the last two updates instead of
+  // showing each update twice (which judders). Off on 60 Hz screens (no added delay).
+  let refresh = 16.7;
+  const snap = { scene: null, list: [] };
+  const remember = () => {
+    const sc = game.scene;
+    snap.scene = sc;
+    snap.list = sc && sc.fighters ? sc.fighters.map((f) => [f.x, f.y]) : [];
+    snap.cam = sc && sc.cam ? [sc.cam.x, sc.cam.z] : null;
+  };
+  const withInterpolation = (alpha, draw) => {
+    const sc = game.scene;
+    if (refresh > 12.5 || alpha <= 0 || snap.scene !== sc || !sc.fighters || (RF.online && RF.online.active)) return draw();
+    const saved = sc.fighters.map((f) => [f.x, f.y]), cam = sc.cam ? [sc.cam.x, sc.cam.z] : null;
+    sc.fighters.forEach((f, i) => {
+      const p = snap.list[i];
+      if (p && Math.abs(f.x - p[0]) < 40 && Math.abs(f.y - p[1]) < 40) { f.x = p[0] + (f.x - p[0]) * alpha; f.y = p[1] + (f.y - p[1]) * alpha; }
+    });
+    if (cam && snap.cam) { sc.cam.x = snap.cam[0] + (cam[0] - snap.cam[0]) * alpha; sc.cam.z = snap.cam[1] + (cam[1] - snap.cam[1]) * alpha; }
+    try { draw(); } finally {
+      sc.fighters.forEach((f, i) => { f.x = saved[i][0]; f.y = saved[i][1]; });
+      if (cam) { sc.cam.x = cam[0]; sc.cam.z = cam[1]; }
+    }
+  };
+
   let last = performance.now(), acc = 0;
   function loop(now) {
     let dt = Math.min(now - last, 250); // avoid a huge catch-up after the tab was hidden
     last = now;
+    if (dt > 0 && dt < 50) refresh = refresh * 0.95 + dt * 0.05; // how fast this screen refreshes
     // Frame times jitter by a millisecond or two; treating "about one frame" as
     // exactly one frame stops the occasional doubled/skipped update (judder).
     if (Math.abs(dt - STEP) < 2) dt = STEP;
     acc += dt;
     while (acc >= STEP) {
-      if (!game.manualStep) safely(() => (RF.online && RF.online.active ? RF.online.tick() : game.step()));
+      if (!game.manualStep) { remember(); safely(() => (RF.online && RF.online.active ? RF.online.tick() : game.step())); }
       acc -= STEP;
     }
-    safely(() => game.scene.render(ctx));
+    safely(() => withInterpolation(game.manualStep ? 0 : acc / STEP, () => game.scene.render(ctx)));
     if (RF.online) safely(() => RF.online.drawOverlay(ctx));
     if (game.achievement) { // ACHIEVEMENT UNLOCKED pop-up (top centre)
       const a = game.achievement, tIn = Math.min(1, (240 - a.t) / 12), tOut = Math.min(1, a.t / 12), y = Math.round(-30 + 34 * Math.min(tIn, tOut));

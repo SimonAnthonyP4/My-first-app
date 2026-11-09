@@ -670,6 +670,13 @@ Fighters don't snap between a few poses any more:
 - **Squash & stretch:** a squash on landing, a stretch on take-off, and a recoil pop when hit.
 - **No hitches:** sprites are cached per fighter + costume and built during the versus screen,
   so nothing is generated mid-fight.
+- **Move-to-move blending:** switching moves (idle into a punch, landing into a walk, a block
+  dropping) cross-fades over a few frames instead of popping - 2 frames into attacks so they stay
+  snappy, 4 otherwise; getting hit and KOs still snap for impact (`drawBody` in fighter.js,
+  `drawBlend` in pixel-puppet-sprite.js).
+- **High-refresh screens:** on 120/144 Hz monitors the game still updates 60 times a second, but
+  fighter positions and the camera are interpolated between updates when drawing, so motion looks
+  smoother. Off on 60 Hz screens and in online matches (`withInterpolation` in main.js).
 
 ## Attacking arms and legs
 
