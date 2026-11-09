@@ -149,6 +149,9 @@
         return;
       }
 
+      // 3b. LAST STAND when low on health and close (not every time it could).
+      if (me.lastStandReady && me.lastStandReady() && dist < 70 && opp.grounded && Math.random() < 0.05 * L.aggression * 2) { this.tap('cmdLastStand'); return; }
+
       // 4. Throw when right next to them (more likely if they're blocking).
       const gap = dist - (me.body.width + opp.body.width) / 2;
       if (gap <= RF.CONFIG.THROW_RANGE - 2 && opp.grounded &&

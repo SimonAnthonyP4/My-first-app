@@ -656,6 +656,27 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Arcade feel (MK-style)
+
+- **Short hop:** tap UP for a quick low hop, hold UP for a full jump (player-controlled jumps only;
+  the CPU always jumps full). A hop into an air attack is a fast overhead.
+- **Counter hits:** hitting someone during their attack's start-up, a grab, a taunt or a special's
+  wind-up does +25% damage, stuns 18 frames longer (enough to combo after), and hits harder
+  (extra freeze, shake, rumble).
+- **BONE BREAKER:** a counter hit with a heavy, launcher or special - once per round per fighter -
+  does 40% more, pops them up, and freezes the fight for an X-ray close-up: the camera punches in,
+  the world goes dark, and a lens over the victim shows the bone cracking (blood with BLOOD on).
+- **LAST STAND:** once per match, below 30% health: EX + HEAVY together (PS5 L2 + R2, keyboard
+  E + G / Num6 + Num2). A lunging blow with its own cut-in; if it connects it plays a long X-ray of
+  three bones breaking (ribs, skull, leg) for 30 damage. Blocked = spent; a whiff can be retried.
+  The CPU uses it too.
+- **Easier special inputs:** quarter circles accept DOWN -> DOWN-FORWARD (no need to reach full
+  forward), and arcade taps work too: BACK, FORWARD + attack (or FORWARD, BACK). The tap has to be
+  quick, so walking back and forth and attacking never fires a special by accident.
+- New **ADVANCED** page in HOW TO PLAY; the pause move list shows LAST STAND.
+- Code: `motionDone` / `wantsLastStand` / `inCounterState` in fighter.js; `startXray` /
+  `updateXray` / `drawXray` in fight-scene.js; `RF.LAST_STAND` in commands.js.
+
 ## Smooth animation
 
 Fighters don't snap between a few poses any more:

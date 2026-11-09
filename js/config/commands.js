@@ -113,5 +113,10 @@
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
   };
+  // LAST STAND: the once-a-match comeback strike (below 30% health, EX + HEAVY / L2 + R2).
+  // A lunging blow that, if it connects, plays an X-ray close-up of three bones breaking.
+  RF.LAST_STAND = Object.assign({ name: 'Last Stand', kind: 'rush', startup: 14, speed: 9, duration: 18, reach: 22, recovery: 34, color: '#ff3030', anim: 'heavy', sound: 'whoosh', lastStand: true },
+    hit(30, { hitstun: 50, blockstun: 22, pushback: 6, hitstop: 2, launch: 5, launchVx: 2.5 }));
+
   for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
 })();

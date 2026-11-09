@@ -56,6 +56,8 @@
     L(ctx, x + 7 * s, neck + 2, x + 12 * s, neck - 6 * s, 2, bone);
   }
 
+  RF.drawSkeleton = skeleton; // the X-ray close-ups (BONE BREAKER, LAST STAND) use it too
+
   // Chalk dust puff.
   function chalk(ctx, x, y, frame, n = 6) {
     for (let i = 0; i < n; i++) {

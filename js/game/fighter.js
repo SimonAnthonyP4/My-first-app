@@ -49,6 +49,7 @@
     }
 
     reset(x, facing) {
+      this.boneBreakUsed = false; // BONE BREAKER: once per round
       this.x = x; this.y = 0;
       this.vx = 0; this.vy = 0;
       this.pushVx = 0;
@@ -146,6 +147,12 @@
           break;
         case 'jump':
           this.crouching = false;
+          // SHORT HOP: tap UP (let go early) for a quick low hop; hold it for a full jump.
+          if (this.hopCheck && this.stateTime <= 7 && this.vy > 0 && !input.held('up')) {
+            this.hopCheck = false;
+            this.vy = Math.min(this.vy, this.stats.jumpPower * 0.42);
+            this.vx *= 1.1; // hops travel a bit flatter and faster
+          }
           // WALL JUMP (Alejandro): against the edge of the stage, hold toward it to slide down
           // slowly, press UP to kick off it (up to 3 times before landing).
           if (this.def.wallJump && bounds && this.atWall(bounds)) {
@@ -186,6 +193,7 @@
           if (this.move.projectile && this.stateTime === this.move.startup) this.scene.spawnProjectile(this, this.move.projectile);
           // Super: LIGHT + HEAVY together. Also cancels any ground attack that connected.
           const confirmed = this.moveHasHit && !this.attackAirborne && this.stateTime >= this.move.startup;
+          if (canAct && !this.attackAirborne && (this.stateTime <= 3 || confirmed) && this.wantsLastStand(input)) { this.startLastStand(); break; }
           if (canAct && !this.attackAirborne && (this.stateTime <= 3 || confirmed) && this.wantsSuper(input)) { this.startSuper(); break; }
           // Command special cancel: a ground attack that connected -> DOWN, FORWARD/BACK + attack.
           if (canAct && confirmed && this.def.commands) { const cmd = this.commandPressed(input); if (cmd) { this.startCommand(cmd); break; } }
@@ -281,15 +289,37 @@
       if (this.motion.length > 28) this.motion.shift();
     }
 
-    // Did the stick go DOWN then FORWARD (6) / BACK (4) in the last ~15 frames, ending recently?
+    // Did the stick do a command motion ending in FORWARD (6) or BACK (4), recently? Lenient:
+    //  - quarter circle: any DOWN-ish position, then FORWARD - or just DOWN then DOWN-FORWARD;
+    //  - arcade tap: BACK, FORWARD (or FORWARD, BACK) as two quick taps.
     motionDone(end) {
-      const m = this.motion, n = m.length;
+      const m = this.motion, n = m.length, diag = end === 6 ? 3 : 1, opp = end === 6 ? 4 : 6;
+      const isDown = (d) => d === 1 || d === 2 || d === 3;
+      for (let k = n - 1; k >= 0 && n - 1 - k <= 10; k--) {
+        if (m[k] === end) {
+          for (let j = k - 1; j >= Math.max(0, k - 20); j--) if (isDown(m[j])) return true;
+        } else if (m[k] === diag && n - 1 - k <= 6) {
+          // DOWN-FORWARD counts as the end if the stick went neutral -> DOWN -> DOWN-FORWARD quickly
+          // (crouching for a while and drifting forward doesn't count).
+          let j = k - 1, run = 0;
+          while (j >= 0 && m[j] === diag) j--;
+          while (j >= 0 && isDown(m[j]) && m[j] !== diag) { run++; j--; }
+          if (run > 0 && run <= 12 && j >= 0) return true;
+          break;
+        }
+      }
+      // Arcade-style tap: a short BACK tap right before FORWARD (or the reverse). The first tap
+      // must be short (not a long walk) so walking around and attacking never fires one.
       let k = n - 1;
-      while (k >= 0 && n - 1 - k <= 8 && m[k] !== end) k--;
-      if (k < 0 || n - 1 - k > 8) return false;
-      // Any DOWN-ish position counts (down-back, down, down-forward): easier on a stick or pad.
-      for (let j = k - 1; j >= Math.max(0, k - 18); j--) if (m[j] === 1 || m[j] === 2 || m[j] === 3) return true;
-      return false;
+      while (k >= 0 && n - 1 - k <= 6 && m[k] !== end) k--;
+      if (k < 0 || n - 1 - k > 6) return false;
+      while (k > 0 && m[k - 1] === end) k--;           // start of the final FORWARD
+      let j = k - 1;
+      while (j >= 0 && k - j <= 3 && m[j] === 5) j--;   // a frame or two of neutral is fine
+      if (j < 0 || (m[j] !== opp && m[j] !== opp + 3 && m[j] !== opp - 3)) return false;
+      let len = 0;
+      while (j >= 0 && (m[j] === opp || m[j] === opp + 3 || m[j] === opp - 3)) { len++; j--; }
+      return len <= 10 && (j < 0 || m[j] !== opp);
     }
 
     // Which command special (if any) was just performed: 'qcf' or 'qcb'.
@@ -428,6 +458,7 @@
     doJump(input) {
       const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
       this.jumpPressAt = input.lastPress('up');
+      this.hopCheck = input instanceof RF.PlayerInput && !RF.CONFIG.MOD_LOWGRAV; // the CPU always does full jumps
       this.doubleJumped = false;
       this.wallJumps = 0;
       this.state = null;
@@ -440,6 +471,7 @@
 
     // Jump after a launched opponent.
     launchJump(opp) {
+      this.hopCheck = false;
       this.state = null;
       this.setState('jump');
       this.airCombo = true;
@@ -477,9 +509,27 @@
       this.setState('hitstun');
     }
 
+    // LAST STAND: once a match, below 30% health - EX + HEAVY together (PS5: L2 + R2).
+    lastStandReady() { return !this.lastStandUsed && this.health > 0 && this.health / this.maxHealth < RF.CONFIG.RAGE_HEALTH && this.scene && this.scene.phase === 'fight'; }
+    wantsLastStand(input) {
+      if (!this.lastStandReady()) return false;
+      if (input.pressed('cmdLastStand')) { input.consume('cmdLastStand'); return true; } // the CPU
+      const w = 6;
+      if (input.pressed('ex', w) && (input.pressed('heavy', w) || input.held('heavy'))) { input.consume('ex'); input.consume('heavy'); input.consume('light'); return true; }
+      return false;
+    }
+    startLastStand() {
+      this.lastStandTry = true;
+      this.startSpecial(RF.LAST_STAND);
+      this.scene.startLastStand(this);
+    }
+
     groundControl(input, opp) {
       this.faceOpponent(opp);
       const down = input.held('down'), up = input.held('up');
+      if (this.wantsLastStand(input)) return this.startLastStand();
+      // EX pressed while LAST STAND is ready: wait a couple of frames for HEAVY (L2 + R2 together)
+      if (this.lastStandReady() && input.pressed('ex', 2) && input instanceof RF.PlayerInput) return;
       if (this.wantsSuper(input)) return this.startSuper();
       const cmd = this.commandPressed(input);
       if (cmd) return this.startCommand(cmd);
@@ -733,6 +783,12 @@
       return true;
     }
 
+    // Caught while starting an attack, a grab, a taunt or a special: a hit now is a COUNTER.
+    inCounterState() {
+      return (this.state === 'attack' && this.attackPhase() === 'startup') || this.state === 'throwReach' || this.state === 'taunt' ||
+        (this.state === 'special' && this.stateTime < 8 && !(this.special && this.special.lastStand));
+    }
+
     // Returns true if the hit was blocked.
     receiveHit(attacker, move) {
       const dir = sign(this.x - attacker.x) || attacker.facing;
@@ -749,8 +805,7 @@
         this.counterHit = false;
         return false;
       }
-      this.counterHit = !blocked && ((this.state === 'attack' && this.attackPhase() === 'startup') || this.state === 'throwReach' || this.state === 'taunt' ||
-        (this.state === 'special' && this.stateTime < 8));
+      this.counterHit = !blocked && this.inCounterState();
       const airborne = !this.grounded;
       let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
@@ -772,7 +827,7 @@
         const scaling = attacker.def.comboScaling != null ? attacker.def.comboScaling : RF.CONFIG.COMBO_SCALING; // Tamayo's combos barely scale
         dmg *= Math.max(RF.CONFIG.COMBO_MIN_SCALE, 1 - scaling * (this.combo - 1));
         this.flash = 4;
-        this.stun = move.hitstun + (this.counterHit ? 10 : 0);
+        this.stun = move.hitstun + (this.counterHit ? 18 : 0); // counter hits stun long enough to combo after
         this.state = null;
         this.setState('hitstun');
         this.hitPop = 8;       // recoil (visual)

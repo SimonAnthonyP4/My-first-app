@@ -48,6 +48,7 @@
           ['R1', 'DASH (HOLD BACK = BACKDASH)', '#ffffff'],
           ['L2', 'EX SPECIAL (1 BAR)', '#60e0ff'],
           ['R2', 'SUPER / COMBO BREAKER', '#ffd030'],
+          ['L2 + R2', 'LAST STAND (LOW HEALTH, 1X MATCH)', '#ff4040'],
           ['UP + TRIANGLE', 'LAUNCHER', '#ff9a40'],
           ['CREATE / TOUCHPAD', 'TAUNT', '#fff'],
           ['OPTIONS', 'PAUSE', '#fff'],
@@ -64,7 +65,7 @@
     },
     combos: {
       title: 'COMBOS AND SUPERS',
-      next: 'controller',
+      next: 'pro',
       draw(ctx, W) {
         const rows = [
           ['KOMBOS', '#ff4040', 'L,L,H = KOMBO! (BIG KNOCKBACK). L,L,L,H = BRUTAL KOMBO: LAUNCHES - HOLD UP TO CHASE.'],
@@ -81,6 +82,26 @@
           T(ctx, title, 20, y, { color: col, outline: '#000' });
           RF.font.wrap(text, 46).forEach((line, i) => T(ctx, line, 92, y + i * 8, { color: '#e8e0d8', outline: '#000' }));
           y += Math.max(1, RF.font.wrap(text, 46).length) * 8 + 5;
+        }
+      },
+    },
+    pro: {
+      title: 'ADVANCED',
+      next: 'controller',
+      draw(ctx, W) {
+        const rows = [
+          ['SHORT HOP', '#8ff0ff', 'TAP UP FOR A QUICK LOW HOP, HOLD UP FOR A FULL JUMP. HOP + AIR ATTACK = A FAST OVERHEAD.'],
+          ['COUNTER', '#ff4040', 'HIT THEM WHILE THEY START AN ATTACK: MORE DAMAGE AND THEY STAY STUNNED - TIME TO COMBO.'],
+          ['BONE BREAKER', '#ffffff', 'COUNTER WITH A HEAVY OR A SPECIAL: X-RAY CLOSE-UP, A BROKEN BONE, BIG DAMAGE. ONCE PER ROUND.'],
+          ['LAST STAND', '#ff3030', 'UNDER 30% HEALTH: EX + HEAVY (L2 + R2). LANDS = 3 BONES BROKEN. ONCE PER MATCH. A MISS CAN BE RETRIED.'],
+          ['SPECIALS', '#60e0ff', 'DOWN, FORWARD + ATTACK (OR TAP BACK, FORWARD + ATTACK). DOWN, BACK (OR TAP FORWARD, BACK) FOR THE OTHER ONE.'],
+        ];
+        RF.drawPanel(ctx, 12, 34, W - 24, 170);
+        let y = 42;
+        for (const [title, col, text] of rows) {
+          T(ctx, title, 20, y, { color: col, outline: '#000' });
+          RF.font.wrap(text, 44).forEach((line, i) => T(ctx, line, 100, y + i * 8, { color: '#e8e0d8', outline: '#000' }));
+          y += Math.max(1, RF.font.wrap(text, 44).length) * 8 + 8;
         }
       },
     },

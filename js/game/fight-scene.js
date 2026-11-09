@@ -98,6 +98,7 @@
       this.flash = 0;
       this.comboText = null;
       this.superFreeze = null;   // the dramatic pause before a super
+      this.xray = null;          // BONE BREAKER / LAST STAND close-up
       this.finisher = null;      // the finisher being performed, if any
       this.finishVictim = null;  // who is dazed waiting to be finished
       this.finishOffered = false;
@@ -141,7 +142,7 @@
       const kb = this.game.kb;
       // Attract demo: any key returns to the title screen.
       if (this.opts.demo && !extra && this.frame > 30 && (kb.down.size > 0 || (this.phase === 'matchOver' && this.phaseTime > 120))) return this.game.setScene(new RF.TitleScene(this.game));
-      if (extra) { this.frame++; this.phaseTime++; this.effects.update(); for (const f of this.fighters) f.tickVisuals(); if (this.hitstop > 0) { this.hitstop--; return; } return this.simulate(); }
+      if (extra) { if (this.xray || this.superFreeze) return; this.frame++; this.phaseTime++; this.effects.update(); for (const f of this.fighters) f.tickVisuals(); if (this.hitstop > 0) { this.hitstop--; return; } return this.simulate(); }
       if (kb.justPressed('Backquote')) this.showHitboxes = !this.showHitboxes;
       if (kb.justPressed('Escape', 'KeyP') && this.phase !== 'matchOver') {
         this.paused = !this.paused;
@@ -166,8 +167,9 @@
       if (this.toasty && ++this.toasty.t > 70) this.toasty = null;
       for (const f of this.fighters) f.tickVisuals();
       this.updateCamera();
-      const frozen = !!this.superFreeze || this.hitstop > 0;
+      const frozen = !!this.superFreeze || this.hitstop > 0 || !!this.xray;
       for (const inp of this.inputs) if (inp.noteFrame) inp.noteFrame(frozen); // frozen frames don't age buffered presses
+      if (this.xray) return this.updateXray(); // X-ray close-up: the world holds still
       if (this.superFreeze) {
         // Everything stops while the super cut-in plays.
         if (++this.superFreeze.t >= SUPER_FREEZE) this.superFreeze = null;
@@ -449,15 +451,16 @@
       if (RF.CONFIG.DYNAMIC_CAMERA) {
         const d = Math.abs(a.x - b.x), high = Math.max(a.y, b.y);
         tz = 1 + 0.2 * Math.max(0, Math.min(1, (200 - d) / 140)) - Math.max(0, high - 20) / 220;
-        if (this.superFreeze) { tz = 1.35; tx = this.superFreeze.f.x; }
+        if (this.xray) { tz = 1.45; tx = this.xray.vic.x; }
+        else if (this.superFreeze) { tz = 1.35; tx = this.superFreeze.f.x; }
         else if (this.finisher) { tz = 1.22; tx = (this.finisher.att.x + this.finisher.vic.x) / 2; }
         else if (this.transition) { tz = 1.3; tx = this.transition.def.x; }
         else if (this.phase === 'roundOver' && this.phaseTime < 60) tz = Math.max(tz, 1.15);
         tz = Math.max(1, Math.min(1.4, tz));
       }
       const c = this.cam || (this.cam = { x: W / 2, z: 1 });
-      c.z += (tz - c.z) * (this.superFreeze ? 0.25 : 0.08);
-      c.x += (tx - c.x) * 0.12;
+      c.z += (tz - c.z) * (this.superFreeze || this.xray ? 0.25 : 0.08);
+      c.x += (tx - c.x) * (this.xray ? 0.3 : 0.12);
       const half = W / 2 / c.z;
       c.x = Math.max(half, Math.min(W - half, c.x));
     }
@@ -570,6 +573,79 @@
       this.projectiles = this.projectiles.filter((p) => p.owner === f);
       RF.audio.sfx('super');
       RF.announcer.say('SUPER!', { rate: 0.95 });
+    }
+
+    // ---- LAST STAND / BONE BREAKER (X-ray close-ups) ----
+
+    startLastStand(f) {
+      this.superFreeze = { f, t: 0, label: 'LAST STAND' };
+      this.projectiles = this.projectiles.filter((p) => p.owner === f);
+      this.flash = 6;
+      RF.audio.sfx('super'); RF.audio.sfx('boom');
+      RF.announcer.say('LAST STAND!', { rate: 0.9 });
+      this.game.kb.rumble(f.side, 1, 500);
+    }
+
+    // n = how many bones break (1 for a BONE BREAKER, 3 for a LAST STAND).
+    startXray(att, vic, n, label) {
+      this.xray = { att, vic, n, t: 0, len: n === 1 ? 58 : 136, label };
+      this.hitstop = 0;
+      RF.announcer.say(label, { rate: 0.95 });
+      RF.audio.sfx('heavy');
+      if (this.isHuman(att)) RF.records.count && RF.records.count(n === 1 ? 'bonebreak' : 'laststand');
+    }
+
+    updateXray() {
+      const x = this.xray;
+      x.t++;
+      const local = (x.t - 6) % 38, i = Math.floor((x.t - 6) / 38);
+      if (x.t >= 6 && local === 12 && i < x.n) { // the break
+        RF.audio.sfx('crack'); RF.audio.sfx('heavy');
+        this.shake = Math.max(this.shake, 10); this.flash = 2;
+        this.game.kb.rumble(x.vic.side, 1, 250); this.game.kb.rumble(x.att.side, 0.6, 150);
+        if (this.gore.on) this.gore.burst(x.vic.x, x.vic.y + x.vic.body.height * 0.6, Math.sign(x.vic.x - x.att.x) || 1, 0.7);
+      }
+      if (x.t >= x.len) this.xray = null;
+    }
+
+    // The X-ray lens: a round cut-away over the victim showing the bone, then the crack.
+    drawXray(ctx, floorY) {
+      const x = this.xray, v = x.vic, t = x.t;
+      const k = Math.max(0, Math.min(1, (t - 3) / 7, (x.len - t) / 7));
+      const r = Math.round(30 * k);
+      if (r < 3) return;
+      const i = Math.min(x.n - 1, Math.max(0, Math.floor((t - 6) / 38))), local = (t - 6) - i * 38;
+      const spots = x.n === 1 ? [0.6] : [0.6, 0.86, 0.3]; // ribs, skull, leg
+      const footY = floorY - v.y, cx = Math.round(v.x), cy = Math.round(footY - v.body.height * spots[i]);
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = '#081028'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.fillStyle = 'rgba(90,150,255,0.12)';
+      for (let y = cy - r + ((t >> 1) % 3); y < cy + r; y += 3) ctx.fillRect(cx - r, y, r * 2, 1); // scan lines
+      ctx.save(); // magnified: a close-up on the bone
+      ctx.translate(cx, cy); ctx.scale(1.8, 1.8); ctx.translate(-cx, -cy);
+      RF.drawSkeleton(ctx, cx, footY, v.body.height, v.facing);
+      ctx.restore();
+      if (local >= 12) {
+        // the crack: a jagged line through the bone, with splinters
+        const pts = [[-9, -2], [-5, 1], [-2, -2], [1, 2], [4, -1], [8, 2]];
+        ctx.fillStyle = local < 15 ? '#ffffff' : '#ff3030';
+        for (let p = 0; p < pts.length - 1; p++) {
+          const [ax, ay] = pts[p], [bx, by] = pts[p + 1], steps = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
+          for (let q = 0; q <= steps; q++) ctx.fillRect(Math.round(cx + ax + (bx - ax) * q / steps), Math.round(cy + ay + (by - ay) * q / steps), 1, 1);
+        }
+        ctx.fillStyle = '#f4f0dc';
+        for (let q = 0; q < 6; q++) { // splinters drifting off
+          const a = q * 1.05 + i, d = Math.min(14, (local - 12) * 0.8);
+          ctx.fillRect(Math.round(cx + Math.cos(a) * d), Math.round(cy + Math.sin(a) * d * 0.7), 1 + (q & 1), 1);
+        }
+        if (local < 15) { ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); }
+      }
+      ctx.restore();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#000';
+      ctx.beginPath(); ctx.arc(cx, cy, r + 1, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = local >= 12 && local < 20 ? '#ff4040' : '#a8d0ff';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
     }
 
     // ---- FINISH THEM! ----
@@ -800,8 +876,21 @@
           move = Object.assign({}, move, { knockback: /light/i.test(att.moveKind) ? 0 : move.knockback, pushback: move.pushback * 0.55, hitstun: Math.max((move.hitstun || 14) + 6, link), tag: move.tag || att.moveKind });
         }
       }
+      // BONE BREAKER: a COUNTER hit with a heavy, launcher or special - once per round each -
+      // breaks a bone: extra damage, a pop-up, and an X-ray close-up of the break.
+      const fromAtt = move === att.move ? att.moveKind || '' : '';
+      const boneBreak = !move.lastStand && !att.boneBreakUsed && this.phase === 'fight' && def.inCounterState() && !def.isBlockingAgainst(att, move) &&
+        (move.special || /heavy|launcher/i.test(fromAtt));
+      if (boneBreak) move = Object.assign({}, move, { damage: move.damage * 1.4, hitstun: (move.hitstun || 20) + 20, launch: move.launch || 4.5, launchVx: move.launchVx != null ? move.launchVx : 1.6 });
       const hpBefore = def.health;
       const blocked = def.receiveHit(att, move);
+      if (move.lastStand) {
+        att.lastStandUsed = true; // spent once it connects or is blocked (a whiff can be tried again)
+        if (!blocked) this.startXray(att, def, 3, 'LAST STAND!');
+      } else if (boneBreak && !blocked && def.counterHit) {
+        att.boneBreakUsed = true;
+        this.startXray(att, def, 1, 'BONE BREAKER!');
+      }
       if (!blocked) {
         if (def.combo <= 1) this.trialLog = [];
         this.trialEvent(move.tag || (move === att.move ? att.moveKind : 'special'), att);
@@ -822,10 +911,11 @@
       // Super meter: dealing damage fills it fastest, taking it fills it too.
       att.gainMeter(move.damage * (blocked ? 0.3 : 0.75));
       def.gainMeter(move.damage * (blocked ? 0.2 : 0.45));
-      if (def.counterHit) {
+      if (def.counterHit && !this.xray) {
         this.effects.spawnText('COUNTER!', def.x, def.body.height + 16, '#ff4040');
-        this.hitstop += 4;
+        this.hitstop += 8; this.shake = Math.max(this.shake, 5); this.flash = Math.max(this.flash, 2);
         RF.audio.sfx('counter');
+        this.game.kb.rumble(def.side, 0.7, 160);
       }
       // Air combo: landing an air hit keeps you floating alongside them.
       if (!blocked && att.state === 'attack' && att.attackAirborne && !def.grounded) {
@@ -1034,8 +1124,8 @@
       if (this.shake) ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake * 0.5));
       this.applyCamera(ctx);
       this.stage.draw(ctx, this.frame);
-      if (this.superFreeze) { // the world goes dark around the super
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      if (this.superFreeze || this.xray) { // the world goes dark around the super / X-ray
+        ctx.fillStyle = this.xray ? `rgba(0,0,0,${0.6 * Math.min(1, this.xray.t / 6, (this.xray.len - this.xray.t) / 6)})` : 'rgba(0,0,0,0.6)';
         ctx.fillRect(-10, -10, W + 20, H + 20);
       }
       for (const f of this.fighters) if (f.state !== 'finished') f.drawShadow(ctx, floorY);
@@ -1059,6 +1149,7 @@
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);
       }
       this.gore.draw(ctx, floorY);
+      if (this.xray) this.drawXray(ctx, floorY);
       this.effects.draw(ctx, floorY);
       if (this.showHitboxes) this.drawHitboxes(ctx, floorY);
       ctx.restore();
@@ -1076,6 +1167,10 @@
       if (this.opts.survival) T(ctx, 'SURVIVAL - STREAK ' + this.opts.survival.streak, W / 2, 30, { align: 'center', color: '#ffd030', outline: '#000' });
       if (this.opts.demo && Math.floor(this.frame / 30) % 2) T(ctx, 'DEMO - PRESS ANY KEY', W / 2, 196, { align: 'center', color: '#ffe0b0', outline: '#000' });
       if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
+      if (this.xray) { // the title of the moment, slammed in at the top
+        const x = this.xray, sc = x.t < 4 ? 5 - x.t / 2 : 3;
+        if (x.len - x.t > 4) T(ctx, x.label, W / 2, 40 - sc * 2, { scale: Math.round(sc), align: 'center', color: x.n === 1 ? ['#ffffff', '#e0e8ff', '#a0b8ff'] : BIG, outline: '#000' });
+      }
       if (this.toasty) this.drawToasty(ctx, W, H);
       this.drawAnnouncements(ctx, W, H);
 
@@ -1164,8 +1259,8 @@
       ctx.restore();
       if (h > 40) {
         const tx = fromLeft ? W - 20 : 20, align = fromLeft ? 'right' : 'left';
-        T(ctx, 'SUPER!', tx, y + 10, { scale: 3, align, color: BIG, outline: '#200000' });
-        T(ctx, f.special.name.toUpperCase(), tx, y + 40, { scale: 1, align, color: '#fff', outline: '#000' });
+        T(ctx, this.superFreeze.label || 'SUPER!', tx, y + 10, { scale: 3, align, color: BIG, outline: '#200000' });
+        T(ctx, (this.superFreeze.label ? f.def.name : f.special.name).toUpperCase(), tx, y + 40, { scale: 1, align, color: '#fff', outline: '#000' });
       }
     }
 
@@ -1187,7 +1282,7 @@
           ['THROW (1 BAR IN COMBO)', 'EX ' + f.baseSpecial.name, '#60c0ff'],
           ['LIGHT + HEAVY (3 BARS)', 'SUPER ' + f.baseSpecial.name, '#ffd030'],
           ['THROW (CLOSE)', f.throwCfg ? f.throwCfg.name : '-', '#ff9a40'],
-          ['TAUNT', '"' + (d.taunt || 'COME ON!') + '"', '#c0ff80'],
+          ['EX + HEAVY (UNDER 30%)', 'LAST STAND (1X MATCH)', '#ff4040'],
           ['FINISH THEM: THROW', (RF.FINISHERS[d.finisher] || {}).name || '-', '#ff6050'],
           ['FINISH THEM: HIT 5X', (d.brutality || {}).name || 'BRUTALITY', '#ff6050'],
         ];

@@ -311,6 +311,11 @@
       const t = this.ctx.currentTime;
       switch (name) {
         case 'whoosh': this.noiseBurst(t, 0.09, 0.08, 'bandpass', 2400); break;
+        case 'crack': // bone breaking: a sharp snap and a dull crunch
+          this.noiseBurst(t, 0.05, 0.5, 'highpass', 3000);
+          this.noiseBurst(t + 0.03, 0.14, 0.45, 'bandpass', 700);
+          this.tone('square', 90, t + 0.02, 0.12, 0.3, null, 40);
+          break;
         case 'hit':
           this.noiseBurst(t, 0.09, 0.35, 'bandpass', 1500);
           this.tone('square', 220, t, 0.07, 0.15, null, 70);

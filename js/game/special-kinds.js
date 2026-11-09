@@ -16,6 +16,7 @@
     hitstun: s.hitstun, blockstun: s.blockstun, pushback: s.pushback, hitstop: s.hitstop,
     launch: s.launch || 0,
     special: true,
+    lastStand: s.lastStand || false,
   });
 
   RF.SPECIAL_KINDS = {
