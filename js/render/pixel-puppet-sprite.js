@@ -328,6 +328,24 @@
           ctx.strokeStyle = '#b8742a'; ctx.lineWidth = Math.max(1, U);
           ctx.beginPath(); ctx.arc(gx, gy, (R + 1.5) * U, -Math.PI * 0.75, Math.PI * 0.6); ctx.stroke();
           ctx.lineWidth = 1;
+        } else if (wpn && wpn.kind === 'skateboard' && !dark) {
+          // A skateboard held by the tail (Bandy): the deck runs along the arm, wheels on one side.
+          const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];
+          const dirX = Math.sign(hx - px), dirY = Math.sign(hy - py) || (dirX ? 0 : -1);
+          const cx0 = sc + hx * k + k / 2, cy0 = sr + hy * k + k / 2, L = wpn.length;
+          const at = (wx, wy, col, w = 1, h = 1) => { ctx.fillStyle = col; ctx.fillRect(Math.round(ox + wx * U + dx), Math.round(oy + wy * U + dy), U * w, U * h); };
+          const sx = dirY ? 1 : 0, sy = dirY && !dirX ? 0 : 1; // sideways (across the deck); both on a diagonal
+          for (let i = -3; i < L; i++) {
+            const wx = cx0 + dirX * i - sx * 2, wy = cy0 + dirY * i - sy * 2;
+            at(wx - sx, wy - sy, '#111', 1 + sx * 4, 1 + sy * 4);                         // outline
+            at(wx, wy, i % 9 < 2 ? '#ffd030' : '#ff3060', 1 + sx * 2, 1 + sy * 2);        // deck graphic
+          }
+          for (const i of [3, L - 6]) {                                                   // trucks + wheels
+            const wx = cx0 + dirX * i + sx * 2, wy = cy0 + dirY * i + sy * 2;
+            at(wx, wy, '#8a8a94', 1 + 3 * Math.abs(dirX), 1 + 3 * Math.abs(dirY));
+            at(wx + sx, wy + sy, '#111', 2 + Math.abs(dirX) * 3, 2 + Math.abs(dirY) * 3);
+            at(wx + sx, wy + sy, '#f0e8d8', 1 + Math.abs(dirX) * 3, 1 + Math.abs(dirY) * 3);
+          }
         } else if (wpn && wpn.kind === 'club' && !dark) {
           // A golf club (Tyler): black grip, silver shaft along the arm, iron head at the end.
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];

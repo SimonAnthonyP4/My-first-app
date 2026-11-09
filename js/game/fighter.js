@@ -178,6 +178,7 @@
             this.doubleJumped = true;
             const dir = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
             this.vy = Math.max(this.vy, 5.5); // a short extra hop (and a change of direction)
+            if (this.def.doubleJumpText && this.scene) { this.scene.effects.spawnText(this.def.doubleJumpText, this.x, this.y + this.body.height + 8, '#ff60a0'); this.ollieT = 14; }
             if (dir) this.vx = dir * Math.max(this.stats.walkSpeed * RF.CONFIG.JUMP_FORWARD_FACTOR, RF.CONFIG.JUMP_MIN_SPEED);
             this.airAttackUsed = false;
             if (this.scene) { this.scene.effects.spawn('dust', this.x, this.y); this.scene.effects.spawn('dust', this.x + 6, this.y); }
@@ -919,6 +920,7 @@
 
     // Purely visual timers; run even during hit-stop.
     tickVisuals() {
+      if (this.ollieT > 0) this.ollieT--;
       // Squash on landing, stretch on take-off, a recoil pop when hit (see draw).
       const air = this.y > 0.5;
       if (this.wasAir && !air && !['ko', 'knockdown', 'thrown', 'finished'].includes(this.state)) this.landT = 7;

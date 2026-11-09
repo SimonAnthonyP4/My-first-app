@@ -130,6 +130,15 @@ RF.THROWS = {
     slamDamage: 4,
     finisherDamage: 8,
   },
+  countIn: {
+    name: 'One, Two, Three, Four!',
+    description: 'Grabs them and counts in the song - ONE! TWO! THREE! - a headbutt on every beat, then FOUR! kicks them across the stage.',
+    kind: 'flurry',
+    hits: 3,
+    damagePerHit: 3,
+    finisherDamage: 6,
+    callouts: ['ONE!', 'TWO!', 'THREE!', 'FOUR!'],
+  },
   shallICompareThee: {
     name: 'Shall I Compare Thee',
     description: 'Calmly recites a sonnet... then smashes the opponent into the floor, side to side, again and again.',

@@ -313,5 +313,75 @@
     },
   };
 
+  // ================================================================ THE SKATEPARK (Bandy)
+  RF.registerStage({
+    id: 'skatepark', name: 'The Skatepark', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    drawStatic(ctx, W, H) {
+      grad(ctx, 0, 0, W, 140, [[0, '#0c0618'], [0.6, '#2a1030'], [1, '#4a1a3a']]);
+      const r = rng(77);
+      for (let i = 0; i < 40; i++) rect(ctx, '#ffffff', Math.floor(r() * W), Math.floor(r() * 60), 1, 1);   // stars
+      // city skyline
+      for (let x = 0; x < W; x += 18 + Math.floor(r() * 14)) {
+        const h = 30 + Math.floor(r() * 50), w = 14 + Math.floor(r() * 14);
+        rect(ctx, '#160c20', x, 100 - h, w, h + 10);
+        for (let wy = 104 - h; wy < 96; wy += 6) for (let wx = x + 2; wx < x + w - 2; wx += 4) if (r() < 0.25) rect(ctx, '#ffd890', wx, wy, 2, 2);
+      }
+      // the graffiti wall
+      rect(ctx, '#3a3440', 0, 92, W, 50);
+      for (let y = 92; y < 142; y += 8) for (let x = (y / 8) % 2 ? 0 : 12; x < W; x += 24) rect(ctx, '#332e3a', x, y, 23, 7); // cinder blocks
+      const tag = (txt, x, y, sc, col, out) => T(ctx, txt, x, y, { scale: sc, align: 'center', color: col, outline: out });
+      tag('SICK', 96, 100, 3, ['#ff60a0', '#ff3060', '#c01850'], '#1a0010');
+      tag('TERRAMANIA', 260, 104, 2, ['#60e0ff', '#3090ff'], '#001020');
+      tag('SKATE OR DIE', 300, 126, 1, '#ffd030', '#201000');
+      rect(ctx, '#ff60a0', 30, 128, 2, 10); rect(ctx, '#ff60a0', 30, 138, 6, 2);                         // drips
+      ctx.fillStyle = '#80ff80'; ctx.beginPath(); ctx.arc(190, 118, 9, 0, Math.PI * 2); ctx.fill();      // a smiley
+      rect(ctx, '#102010', 186, 114, 2, 3); rect(ctx, '#102010', 192, 114, 2, 3); rect(ctx, '#102010', 186, 121, 8, 2);
+      // quarter-pipe ramps on both sides
+      for (const side of [-1, 1]) {
+        const x0 = side < 0 ? 0 : W;
+        ctx.fillStyle = '#8a8690'; ctx.beginPath(); ctx.moveTo(x0, 112); ctx.quadraticCurveTo(x0 - side * 6, 140, x0 - side * 62, 142); ctx.lineTo(x0, 142); ctx.fill();
+        ctx.strokeStyle = '#c8c4cc'; ctx.beginPath(); ctx.moveTo(x0, 112); ctx.quadraticCurveTo(x0 - side * 6, 140, x0 - side * 62, 142); ctx.stroke();
+        rect(ctx, '#d0d0d8', side < 0 ? 0 : W - 30, 110, 30, 2);                                            // coping
+      }
+      // a grind rail
+      rect(ctx, '#111', 120, 128, 140, 3); rect(ctx, '#b8b8c4', 120, 128, 140, 1);
+      for (const px of [128, 190, 252]) rect(ctx, '#2a2a30', px, 131, 2, 11);
+      // smooth concrete
+      perspectiveFloor(ctx, W, H, 142, '#5a5662', '#625e6a', 'rgba(0,0,0,0.12)');
+      ctx.strokeStyle = 'rgba(20,20,26,0.5)';
+      for (const [a, b, c, d] of [[40, 160, 70, 190], [300, 150, 330, 180], [330, 180, 340, 210]]) { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); } // cracks
+    },
+    drawAnimated(ctx, t) {
+      // string lights swaying over the park
+      for (let i = 0; i < 16; i++) {
+        const x = 12 + i * 24, y = 60 + Math.sin(i / 15 * Math.PI) * 14 + Math.sin(t / 30 + i) * 0.8;
+        rect(ctx, ['#ff60a0', '#ffd030', '#60e0ff'][i % 3], Math.round(x), Math.round(y), 2, 2);
+        if ((t >> 4) % 3 === i % 3) { ctx.globalAlpha = 0.25; rect(ctx, '#ffffff', Math.round(x) - 1, Math.round(y) - 1, 4, 4); ctx.globalAlpha = 1; }
+      }
+      // the neon SKATE sign, flickering
+      const on = !(t % 140 > 128 && t % 4 < 2);
+      T(ctx, 'SKATE', 192, 74, { scale: 2, align: 'center', color: on ? '#ff60a0' : '#40182a', outline: on ? '#ffffff' : '#000' });
+    },
+  });
+  HZ.skatepark = { side: -1, name: 'AMPED!', damage: 10, launch: { vx: 5, vy: 7 }, color: '#ff60a0', sound: 'chord',
+    draw(ctx, x, floorY) { // a stack of amps
+      const l = x;
+      for (const [y, h] of [[floorY - 22, 22], [floorY - 40, 18]]) {
+        rect(ctx, '#111', l, y, 30, h); rect(ctx, '#2a2a30', l + 1, y + 1, 28, h - 2);
+        rect(ctx, '#3a3a44', l + 3, y + 4, 24, h - 7);
+        for (let gy = y + 5; gy < y + h - 3; gy += 2) rect(ctx, '#22222a', l + 3, gy, 24, 1);   // speaker grille
+      }
+      rect(ctx, '#d8c890', l + 3, floorY - 39, 10, 2); rect(ctx, '#111', l + 18, floorY - 39, 2, 2); rect(ctx, '#111', l + 22, floorY - 39, 2, 2);
+    },
+    fx(ctx, x, floorY, t) { // a wall of sound blasts out
+      const u = t / FX;
+      for (let i = 0; i < 4; i++) {
+        ctx.globalAlpha = Math.max(0, 0.8 - u - i * 0.12); ctx.strokeStyle = i % 2 ? '#ff60a0' : '#ffffff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x + 15, floorY - 26, 10 + u * 70 + i * 8, -1.1, 1.1); ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    },
+  };
+
   RF.HOME_HAZARDS = HZ;
 })();

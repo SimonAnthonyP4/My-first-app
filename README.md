@@ -656,6 +656,27 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Bandy (the skater)
+
+Street fighter, skater, rock and roll. Home stage: **The Skatepark** (night, graffiti, ramps,
+a neon SKATE sign; wall hazard: a stack of amps - AMPED!).
+
+- **Light - Street Jab**, fast hands; chains up to 5 hits.
+- **Heavy - Board Swing**: swings his skateboard like a bat (long reach, CRACK!).
+- **Special - Power Chord** (perfect block / EX / super): pulls out a red guitar and hits one
+  massive chord - a soundwave rolls across the screen. TOO LOUD!
+- **DOWN, FORWARD - Kickflip**: rides the board at them and kickflips into a pop-up.
+- **DOWN, BACK - Stage Dive**: leaps and crashes down on them.
+- **Throw - One, Two, Three, Four!**: counts in the song with a headbutt on every beat, FOUR!
+  kicks them away.
+- **Double jump - OLLIE!** off his board; his **dash rides the board**.
+- **Entrance**: skates in, kicks the board up into his hand. TURN IT UP!
+- **Fatality - ENCORE**: "ONE MORE SONG." Three power chords blast them back under the stage
+  lights, then he leaps and smashes the guitar on their head. **Brutality - MOSH PIT.**
+- Code: `js/game/bandy.js` (skateboard + guitar art, aura, soundwave, intro, fatality);
+  the `skateboard` held-weapon kind in pixel-puppet-sprite.js.
+- Balance: about 48% against the whole roster (hard CPU, both sides).
+
 ## Arcade feel (MK-style)
 
 - **Short hop:** tap UP for a quick low hop, hold UP for a full jump (player-controlled jumps only;

@@ -51,10 +51,12 @@
         hold(att, def, sinceKnee < 3 ? 2 : 0); // jolts back on each knee
         def.thrownPose = ['hit', 0];
         if (knees.includes(t)) {
+          if (T.callouts) scene.effects.spawnText(T.callouts[knees.indexOf(t)], att.x, att.body.height + 14, '#ff60a0');
           scene.effects.spawn('hit', def.x - att.facing * 4, 30);
           scene.throwHit(att, def, T.damagePerHit);
         }
         if (t === finish) {
+          if (T.callouts) scene.effects.spawnText(T.callouts[T.hits], att.x, att.body.height + 22, '#ffd030');
           scene.effects.spawn('heavy', def.x - att.facing * 6, 40);
           scene.shake = 6;
           scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 4, vy: 5 });

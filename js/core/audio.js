@@ -311,6 +311,10 @@
       const t = this.ctx.currentTime;
       switch (name) {
         case 'whoosh': this.noiseBurst(t, 0.09, 0.08, 'bandpass', 2400); break;
+        case 'chord': // a distorted power chord (root, fifth, octave) ringing out
+          [82, 123, 165].forEach((f, i) => { this.tone('sawtooth', f, t, 0.9, 0.09, null, f * 0.99); this.tone('square', f * 2, t + 0.005 * i, 0.5, 0.03); });
+          this.noiseBurst(t, 0.08, 0.25, 'bandpass', 2000);
+          break;
         case 'crack': // bone breaking: a sharp snap and a dull crunch
           this.noiseBurst(t, 0.05, 0.5, 'highpass', 3000);
           this.noiseBurst(t + 0.03, 0.14, 0.45, 'bandpass', 700);
