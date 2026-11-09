@@ -675,7 +675,7 @@ a neon SKATE sign; wall hazard: a stack of amps - AMPED!).
   lights, then he leaps and smashes the guitar on their head. **Brutality - MOSH PIT.**
 - Code: `js/game/bandy.js` (skateboard + guitar art, aura, soundwave, intro, fatality);
   the `skateboard` held-weapon kind in pixel-puppet-sprite.js.
-- Balance: about 48% against the whole roster (hard CPU, both sides).
+- Balance: about 50-57% against the whole roster (hard CPU, both sides). Height 86 px: in line with the roster.
 
 ## Arcade feel (MK-style)
 
