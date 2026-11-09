@@ -349,6 +349,23 @@
       this.state = null; this.setState('taunt');
       const jokes = this.def.jokes, opp = this.scene && this.scene.opponentOf(this);
       const rival = opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
+      const live = this.scene && this.scene.phase === 'fight';
+      // STRICT (Ms. Brady): taunting in front of her gets you written up - she takes your meter.
+      if (live && opp && opp.def.strict) {
+        const n = Math.min(this.meter, 20); this.meter -= n; opp.gainMeter(10);
+        this.scene.effects.spawnText('WRITTEN UP!', this.x, this.body.height + 34, '#ff4040');
+        RF.audio.sfx('paper');
+      }
+      // THE ADMINISTRATION (King Sirven): taunting with 1 bar radios Ms. Brady, who charges in.
+      const help = this.def.assistTaunt;
+      if (live && help && opp && opp.def.id !== help.actor && this.meter >= RF.CONFIG.EX_COST && RF.spawnAssist) {
+        this.meter -= RF.CONFIG.EX_COST;
+        RF.spawnAssist(this.scene, this, help.actor, help);
+        this.scene.effects.spawnText(help.call, this.x, this.body.height + 26, '#ffd040');
+        RF.audio.sfx('pa');
+        this.stateTime = 51; // a quick call: no taunt meter, and he's back to work sooner
+        return;
+      }
       // Gabriel: taunting with 2 bars turns him into his alter ego, MR. SUPPLIER.
       if (this.def.alterEgo && !this.alterT && this.meter >= 200 && this.scene && this.scene.phase === 'fight') {
         this.meter -= 200;

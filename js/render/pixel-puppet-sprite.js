@@ -328,6 +328,10 @@
           ctx.strokeStyle = '#b8742a'; ctx.lineWidth = Math.max(1, U);
           ctx.beginPath(); ctx.arc(gx, gy, (R + 1.5) * U, -Math.PI * 0.75, Math.PI * 0.6); ctx.stroke();
           ctx.lineWidth = 1;
+        } else if (wpn && wpn.kind === 'walkie' && !dark && RF.drawWalkie) {
+          // A walkie-talkie in the fist (Ms. Brady).
+          const [hx, hy] = cells[cells.length - 1];
+          RF.drawWalkie(ctx, ox + (sc + hx * k + k / 2) * U + dx, oy + (sr + hy * k + k) * U + dy, U);
         } else if (wpn && wpn.kind === 'skateboard' && !dark) {
           // A skateboard held by the tail (Bandy): the deck runs along the arm, wheels on one side.
           const n = cells.length, [hx, hy] = cells[n - 1], [px, py] = cells[n - 2] || [0, 0];

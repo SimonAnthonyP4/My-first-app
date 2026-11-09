@@ -130,6 +130,15 @@ RF.THROWS = {
     slamDamage: 4,
     finisherDamage: 8,
   },
+  parentConference: {
+    name: 'Parent Conference',
+    description: 'Grabs them by the collar and lays out the consequences - DETENTION! SATURDAY SCHOOL! SUSPENDED! - then EXPELLED! sends them flying.',
+    kind: 'flurry',
+    hits: 3,
+    damagePerHit: 3,
+    finisherDamage: 7,
+    callouts: ['DETENTION!', 'SATURDAY SCHOOL!', 'SUSPENDED!', 'EXPELLED!'],
+  },
   countIn: {
     name: 'One, Two, Three, Four!',
     description: 'Grabs them and counts in the song - ONE! TWO! THREE! - a headbutt on every beat, then FOUR! kicks them across the stage.',

@@ -82,6 +82,9 @@
     // ---- Fernando ----
     smokeScreen: Object.assign({ name: 'Smoke Screen', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 12, color: '#b0b0b0', callout: 'POOF. HEH HEH.' }, hit(11)),
     wheelie: Object.assign({ name: 'Wheelie', kind: 'rush', startup: 8, speed: 9, duration: 16, reach: 16, recovery: 16, color: '#ff7020', callout: 'VROOOOM!', anim: 'light' }, hit(12, { pushback: 9 })),
+    // ---- Ms. Brady ----
+    writeUp: Object.assign({ name: 'Write-Up', kind: 'projectile', startup: 9, recovery: 16, speed: 6, size: 14, height: 0.6, art: 'detentionSlip', sound: 'paper', hitText: 'WRITTEN UP!', colors: ['#ffffff', '#ff9ac8', '#d0507a'] }, hit(9)),
+    zeroTolerance: Object.assign({ name: 'Zero Tolerance', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'NOT IN MY SCHOOL.' }, hit(13, { launch: 5 })),
     // ---- Bandy ----
     kickflip: Object.assign({ name: 'Kickflip', kind: 'rush', startup: 5, speed: 8.5, duration: 16, hop: 4.5, reach: 16, recovery: 14, color: '#ff60a0', callout: 'KICKFLIP!', anim: 'jump', board: true, sound: 'whoosh' }, hit(10, { pushback: 7, launch: 4 })),
     stageDive: Object.assign({ name: 'Stage Dive', kind: 'slam', startup: 8, leapPower: 8.5, maxLeapSpeed: 5, recovery: 20, radius: 48, height: 26, color: '#ff60a0' }, hit(12, { launch: 5 })),
@@ -114,6 +117,7 @@
     wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
     gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
+    brady: { commands: { qcf: 'writeUp', qcb: 'zeroTolerance' }, taunt: 'TUCK IN THAT SHIRT.', voicePitch: 0.85 },
     bandy: { commands: { qcf: 'kickflip', qcb: 'stageDive' }, taunt: 'TURN IT UP!', voicePitch: 1.05 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
   };

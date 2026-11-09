@@ -220,6 +220,18 @@ RF.SPECIALS = {
     colors: ['#ffffff', '#fff2a0', '#c8b060'],
     sound: 'whoosh',
   },
+  callThePrincipal: {
+    name: 'Call the Principal',
+    description: 'Radios the front office... and KING SIRVEN storms in from behind her and charges across the stage. SUSPENDED! (Against Sirven himself, she writes him up instead.)',
+    kind: 'assist',
+    actor: 'sirven',
+    startup: 12,
+    recovery: 14,
+    damage: 14,
+    callout: 'BRADY TO PRINCIPAL. CODE RED!',
+    line: 'THIS IS YOUR PRINCIPAL SPEAKING!',
+    hitText: 'SUSPENDED!',
+  },
   powerChord: {
     name: 'Power Chord',
     description: 'Pulls out his guitar and hits ONE massive power chord. The soundwave rolls across the screen like a wall of amps.',
@@ -337,4 +349,11 @@ RF.SPECIALS = {
     hitstun: 26, blockstun: 16, pushback: 5, hitstop: 8,
     colors: ['#d8ff9a', '#7cff4a', '#2e9a1e'],
   },
+};
+
+// Ms. Brady's write-up slip when she can't call the principal (because she's fighting him).
+RF.BRADY_SLIP = {
+  name: 'Write-Up', kind: 'projectile', startup: 1, recovery: 1, speed: 6, size: 14, height: 0.6,
+  damage: 12, hitstun: 24, blockstun: 12, pushback: 6, hitstop: 8,
+  art: 'detentionSlip', sound: 'paper', hitText: 'WRITTEN UP!', colors: ['#ffffff', '#ff9ac8', '#d0507a'],
 };

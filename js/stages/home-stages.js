@@ -383,5 +383,63 @@
     },
   };
 
+  // ================================================================ THE MAIN HALLWAY (Ms. Brady)
+  RF.registerStage({
+    id: 'hallway', name: 'The Main Hallway', music: 'office', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    drawStatic(ctx, W, H) {
+      grad(ctx, 0, 0, W, 140, [[0, '#d8d4c4'], [1, '#c4bea8']]);                         // painted cinder-block wall
+      for (let y = 6; y < 140; y += 10) for (let x = (y / 10) % 2 ? 0 : 14; x < W; x += 28) rect(ctx, '#cac4b0', x, y, 27, 9);
+      rect(ctx, '#2a3a7a', 0, 0, W, 6); rect(ctx, '#ffd030', 0, 6, W, 2);              // school-colour stripe
+      // lockers
+      for (let x = 4; x < W; x += 16) {
+        if (x > 150 && x < 236) continue;                                                // gap for the trophy case
+        rect(ctx, '#111', x, 52, 15, 90); rect(ctx, '#2a4a9a', x + 1, 53, 13, 88);
+        for (let v = 0; v < 3; v++) rect(ctx, '#1a3070', x + 3, 56 + v * 3, 9, 1);      // vents
+        rect(ctx, '#c0c0c8', x + 10, 92, 2, 6);                                          // handle
+        if (hash(x) < 0.25) { rect(ctx, '#e8e0c0', x + 3, 104, 8, 10); }                 // a note taped on
+      }
+      // trophy case
+      rect(ctx, '#3a2414', 152, 50, 84, 92); rect(ctx, '#8ab0c8', 155, 53, 78, 70);
+      for (const [tx, ty, h] of [[166, 88, 22], [188, 80, 30], [210, 90, 20]]) { rect(ctx, '#d8a020', tx, ty, 10, h - 8); rect(ctx, '#b07818', tx + 2, ty + h - 8, 6, 8); rect(ctx, '#ffe070', tx + 2, ty + 2, 2, h - 12); }
+      rect(ctx, '#5a3a1a', 155, 112, 78, 3);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.moveTo(160, 53); ctx.lineTo(170, 53); ctx.lineTo(158, 85); ctx.lineTo(155, 85); ctx.fill();
+      // signs
+      rect(ctx, '#111', 30, 22, 90, 18); rect(ctx, '#c01818', 31, 23, 88, 16);
+      T(ctx, 'NO RUNNING', 75, 27, { align: 'center', color: '#ffffff' });
+      rect(ctx, '#111', 268, 20, 90, 22); rect(ctx, '#ffffff', 269, 21, 88, 20);
+      T(ctx, 'MAIN OFFICE', 313, 24, { align: 'center', color: '#2a3a7a' }); T(ctx, '->', 313, 32, { align: 'center', color: '#2a3a7a' });
+      // clock
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(194, 30, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f4f0e4'; ctx.beginPath(); ctx.arc(194, 30, 9, 0, Math.PI * 2); ctx.fill();
+      rect(ctx, '#111', 193, 23, 1, 8); rect(ctx, '#111', 194, 30, 5, 1);                  // 7:45
+      // waxed linoleum floor
+      perspectiveFloor(ctx, W, H, 142, '#b8b0a0', '#c4bcac', 'rgba(80,70,60,0.15)');
+      for (let x = 0; x < W; x += 24) rect(ctx, 'rgba(255,255,255,0.12)', x, 150, 10, 2);  // shine
+    },
+    drawAnimated(ctx, t) {
+      // a flickering fluorescent tube
+      const flick = t % 200 > 186 && t % 4 < 2;
+      ctx.globalAlpha = flick ? 0.05 : 0.12; rect(ctx, '#fffff0', 0, 0, 384, 140); ctx.globalAlpha = 1;
+      rect(ctx, flick ? '#888' : '#ffffff', 60, 10, 60, 3); rect(ctx, '#ffffff', 260, 10, 60, 3);
+      // the clock's second hand
+      const a = (t / 60) * Math.PI / 30;
+      ctx.fillStyle = '#c01818'; ctx.fillRect(Math.round(194 + Math.sin(a) * 7), Math.round(30 - Math.cos(a) * 7), 1, 1);
+    },
+  });
+  HZ.hallway = { side: 1, name: 'LOCKED IN!', damage: 10, launch: { vx: -5, vy: 7 }, color: '#2a4a9a', sound: 'clang',
+    draw(ctx, x, floorY, frame, firing) { // an open locker at the wall
+      const l = x - 26;
+      rect(ctx, '#111', l, floorY - 74, 26, 74); rect(ctx, '#2a4a9a', l + 1, floorY - 73, 24, 72);
+      rect(ctx, '#0a0a10', l + 4, floorY - 68, 18, 62);                                  // inside
+      rect(ctx, '#1a3070', l - (firing ? 4 : 14), floorY - 73, firing ? 4 : 12, 72);       // the door, swinging
+    },
+    fx(ctx, x, floorY, t) {
+      const u = t / FX;
+      ctx.globalAlpha = Math.max(0, 1 - u);
+      T(ctx, 'CLANG!', x - 30, floorY - 90 - u * 20, { align: 'center', color: '#ffd030', outline: '#000' });
+      ctx.globalAlpha = 1;
+    },
+  };
+
   RF.HOME_HAZARDS = HZ;
 })();

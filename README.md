@@ -656,6 +656,31 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Ms. Brady (the assistant principal)
+
+Strict, demanding, and King Sirven's right hand. Home stage: **The Main Hallway** (lockers,
+trophy case, NO RUNNING sign, a flickering fluorescent tube; wall hazard: an open locker -
+LOCKED IN!).
+
+- **Light - STOP.**: a firm open palm that shoves them back.
+- **Heavy - Walkie Smack**: the walkie-talkie, swung down, crackling with static. OVER.
+- **Special - Call the Principal** (perfect block / EX / super): she radios the office and
+  **King Sirven storms in from behind her**, charging across the stage - SUSPENDED! The super
+  sends a second wave. Against Sirven himself she writes him up instead.
+- **DOWN, FORWARD - Write-Up** (a referral slip, thrown) / **DOWN, BACK - Zero Tolerance**
+  (counter stance: NOT IN MY SCHOOL.).
+- **Throw - Parent Conference**: DETENTION! SATURDAY SCHOOL! SUSPENDED! ...EXPELLED!
+- **STRICT**: taunt in front of her and you get WRITTEN UP - she takes your meter. Blocking
+  builds her meter.
+- **Entrance**: walks in on her walkie - "BRADY TO FRONT OFFICE... COPY. I'M ON IT."
+- **Fatality - EXPELLED**: "PERMISSION TO EXPEL?" "GRANTED." A giant rubber stamp drops out of
+  the sky. Then King Sirven walks in: "GOOD WORK, MS. BRADY." **Brutality - ZERO TOLERANCE.**
+- **The Administration (collab with King Sirven)**: Sirven's taunt with 1 bar radios Ms. Brady,
+  who charges in for him ("MS. BRADY! HANDLE THIS." "ON IT, SIR!"). Shared assist code:
+  `RF.spawnAssist` in `js/game/brady.js`. Plus their own banter both ways.
+- Balance: about 46% against the whole roster (hard CPU, both sides).
+- The character select grid is now 10 x 3 (30 slots).
+
 ## Bandy (the skater)
 
 Street fighter, skater, rock and roll. Home stage: **The Skatepark** (night, graffiti, ramps,
