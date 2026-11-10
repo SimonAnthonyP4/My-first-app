@@ -658,61 +658,50 @@ Character select is now 10 x 2.
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A cinematic campaign in four acts - about 30 minutes of film and only 3
-fights (The Climb, Show Your Work and the finale); everything else is scenes and scripted
-action.
+Main menu -> **STORY**. A generational, cinematic campaign: **24 chapters**, about 47 minutes
+of film, 440+ lines of dialogue and 4 fights. It spans three generations of the school.
 
-**The story.** In every universe Lopez Tuero has seen, Terramania High ends the same way: a
-last bell, a last day, and everyone walks out the doors and forgets each other - just like his
-first class did, twelve years ago, when none of them came back. So at midnight he finishes his
-equation and tears the school open across every universe: a bell that never stops, so nobody
-ever has to say goodbye again. The rest is about what it actually means when the last bell
-rings.
+**The story.** The school bell was cast by the first graduating class in 1961, and every class
+since has signed the inside of it. On their last day it rings once - the last bell - and they
+walk out the doors. Lopez Tuero's first class did that twelve years ago and never came back.
+In every universe he has checked, it ends the same way. So at midnight he tears the school
+open across every universe: a bell that never stops, so nobody ever has to say goodbye.
 
-| Act | # | Chapter | What happens | Fight |
+| # | Chapter | When | What happens | Fight |
 |---|---|---|---|---|
-| I | 0 | Midnight | the old class photo, the equation, the clock hits 12, the rift | - |
-| I | 1 | Bro Batch | flashback: how Nicholas and Anthony met; Nicholas takes down Rift Chris; ANOTHER UNIVERSE: Chris buys Bro Batch (the contract, SOLD, the CHRIS CORP sign, money raining) and Nicholas eats alone forever | - |
-| I | 2 | Lockdown | Brady and Sirven on the radio; Brady STOPs Rift Bandy; Sirven's secret: his last year | - |
-| I | 3 | Street Level | Bandy and Fernando tag-team his evil twin; "every other school kicked me out. This one kept me." | - |
-| I | 4 | Game Day | Mikey's scholarship, three states away: "so why does it feel like losing?" | - |
-| II | 5 | The Faculty Meeting | LOPEZ. TUERO. Jauregui: he was my student teacher, the best I ever had | - |
-| II | 6 | Every Universe | flashback: Lopez's first class graduates and never comes back | - |
-| II | 7 | Three Anchors | Wuttke: "every song ends - that's what makes it a song"; Tyler's hole in one | - |
-| II | 8 | The Climb | Lady Landa admits she cares | Alejandro vs Rift Lady Landa |
-| II | 9 | Show Your Work | "I was proud of you." "Then why did you never say it?" | Jauregui vs Lopez (1/3) |
-| III | 10 | Doomsday | the heroes go in and lose: Gabriel, Bandy, Simon and Anthony are folded into other universes | - |
-| III | 11 | The Last One Out | rain; Fernando takes the empty seat; Sirven volunteers to hold the rift; "go get your friends back" | - |
-| IV | 12 | The Last Bell | you choose who goes in; Omega Lopez; the lost come back; Lopez takes Sirven's place | you vs **OMEGA LOPEZ** |
-| IV | 13 | Graduation | Principal Brady, Sirven's last announcement, the last bell - and this time it's okay; credits; post-credits | - |
+| 0 | Midnight | now | the old class photo, the equation, the clock hits 12 | - |
+| 1 | The Day Before | 12 hours earlier | one last normal lunch at the corner table; Lopez watching | - |
+| 2 | Bro Batch | now | how Nicholas and Anthony met; Rift Chris; the universe where Chris bought Bro Batch | - |
+| 3 | Lockdown | now | Brady and Sirven on the radio; Sirven's secret last year | - |
+| 4 | 1994 | 31 years ago | young Mr. Sirven's first day; Principal Ortega and the bell; a freshman named Brady | - |
+| 5 | Street Level | now | Bandy and Fernando vs his evil twin; "this school kept me" | - |
+| 6 | Game Day | now | Simon and Mikey; the scholarship | - |
+| 7 | The Throne | now | Rift Tamayo is sitting in the principal's chair | King Sirven vs Rift Tamayo |
+| 8 | The Faculty Meeting | now | LOPEZ. TUERO. | - |
+| 9 | The Student Teacher | 12 years ago | young Lopez, the proof, the kids nobody else would tutor; "show your work" | - |
+| 10 | Every Universe | 12 years ago / now | his first class leaves and never comes back | - |
+| 11 | The Bell Tower | now | the signatures inside the bell; a class is fading; Ruano vs his fallen self | - |
+| 12 | Three Anchors | now | Wuttke's chord, Holbrook's map, Tyler's hole in one | - |
+| 13 | The Climb | now | anchor two | Alejandro vs Rift Lady Landa |
+| 14 | Ms. Brady's First Day | 8 years ago | thirty-two detentions; the walkie-talkie is a chain | - |
+| 15 | Show Your Work | now | "I was proud of you." "Then why did you never say it?" | Jauregui vs Lopez (1/3) |
+| 16 | Doomsday | now | the heroes go in and lose four of their own | - |
+| 17 | Folded | elsewhere | Anthony wakes in a universe that doesn't know him, and sits down with a stranger | - |
+| 18 | The Last One Out | night | rain; Sirven volunteers to hold the rift | - |
+| 19 | The Night Before | 2 AM | the roof, a phone call home, a song, Jauregui's letter, locking up one last time | - |
+| 20 | The Last Bell | now | you choose who goes in; Lopez takes Sirven's place | you vs **OMEGA LOPEZ** |
+| 21 | Graduation | 3 months later | Principal Brady; the last bell rings and it's okay | - |
+| 22 | Twenty Years Later | 20 years later | everyone comes back; a new kid is alone at the corner table | - |
+| 23 | The Next Bell | 20 years later | the walkie-talkie changes hands again; the letter arrives; credits; post-credits | - |
 
-**Voices**: every character has their own voice profile (`VOICES` in story-scene.js): a male or
-female voice, an accent and a pitch/pace that fit them - King Sirven slow, deep and British,
-Lopez the slowest and deepest of all, Gabriel fast and hyped, Tyler unhurried, Ruano and
-Escobedo with Spanish accents, Dr. Weissenberg German, Ms. Brady and Lady Landa female voices.
-Each character gets the least-used fitting voice on the device, so they sound different from
-each other; on a device with only one voice, pitch keeps them apart. Fighters' taunts use the
-same voices. Rift variants speak deeper and slower.
+**The 3D camera** (`draw3D` in story-scene.js): scenes can be shot in real perspective - a
+floor plane with a grid running to the horizon, the stage standing as a wall in space (drawn in
+perspective slices), and every character a billboard at their own depth (cast option `z`), so
+crowds stand in rows. The camera has a yaw, distance and height and moves through that space:
+`{ cam3d: [who, 'flyin' | 'orbit' | 'crane' | 'pullback' | 'truck' | 'low' | 'top'] }`.
 
-**New Story**: the STORY menu has NEW STORY (ERASE PROGRESS) once you've started - press it
-twice to wipe your progress and start again from the cold open.
-
-**3D moments**: ORBIT shots - the camera circles a character, everyone around them swings
-through depth (nearer = bigger), the subject turns, the background slides past in parallax -
-and VERTIGO dolly zooms, at the big beats (the rift opening, Omega Lopez, Sirven's speech,
-graduation).
-
-**Voices that always work**: browsers only allow speech after a tap / click / key press (a
-controller press doesn't count), and some block it entirely. Speech is unlocked on your first
-tap or key; if the browser still won't speak, every character talks in their own built-in
-synthesized voice (their pitch, timbre and rhythm) as their line types out.
-
-**Pacing**: every line waits until it has been typed, *spoken in full* and given time to read;
-CONFIRM finishes a line, a second press moves on, ESC / BLOCK skips the scene.
-
-**Score**: the game plays its own emotional music under the big scenes (a sad theme in A
-minor, a hopeful one in C major, a tense drone), plus flashbacks in sepia film, rain, and
-characters "folding" away into other universes in purple light.
+The story is data in `js/config/story.js` (the original 14 chapters) and
+`js/config/story-extra.js` (the 10 generational chapters, spliced in).
 
 **Cinematography** (`js/scenes/story-scene.js`): hard cuts between wide shots, medium shots,
 close-ups (background out of focus), extreme close-ups on the eyes, over-the-shoulder shots

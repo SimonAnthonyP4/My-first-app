@@ -430,6 +430,28 @@
         R(ctx, '#111', 82, y - 24, 220, 48); R(ctx, '#3a0a5a', 86, y - 20, 212, 40);
         T(ctx, 'CHRIS CORP', 192, y - 10, { scale: 3, align: 'center', color: ['#fff6b0', '#ffd040', '#c08010'] }); }
     },
+    // inside the school bell: every graduating class has signed it (o.fade = a class being erased)
+    bellin(ctx, t, o) {
+      R(ctx, '#0a0604', 0, 0, W, H);
+      for (let i = 0; i < 7; i++) { ctx.fillStyle = ['#2a1a08', '#3a2610', '#4a3214', '#5a3e18', '#6a4a1c', '#7a5620', '#8a6224'][i]; ctx.beginPath(); ctx.arc(192, 112, 190 - i * 24, 0, Math.PI * 2); ctx.fill(); }
+      const years = []; for (let y = 1961; y <= 2026; y += 5) years.push(y);
+      years.forEach((y, i) => {
+        const a = i / years.length * Math.PI * 2 + t / 260, r = 60 + (i % 3) * 34, x = 192 + Math.cos(a) * r * 1.5, yy = 112 + Math.sin(a) * r * 0.9;
+        const faded = o.fade && y === o.fade;
+        ctx.globalAlpha = faded ? 0.25 + Math.sin(t / 5) * 0.2 : 0.9;
+        T(ctx, 'CLASS OF ' + y, x, yy, { align: 'center', color: faded ? '#c080ff' : '#f0d890' });
+      });
+      ctx.globalAlpha = 1;
+      if (o.text) T(ctx, o.text, 192, 108, { align: 'center', color: '#ffffff', outline: '#000' });
+    },
+    // a handwritten letter, appearing line by line (o.lines)
+    letter(ctx, t, o) {
+      R(ctx, '#2a2018', 0, 0, W, H);
+      ctx.save(); ctx.translate(192, 112); ctx.rotate(0.02);
+      R(ctx, '#111', -132, -78, 264, 156); R(ctx, '#f0e8d4', -130, -76, 260, 152);
+      (o.lines || []).forEach((l, i) => { const n = Math.max(0, Math.floor((t - i * 50) / 1.6)); if (n > 0) T(ctx, l.slice(0, n), -118, -62 + i * 14, { color: '#2a2a5a' }); });
+      ctx.restore();
+    },
     // a black card with words
     card(ctx, t, o) {
       R(ctx, '#000', 0, 0, W, H);
@@ -437,6 +459,18 @@
       T(ctx, o.text || '', W / 2, 100, { scale: 2, align: 'center', color: o.color || '#e0d0ff' });
       ctx.globalAlpha = 1;
     },
+  };
+
+  // 3D camera moves: [from, to] over `frames`. yaw = angle around the subject (radians),
+  // dist = how far the camera is, height = how high, shift = sideways slide of the aim point.
+  const CAM3 = {
+    orbit: { yaw: [-0.95, 0.95], dist: [210, 210], height: [62, 62], frames: 260 },
+    flyin: { yaw: [0.55, 0], dist: [560, 170], height: [130, 56], frames: 200 },
+    pullback: { yaw: [0, -0.45], dist: [150, 520], height: [52, 170], frames: 240 },
+    crane: { yaw: [0.3, 0.2], dist: [200, 320], height: [14, 200], frames: 220 },
+    truck: { yaw: [0.25, 0.25], dist: [230, 230], height: [60, 60], shift: [-150, 150], frames: 260 },
+    low: { yaw: [-0.35, 0.35], dist: [150, 125], height: [8, 8], frames: 220 },
+    top: { yaw: [0, 0.6], dist: [260, 240], height: [230, 230], frames: 240 },
   };
 
   // ---------------------------------------------------------------- the scene player
@@ -497,6 +531,7 @@
     setShot(spec, dutch = 0) {
       const sh = Array.isArray(spec) ? spec : [spec];
       this.shot = { type: sh[0], a: sh[1] && this.resolve(sh[1]), b: sh[2] && this.resolve(sh[2]), dutch, t0: this.t, speed: typeof sh[2] === 'number' ? sh[2] : 0.012 };
+      if (sh[0] === 'orbit') this.shot = Object.assign({ type: '3d', a: this.shot.a, t0: this.t, shift: [0, 0] }, CAM3.orbit); // orbits use the 3D camera
       this.insert = null;
       this.frameShot(true);
     }
@@ -523,8 +558,10 @@
         for (const [k, v] of Object.entries(s.cast)) {
           const id = this.resolve(v[0]); let def = RF.getCharacter(id); if (!def) continue;
           const o = v[3] || {};
+          if (o.costume && def.sprite.palette) def = RF.costume(def, o.costume);
           if (o.rift) def = RF.riftDef(def);
-          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
+          if (o.name) def = Object.assign({}, def, { name: o.name });
+          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, z: o.z || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
         }
         return true;
       }
@@ -541,6 +578,11 @@
       if (s.flash) { this.flash = s.flash; return true; }
       if (s.tint !== undefined) { this.tintCol = s.tint; return true; }
       if (s.handheld !== undefined) { this.handheld = s.handheld; return true; }
+      if (s.cam3d) { // { cam3d: [key, 'preset' | { yaw, dist, height, shift, frames }] }
+        const pr = typeof s.cam3d[1] === 'string' ? CAM3[s.cam3d[1]] : s.cam3d[1];
+        this.shot = Object.assign({ type: '3d', a: this.resolve(s.cam3d[0]), t0: this.t, shift: [0, 0] }, CAM3.orbit, pr);
+        this.insert = null; return true;
+      }
       if (s.shot) { this.setShot(s.shot, s.dutch); return true; }
       if (s.insert) { this.insert = { name: s.insert, t: 0, o: s }; return true; }
       if (s.push) { this.cam.tz = this.cam.z + s.push[0]; this.cam.k = 2 / (s.push[1] || 60); return true; }
@@ -742,6 +784,8 @@
           ctx.restore();
         });
         R(ctx, '#000', W / 2 - 1, 0, 3, H);
+      } else if (sh.type === '3d' && this.actors[sh.a]) {
+        this.draw3D(ctx, sh, fy);
       } else if ((sh.type === 'orbit' || sh.type === 'dolly') && this.actors[sh.a]) {
         this.drawOrbit(ctx, sh, fy);
       } else if (sh.type === 'xcu' && this.actors[sh.a]) {
@@ -803,6 +847,62 @@
       if (this.fadeA > 0) { ctx.fillStyle = `rgba(0,0,0,${this.fadeA})`; ctx.fillRect(0, 0, W, H); }
     }
 
+    // THE 3D CAMERA. The scene becomes a real space: a floor plane with a perspective grid, the
+    // stage standing as a wall behind the actors, and everyone a billboard at their own depth
+    // (cast option z). The camera sits at a yaw / distance / height from its subject and moves
+    // between two of those over time - fly-ins, cranes, orbits, pull-backs.
+    draw3D(ctx, sh, fy) {
+      const A = this.actors[sh.a], u0 = Math.min(1, (this.t - sh.t0) / sh.frames), u = u0 * u0 * (3 - 2 * u0);
+      const L = (p) => p[0] + (p[1] - p[0]) * u;
+      const yaw = L(sh.yaw), dist = L(sh.dist), h = L(sh.height), tx = A.x + L(sh.shift || [0, 0]), tz = A.z || 0;
+      const F = 260, cy = Math.cos(yaw), sn = Math.sin(yaw);
+      const C = { x: tx + sn * dist, y: h, z: tz - cy * dist }, lift = (C.y - 44) * F / dist;
+      const proj = (x, y, z) => { const dx = x - C.x, dz = z - C.z, rz = -dx * sn + dz * cy; if (rz < 14) return null; const k = F / rz; return { x: W / 2 + (dx * cy + dz * sn) * k, y: H / 2 + (C.y - y) * k - lift, k, rz }; };
+      // sky, horizon, floor
+      const hy = Math.max(0, Math.min(H, H / 2 - lift)), st = this.stage;
+      if (st && !st.floorCol) { try { const d = st.bg.getContext('2d').getImageData(W / 2, Math.min(H - 2, fy + 12), 1, 1).data, e = st.bg.getContext('2d').getImageData(W / 2, 6, 1, 1).data; st.floorCol = `rgb(${d[0]},${d[1]},${d[2]})`; st.skyCol = `rgb(${e[0] >> 1},${e[1] >> 1},${e[2] >> 1})`; } catch (e) { st.floorCol = '#3a3a44'; st.skyCol = '#101018'; } }
+      const sky = ctx.createLinearGradient(0, 0, 0, hy || 1); sky.addColorStop(0, '#05040a'); sky.addColorStop(1, st ? st.skyCol : '#14001e');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, hy);
+      ctx.fillStyle = st ? st.floorCol : '#1a1028'; ctx.fillRect(0, hy, W, H - hy);
+      const fg = ctx.createLinearGradient(0, hy, 0, H); fg.addColorStop(0, 'rgba(0,0,0,0.6)'); fg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(0, hy, W, H - hy);
+      ctx.strokeStyle = 'rgba(255,255,255,0.13)'; ctx.lineWidth = 1;
+      const seg = (a, b) => { if (a && b) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } };
+      for (let g = -480; g <= 864; g += 48) { for (let z = -240; z < 480; z += 96) seg(proj(g, 0, z), proj(g, 0, z + 96)); }
+      for (let z = -240; z <= 480; z += 48) { for (let g = -480; g < 864; g += 96) seg(proj(g, 0, z), proj(g + 96, 0, z)); }
+      // the stage as a wall behind the actors, in perspective (drawn in vertical slices)
+      if (st) {
+        const WZ = 84, SL = 8;
+        for (let x0 = 0; x0 < W; x0 += SL) {
+          const b0 = proj(x0, 0, WZ), b1 = proj(x0 + SL, 0, WZ), t0 = proj(x0, fy, WZ);
+          if (!b0 || !b1 || !t0 || b1.x <= b0.x) continue;
+          ctx.drawImage(st.bg, x0, 0, SL, fy, b0.x, t0.y, b1.x - b0.x + 0.7, b0.y - t0.y);
+        }
+      }
+      if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(0, 0, W, H); }
+      if (this.riftFx) { const r = this.riftFx, p = proj(r.x, 50 * r.size, 30); if (p) drawRift(ctx, p.x, p.y, r.size * p.k * (r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16)), this.t); }
+      // everyone, far to near
+      const list = Object.values(this.actors).filter((a) => !a.stage).map((a) => ({ a, p: proj(a.x, 0, a.z || 0) })).filter((o) => o.p).sort((m, n) => n.p.rz - m.p.rz);
+      for (const { a, p } of list) {
+        let anim = a.anim, frame = 0;
+        if (a.wlen) { anim = 'walk'; frame = (a.wt / 5) % 4; }
+        else if (anim === 'idle') frame = ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
+        else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((this.t + a.seed) / 16) % 2;
+        else frame = Math.min(1, (this.t - (a.at || 0)) / 8);
+        ctx.save(); ctx.translate(p.x, p.y);
+        ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 1, 15 * p.k, 3.5 * p.k, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1;
+        ctx.scale(p.k, p.k);
+        if (p.rz > dist * 1.7 && 'filter' in ctx) ctx.filter = 'brightness(0.7)';
+        a.sprite.draw(ctx, anim, frame, 0, -a.y, cy >= 0 ? a.facing : -a.facing, a.ghost ? '#2a2038' : null);
+        ctx.filter = 'none';
+        if (a.rift) RF.MOVE_FX.riftAura({ x: 0, y: a.y, body: a.def.body, state: 'idle' }, ctx, 0, this.t);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      for (const q of this.shards) { const p = proj(q.x, q.y, 0); if (p) { ctx.globalAlpha = Math.min(1, q.life / 30); ctx.fillStyle = q.c; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } }
+      ctx.globalAlpha = 1;
+    }
+
     // 3D moments. ORBIT: the camera circles the subject - everyone around them swings through
     // depth (nearer = bigger and lower, farther = smaller and behind), the subject turns, and the
     // background slides past in parallax. DOLLY: the "vertigo" shot - the subject stays the same
@@ -860,7 +960,7 @@
       const k = Math.min(1, this.stepT / 24);
       ctx.fillStyle = `rgba(0,0,0,${0.55 * k})`; ctx.fillRect(0, 76, W, 72);
       ctx.fillStyle = '#a050ff'; ctx.fillRect(W / 2 - 130 * k, 80, 260 * k, 1); ctx.fillRect(W / 2 - 130 * k, 143, 260 * k, 1);
-      T(ctx, small, W / 2, 88, { align: 'center', color: '#c8b0e0', outline: '#000' });
+      T(ctx, /^CHAPTER/.test(small) ? 'CHAPTER ' + this.index : small, W / 2, 88, { align: 'center', color: '#c8b0e0', outline: '#000' });
       T(ctx, big.slice(0, Math.ceil(this.typed / 1.2)), W / 2, 102, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
     }
 
