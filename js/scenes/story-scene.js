@@ -7,7 +7,7 @@
 // The script is data: js/config/story.js.
 //
 // STEPS (run in order):
-//  staging   { bg: 'stageId' | 'black' }  { cast: { key: [charId, x, facing, { rift, anim, y, bg }] } }
+//  staging   { bg: 'stageId' | 'black' }  { cast: { key: [charId, x, facing, { rift, anim, y, z, bg, ghost, name, scale }] } }
 //            { remove: 'key' }  { face: ['key', dir] }  { tint: 'rgba()' | null }
 //  shots     { shot: 'wide' | ['medium'|'close'|'xcu'|'low', key] | ['two', keyA, keyB] |
 //                    ['ots', overKey, atKey] | ['split', keyA, keyB] , dutch?: rad }
@@ -18,9 +18,13 @@
 //            { rise: ['key', y, frames] }  { hop: 'key' }  { impact: ['key', power] }
 //            { shatter: 'key' }  { fly: ['fromKey', toX, art, frames] }  { rift: [x, size] }  { riftOff: true }
 //  words     { say: ['key' | charId, 'TEXT', { radio, shot }] }  { narrate: 'TEXT' }  { title: ['SMALL', 'BIG'] }
+//            (TEXT can be { heroId: '...', _: '...' }: a different line for each finale hero)
 //  sound     { music: 'song' | 'silence' }  { sfx: 'name' }  { amb: ['drone', 'bell', ...] | null }
 //  timing    { wait: frames }  { shake: n }  { flash: n }
 //  special   { choose: true } (pick the finale hero -> '$hero')  { credits: true }
+//  music     { score: 'theme' | 'bro' | 'sirven' | 'lopez' | 'battle' | 'omega' | 'requiem' | ... | null }  (story-score.js)
+//  3D        { cam3d: [who, 'flyin' | 'orbit' | 'ots' | 'vertigo' | ...] }                       (story-3d.js)
+//  play      { qte: {...} }  { choice: {...} }  { if: fn, then, else }  { emote } { card } { grade } ... (story-play.js)
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224, BAR = 30;                       // 2.35:1 letterbox
@@ -29,12 +33,26 @@
   const FEMALE = new Set(['brady', 'landa']);              // Ms. / Lady: female voices
 
   // ---------------------------------------------------------------- progress
+  // reached = furthest chapter; vars = the choices made (and the finale hero); endings = which
+  // endings have been seen; ranks = best STYLE RANK per chapter; cine = action prompts off.
+  const mem = { data: null }; // a copy in memory, for browsers that block storage
+  const rankOf = (r) => 'CBAS'.indexOf(r || '?');
   RF.storyProgress = {
-    get() { try { return Object.assign({ reached: 0, done: false }, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { return { reached: 0, done: false }; } },
+    get() {
+      let p = mem.data;
+      try { p = JSON.parse(localStorage.getItem(KEY)) || p; } catch (e) { /* no storage */ }
+      p = Object.assign({ reached: 0, done: false }, p);
+      p.vars = p.vars || {}; p.endings = p.endings || {}; p.ranks = p.ranks || {};
+      return p;
+    },
     reach(i) { const p = this.get(); p.reached = Math.max(p.reached, i); this.save(p); },
-    finish() { const p = this.get(); p.done = true; this.save(p); },
-    save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* no storage */ } },
+    finish(ending) { const p = this.get(); p.done = true; if (ending) p.endings[ending] = true; this.save(p); },
+    setVar(k, v) { const p = this.get(); p.vars[k] = v; this.save(p); },
+    rank(title, r) { const p = this.get(); if (rankOf(r) > rankOf(p.ranks[title])) { p.ranks[title] = r; this.save(p); } },
+    reset() { const p = this.get(); this.save({ reached: 0, done: false, vars: {}, endings: p.endings, ranks: {}, cine: p.cine }); }, // endings found stay found
+    save(p) { mem.data = p; try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* no storage */ } },
   };
+  const run = { tally: { perfect: 0, good: 0, miss: 0 } }; // quick-time results for the chapter being played
 
   // ---------------------------------------------------------------- rift variants
   RF.riftDef = function (def) {
@@ -65,6 +83,12 @@
       scene.midShown = true;
       scene.effects.spawnText(st.mid, foe.x, foe.body.height + 30, '#d090ff');
       speak(foe.def, st.mid);
+    }
+    if (st.meter && !scene.boosted && scene.phase === 'fight') { // good quick-time play before the fight = a head start
+      scene.boosted = true;
+      const f = scene.fighters[0];
+      f.meter = Math.min(RF.CONFIG.SUPER_MAX, (f.meter || 0) + st.meter);
+      scene.effects.spawnText('MOMENTUM!', f.x, f.body.height + 30, '#ffd040');
     }
   };
   RF.storyEndMenu = function (scene, won) {
@@ -130,7 +154,8 @@
   }
   function speak(def, text, { radio = false, interrupt = true } = {}) {
     voice.speaking = false;
-    if (!def || voice.mode === 'blip' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) { voice.mode = 'blip'; return; }
+    if (!def) return;
+    if (voice.mode === 'blip' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) { voice.mode = 'blip'; return; }
     if (RF.audio && RF.audio.muted) return;
     try {
       if (interrupt) speechSynthesis.cancel();
@@ -206,18 +231,10 @@
       if (this.on.has('room')) noise('lowpass', 300, 0.05);
     },
     stop() { for (const n of this.nodes) { try { if (n.stop) n.stop(); n.disconnect(); } catch (e) { /* gone */ } } this.nodes = []; this.on = new Set(); },
-    score: null,
     // the rhythmic ones run off the frame clock
     tick(t) {
       const A = RF.audio; if (!A || !A.ctx) return;
-      const sc = this.score && SCORES[this.score];
-      if (sc && t % sc.beat === 0) {
-        const step = t / sc.beat, chord = sc.chords[Math.floor(step / 8) % sc.chords.length], i = step % 8, now = A.ctx.currentTime;
-        const hz = (n) => 440 * Math.pow(2, (n - 69) / 12), bus = A.master;
-        A.tone('triangle', hz(chord[i % 3] + (i >= 3 && i < 6 ? 12 : 0)), now, sc.beat / 60 * 2.5, 0.03, bus);
-        if (i === 0) { chord.forEach((n) => A.tone('sine', hz(n), now, sc.beat / 60 * 8, 0.016, bus)); A.tone('sine', hz(chord[0] - 12), now, sc.beat / 60 * 8, 0.045, bus); }
-        if (sc.mel && i % 4 === 2) A.tone('sine', hz(sc.mel[Math.floor(step / 4) % sc.mel.length]), now, sc.beat / 60 * 3.5, 0.03, bus);
-      }
+      if (RF.storyScore) RF.storyScore.tick(); // the soundtrack (story-score.js)
       if (!this.on.size) return;
       if (this.on.has('bell') && t % 170 === 0) A.sfx('bell');
       if (this.on.has('heartbeat') && (t % 54 === 0 || t % 54 === 12)) A.tone('sine', t % 54 ? 48 : 58, A.ctx.currentTime, 0.14, 0.5, A.sfxBus, 30);
@@ -226,49 +243,50 @@
       if (this.on.has('birds') && t % 140 === 0) A.sfx('birds');
     },
   };
-  // sad = A minor (Am F C G), hope = C major (C G Am F), tense = two dark chords
-  const SCORES = {
-    sad: { beat: 26, chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], mel: [76, 74, 72, 71, 72, 69, 71, 67] },
-    hope: { beat: 22, chords: [[48, 52, 55], [55, 59, 62], [57, 60, 64], [53, 57, 60]], mel: [72, 74, 76, 79, 77, 76, 74, 76] },
-    tense: { beat: 34, chords: [[45, 48, 52], [46, 49, 53]] },
-  };
   function setMusic(name) {
     const A = RF.audio; if (!A) return;
     if (name === 'silence') { if (A.musicBus && A.ctx) A.musicBus.gain.linearRampToValueAtTime(0.0001, A.ctx.currentTime + 0.6); return; }
     if (A.musicBus && A.ctx) { A.musicBus.gain.cancelScheduledValues(A.ctx.currentTime); A.musicBus.gain.value = RF.CONFIG.MUSIC_VOLUME; }
     if (name) A.playSong(name);
   }
-  function leaveStory() { amb.stop(); amb.score = null; setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
+  function leaveStory() { amb.stop(); if (RF.storyScore) RF.storyScore.stop(); setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
 
   // ---------------------------------------------------------------- story menu
+  const ENDINGS = [['lopez', 'THE TEACHER'], ['sirven', 'THE LAST ONE OUT'], ['hero', 'THE EMPTY SEAT']];
   class StoryMenuScene {
     constructor(game) {
-      setMusic('court');
+      setMusic('silence'); if (RF.storyScore) RF.storyScore.set('bell');
       this.game = game; this.t = 0;
       const prog = RF.storyProgress.get(), chs = RF.STORY.chapters;
+      this.prog = prog;
       const items = [];
       const next = Math.min(prog.reached, chs.length - 1);
-      items.push({ label: prog.reached ? 'CONTINUE: ' + chs[next].title : 'NEW STORY', desc: chs[next].sub, onSelect: () => game.setScene(new StoryScene(game, next, 'intro')) });
+      const start = (i) => { leaveStory(); game.setScene(new StoryScene(game, i, 'intro')); };
+      items.push({ label: prog.reached ? 'CONTINUE: ' + chs[next].title : 'NEW STORY', desc: chs[next].sub, onSelect: () => start(next) });
       if (prog.reached || prog.done) {
         const reset = { label: 'NEW STORY (ERASE PROGRESS)', desc: 'START OVER FROM THE VERY BEGINNING', onSelect: () => {
-          if (!reset.armed) { reset.armed = true; reset.label = 'ARE YOU SURE? PRESS AGAIN'; reset.desc = 'ALL STORY PROGRESS WILL BE ERASED'; RF.audio.sfx('block'); return; }
-          RF.storyProgress.save({ reached: 0, done: false });
-          game.setScene(new StoryScene(game, 0, 'intro'));
+          if (!reset.armed) { reset.armed = true; reset.label = 'ARE YOU SURE? PRESS AGAIN'; reset.desc = 'CHAPTERS, CHOICES AND RANKS WILL BE ERASED'; RF.audio.sfx('block'); return; }
+          RF.storyProgress.reset();
+          start(0);
         } };
         items.push(reset);
       }
+      const cine = { label: '', desc: 'OFF = QUICK-TIME MOMENTS PLAY THEMSELVES', onSelect: () => { const p = RF.storyProgress.get(); p.cine = !p.cine; RF.storyProgress.save(p); cine.label = 'ACTION PROMPTS: ' + (p.cine ? 'OFF' : 'ON'); RF.audio.sfx('select'); } };
+      cine.label = 'ACTION PROMPTS: ' + (prog.cine ? 'OFF' : 'ON');
+      items.push(cine);
       chs.forEach((c, i) => {
         if (i === 0) return;
         const open = i <= prog.reached;
-        items.push({ label: open ? (i + '. ' + c.title) : (i + '. ??????'), desc: open ? c.sub : 'LOCKED', onSelect: () => open && game.setScene(new StoryScene(game, i, 'intro')) });
+        items.push({ label: open ? (i + '. ' + c.title) : (i + '. ??????'), desc: open ? c.sub : 'LOCKED', rank: open && prog.ranks[c.title], onSelect: () => open && start(i) });
       });
-      items.push({ label: 'BACK', desc: '', onSelect: () => game.setScene(new RF.TitleScene(game)) });
+      items.push({ label: 'BACK', desc: '', onSelect: () => { leaveStory(); game.setScene(new RF.TitleScene(game)); } });
       this.menu = new RF.ListMenu(items);
       this.stage = new RF.StageRenderer(RF.getStage('court'));
     }
     update() {
       this.t++;
-      if (RF.menuPressed(this.game.kb, 'back')) return this.game.setScene(new RF.TitleScene(this.game));
+      if (RF.storyScore) RF.storyScore.tick();
+      if (RF.menuPressed(this.game.kb, 'back')) { leaveStory(); return this.game.setScene(new RF.TitleScene(this.game)); }
       this.menu.update(this.game.kb);
       const armed = this.menu.items.find((it) => it.armed); // moved away from the reset: disarm it
       if (armed && this.menu.items[this.menu.index] !== armed) { armed.armed = false; armed.label = 'NEW STORY (ERASE PROGRESS)'; armed.desc = 'START OVER FROM THE VERY BEGINNING'; }
@@ -276,16 +294,21 @@
     render(ctx) {
       this.stage.draw(ctx, this.t);
       ctx.fillStyle = 'rgba(20,0,40,0.72)'; ctx.fillRect(0, 0, W, H);
-      drawRift(ctx, 320, 120, 1.6, this.t);
+      drawRift(ctx, 322, 96, 1.4, this.t);
       T(ctx, 'STORY MODE', W / 2, 10, { align: 'center', color: '#c080ff', outline: '#000' });
       T(ctx, 'THE LAST BELL', W / 2, 20, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
       const items = this.menu.items, y0 = 56, per = 13, start = Math.max(0, Math.min(items.length - per, this.menu.index - 6));
       items.forEach((it, i) => {
         if (i < start || i >= start + per) return;
         const sel = i === this.menu.index, y = y0 + (i - start) * 11;
-        if (sel) { ctx.fillStyle = 'rgba(160,80,255,0.35)'; ctx.fillRect(40, y - 2, 210, 11); }
-        T(ctx, it.label, 48, y, { color: sel ? '#ffffff' : (it.desc === 'LOCKED' ? '#5a4a6a' : '#c8b0e0'), outline: '#000' });
+        if (sel) { ctx.fillStyle = 'rgba(160,80,255,0.35)'; ctx.fillRect(28, y - 2, 222, 11); }
+        T(ctx, it.label, 36, y, { color: sel ? '#ffffff' : (it.desc === 'LOCKED' ? '#5a4a6a' : '#c8b0e0'), outline: '#000' });
+        if (it.rank) T(ctx, it.rank, 240, y, { color: it.rank === 'S' ? '#ffd040' : it.rank === 'A' ? '#e0b0ff' : '#909090', outline: '#000' });
       });
+      // endings found
+      const found = ENDINGS.filter(([id]) => this.prog.endings[id]).length;
+      T(ctx, 'ENDINGS ' + found + '/3', W - 10, 148, { align: 'right', color: '#c080ff', outline: '#000' });
+      ENDINGS.forEach(([id, name], i) => T(ctx, this.prog.endings[id] ? name : '? ? ?', W - 10, 160 + i * 10, { align: 'right', color: this.prog.endings[id] ? '#ffd040' : '#5a4a6a', outline: '#000' }));
       const d = items[this.menu.index].desc;
       if (d) T(ctx, d, W / 2, H - 14, { align: 'center', color: '#e0c0ff', outline: '#000' });
     }
@@ -478,8 +501,13 @@
     constructor(game, index, part, opts = {}) {
       this.game = game; this.index = index; this.part = part;
       this.ch = RF.STORY.chapters[index];
-      this.steps = (part === 'intro' ? this.ch.intro : this.ch.outro) || [];
-      this.hero = opts.hero || null;
+      this.steps = ((part === 'intro' ? this.ch.intro : this.ch.outro) || []).slice(); // a copy: branches splice into it
+      const prog = RF.storyProgress.get();
+      this.vars = prog.vars;                 // the choices made so far
+      this.state = { qte: null };            // the last quick-time result
+      this.cine = !!prog.cine; this.lock = 0;
+      this.hero = opts.hero || prog.vars.hero || null;
+      if (part === 'intro') run.tally = { perfect: 0, good: 0, miss: 0 };
       this.i = -1; this.t = 0; this.stepT = 0;
       this.actors = {}; this.bgDef = null; this.stage = null;
       this.cam = { x: W / 2, y: H / 2, z: 1, rot: 0, tx: W / 2, ty: H / 2, tz: 1, trot: 0, k: 1 };
@@ -491,8 +519,17 @@
       this.next();
     }
 
-    resolve(k) { return k === '$hero' ? this.hero : k; }
+    // '$hero' = whoever you chose for the finale. '$friend' and '$principal' are people who are
+    // NOT the hero (for scenes the hero is missing from).
+    resolve(k) {
+      if (k === '$hero') return this.hero || RF.STORY.heroes[0];
+      if (k === '$friend') return this.hero === 'nicholas' ? 'anthony' : 'nicholas';
+      if (k === '$principal') return this.hero === 'brady' ? 'sirven' : 'brady';
+      return k;
+    }
     actor(k) { return this.actors[this.resolve(k)]; }
+    // a line can depend on who the hero is: { nicholas: '...', brady: '...', _: 'anyone else' }
+    line(x) { return x && typeof x === 'object' ? (x[this.hero] || x._ || '') : x; }
     floorY() { return this.bgDef ? this.bgDef.floorY : 204; }
 
     next() {
@@ -502,18 +539,20 @@
         if (!s) return this.finish();
         if (this.instant(s)) continue;
         this.cur = s;
-        if (s.say || s.narrate || s.title) { this.typed = 0; this.text = s.say ? s.say[1] : s.narrate || s.title[1]; }
+        if (s.say || s.narrate || s.title) { this.typed = 0; this.text = s.say ? this.line(s.say[1]) : s.narrate || s.title[1]; }
         if (s.say) {
           const o = s.say[2] || {}, a = this.actor(s.say[0]);
           if (o.shot) this.setShot(Array.isArray(o.shot) ? o.shot : [o.shot, s.say[0]]);
           if (a) a.talk = true;
           if (o.radio) RF.audio.sfx('pa');
-          speak(a ? a.def : RF.getCharacter(this.resolve(s.say[0])), s.say[1], o);
+          speak(a ? a.def : RF.getCharacter(this.resolve(s.say[0])), this.text, o);
         }
         if (s.narrate) RF.audio.sfx('paper');
         if (s.walk || s.dash) {
           const w = s.walk || s.dash, a = this.actor(w[0]);
-          if (a) { a.from = a.x; a.to = w[1]; a.wt = 0; a.wlen = w[2] || (s.dash ? 10 : 40); a.facing = a.to >= a.x ? 1 : -1; a.dashing = !!s.dash; if (s.dash) RF.audio.sfx('whoosh'); }
+          // a target of [key, gap] = close in on that actor, stopping `gap` away on your own side
+          const tg = Array.isArray(w[1]) ? this.actor(w[1][0]) : null;
+          if (a) { a.from = a.x; a.to = tg ? tg.x + (a.x >= tg.x ? 1 : -1) * w[1][1] : Array.isArray(w[1]) ? a.x : w[1]; a.wt = 0; a.wlen = w[2] || (s.dash ? 10 : 40); a.facing = a.to >= a.x ? 1 : -1; a.dashing = !!s.dash; if (s.dash) RF.audio.sfx('whoosh'); }
           if (w[3] === 'async') continue;
         }
         if (s.rise) { const a = this.actor(s.rise[0]); if (a) { a.yFrom = a.y; a.yTo = s.rise[1]; a.yt = 0; a.ylen = s.rise[2] || 40; } if (s.rise[3] === 'async') continue; }
@@ -523,7 +562,8 @@
           RF.audio.sfx('whoosh');
         }
         if (s.choose) { this.picks = (Array.isArray(s.choose) ? s.choose : RF.STORY.heroes).filter((id) => RF.getCharacter(id)); this.pick = 0; }
-        if (s.credits) { this.creditY = H - 60; setMusic('menu'); amb.set(null); }
+        if (s.credits) { this.creditY = H - 60; setMusic('silence'); if (RF.storyScore) RF.storyScore.set('theme'); amb.set(null); }
+        if (this.beginStep) this.beginStep(s); // quick-time events, choices, cards (story-play.js)
         return;
       }
     }
@@ -538,11 +578,11 @@
     // aim the camera for the current shot (cut = jump straight there)
     frameShot(cut) {
       const s = this.shot, c = this.cam, fy = this.floorY(), A = this.actors[s.a], B = this.actors[s.b];
-      let x = W / 2, y = H / 2, z = 1;
-      const head = (a) => fy - a.y - a.def.body.height * 0.86;
-      if (s.type === 'medium' && A) { z = 2.2; x = A.x; y = fy - A.y - A.def.body.height * 0.66; }
+      let x = W / 2, y = H / 2 + 12, z = 1;
+      const tall = (a) => a.def.body.height * (a.scale || 1), head = (a) => fy - a.y - tall(a) * 0.86;
+      if (s.type === 'medium' && A) { z = 2.2; x = A.x; y = fy - A.y - tall(A) * 0.66; }
       if (s.type === 'close' && A) { z = 4.2; x = A.x + A.facing * 2; y = head(A) + 5; }
-      if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - A.def.body.height * 0.72; }
+      if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - tall(A) * 0.72; }
       if ((s.type === 'two') && A && B) { x = (A.x + B.x) / 2; z = Math.max(1, Math.min(2.2, 300 / (Math.abs(A.x - B.x) + 110))); y = fy - 46; }
       if (s.type === 'ots' && B) { z = 2.7; x = B.x + (A && A.x < B.x ? -12 : 12); y = head(B) + 14; }
       c.tx = x; c.ty = y; c.tz = z; c.trot = s.dutch || 0;
@@ -550,8 +590,9 @@
     }
 
     instant(s) {
+      if (this.instantExtra && this.instantExtra(s)) return true; // branches, emotes, the look (story-play.js)
       if (s.bg) { this.bgDef = s.bg === 'black' ? null : RF.getStage(s.bg); this.stage = this.bgDef ? new RF.StageRenderer(this.bgDef) : null; return true; }
-      if (s.music) { setMusic(s.music); return true; }
+      if (s.music) { setMusic(s.music); if (s.music !== 'silence' && RF.storyScore) RF.storyScore.set(null); return true; }
       if (s.sfx) { RF.audio.sfx(s.sfx); return true; }
       if (s.amb !== undefined) { amb.set(s.amb); return true; }
       if (s.cast) {
@@ -561,12 +602,12 @@
           if (o.costume && def.sprite.palette) def = RF.costume(def, o.costume);
           if (o.rift) def = RF.riftDef(def);
           if (o.name) def = Object.assign({}, def, { name: o.name });
-          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, z: o.z || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
+          this.actors[k[0] === '$' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, z: o.z || 0, scale: o.scale || 1, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
         }
         return true;
       }
-      if (s.remove) { delete this.actors[s.remove]; return true; }
-      if (s.score !== undefined) { amb.score = s.score; return true; }
+      if (s.remove) { delete this.actors[this.resolve(s.remove)]; return true; }
+      if (s.score !== undefined) { if (s.score) setMusic('silence'); if (RF.storyScore) RF.storyScore.set(s.score); return true; }
       if (s.flashback !== undefined) { this.flashback = s.flashback; if (s.flashback) RF.audio.sfx('whoosh'); return true; }
       if (s.weather !== undefined) { this.weather = s.weather; return true; }
       if (s.fold) { const a = this.actor(s.fold); if (a) { a.foldT = 1; RF.audio.sfx('arcane'); } return true; }
@@ -615,11 +656,12 @@
 
     finish() {
       this.cur = null;
+      if (this.beforeFinish && this.beforeFinish()) return; // the chapter's STYLE RANK comes first
       const ch = this.ch, game = this.game;
       if (this.part === 'intro' && ch.fight) { leaveStory(); return this.startFight(); }
       const n = this.index + 1;
       if (this.part === 'intro' && !ch.fight && ch.outro) return game.setScene(new StoryScene(game, this.index, 'outro', { hero: this.hero }));
-      if (n >= RF.STORY.chapters.length) { leaveStory(); RF.storyProgress.finish(); return game.setScene(new RF.TitleScene(game)); }
+      if (n >= RF.STORY.chapters.length) { leaveStory(); RF.storyProgress.finish(this.vars.ending || 'lopez'); return game.setScene(new StoryMenuScene(game)); }
       RF.storyProgress.reach(n);
       game.setScene(new StoryScene(game, n, 'intro', { hero: this.hero }));
     }
@@ -630,7 +672,7 @@
       if (f.name) p2.name = f.name;
       this.game.setScene(new RF.VersusScene(this.game, {
         p1, p2, stage: f.stage, cpu: true, cpuLevel: f.cpu || 'normal', boss: f.boss || 0,
-        story: { index: this.index, mid: f.mid, hero: this.hero || hero },
+        story: { index: this.index, mid: f.mid, hero: this.hero || hero, meter: Math.min(RF.CONFIG.SUPER_MAX, run.tally.perfect * 60 + run.tally.good * 25) },
       }));
     }
 
@@ -638,6 +680,7 @@
     update() {
       this.t++; this.stepT++; voice.clock = this.t;
       amb.tick(this.t);
+      if (this.tickExtra && this.tickExtra(this.game.kb)) return; // timers, and hold-BACK-to-skip
       const kb = this.game.kb, s = this.cur, c = this.cam;
       if (this.fadeA > 0 && !(s && s.fade)) this.fadeA = Math.max(0, this.fadeA - 0.05);
       if (this.shake > 0) this.shake--;
@@ -648,11 +691,14 @@
       const k = Math.min(1, c.k); c.x += (c.tx - c.x) * k; c.y += (c.ty - c.y) * k; c.z += (c.tz - c.z) * k; c.rot += (c.trot - c.rot) * k;
       if (c.k < 1) c.k = Math.max(c.k, 0.02);
       if (this.riftFx) { this.riftFx.t++; if (this.riftFx.closing && (this.riftFx.closing += 0.05) > 2) this.riftFx = null; }
-      for (const p of this.shards) { p.x += p.vx; p.y += p.vy; if (!p.float) p.vy -= 0.25; if (p.y < 0) { p.y = 0; p.vy *= -0.3; p.vx *= 0.7; } p.life--; }
+      const live = !(this.slowT > 0) || this.t % 3 === 0; // slow motion: the world moves one frame in three
+      if (this.slowT > 0) this.slowT--;
+      if (live) for (const p of this.shards) { p.x += p.vx; p.y += p.vy; if (!p.float) p.vy -= 0.25; if (p.y < 0) { p.y = 0; p.vy *= -0.3; p.vx *= 0.7; } p.life--; }
       this.shards = this.shards.filter((p) => p.life > 0);
-      for (const f of this.flies) { f.t++; f.x = f.from + (f.to - f.from) * Math.min(1, f.t / f.len); }
+      if (live) for (const f of this.flies) { f.t++; f.x = f.from + (f.to - f.from) * Math.min(1, f.t / f.len); }
       this.flies = this.flies.filter((f) => f.t <= f.len);
       for (const a of Object.values(this.actors)) {
+        if (!live) continue;
         if (a.wlen) { a.wt++; const u = Math.min(1, a.wt / a.wlen); a.x = a.from + (a.to - a.from) * (a.dashing ? 1 - (1 - u) * (1 - u) : u); if (u >= 1) { a.wlen = 0; a.dashing = false; } }
         if (a.ylen) { a.yt++; const u = Math.min(1, a.yt / a.ylen); a.y = a.yFrom + (a.yTo - a.yFrom) * u; if (u >= 1) a.ylen = 0; }
         if (a.hopT) { a.hopT++; a.y = Math.max(0, Math.sin((a.hopT / 20) * Math.PI) * 16); if (a.hopT > 20) { a.hopT = 0; a.y = 0; } }
@@ -663,12 +709,8 @@
         }
       }
       for (const [k, a] of Object.entries(this.actors)) if (a.foldT > 60) delete this.actors[k];
-      if (RF.menuPressed(kb, 'back') && !(s && s.choose)) {
-        if (!this.hero && this.steps.some((st) => st.choose)) this.hero = RF.STORY.heroes[0];
-        this.i = this.steps.length; return this.finish();
-      }
       if (!s) return;
-      const ok = RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
+      const ok = !(this.lock > 0) && RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
       if (s.say || s.narrate || s.title) {
         const before = this.typed | 0;
         this.typed += 0.75;
@@ -702,6 +744,7 @@
         if (RF.menuPressed(kb, 'right')) { this.pick = (this.pick + 1) % this.picks.length; RF.audio.sfx('move'); }
         if (ok || (auto && this.stepT > 8)) {
           this.hero = this.picks[this.pick]; RF.audio.sfx('select');
+          this.vars.hero = this.hero; RF.storyProgress.setVar('hero', this.hero);
           const def = RF.getCharacter(this.hero);
           this.actors[this.hero] = { def, sprite: RF.createSprite(def), x: 230, y: 0, facing: 1, anim: 'victory', seed: 1 };
           this.next();
@@ -713,12 +756,13 @@
         if (this.creditY < -(RF.CHARACTERS.length * 74 + 300) || (auto && this.stepT > 30)) this.next();
         return;
       }
+      if (this.updateExtra && this.updateExtra(s, kb, ok, auto)) return; // quick-time events, choices, cards, ranks
       this.next();
     }
 
     // ---- render ----
-    drawActors(ctx, fy, only) {
-      const list = Object.values(this.actors).filter((a) => (only ? only.includes(a) : !a.stage)).sort((a, b) => a.x - b.x); // actors with their own stage only appear in split screens
+    drawActors(ctx, fy, only, solo) {
+      const list = Object.values(this.actors).filter((a) => (only ? only.includes(a) : !a.stage) && (!solo || a === solo || Math.abs(a.x - solo.x) > 62)).sort((a, b) => a.x - b.x); // actors with their own stage only appear in split screens; a close-up is a single
       for (const a of list) {
         ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
         ctx.beginPath(); ctx.ellipse(a.x, fy + 1, 14, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
@@ -728,11 +772,13 @@
         else if (anim === 'idle') frame = ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
         else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((this.t + a.seed) / 16) % 2;
         else if (['special', 'heavy', 'light', 'uppercut', 'throw'].includes(anim)) frame = Math.min(1, (this.t - (a.at || 0)) / 8);
-        const bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0;
+        const bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0, small = a.scale && a.scale !== 1;
+        if (small) { ctx.save(); ctx.translate(a.x, fy); ctx.scale(a.scale, a.scale); ctx.translate(-a.x, -fy); } // a younger, smaller version of someone
         if (a.dashing) for (let i = 1; i <= 3; i++) { ctx.globalAlpha = 0.25 / i; a.sprite.draw(ctx, anim, frame, a.x - a.facing * i * 10, fy - a.y, a.facing); }
         ctx.globalAlpha = a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1;
-        a.sprite.draw(ctx, anim, frame, a.x, fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null);
+        a.sprite.draw(ctx, anim, frame, a.x + (a.trembleT > 0 ? ((this.t >> 1) % 2 ? 1 : -1) : 0), fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null);
         ctx.globalAlpha = 1;
+        if (small) ctx.restore();
         if (a.rift) RF.MOVE_FX.riftAura({ x: a.x, y: a.y, body: a.def.body, state: 'idle' }, ctx, fy, this.t);
       }
     }
@@ -745,11 +791,12 @@
       const hx = Math.sin(this.t / 47) * hh * 2, hy = Math.sin(this.t / 31) * hh * 1.5;
       // keep the stage edges out of frame
       const half = W / 2 / z, halfH = H / 2 / z;
-      const cx = Math.max(half, Math.min(W - half, cam.x)), cy = Math.max(halfH, Math.min(H - halfH, cam.y));
+      const cx = Math.max(half, Math.min(W - half, cam.x)), cy = Math.max(halfH, Math.min(H - halfH + 12, cam.y)); // +12: the floor sits just above the bottom bar
       ctx.translate(W / 2 + sx + hx, H / 2 + sy + hy);
       if (cam.rot) ctx.rotate(cam.rot);
       ctx.scale(z, z * (opts.low ? 1.18 : 1));
       ctx.translate(-cx, -cy);
+      if (!opts.only) this.view = { kind: '2d', cx, cy, z, zy: z * (opts.low ? 1.18 : 1), tx: W / 2 + sx + hx, ty: H / 2 + sy + hy, rot: cam.rot || 0 };
       const st = opts.stage || this.stage;
       if (st) {
         if (z >= 2 && 'filter' in ctx) ctx.filter = `blur(${z >= 2.8 ? 2 : 1}px)`; // depth of field
@@ -758,7 +805,7 @@
       } else { ctx.fillStyle = '#05000a'; ctx.fillRect(-W, -H, W * 3, H * 3); }
       if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-W, -H, W * 3, H * 3); }
       if (this.riftFx) { const r = this.riftFx, k = r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16); drawRift(ctx, r.x, fy - 50 * r.size, r.size * k, this.t); }
-      this.drawActors(ctx, fy, opts.only);
+      this.drawActors(ctx, fy, opts.only, opts.solo);
       for (const f of this.flies) { const art = RF.PROJECTILE_ART[f.art]; if (art) art(ctx, Math.round(f.x), Math.round(fy - f.y), f.t, f.dir, { w: 14, h: 10, cfg: {} }, fy); }
       for (const p of this.shards) { ctx.globalAlpha = Math.min(1, p.life / 30); ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(fy - p.y), 2, 2); }
       ctx.globalAlpha = 1;
@@ -768,6 +815,7 @@
     render(ctx) {
       const s = this.cur;
       ctx.imageSmoothingEnabled = false;
+      this.view = null;
       if (s && s.credits) return this.drawCredits(ctx);
       // dissolve: remember the outgoing frame before drawing the new one
       if (this.trans && this.trans.grab) { const [cv, c2] = RF.util.makeCanvas(W, H); c2.drawImage(ctx.canvas, 0, 0, W, H); this.snap = cv; this.trans.grab = false; }
@@ -784,7 +832,7 @@
           ctx.restore();
         });
         R(ctx, '#000', W / 2 - 1, 0, 3, H);
-      } else if (sh.type === '3d' && this.actors[sh.a]) {
+      } else if (sh.type === '3d' && (sh.ax != null || [].concat(sh.a).some((k) => this.actors[k]))) {
         this.draw3D(ctx, sh, fy);
       } else if ((sh.type === 'orbit' || sh.type === 'dolly') && this.actors[sh.a]) {
         this.drawOrbit(ctx, sh, fy);
@@ -798,7 +846,7 @@
         ctx.restore();
         if (a.rift || a.def.id === 'lopez') { ctx.globalAlpha = 0.18 + Math.sin(this.t / 6) * 0.08; R(ctx, '#a050ff', 0, top, W, band); ctx.globalAlpha = 1; }
       } else {
-        this.drawWorld(ctx, this.cam, { low: sh.type === 'low' });
+        this.drawWorld(ctx, this.cam, { low: sh.type === 'low', solo: sh.type === 'close' ? this.actors[sh.a] : null });
         if (sh.type === 'ots' && this.actors[sh.a]) { // the foreground shoulder, dark and out of focus
           const a = this.actors[sh.a], B = this.actors[sh.b], left = !B || a.x < B.x, k = 3.6;
           ctx.save(); if ('filter' in ctx) ctx.filter = 'brightness(0.25) blur(1.5px)';
@@ -832,6 +880,7 @@
         ctx.fillStyle = 'rgba(255,240,210,0.12)'; ctx.fillRect(0, 0, W, H);
         for (let i = 0; i < 3; i++) R(ctx, 'rgba(255,255,240,0.25)', (this.t * 37 + i * 131) % W, 0, 1, H);
       }
+      if (this.drawFxLayer) this.drawFxLayer(ctx); // emotes, grading, light, impact frames (story-play.js)
       // film look: vignette, grain, flash
       const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
       vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
@@ -839,11 +888,12 @@
       if (this.flash) { ctx.fillStyle = `rgba(255,240,255,${this.flash * 0.08})`; ctx.fillRect(0, 0, W, H); }
       // letterbox
       R(ctx, '#000', 0, 0, W, BAR); R(ctx, '#000', 0, H - BAR, W, BAR);
-      if (!(s && s.choose)) T(ctx, 'ESC: SKIP', W - 6, 4, { align: 'right', color: '#3a2a4a' });
+      if (!(s && (s.choose || s.rank || s.narrate))) T(ctx, 'HOLD ESC: SKIP', W - 6, 4, { align: 'right', color: '#3a2a4a' });
       if (s && s.say) this.drawSubtitle(ctx, s);
       if (s && s.narrate) this.drawCaption(ctx, this.text.slice(0, this.typed | 0));
       if (s && s.title) this.drawTitle(ctx, s.title);
       if (s && s.choose) this.drawChooser(ctx);
+      if (this.drawUI) this.drawUI(ctx, s); // prompts, choices, cards, ranks (story-play.js)
       if (this.fadeA > 0) { ctx.fillStyle = `rgba(0,0,0,${this.fadeA})`; ctx.fillRect(0, 0, W, H); }
     }
 
@@ -1004,6 +1054,7 @@
     }
   }
 
+  RF.storyKit = { amb, INSERTS, CAM3, drawRift, R, T, PURPLE, speak, voice, VOICES, setMusic, leaveStory, run };
   RF.StoryScene = StoryScene;
   RF.StoryMenuScene = StoryMenuScene;
 })();

@@ -1,0 +1,193 @@
+// STORY MODE: the 3D camera. A scene becomes a real space: a textured floor running to the
+// horizon in true perspective, the stage standing as a wall in that space (animated, drawn in
+// perspective slices, with a faint reflection on shiny floors), and every actor a billboard at
+// their own depth. The camera has a yaw, a distance, a height, a focal length and a roll, and
+// moves between two sets of those over time.
+//
+//   { cam3d: [who, 'preset'] }          who = an actor key, or [a, b] to aim between two
+//   { cam3d: [who, 'preset', { ...overrides }] }   or  { cam3d: [who, { yaw, dist, ... }] }
+//   presets: flyin orbit crane pullback truck low top push spiral reveal whirl rise drop
+//            vertigo (a real dolly zoom) hero still wide tilt
+//            ots ([over, at]: a shoulder in the foreground)   two ([a, b]: both in frame)
+// Loaded after story-scene.js; replaces its simpler draw3D.
+(function () {
+  const K = RF.storyKit, P = RF.StoryScene.prototype, W = 384, H = 224, CAM3 = K.CAM3, drawRift = K.drawRift;
+
+  Object.assign(CAM3, {
+    push: { yaw: [0.12, -0.05], dist: [290, 170], height: [58, 54], frames: 320 },
+    spiral: { yaw: [-1.1, 0.5], dist: [340, 190], height: [160, 52], frames: 320 },
+    reveal: { yaw: [1.25, 0.15], dist: [120, 230], height: [40, 62], frames: 240 },
+    whirl: { yaw: [-1.2, 1.2], dist: [170, 170], height: [48, 48], frames: 100 },
+    rise: { yaw: [0, 0.1], dist: [190, 270], height: [6, 130], frames: 260 },
+    drop: { yaw: [0.4, 0], dist: [310, 190], height: [240, 58], frames: 240 },
+    vertigo: { yaw: [0, 0], dist: [150, 420], height: [52, 52], f: [260, 728], frames: 220 },
+    hero: { yaw: [0.5, 0.2], dist: [140, 118], height: [10, 14], frames: 220 },
+    still: { yaw: [0.2, 0.2], dist: [220, 220], height: [60, 60], frames: 1 },
+    wide: { yaw: [-0.25, 0.25], dist: [430, 430], height: [110, 110], frames: 420 },
+    tilt: { yaw: [-0.2, 0.2], dist: [200, 180], height: [50, 50], roll: [-0.14, 0.14], frames: 260 },
+  });
+
+  // { cam3d: [who, preset | params, overrides?] }
+  P.cam3dStep = function (s) {
+    const [who, spec, extra] = s.cam3d;
+    const keys = (Array.isArray(who) ? who : [who]).map((k) => this.resolve(k));
+    const sh = Object.assign({ type: '3d', a: keys, t0: this.t, shift: [0, 0] }, CAM3.orbit, typeof spec === 'string' ? CAM3[spec] : spec);
+    const A = this.actors[keys[0]], B = this.actors[keys[1]];
+    if (spec === 'ots' && A && B) {
+      // the camera sits in front of and beside the listener; the speaker is framed past them
+      const d = Math.hypot(A.x - B.x, (A.z || 0) - (B.z || 0)), side = A.x < B.x ? -1 : 1;
+      Object.assign(sh, { a: [keys[1]], over: keys[0], yaw0: side * 1.0, yaw: [-0.08, 0.08], dist: [d * 0.85 + 100, d * 0.85 + 84], height: [50, 52], frames: 260 });
+    }
+    if (spec === 'two' && A && B) {
+      const d = Math.hypot(A.x - B.x, (A.z || 0) - (B.z || 0));
+      Object.assign(sh, { yaw: [-0.3, 0.3], dist: [d * 0.9 + 190, d * 0.9 + 160], height: [56, 56], frames: 320 });
+    }
+    Object.assign(sh, extra || {});
+    this.shot = sh; this.insert = null;
+    return true;
+  };
+
+  // ---- per-stage setup: colours, a floor texture, a buffer for the animated wall ----
+  const GLOSSY = new Set(['hallway', 'court', 'cafeteria', 'office', 'musicroom', 'brobatch']);
+  const ROUGH = new Set(['field', 'golf', 'cliff', 'miami']);
+  function prep(st, def, fy, ctx) {
+    if (st.k3) return st.k3;
+    const k = st.k3 = {};
+    const bctx = st.bg.getContext('2d');
+    const px = (x, y) => { try { return bctx.getImageData(Math.round(x), Math.round(Math.min(H - 1, y)), 1, 1).data; } catch (e) { return [58, 58, 68]; } };
+    const col = (d, m = 1) => `rgb(${Math.min(255, d[0] * m) | 0},${Math.min(255, d[1] * m) | 0},${Math.min(255, d[2] * m) | 0})`;
+    const f1 = px(W / 2, fy + 12), sky = px(W / 2, 4);
+    k.floor = col(f1); k.sky = col(sky, 0.5);
+    k.gloss = GLOSSY.has(def.id) ? 0.17 : ROUGH.has(def.id) ? 0 : 0.06;
+    // a 64x64 tile: checker + grout indoors, speckle on grass / sand, speckle + a painted line on asphalt
+    const [tex, t] = RF.util.makeCanvas(64, 64);
+    t.fillStyle = col(f1); t.fillRect(0, 0, 64, 64);
+    const rnd = RF.util.rng ? RF.util.rng(def.id.length * 131 + 7) : Math.random;
+    if (ROUGH.has(def.id)) {
+      for (let i = 0; i < 260; i++) { t.fillStyle = col(f1, 0.82 + rnd() * 0.36); t.fillRect((rnd() * 64) | 0, (rnd() * 64) | 0, 1 + ((rnd() * 2) | 0), 1); }
+      t.fillStyle = col(f1, 0.88); t.fillRect(0, 0, 64, 3); // mowing stripe
+    } else if (GLOSSY.has(def.id)) {
+      t.fillStyle = col(f1, 1.12); t.fillRect(0, 0, 32, 32); t.fillRect(32, 32, 32, 32);
+      t.fillStyle = col(f1, 0.7); t.fillRect(0, 0, 64, 1); t.fillRect(0, 32, 64, 1); t.fillRect(0, 0, 1, 64); t.fillRect(32, 0, 1, 64);
+    } else {
+      for (let i = 0; i < 160; i++) { t.fillStyle = col(f1, 0.8 + rnd() * 0.4); t.fillRect((rnd() * 64) | 0, (rnd() * 64) | 0, 1, 1); }
+      t.fillStyle = col(f1, 1.5); t.fillRect(30, 0, 3, 40);
+    }
+    k.pat = ctx.createPattern(tex, 'repeat');
+    const [buf, bc] = RF.util.makeCanvas(W, H); k.buf = buf; k.bc = bc;
+    return k;
+  }
+
+  P.draw3D = function (ctx, sh, fy) {
+    const keys = Array.isArray(sh.a) ? sh.a : [sh.a], subs = keys.map((k) => this.actors[k]).filter(Boolean);
+    if (subs.length) { sh.ax = subs.reduce((s, a) => s + a.x, 0) / subs.length; sh.az = subs.reduce((s, a) => s + (a.z || 0), 0) / subs.length; }
+    if (sh.ax == null) return; // (if the subject has gone - folded away, shattered - the camera stays where they were)
+    const u0 = Math.min(1, (this.t - sh.t0) / (sh.frames || 1)), u = u0 * u0 * (3 - 2 * u0), L = (p) => (p ? p[0] + (p[1] - p[0]) * u : 0);
+    const ax = sh.ax, az = sh.az;
+    const hh = this.handheld || 0;
+    const yaw = (sh.yaw0 || 0) + L(sh.yaw) + Math.sin(this.t / 53) * 0.012 * hh;
+    const dist = Math.max(40, L(sh.dist)), F = sh.f ? L(sh.f) : 260, roll = sh.roll ? L(sh.roll) : 0;
+    const cy = Math.cos(yaw), sn = Math.sin(yaw);
+    const C = { x: ax + L(sh.shift) + sn * dist, y: Math.max(4, L(sh.height) + Math.sin(this.t / 37) * 1.2 * hh), z: az - cy * dist };
+    const lift = (C.y - (sh.aim == null ? 44 : sh.aim)) * F / dist;
+    const kx = this.shake ? (Math.random() - 0.5) * this.shake : 0, ky = this.shake ? (Math.random() - 0.5) * this.shake * 0.5 : 0;
+    const proj = (x, y, z) => {
+      const dx = x - C.x, dz = z - C.z, rz = -dx * sn + dz * cy;
+      if (rz < 14) return null;
+      const k = F / rz;
+      return { x: W / 2 + (dx * cy + dz * sn) * k + kx, y: H / 2 + (C.y - y) * k - lift + ky, k, rz };
+    };
+    this.view = { kind: '3d', proj };
+
+    ctx.save();
+    if (roll) { ctx.translate(W / 2, H / 2); ctx.rotate(roll); ctx.scale(1.16, 1.16); ctx.translate(-W / 2, -H / 2); }
+    const st = this.stage, k3 = st ? prep(st, this.bgDef, fy, ctx) : null;
+    const hyRaw = H / 2 - lift + ky, hy = Math.max(0, Math.min(H, hyRaw));
+
+    // sky
+    const sky = ctx.createLinearGradient(0, 0, 0, Math.max(1, hy)); sky.addColorStop(0, '#04030a'); sky.addColorStop(1, k3 ? k3.sky : '#14001e');
+    ctx.fillStyle = sky; ctx.fillRect(-20, -20, W + 40, hy + 20);
+    // the floor: a tiled texture laid out in perspective, one thin strip of screen at a time
+    ctx.fillStyle = k3 ? k3.floor : '#1a1028'; ctx.fillRect(-20, hy, W + 40, H - hy + 20);
+    if (k3 && k3.pat && k3.pat.setTransform && typeof DOMMatrix === 'function') {
+      for (let y = Math.ceil(hy) + 1; y < H + 2; y += 2) {
+        const rz = C.y * F / (y - hyRaw);
+        if (rz > 1500 || rz < 4) continue;
+        const k = F / rz, Px = C.x - sn * rz, Pz = C.z + cy * rz;      // the ground point under this strip's centre
+        const a = cy * k, c = sn * k, b = -sn * k, d = cy * k;          // world (x, z) -> screen along the strip
+        k3.pat.setTransform(new DOMMatrix([a, b, c, d, W / 2 + kx - (Px * a + Pz * c), y - (Px * b + Pz * d)]));
+        ctx.fillStyle = k3.pat; ctx.fillRect(-20, y, W + 40, 2);
+      }
+    }
+    const fog = ctx.createLinearGradient(0, hy, 0, H); fog.addColorStop(0, 'rgba(0,0,0,0.62)'); fog.addColorStop(0.5, 'rgba(0,0,0,0.12)'); fog.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fog; ctx.fillRect(-20, hy, W + 40, H - hy + 20);
+
+    // the stage as a wall behind the actors (five tiles wide, mirrored, so it never runs out)
+    if (k3) {
+      st.draw(k3.bc, this.t);
+      const WZ = 84, SL = 8;
+      for (let x0 = -2 * W; x0 < 3 * W; x0 += SL) {
+        const b0 = proj(x0, 0, WZ), b1 = proj(x0 + SL, 0, WZ);
+        if (!b0 || !b1 || b1.x <= b0.x || b1.x < -8 || b0.x > W + 8) continue;
+        const t0 = proj(x0, fy, WZ), t1 = proj(x0, fy + 160, WZ);
+        const m = ((x0 % (2 * W)) + 2 * W) % (2 * W), sx = m < W ? m : 2 * W - m - SL;   // mirror every other tile
+        const w = b1.x - b0.x + 0.7, hgt = b0.y - t0.y;
+        ctx.drawImage(k3.buf, sx, 0, SL, 2, b0.x, t1.y, w, t0.y - t1.y + 0.5);            // the wall carries on upward
+        ctx.drawImage(k3.buf, sx, 0, SL, fy, b0.x, t0.y, w, hgt);
+        if (k3.gloss) { ctx.globalAlpha = k3.gloss; ctx.drawImage(k3.buf, sx, fy * 0.45, SL, fy * 0.55, b0.x, b0.y + hgt * 0.55, w, -hgt * 0.55); ctx.globalAlpha = 1; } // reflection
+      }
+    }
+    if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-20, -20, W + 40, H + 40); }
+    if (this.riftFx) {
+      const r = this.riftFx, kk = r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16), p = proj(r.x, 50 * r.size, 30), g = proj(r.x, 0, 30);
+      if (g) { ctx.globalAlpha = 0.28 * kk; ctx.fillStyle = '#a050ff'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 70 * r.size * g.k, 12 * r.size * g.k, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+      if (p) drawRift(ctx, p.x, p.y, r.size * p.k * kk, this.t);
+    }
+
+    // everyone, far to near
+    const list = Object.values(this.actors).filter((a) => !a.stage).map((a) => ({ a, p: proj(a.x, 0, a.z || 0) })).filter((o) => o.p).sort((m, n) => n.p.rz - m.p.rz);
+    const subP = subs.map((a) => proj(a.x, 0, a.z || 0)).filter(Boolean), over = this.actors[sh.over];
+    for (const { a, p } of list) {
+      // nobody stands in front of the person the shot is about: anyone who would is faded out of it
+      let clear = 1;
+      if (!subs.includes(a) && a !== over) for (const sp of subP) if (p.rz < sp.rz - 4) { const w = p.k + sp.k; clear = Math.min(clear, Math.max(0, (Math.abs(p.x - sp.x) - 15 * w) / (3 * w))); }
+      if (clear <= 0.02) continue;
+      let anim = a.anim, frame = 0;
+      if (a.wlen) { anim = a.dashing ? 'jump' : 'walk'; frame = a.dashing ? 0.5 : (a.wt / 5) % 4; }
+      else if (a.zlen) { anim = 'walk'; frame = (a.zt / 5) % 4; }
+      else if (a.ylen) { anim = 'jump'; frame = 0.3; }
+      else if (anim === 'idle') frame = ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
+      else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((this.t + a.seed) / 16) % 2;
+      else frame = Math.min(1, (this.t - (a.at || 0)) / 8);
+      const jx = a.trembleT > 0 ? ((this.t >> 1) % 2 ? 0.8 : -0.8) : 0, bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0;
+      const face = cy >= 0 ? a.facing : -a.facing;
+      const alpha = clear * (a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1);
+      const tint = a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null;
+      ctx.save(); ctx.translate(p.x + jx, p.y);
+      ctx.globalAlpha = 0.35 * alpha; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 1, 15 * p.k, 3.5 * p.k, 0, 0, Math.PI * 2); ctx.fill();
+      const sz = p.k * (a.scale || 1);
+      if (k3 && k3.gloss && !a.y) { ctx.save(); ctx.globalAlpha = k3.gloss * alpha; ctx.scale(sz, -sz * 0.85); a.sprite.draw(ctx, anim, frame, 0, 0, face, tint); ctx.restore(); } // reflection
+      ctx.globalAlpha = alpha;
+      ctx.scale(sz, sz);
+      if ('filter' in ctx) { if (p.rz < Math.max(74, dist * 0.66)) ctx.filter = 'brightness(0.36)'; else if (p.rz > dist * 1.7) ctx.filter = 'brightness(0.72)'; } // someone close to the lens is a dark shape; far people fade
+      a.sprite.draw(ctx, anim, frame, 0, -a.y - bob, face, tint);
+      ctx.filter = 'none';
+      if (a.rift) RF.MOVE_FX.riftAura({ x: 0, y: a.y, body: a.def.body, state: 'idle' }, ctx, 0, this.t);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    for (const f of this.flies) {
+      const art = RF.PROJECTILE_ART[f.art], p = proj(f.x, f.y, 0);
+      if (art && p) { ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k); art(ctx, 0, 0, f.t, f.dir, { w: 14, h: 10, cfg: {} }, 0); ctx.restore(); }
+    }
+    for (const q of this.shards) { const p = proj(q.x, q.y, 0); if (p) { ctx.globalAlpha = Math.min(1, q.life / 30); ctx.fillStyle = q.c; ctx.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1, Math.round(2 * p.k)), Math.max(1, Math.round(2 * p.k))); } }
+    // dust in the air: it slides past as the camera moves, which is most of what sells the depth
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 26; i++) {
+      const p = proj((i * 97) % 520 - 70, 18 + (i * 53) % 130 + Math.sin(this.t / 40 + i) * 6, (i * 71) % 300 - 170);
+      if (p && p.rz < 700) { ctx.globalAlpha = Math.min(0.3, 30 / p.rz + 0.05); ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1); }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  };
+})();

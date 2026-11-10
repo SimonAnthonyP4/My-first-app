@@ -658,8 +658,9 @@ Character select is now 10 x 2.
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A generational, cinematic campaign: **24 chapters**, about 47 minutes
-of film, 440+ lines of dialogue and 4 fights. It spans three generations of the school.
+Main menu -> **STORY**. A generational, cinematic campaign you **play**: **24 chapters** across
+three generations of the school, 400+ spoken lines per playthrough, **20 quick-time moments**,
+**10 choices the story remembers**, 4 fights and **3 endings**.
 
 **The story.** The school bell was cast by the first graduating class in 1961, and every class
 since has signed the inside of it. On their last day it rings once - the last bell - and they
@@ -667,60 +668,98 @@ walk out the doors. Lopez Tuero's first class did that twelve years ago and neve
 In every universe he has checked, it ends the same way. So at midnight he tears the school
 open across every universe: a bell that never stops, so nobody ever has to say goodbye.
 
-| # | Chapter | When | What happens | Fight |
+| # | Chapter | When | What happens | You play |
 |---|---|---|---|---|
-| 0 | Midnight | now | the old class photo, the equation, the clock hits 12 | - |
-| 1 | The Day Before | 12 hours earlier | one last normal lunch at the corner table; Lopez watching | - |
-| 2 | Bro Batch | now | how Nicholas and Anthony met; Rift Chris; the universe where Chris bought Bro Batch | - |
-| 3 | Lockdown | now | Brady and Sirven on the radio; Sirven's secret last year | - |
+| 0 | Midnight | now | cold open, the clock hits 12, then the opening titles: every lead gets a freeze-frame card | - |
+| 1 | The Day Before | 12 hours earlier | one last normal lunch at the corner table; Lopez watching | choice |
+| 2 | Bro Batch | now | how Nicholas and Anthony met; Rift Chris; the universe where Chris bought Bro Batch | slip, jab, cross, uppercut; choice |
+| 3 | Lockdown | now | Brady and Sirven on the radio; Sirven's secret last year | STOP.; choice |
 | 4 | 1994 | 31 years ago | young Mr. Sirven's first day; Principal Ortega and the bell; a freshman named Brady | - |
-| 5 | Street Level | now | Bandy and Fernando vs his evil twin; "this school kept me" | - |
-| 6 | Game Day | now | Simon and Mikey; the scholarship | - |
-| 7 | The Throne | now | Rift Tamayo is sitting in the principal's chair | King Sirven vs Rift Tamayo |
+| 5 | Street Level | now | Bandy and Fernando vs his evil twin; "this school kept me" | board swing, flick it; timed choice |
+| 6 | Game Day | now | Simon and Mikey; the scholarship | duck, tackle, flying knee; choice |
+| 7 | The Throne | now | Rift Tamayo is sitting in the principal's chair | pull rank; **King Sirven vs Rift Tamayo** |
 | 8 | The Faculty Meeting | now | LOPEZ. TUERO. | - |
 | 9 | The Student Teacher | 12 years ago | young Lopez, the proof, the kids nobody else would tutor; "show your work" | - |
 | 10 | Every Universe | 12 years ago / now | his first class leaves and never comes back | - |
-| 11 | The Bell Tower | now | the signatures inside the bell; a class is fading; Ruano vs his fallen self | - |
-| 12 | Three Anchors | now | Wuttke's chord, Holbrook's map, Tyler's hole in one | - |
-| 13 | The Climb | now | anchor two | Alejandro vs Rift Lady Landa |
+| 11 | The Bell Tower | now | the signatures inside the bell; a class is fading; Ruano vs his fallen self | forgive him |
+| 12 | Three Anchors | now | Wuttke's chord, Holbrook's map, Tyler's swing | the swing |
+| 13 | The Climb | now | a free climb up the crag, 120 metres, no rope | reach, pull up; **Alejandro vs Rift Lady Landa** |
 | 14 | Ms. Brady's First Day | 8 years ago | thirty-two detentions; the walkie-talkie is a chain | - |
-| 15 | Show Your Work | now | "I was proud of you." "Then why did you never say it?" | Jauregui vs Lopez (1/3) |
-| 16 | Doomsday | now | the heroes go in and lose four of their own | - |
-| 17 | Folded | elsewhere | Anthony wakes in a universe that doesn't know him, and sits down with a stranger | - |
-| 18 | The Last One Out | night | rain; Sirven volunteers to hold the rift | - |
+| 15 | Show Your Work | now | "I was proud of you." "Then why did you never say it?" | jump; **Jauregui vs Lopez (1/3)**; timed choice |
+| 16 | Doomsday | now | the heroes go in and lose four of their own | dodge; reach him |
+| 17 | Folded | elsewhere | Anthony wakes in a universe that doesn't know him, and sits down with a stranger | choice |
+| 18 | The Last One Out | night | rain; Sirven volunteers to hold the rift | choice |
 | 19 | The Night Before | 2 AM | the roof, a phone call home, a song, Jauregui's letter, locking up one last time | - |
-| 20 | The Last Bell | now | you choose who goes in; Lopez takes Sirven's place | you vs **OMEGA LOPEZ** |
-| 21 | Graduation | 3 months later | Principal Brady; the last bell rings and it's okay | - |
+| 20 | The Last Bell | now | you choose who goes in (each of the 17 has their own line); someone has to hold the door | choice; **you vs OMEGA LOPEZ**; the handshake; **the ending** |
+| 21 | Graduation | 3 months later | a different graduation for each ending | caps up |
 | 22 | Twenty Years Later | 20 years later | everyone comes back; a new kid is alone at the corner table | - |
-| 23 | The Next Bell | 20 years later | the walkie-talkie changes hands again; the letter arrives; credits; post-credits | - |
+| 23 | The Next Bell | 20 years later | the walkie-talkie changes hands; credits; a different scene after the credits for each ending | - |
 
-**The 3D camera** (`draw3D` in story-scene.js): scenes can be shot in real perspective - a
-floor plane with a grid running to the horizon, the stage standing as a wall in space (drawn in
-perspective slices), and every character a billboard at their own depth (cast option `z`), so
-crowds stand in rows. The camera has a yaw, distance and height and moves through that space:
-`{ cam3d: [who, 'flyin' | 'orbit' | 'crane' | 'pullback' | 'truck' | 'low' | 'top'] }`.
+**Quick-time events** (`js/scenes/story-play.js`). The action scenes are played, with the
+controller's own symbols on screen (and the keyboard key under them):
 
-The story is data in `js/config/story.js` (the original 14 chapters) and
-`js/config/story-extra.js` (the 10 generational chapters, spliced in).
+- **Ring**: press the button as the ring closes on it - PERFECT / GOOD / MISS.
+- **Mash**: hammer the button to fill the bar before time runs out.
+- **Swing**: stop the sliding marker in the green (gold in the middle = PERFECT).
+
+A miss never fails the scene - it changes it (Anthony throws the protein bar that finishes the
+job; Tyler takes a mulligan; Mikey bounces off his own clone). Every prompt counts toward the
+chapter's **STYLE RANK** (S / A / B / C), shown when the chapter ends and saved on the chapter
+list, and good play before a fight starts it with **MOMENTUM** (super meter). One moment in
+chapter 16 cannot be won, and does not count. Story menu -> **ACTION PROMPTS: OFF** plays those
+moments for you.
+
+**Choices.** Ten moments stop and ask what a character says. They are saved, and come back
+later - a line in chapter 1 is answered in chapter 22; what Ms. Brady says in chapter 3 is
+what King Sirven quotes back in chapter 18; whether Jauregui manages to say it in chapter 15
+changes the letter he writes in chapter 19. Some are timed; saying nothing is an answer.
+
+**Three endings**, from the last choice in chapter 20 (someone has to hold the door):
+
+- **THE TEACHER** - Lopez holds it. The letter reaches him twenty years later.
+- **THE LAST ONE OUT** - King Sirven stays. His crown is all they find; Lopez serves his
+  detention teaching Room 314; Ms. Brady takes up the sign-off.
+- **THE EMPTY SEAT** - you hold it yourself, so nobody is lost. Unlocked once you have finished
+  the story; the graduation will not start one short.
+
+Chapters 21-23, the credits scene and the story menu's ENDINGS counter follow the ending.
+
+**The 3D camera** (`js/scenes/story-3d.js`): scenes are shot in real perspective - a textured
+floor laid out to the horizon, the stage standing as an animated wall in space (drawn in
+perspective slices, with a faint reflection on polished floors), every character a billboard at
+their own depth, dust hanging in the air. The camera has a yaw, a distance, a height, a focal
+length and a roll, and moves between two sets of those:
+`{ cam3d: [who, 'flyin' | 'orbit' | 'crane' | 'pullback' | 'truck' | 'low' | 'top' | 'push' |
+'spiral' | 'reveal' | 'whirl' | 'rise' | 'drop' | 'vertigo' | 'hero' | 'wide' | 'tilt'] }`,
+plus `'ots'` (over one character's shoulder at another) and `'two'` (both in frame). Anyone who
+would stand between the lens and the person the shot is about is faded out of it.
 
 **Cinematography** (`js/scenes/story-scene.js`): hard cuts between wide shots, medium shots,
-close-ups (background out of focus), extreme close-ups on the eyes, over-the-shoulder shots
-(the foreground shoulder dark and blurred), low angles that make villains loom, Dutch angles,
-two-shots and split-screen radio calls; full-screen insert shots (the school at night, the
-chalkboard equation writing itself, the clock hitting midnight, the ringing bell, the walkie-
-talkie, Holbrook's map, title cards); dissolves, whip pans, fades, slow push-ins and a subtle
-handheld sway; 2.35:1 letterbox with subtitles, vignette and film grain. Scripted action beats
-(dashes, impacts, a golf ball into a rift, shattering rift variants) without leaving the film.
+close-ups (background out of focus, always a single), extreme close-ups on the eyes,
+over-the-shoulder shots, low angles, Dutch angles, two-shots and split-screen radio calls;
+full-screen insert shots (the school at night, the chalkboard equation writing itself, the
+clock, the bell and its signatures, a handwritten letter, a crown on the gym floor, a bronze
+plaque, one empty chair, a 120-metre rock face); freeze-frame character cards; location stamps;
+dissolves, whip pans, fades and a handheld sway; colour grading, light shafts, a spotlight,
+slow motion, impact frames, rain, embers, confetti; 2.35:1 letterbox, vignette and film grain.
 
-**Audio**: every line is **spoken** (speech synthesis, each character with their own pitch;
-rift variants deeper and slower, Lopez slowest of all; turn off with the ANNOUNCER setting),
-plus ambient beds - the endlessly tolling bell, a rift drone, a heartbeat, a ticking clock,
-fluorescent hum, wind, crickets, a crowd, birds when it's over - and music that drops to
-silence for the big moments.
+**Audio**: every line is **spoken** (each character with their own voice; rift variants deeper
+and slower), over ambient beds - the tolling bell, a rift drone, a heartbeat, a clock, rain,
+wind, crickets, a crowd - and an original **soundtrack of 20 themes** played live by a small
+sequencer (`js/scenes/story-score.js`): the bell melody, the Bro Batch theme, King Sirven's
+march (and the same march played once, slowly, as a requiem), Lopez's circling melody (and its
+boss version), a graduation march, and cues for action, comedy, memory and grief.
 
-Lines play on their own like a film; CONFIRM hurries a line along; ESC / BLOCK skips the
-scene. Progress is saved; finished chapters can be replayed. The script is data in
-`js/config/story.js` (step reference at the top of story-scene.js).
+Lines play on their own like a film; CONFIRM hurries a line along; **hold ESC** skips a scene.
+Progress, choices, ranks and endings are saved; chapters can be replayed, and
+**NEW STORY (ERASE PROGRESS)** starts over (endings found stay found).
+
+**Editing the story.** The screenplay is data: `js/config/story.js` and `story-2.js` ...
+`story-6.js`, a list of steps per chapter such as `{ say: ['brady', 'STOP.'] }`,
+`{ cam3d: ['sirven', 'hero'] }`, `{ score: 'requiem' }`, `{ qte: {...}, hit: [...], miss: [...] }`,
+`{ choice: { id, options } }` and `{ if: when('brady', 'heart'), then: [...], else: [...] }`.
+The list of choices is at the top of `story.js`; the step reference is at the top of each
+engine file in `js/scenes/story-*.js`.
 
 ## Ms. Brady (the assistant principal)
 
