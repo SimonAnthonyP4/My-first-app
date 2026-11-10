@@ -77,7 +77,9 @@
   };
 
   // ---------------------------------------------------------------- voices
+  const voice = { speaking: false, endT: 0, clock: 0 };
   function speak(def, text, { radio = false } = {}) {
+    voice.speaking = false;
     if (!def || !RF.CONFIG.ANNOUNCER || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     if (RF.audio && (RF.audio.muted || !RF.audio.ctx)) return;
     try {
@@ -96,8 +98,10 @@
       if (radio) rate *= 1.08;
       u.pitch = Math.max(0.1, Math.min(2, pitch)); u.rate = rate;
       u.volume = Math.min(1, (RF.CONFIG.SFX_VOLUME || 0.8) * 1.25);
+      u.onend = u.onerror = () => { voice.speaking = false; voice.endT = voice.clock; };
+      voice.speaking = true;
       speechSynthesis.speak(u);
-    } catch (e) { /* speech not available: subtitles only */ }
+    } catch (e) { voice.speaking = false; }
   }
 
   // ---------------------------------------------------------------- ambient sound beds
@@ -132,15 +136,31 @@
       if (this.on.has('room')) noise('lowpass', 300, 0.05);
     },
     stop() { for (const n of this.nodes) { try { if (n.stop) n.stop(); n.disconnect(); } catch (e) { /* gone */ } } this.nodes = []; this.on = new Set(); },
+    score: null,
     // the rhythmic ones run off the frame clock
     tick(t) {
-      const A = RF.audio; if (!A || !A.ctx || !this.on.size) return;
+      const A = RF.audio; if (!A || !A.ctx) return;
+      const sc = this.score && SCORES[this.score];
+      if (sc && t % sc.beat === 0) {
+        const step = t / sc.beat, chord = sc.chords[Math.floor(step / 8) % sc.chords.length], i = step % 8, now = A.ctx.currentTime;
+        const hz = (n) => 440 * Math.pow(2, (n - 69) / 12), bus = A.master;
+        A.tone('triangle', hz(chord[i % 3] + (i >= 3 && i < 6 ? 12 : 0)), now, sc.beat / 60 * 2.5, 0.03, bus);
+        if (i === 0) { chord.forEach((n) => A.tone('sine', hz(n), now, sc.beat / 60 * 8, 0.016, bus)); A.tone('sine', hz(chord[0] - 12), now, sc.beat / 60 * 8, 0.045, bus); }
+        if (sc.mel && i % 4 === 2) A.tone('sine', hz(sc.mel[Math.floor(step / 4) % sc.mel.length]), now, sc.beat / 60 * 3.5, 0.03, bus);
+      }
+      if (!this.on.size) return;
       if (this.on.has('bell') && t % 170 === 0) A.sfx('bell');
-      if (this.on.has('heartbeat') && (t % 54 === 0 || t % 54 === 12)) A.tone('sine', t % 54 ? 48 : 58, A.ctx.currentTime, 0.14, 0.5, null, 30);
-      if (this.on.has('clock') && t % 30 === 0) A.tone('square', 2400, A.ctx.currentTime, 0.015, 0.08);
-      if (this.on.has('crickets') && t % 23 < 3 && t % 160 < 90) A.tone('sine', 4200 + (t % 7) * 60, A.ctx.currentTime, 0.03, 0.03);
+      if (this.on.has('heartbeat') && (t % 54 === 0 || t % 54 === 12)) A.tone('sine', t % 54 ? 48 : 58, A.ctx.currentTime, 0.14, 0.5, A.sfxBus, 30);
+      if (this.on.has('clock') && t % 30 === 0) A.tone('square', 2400, A.ctx.currentTime, 0.015, 0.08, A.sfxBus);
+      if (this.on.has('crickets') && t % 23 < 3 && t % 160 < 90) A.tone('sine', 4200 + (t % 7) * 60, A.ctx.currentTime, 0.03, 0.03, A.sfxBus);
       if (this.on.has('birds') && t % 140 === 0) A.sfx('birds');
     },
+  };
+  // sad = A minor (Am F C G), hope = C major (C G Am F), tense = two dark chords
+  const SCORES = {
+    sad: { beat: 26, chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], mel: [76, 74, 72, 71, 72, 69, 71, 67] },
+    hope: { beat: 22, chords: [[48, 52, 55], [55, 59, 62], [57, 60, 64], [53, 57, 60]], mel: [72, 74, 76, 79, 77, 76, 74, 76] },
+    tense: { beat: 34, chords: [[45, 48, 52], [46, 49, 53]] },
   };
   function setMusic(name) {
     const A = RF.audio; if (!A) return;
@@ -148,7 +168,7 @@
     if (A.musicBus && A.ctx) { A.musicBus.gain.cancelScheduledValues(A.ctx.currentTime); A.musicBus.gain.value = RF.CONFIG.MUSIC_VOLUME; }
     if (name) A.playSong(name);
   }
-  function leaveStory() { amb.stop(); setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
+  function leaveStory() { amb.stop(); amb.score = null; setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
 
   // ---------------------------------------------------------------- story menu
   class StoryMenuScene {
@@ -179,9 +199,10 @@
       drawRift(ctx, 320, 120, 1.6, this.t);
       T(ctx, 'STORY MODE', W / 2, 10, { align: 'center', color: '#c080ff', outline: '#000' });
       T(ctx, 'THE LAST BELL', W / 2, 20, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
-      const items = this.menu.items, y0 = 58;
+      const items = this.menu.items, y0 = 56, per = 13, start = Math.max(0, Math.min(items.length - per, this.menu.index - 6));
       items.forEach((it, i) => {
-        const sel = i === this.menu.index, y = y0 + i * 11;
+        if (i < start || i >= start + per) return;
+        const sel = i === this.menu.index, y = y0 + (i - start) * 11;
         if (sel) { ctx.fillStyle = 'rgba(160,80,255,0.35)'; ctx.fillRect(40, y - 2, 210, 11); }
         T(ctx, it.label, 48, y, { color: sel ? '#ffffff' : (it.desc === 'LOCKED' ? '#5a4a6a' : '#c8b0e0'), outline: '#000' });
       });
@@ -289,6 +310,19 @@
         T(ctx, n, x, y + 12, { align: 'center', color: '#3a1060', outline: '#e0d0b0' });
       });
     },
+    // a class photo: the whole school, in rows (o.sepia for an old one)
+    photo(ctx, t, o) {
+      R(ctx, '#2a2018', 0, 0, W, H); R(ctx, '#e8e0cc', 40, 34, W - 80, 156); R(ctx, o.sepia ? '#8a7258' : '#7a8aa0', 48, 42, W - 96, 128);
+      const ids = (o.ids || ['sirven', 'brady', 'jauregui', 'wuttke', 'landa', 'dabalsa', 'nicholas', 'anthony', 'simon', 'mikey', 'bandy', 'gabriel', 'fernando', 'tyler', 'alejandro', 'chris']).filter((id) => RF.getCharacter(id));
+      const row1 = ids.slice(0, 8), row2 = ids.slice(8);
+      ctx.save(); if (o.sepia && 'filter' in ctx) ctx.filter = 'sepia(0.85)';
+      [row2, row1].forEach((row, r) => row.forEach((id, i) => {
+        const d = RF.getCharacter(id), x = 72 + i * (240 / Math.max(1, row.length - 1)), y = r ? 166 : 140, k = 0.55;
+        ctx.save(); ctx.translate(x, y); ctx.scale(k, k); RF.createSprite(d).draw(ctx, 'idle', 0, 0, 0, 1); ctx.restore();
+      }));
+      ctx.restore(); ctx.filter = 'none';
+      T(ctx, o.text || 'TERRAMANIA HIGH', W / 2, 176, { align: 'center', color: '#3a2a1a' });
+    },
     // a black card with words
     card(ctx, t, o) {
       R(ctx, '#000', 0, 0, W, H);
@@ -347,7 +381,7 @@
           if (a) this.flies.push({ x: a.x + a.facing * 16, y: a.y + a.def.body.height * 0.55, from: a.x + a.facing * 16, to: s.fly[1], art: s.fly[2], len: s.fly[3] || 30, t: 0, dir: Math.sign(s.fly[1] - a.x) || 1 });
           RF.audio.sfx('whoosh');
         }
-        if (s.choose) { this.picks = RF.STORY.heroes.filter((id) => RF.getCharacter(id)); this.pick = 0; }
+        if (s.choose) { this.picks = (Array.isArray(s.choose) ? s.choose : RF.STORY.heroes).filter((id) => RF.getCharacter(id)); this.pick = 0; }
         if (s.credits) { this.creditY = H - 60; setMusic('menu'); amb.set(null); }
         return;
       }
@@ -383,11 +417,16 @@
           const id = this.resolve(v[0]); let def = RF.getCharacter(id); if (!def) continue;
           const o = v[3] || {};
           if (o.rift) def = RF.riftDef(def);
-          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
+          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
         }
         return true;
       }
       if (s.remove) { delete this.actors[s.remove]; return true; }
+      if (s.score !== undefined) { amb.score = s.score; return true; }
+      if (s.flashback !== undefined) { this.flashback = s.flashback; if (s.flashback) RF.audio.sfx('whoosh'); return true; }
+      if (s.weather !== undefined) { this.weather = s.weather; return true; }
+      if (s.fold) { const a = this.actor(s.fold); if (a) { a.foldT = 1; RF.audio.sfx('arcane'); } return true; }
+      if (s.appear) { const a = this.actor(s.appear); if (a) { a.appearT = 1; RF.audio.sfx('arcane'); this.flash = 4; } return true; }
       if (s.clear) { this.actors = {}; this.riftFx = null; this.shards = []; this.flies = []; this.insert = null; return true; }
       if (s.act) { const a = this.actor(s.act[0]); if (a) { a.anim = s.act[1]; a.at = this.t; } return true; }
       if (s.face) { const a = this.actor(s.face[0]); if (a) a.facing = s.face[1]; return true; }
@@ -448,7 +487,7 @@
 
     // ---- update ----
     update() {
-      this.t++; this.stepT++;
+      this.t++; this.stepT++; voice.clock = this.t;
       amb.tick(this.t);
       const kb = this.game.kb, s = this.cur, c = this.cam;
       if (this.fadeA > 0 && !(s && s.fade)) this.fadeA = Math.max(0, this.fadeA - 0.05);
@@ -460,7 +499,7 @@
       const k = Math.min(1, c.k); c.x += (c.tx - c.x) * k; c.y += (c.ty - c.y) * k; c.z += (c.tz - c.z) * k; c.rot += (c.trot - c.rot) * k;
       if (c.k < 1) c.k = Math.max(c.k, 0.02);
       if (this.riftFx) { this.riftFx.t++; if (this.riftFx.closing && (this.riftFx.closing += 0.05) > 2) this.riftFx = null; }
-      for (const p of this.shards) { p.x += p.vx; p.y += p.vy; p.vy -= 0.25; if (p.y < 0) { p.y = 0; p.vy *= -0.3; p.vx *= 0.7; } p.life--; }
+      for (const p of this.shards) { p.x += p.vx; p.y += p.vy; if (!p.float) p.vy -= 0.25; if (p.y < 0) { p.y = 0; p.vy *= -0.3; p.vx *= 0.7; } p.life--; }
       this.shards = this.shards.filter((p) => p.life > 0);
       for (const f of this.flies) { f.t++; f.x = f.from + (f.to - f.from) * Math.min(1, f.t / f.len); }
       this.flies = this.flies.filter((f) => f.t <= f.len);
@@ -469,7 +508,12 @@
         if (a.ylen) { a.yt++; const u = Math.min(1, a.yt / a.ylen); a.y = a.yFrom + (a.yTo - a.yFrom) * u; if (u >= 1) a.ylen = 0; }
         if (a.hopT) { a.hopT++; a.y = Math.max(0, Math.sin((a.hopT / 20) * Math.PI) * 16); if (a.hopT > 20) { a.hopT = 0; a.y = 0; } }
         if (a.hitT) a.hitT--;
+        if (a.foldT || (a.appearT && a.appearT < 50)) {
+          if (a.foldT) a.foldT++; else a.appearT++;
+          if (this.t % 2 === 0) this.shards.push({ x: a.x + (Math.random() - 0.5) * 26, y: a.y + Math.random() * a.def.body.height, vx: (Math.random() - 0.5) * 0.6, vy: 1.2 + Math.random(), c: PURPLE[(Math.random() * 4) | 0], life: 40, float: true });
+        }
       }
+      for (const [k, a] of Object.entries(this.actors)) if (a.foldT > 60) delete this.actors[k];
       if (RF.menuPressed(kb, 'back') && !(s && s.choose)) {
         if (!this.hero && this.steps.some((st) => st.choose)) this.hero = RF.STORY.heroes[0];
         this.i = this.steps.length; return this.finish();
@@ -477,11 +521,19 @@
       if (!s) return;
       const ok = RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
       if (s.say || s.narrate || s.title) {
-        this.typed += 1.4;
-        // lines play on their own like a film (confirm hurries them along)
-        const done = this.typed >= this.text.length, hold = 46 + this.text.length * 1.6;
+        this.typed += 1.1;
+        // Lines play on their own like a film: the next one waits until this one has been
+        // fully typed, fully SPOKEN, and there was time to read it. CONFIRM finishes the
+        // typing; a second press moves on.
+        const done = this.typed >= this.text.length;
+        const read = (s.title ? 150 : s.narrate ? 100 : 70) + this.text.length * 2.4;
+        const spoken = !voice.speaking && voice.clock - voice.endT > 20;
+        const stuck = this.stepT > 120 + this.text.length * 9; // a voice that never reports finishing
         if (ok && !done) this.typed = this.text.length;
-        else if (ok || (done && this.stepT > hold) || (auto && this.stepT > 6)) { const a = s.say && this.actor(s.say[0]); if (a) a.talk = false; this.next(); }
+        else if ((ok && done) || (done && this.stepT > read && (spoken || stuck)) || (auto && this.stepT > 6)) {
+          if (ok) try { speechSynthesis.cancel(); } catch (e) { /* ok */ }
+          const a = s.say && this.actor(s.say[0]); if (a) a.talk = false; this.next();
+        }
         return;
       }
       if (s.walk || s.dash) { const a = this.actor((s.walk || s.dash)[0]); if (!a || !a.wlen) this.next(); return; }
@@ -522,8 +574,9 @@
         else if (['special', 'heavy', 'light', 'uppercut', 'throw'].includes(anim)) frame = Math.min(1, (this.t - (a.at || 0)) / 8);
         const bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0;
         if (a.dashing) for (let i = 1; i <= 3; i++) { ctx.globalAlpha = 0.25 / i; a.sprite.draw(ctx, anim, frame, a.x - a.facing * i * 10, fy - a.y, a.facing); }
+        ctx.globalAlpha = a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1;
+        a.sprite.draw(ctx, anim, frame, a.x, fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null);
         ctx.globalAlpha = 1;
-        a.sprite.draw(ctx, anim, frame, a.x, fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : null);
         if (a.rift) RF.MOVE_FX.riftAura({ x: a.x, y: a.y, body: a.def.body, state: 'idle' }, ctx, fy, this.t);
       }
     }
@@ -601,6 +654,16 @@
         const u = this.trans.t / this.trans.len, a = Math.sin(u * Math.PI);
         for (let i = 0; i < 26; i++) { ctx.globalAlpha = 0.5 * a; R(ctx, i % 3 ? '#ffffff' : '#c0b0d0', ((i * 53 + this.trans.t * 60 * this.trans.dir) % (W + 80)) - 40, (i * 37) % H, 70, 1 + (i % 2)); }
         ctx.globalAlpha = 0.7 * a; R(ctx, '#000', 0, 0, W, H); ctx.globalAlpha = 1;
+      }
+      if (this.weather === 'rain') {
+        ctx.strokeStyle = 'rgba(170,190,230,0.45)';
+        for (let i = 0; i < 90; i++) { const x = (i * 83 + this.t * 3) % (W + 40) - 20, y = (i * 47 + this.t * 9) % H; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 9); ctx.stroke(); }
+        ctx.fillStyle = 'rgba(20,30,60,0.25)'; ctx.fillRect(0, 0, W, H);
+      }
+      if (this.flashback) { // an old memory: sepia, soft, scratched
+        ctx.save(); ctx.globalCompositeOperation = 'color'; ctx.fillStyle = '#a07848'; ctx.fillRect(0, 0, W, H); ctx.restore();
+        ctx.fillStyle = 'rgba(255,240,210,0.12)'; ctx.fillRect(0, 0, W, H);
+        for (let i = 0; i < 3; i++) R(ctx, 'rgba(255,255,240,0.25)', (this.t * 37 + i * 131) % W, 0, 1, H);
       }
       // film look: vignette, grain, flash
       const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);

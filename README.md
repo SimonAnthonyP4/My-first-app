@@ -658,25 +658,39 @@ Character select is now 10 x 2.
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A cinematic campaign - about 80% film, 20% fighting: 10 chapters, 600+
-scripted steps, 5 fights.
+Main menu -> **STORY**. A cinematic campaign in four acts - about 23 minutes of film and 5
+fights.
 
-At midnight Lopez Tuero finishes "the equation" and tears open a rift through every
-universe's Terramania High. The bell won't stop ringing, and purple **RIFT variants** of
-students and teachers pour out.
+**The story.** In every universe Lopez Tuero has seen, Terramania High ends the same way: a
+last bell, a last day, and everyone walks out the doors and forgets each other - just like his
+first class did, twelve years ago, when none of them came back. So at midnight he finishes his
+equation and tears the school open across every universe: a bell that never stops, so nobody
+ever has to say goodbye again. The rest is about what it actually means when the last bell
+rings.
 
-| # | Chapter | What happens | Fight |
-|---|---|---|---|
-| 0 | Midnight (cold open) | the school at night, Lopez's chalkboard, the clock hits 12, the bell, the rift | - |
-| 1 | Bro Batch | Nicholas and Anthony; Rift Chris tries to buy the company | Nicholas vs Rift Chris |
-| 2 | Lockdown | Ms. Brady and King Sirven on the radio (split screen); Brady STOPs Rift Bandy | - |
-| 3 | Street Level | Fernando meets his evil twin | Bandy vs Rift Fernando |
-| 4 | Game Day | Rift Mikey flattens Simon; the real Mikey tackles him | - |
-| 5 | The Faculty Meeting | the teachers work it out: LOPEZ. TUERO. Then: inside the rift | - |
-| 6 | Three Anchors | Wuttke hears the chord, Holbrook's map; Tyler holes out into anchor one | - |
-| 7 | The Climb | anchor two on the Crag | Alejandro vs Rift Lady Landa |
-| 8 | Show Your Work | anchor three in Room 314 | Jauregui vs Lopez (1/3) |
-| 9 | The Last Bell | the whole school at the rift, you pick the hero, Omega Lopez; the bell stops; Bro Batch party; credits; post-credits scene | you vs **OMEGA LOPEZ** |
+| Act | # | Chapter | What happens | Fight |
+|---|---|---|---|---|
+| I | 0 | Midnight | the old class photo, the equation, the clock hits 12, the rift | - |
+| I | 1 | Bro Batch | flashback: how Nicholas and Anthony met at the corner table | Nicholas vs Rift Chris |
+| I | 2 | Lockdown | Brady and Sirven on the radio; Brady STOPs Rift Bandy; Sirven's secret: his last year | - |
+| I | 3 | Street Level | Fernando: "every other school kicked me out. This one kept me." | Bandy vs Rift Fernando |
+| I | 4 | Game Day | Mikey's scholarship, three states away: "so why does it feel like losing?" | - |
+| II | 5 | The Faculty Meeting | LOPEZ. TUERO. Jauregui: he was my student teacher, the best I ever had | - |
+| II | 6 | Every Universe | flashback: Lopez's first class graduates and never comes back | - |
+| II | 7 | Three Anchors | Wuttke: "every song ends - that's what makes it a song"; Tyler's hole in one | - |
+| II | 8 | The Climb | Lady Landa admits she cares | Alejandro vs Rift Lady Landa |
+| II | 9 | Show Your Work | "I was proud of you." "Then why did you never say it?" | Jauregui vs Lopez (1/3) |
+| III | 10 | Doomsday | the heroes go in and lose: Gabriel, Bandy, Simon and Anthony are folded into other universes | - |
+| III | 11 | The Last One Out | rain; Fernando takes the empty seat; Sirven volunteers to hold the rift; "go get your friends back" | - |
+| IV | 12 | The Last Bell | you choose who goes in; Omega Lopez; the lost come back; Lopez takes Sirven's place | you vs **OMEGA LOPEZ** |
+| IV | 13 | Graduation | Principal Brady, Sirven's last announcement, the last bell - and this time it's okay; credits; post-credits | - |
+
+**Pacing**: every line waits until it has been typed, *spoken in full* and given time to read;
+CONFIRM finishes a line, a second press moves on, ESC / BLOCK skips the scene.
+
+**Score**: the game plays its own emotional music under the big scenes (a sad theme in A
+minor, a hopeful one in C major, a tense drone), plus flashbacks in sepia film, rain, and
+characters "folding" away into other universes in purple light.
 
 **Cinematography** (`js/scenes/story-scene.js`): hard cuts between wide shots, medium shots,
 close-ups (background out of focus), extreme close-ups on the eyes, over-the-shoulder shots
