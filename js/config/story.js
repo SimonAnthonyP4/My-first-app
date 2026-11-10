@@ -1,6 +1,7 @@
 // STORY MODE: "THE LAST BELL" - the screenplay. Four acts, fourteen chapters, five fights.
 // Engine + step reference: js/scenes/story-scene.js.
-// Shots: 'wide', ['medium', k], ['close', k], ['xcu', k], ['low', k], ['two', a, b], ['ots', over, at], ['split', a, b].
+// Shots (incl. 3D): ['orbit', k, speed] (the camera circles k), ['dolly', k] (vertigo zoom),
+// 'wide', ['medium', k], ['close', k], ['xcu', k], ['low', k], ['two', a, b], ['ots', over, at], ['split', a, b].
 // Extra steps used here: { score: 'sad' | 'hope' | 'tense' | null } (the game's own music),
 // { flashback: true | false }, { weather: 'rain' | null }, { fold: k } (pulled into another
 // universe), { appear: k } (brought back), cast option { ghost: true } (a figure in a memory).
@@ -39,6 +40,7 @@ RF.STORY = {
         { sfx: 'bell' }, { insert: 'bell' }, { shake: 10 }, { wait: 60 },
         { whip: true }, { shot: 'wide', dutch: 0.1 }, { act: ['lopez', 'special'] },
         { rift: [270, 1.4] }, { shake: 16 }, { amb: ['drone', 'bell'] }, { score: 'tense' }, { wait: 50 },
+        { shot: ['dolly', 'lopez'] }, { wait: 70 },
         { shot: ['low', 'lopez'], dutch: -0.08 },
         { say: ['lopez', 'ONE SCHOOL. EVERY UNIVERSE. A BELL THAT NEVER STOPS RINGING...'] },
         { say: ['lopez', '...SO THAT NOBODY EVER HAS TO SAY GOODBYE AGAIN.'] },
@@ -51,8 +53,7 @@ RF.STORY = {
     },
     // 1 ------------------------------------------------------------------ BRO BATCH
     {
-      title: 'BRO BATCH', sub: 'NICHOLAS VS RIFT CHRIS',
-      fight: { play: 'nicholas', vs: 'chris', stage: 'brobatch', cpu: 'easy', mid: 'MY DAD WILL HEAR ABOUT THIS! IN EVERY UNIVERSE!' },
+      title: 'BRO BATCH', sub: 'NICHOLAS AND ANTHONY',
       intro: [
         { bg: 'brobatch' }, { music: 'silence' }, { amb: ['room', 'bell'] },
         { cast: { anthony: ['anthony', 130, 1], nicholas: ['nicholas', 210, -1] } },
@@ -101,12 +102,39 @@ RF.STORY = {
         { shot: ['ots', 'rc', 'nicholas'] }, { act: ['nicholas', 'taunt'] },
         { say: ['nicholas', 'BRO BATCH. IS NOT. FOR SALE.'] },
         { music: 'nyc' }, { shot: ['xcu', 'nicholas'] }, { wait: 30 },
+        { shot: 'wide' }, { act: ['rc', 'special'] }, { fly: ['rc', 215, 'coin', 22] }, { impact: ['nicholas', 1] },
+        { shot: ['orbit', 'nicholas', 0.03] }, { wait: 60 },
+        { shot: 'wide' }, { dash: ['nicholas', 262, 8] }, { act: ['nicholas', 'light'] }, { impact: ['rc', 1] }, { wait: 8 }, { act: ['nicholas', 'heavy'] }, { impact: ['rc', 2] },
+        { shot: ['close', 'rc'] }, { wait: 16 },
+        { shot: ['low', 'nicholas'] }, { act: ['nicholas', 'uppercut'] }, { impact: ['rc', 3] }, { flash: 8 }, { shake: 16 },
+        { act: ['rc', 'dazed'] }, { act: ['nicholas', 'idle'] }, { wait: 40 },
       ],
       outro: [
         { bg: 'brobatch' }, { music: 'silence' }, { amb: ['room'] },
         { cast: { anthony: ['anthony', 110, 1], nicholas: ['nicholas', 180, 1], rc: ['chris', 260, -1, { rift: true, anim: 'dazed' }] } },
         { shot: ['close', 'rc'] },
         { say: ['rc', 'IN MY UNIVERSE... YOU TWO NEVER MET. DID YOU KNOW THAT?'] },
+        { shot: ['close', 'nicholas'] }, { wait: 30 },
+        { say: ['rc', 'LET ME SHOW YOU.'] },
+        { whip: true }, { clear: true }, { bg: 'brobatch' }, { tint: 'rgba(60,0,90,0.45)' }, { music: 'silence' }, { amb: ['drone'] }, { score: 'tense' },
+        { insert: 'card', text: 'ANOTHER UNIVERSE.', color: '#c080ff' }, { wait: 70 },
+        { cast: { rc2: ['chris', 192, 1, { rift: true, anim: 'victory' }] } }, { weather: 'cash' }, { sfx: 'cash' },
+        { shot: ['orbit', 'rc2', 0.02] },
+        { say: ['rc2', 'TWO NERDS AND A PROTEIN BAR? CUTE. I\'LL TAKE IT.'] },
+        { insert: 'deal' }, { sfx: 'scribble' }, { wait: 80 }, { sfx: 'stomp' }, { wait: 50 },
+        { say: ['rc2', 'DAD PAID. OBVIOUSLY.'] },
+        { insert: 'sign' }, { wait: 60 }, { sfx: 'clang' }, { wait: 90 },
+        { shot: ['low', 'rc2'] },
+        { say: ['rc2', 'CHRIS CORP. NO BARS. NO BROS. JUST ME.'] },
+        { narrate: 'IN THAT UNIVERSE, BRO BATCH LASTED ONE WEEK.' },
+        { weather: null }, { clear: true }, { bg: 'cafeteria' }, { tint: 'rgba(60,0,90,0.4)' }, { score: 'sad' }, { amb: ['crowd'] },
+        { cast: { lonely: ['nicholas', 230, -1, { rift: true }] } }, { shot: 'wide' },
+        { narrate: 'AND NOBODY EVER SAT AT THE CORNER TABLE.' },
+        { shot: ['dolly', 'lonely'] }, { wait: 110 },
+        { whip: true }, { clear: true }, { score: null }, { tint: null }, { bg: 'brobatch' }, { amb: ['room'] },
+        { cast: { anthony: ['anthony', 110, 1], nicholas: ['nicholas', 180, 1], rc: ['chris', 260, -1, { rift: true, anim: 'dazed' }] } },
+        { shot: ['close', 'nicholas'] }, { wait: 40 },
+        { say: ['nicholas', '...NO. NOT IN THIS ONE.'] },
         { shot: ['close', 'nicholas'] }, { wait: 30 },
         { shot: 'wide' }, { shatter: 'rc' }, { wait: 50 },
         { shot: ['medium', 'anthony'] }, { act: ['anthony', 'special'] },
@@ -190,8 +218,7 @@ RF.STORY = {
     },
     // 3 ------------------------------------------------------------------ STREET LEVEL
     {
-      title: 'STREET LEVEL', sub: 'BANDY VS RIFT FERNANDO',
-      fight: { play: 'bandy', vs: 'fernando', stage: 'parking', cpu: 'normal', mid: 'HEH HEH. YOU\'RE OKAY, KID. STILL GONNA LOSE.' },
+      title: 'STREET LEVEL', sub: 'BANDY AND FERNANDO',
       intro: [
         { bg: 'parking' }, { music: 'silence' }, { amb: ['wind', 'bell'] },
         { cast: { bandy: ['bandy', 70, 1], fernando: ['fernando', 300, -1] } },
@@ -221,6 +248,14 @@ RF.STORY = {
         { shot: ['two', 'bandy', 'rf'] },
         { say: ['bandy', 'THAT DOESN\'T EVEN WORK THERE.'] },
         { music: 'nyc' },
+        { shot: ['orbit', 'rf', 0.025] }, { wait: 60 },
+        { shot: 'wide' }, { dash: ['bandy', 318, 10] }, { act: ['bandy', 'heavy'] }, { impact: ['rf', 2] },
+        { shot: ['close', 'fernando'] },
+        { say: ['fernando', 'HEY, UGLY. CATCH.'] },
+        { shot: 'wide' }, { act: ['fernando', 'special'] }, { fly: ['fernando', 340, 'cigarette', 20] }, { impact: ['rf', 3] }, { flash: 6 },
+        { shot: ['low', 'bandy'] }, { act: ['bandy', 'victory'] },
+        { say: ['bandy', 'TURN IT UP!'] },
+        { act: ['rf', 'dazed'] }, { wait: 30 },
       ],
       outro: [
         { bg: 'parking' }, { music: 'silence' }, { amb: ['wind'] },
@@ -535,6 +570,7 @@ RF.STORY = {
         { narrate: 'INSIDE THE RIFT. EVERY UNIVERSE AT ONCE. TIME DOES NOT WORK HERE.' },
         { rift: [320, 2.4] }, { shake: 14 }, { score: 'tense' },
         { cast: { omega: ['lopez', 320, -1, { rift: true }] } },
+        { shot: ['orbit', 'omega', 0.018] }, { wait: 90 },
         { shot: ['low', 'omega'], dutch: -0.1 },
         { say: ['omega', 'YOU CAME TOGETHER. HOW TOUCHING.'] },
         { shot: ['close', 'omega'] },
@@ -648,6 +684,7 @@ RF.STORY = {
         { say: ['sirven', 'TODAY I WILL END IT DIFFERENTLY.'] }, { wait: 30 },
         { shot: ['xcu', 'sirven'] },
         { say: ['sirven', 'GO GET YOUR FRIENDS BACK.'] },
+        { shot: ['dolly', 'sirven'] }, { wait: 70 },
         { shot: ['close', 'mikey'] },
         { say: ['mikey', 'YOU HEARD THE MAN!'] },
         { shot: ['close', 'nicholas'] },
@@ -686,6 +723,7 @@ RF.STORY = {
         { cast: { '$hero': ['$hero', 110, 1], omega: ['lopez', 290, -1, { rift: true }] } },
         { shot: 'wide', dutch: 0.05 },
         { narrate: 'INSIDE THE RIFT. FOR THE LAST TIME.' },
+        { shot: ['orbit', '$hero', 0.02] }, { wait: 80 },
         { shot: ['xcu', 'omega'] }, { wait: 60 },
         { shot: ['low', 'omega'], dutch: -0.1 }, { score: 'tense' },
         { say: ['omega', 'YOU CAME BACK. EVERYONE ALWAYS LEAVES. WHY DO YOU KEEP COMING BACK?'] },
@@ -788,6 +826,7 @@ RF.STORY = {
         { say: ['anthony', 'WE WILL FIGURE IT OUT.'] },
         { shot: ['close', 'nicholas'] },
         { say: ['nicholas', 'WE ALWAYS DO.'] },
+        { shot: ['orbit', 'nicholas', 0.015] }, { wait: 100 },
         { insert: 'photo', text: 'CLASS OF TERRAMANIA' }, { wait: 150 },
         { say: ['nicholas', 'LIGHT WEIGHT, BABY.'] },
         { fade: ['out', 60] },

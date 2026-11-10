@@ -130,8 +130,8 @@
   }
   function speak(def, text, { radio = false, interrupt = true } = {}) {
     voice.speaking = false;
-    if (!def || !RF.CONFIG.ANNOUNCER || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
-    if (RF.audio && (RF.audio.muted || !RF.audio.ctx)) return;
+    if (!def || voice.mode === 'blip' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) { voice.mode = 'blip'; return; }
+    if (RF.audio && RF.audio.muted) return;
     try {
       if (interrupt) speechSynthesis.cancel();
       const clean = text.replace(/\.\.\./g, ', ').replace(/DR\./g, 'doctor').replace(/MS\./g, 'miz').replace(/MR\./g, 'mister').toLowerCase();
@@ -147,12 +147,30 @@
       if (radio) rate *= 1.06;
       u.pitch = Math.max(0.1, Math.min(2, pitch)); u.rate = Math.max(0.5, Math.min(1.6, rate));
       u.volume = Math.min(1, (RF.CONFIG.SFX_VOLUME || 0.8) * 1.25);
-      u.onend = u.onerror = () => { voice.speaking = false; voice.endT = voice.clock; };
+      u.onend = () => { voice.speaking = false; voice.endT = voice.clock; };
+      u.onerror = () => { voice.speaking = false; voice.endT = voice.clock; if (!voice.ok) voice.mode = 'blip'; }; // blocked: use the built-in voices
+      u.onstart = () => { voice.started = true; voice.ok = true; };
+      voice.started = false; voice.askedAt = voice.clock;
       voice.speaking = true;
       speechSynthesis.speak(u);
     } catch (e) { voice.speaking = false; }
   }
   RF.speakAs = speak; // fights use the same voices (taunts, mid-fight lines)
+  // Browsers only allow speech after a real tap / click / key press (a controller doesn't
+  // count). Unlock it on the first one; if it still never starts, fall back to blips.
+  const unlock = () => { try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) { /* none */ } };
+  ['pointerdown', 'keydown', 'touchend'].forEach((ev) => window.addEventListener(ev, unlock, { once: true }));
+  // Each character's synthesized "voice": short tones in their own pitch, timbre and rhythm,
+  // played as their line types out (used whenever real speech isn't available).
+  function blip(def) {
+    const A = RF.audio; if (!A || !A.ctx || A.muted) return;
+    const prof = VOICES[def.id] || { g: 'm', pitch: 1, rate: 1 };
+    let f = (prof.g === 'f' ? 300 : 135) * (0.55 + prof.pitch * 0.7);
+    let wave = prof.rate >= 1.12 ? 'square' : prof.pitch <= 0.6 ? 'sawtooth' : 'triangle';
+    if (def.rift) { f *= 0.7; wave = 'sawtooth'; }
+    f *= Math.pow(2, (Math.floor(Math.random() * 5) - 2) / 12);
+    A.tone(wave, f, A.ctx.currentTime, 0.06, wave === 'triangle' ? 0.09 : 0.045, A.sfxBus, f * 0.92);
+  }
   RF.VOICES = VOICES;
   try { if (window.speechSynthesis) speechSynthesis.addEventListener('voiceschanged', () => { for (const k in voiceCache) delete voiceCache[k]; voiceUse.clear(); }); } catch (e) { /* ok */ }
 
@@ -385,6 +403,33 @@
       ctx.restore(); ctx.filter = 'none';
       T(ctx, o.text || 'TERRAMANIA HIGH', W / 2, 176, { align: 'center', color: '#3a2a1a' });
     },
+    // a contract being signed: BRO BATCH, SOLD (Chris, in another universe)
+    deal(ctx, t) {
+      R(ctx, '#3a2414', 0, 0, W, H); R(ctx, '#4a2e1a', 0, 150, W, 74);
+      for (let i = 0; i < 5; i++) { R(ctx, '#111', 24 + i * 6, 112 - i * 9, 52, 10); R(ctx, '#7ab05a', 25 + i * 6, 113 - i * 9, 50, 8); R(ctx, '#4a7a34', 45 + i * 6, 115 - i * 9, 8, 4); } // stacks of cash
+      ctx.save(); ctx.translate(200, 112); ctx.rotate(-0.04);
+      R(ctx, '#111', -82, -86, 164, 176); R(ctx, '#f4f0e4', -80, -84, 160, 172);
+      T(ctx, 'PURCHASE AGREEMENT', 0, -76, { align: 'center', color: '#222' });
+      [['THE COMPANY KNOWN AS', -62], ['BRO BATCH', -50], ['IS HEREBY SOLD TO:', -26], ['PRICE: WHATEVER DAD SAYS', 30]].forEach(([l, y], i) => T(ctx, l, 0, y, { align: 'center', color: i === 1 ? '#a01818' : '#444', scale: i === 1 ? 2 : 1 }));
+      const sig = 'CHRIS', n = Math.min(sig.length, Math.max(0, Math.floor((t - 30) / 10)));
+      T(ctx, sig.slice(0, n), 0, -10, { scale: 2, align: 'center', color: '#1a2a8a' });
+      R(ctx, '#888', -60, 8, 120, 1);
+      if (t > 40 && t < 90) { R(ctx, '#111', -30 + n * 12, -20, 3, 22); R(ctx, '#d0a020', -30 + n * 12, -20, 3, 4); } // the pen
+      if (t > 95) { const k = Math.max(1, 3 - (t - 95) / 4); ctx.save(); ctx.translate(34, 58); ctx.rotate(-0.25); ctx.scale(k, k); ctx.strokeStyle = '#c01818'; ctx.lineWidth = 2; ctx.strokeRect(-34, -12, 68, 24); T(ctx, 'SOLD', 0, -7, { scale: 2, align: 'center', color: '#c01818' }); ctx.restore(); }
+      ctx.restore();
+    },
+    // the storefront sign: BRO BATCH comes down, CHRIS CORP goes up
+    sign(ctx, t) {
+      R(ctx, '#2a1a24', 0, 0, W, H);
+      for (let y = 0; y < H; y += 10) for (let x = (y / 10) % 2 ? 0 : 14; x < W; x += 28) R(ctx, '#3a2430', x, y, 27, 9);
+      const drop = t < 50 ? 0 : Math.min(200, (t - 50) * (t - 50) * 0.12), tilt = t < 50 ? 0 : Math.min(0.9, (t - 50) * 0.02);
+      ctx.save(); ctx.translate(192, 80 + drop); ctx.rotate(tilt);
+      R(ctx, '#111', -110, -24, 220, 48); R(ctx, '#e8b420', -106, -20, 212, 40);
+      T(ctx, 'BRO BATCH', 0, -10, { scale: 3, align: 'center', color: '#1a1a22' }); ctx.restore();
+      if (t > 80) { const y = Math.min(80, -60 + (t - 80) * 4);
+        R(ctx, '#111', 82, y - 24, 220, 48); R(ctx, '#3a0a5a', 86, y - 20, 212, 40);
+        T(ctx, 'CHRIS CORP', 192, y - 10, { scale: 3, align: 'center', color: ['#fff6b0', '#ffd040', '#c08010'] }); }
+    },
     // a black card with words
     card(ctx, t, o) {
       R(ctx, '#000', 0, 0, W, H);
@@ -451,7 +496,7 @@
 
     setShot(spec, dutch = 0) {
       const sh = Array.isArray(spec) ? spec : [spec];
-      this.shot = { type: sh[0], a: sh[1] && this.resolve(sh[1]), b: sh[2] && this.resolve(sh[2]), dutch };
+      this.shot = { type: sh[0], a: sh[1] && this.resolve(sh[1]), b: sh[2] && this.resolve(sh[2]), dutch, t0: this.t, speed: typeof sh[2] === 'number' ? sh[2] : 0.012 };
       this.insert = null;
       this.frameShot(true);
     }
@@ -583,12 +628,19 @@
       if (!s) return;
       const ok = RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
       if (s.say || s.narrate || s.title) {
-        this.typed += 1.1;
+        const before = this.typed | 0;
+        this.typed += 0.75;
+        if (voice.speaking && !voice.started && voice.clock - voice.askedAt > 50 && !voice.ok) { voice.mode = 'blip'; voice.speaking = false; try { speechSynthesis.cancel(); } catch (e) { /* ok */ } }
+        if (s.say && voice.mode === 'blip' && (this.typed | 0) !== before && before < this.text.length) {
+          const ch = this.text[before], def = (this.actor(s.say[0]) || {}).def || RF.getCharacter(this.resolve(s.say[0]));
+          const every = Math.round(3 / ((VOICES[def && def.id] || {}).rate || 1));
+          if (def && /[A-Z0-9]/.test(ch) && before % Math.max(2, every) === 0) blip(def);
+        }
         // Lines play on their own like a film: the next one waits until this one has been
         // fully typed, fully SPOKEN, and there was time to read it. CONFIRM finishes the
         // typing; a second press moves on.
         const done = this.typed >= this.text.length;
-        const read = (s.title ? 150 : s.narrate ? 100 : 70) + this.text.length * 2.4;
+        const read = (s.title ? 190 : s.narrate ? 150 : 110) + this.text.length * 3.2;
         const spoken = !voice.speaking && voice.clock - voice.endT > 20;
         const stuck = this.stepT > 120 + this.text.length * 9; // a voice that never reports finishing
         if (ok && !done) this.typed = this.text.length;
@@ -601,7 +653,7 @@
       if (s.walk || s.dash) { const a = this.actor((s.walk || s.dash)[0]); if (!a || !a.wlen) this.next(); return; }
       if (s.rise) { const a = this.actor(s.rise[0]); if (!a || !a.ylen) this.next(); return; }
       if (s.fly) { if (!this.flies.length) { RF.audio.sfx('hit'); this.next(); } return; }
-      if (s.wait) { if (this.stepT >= s.wait || (auto && this.stepT > 4)) this.next(); return; }
+      if (s.wait) { if (this.stepT >= s.wait * 1.4 || (auto && this.stepT > 4)) this.next(); return; }
       if (s.fade) { const [dir, n] = s.fade; this.fadeA = dir === 'out' ? Math.min(1, this.stepT / (n || 30)) : Math.max(0, 1 - this.stepT / (n || 30)); if (this.stepT >= (n || 30)) this.next(); return; }
       if (s.choose) {
         if (RF.menuPressed(kb, 'left')) { this.pick = (this.pick + this.picks.length - 1) % this.picks.length; RF.audio.sfx('move'); }
@@ -690,6 +742,8 @@
           ctx.restore();
         });
         R(ctx, '#000', W / 2 - 1, 0, 3, H);
+      } else if ((sh.type === 'orbit' || sh.type === 'dolly') && this.actors[sh.a]) {
+        this.drawOrbit(ctx, sh, fy);
       } else if (sh.type === 'xcu' && this.actors[sh.a]) {
         const a = this.actors[sh.a], band = 64, top = H / 2 - band / 2, s7 = 5;
         R(ctx, '#000', 0, 0, W, H);
@@ -717,6 +771,13 @@
         for (let i = 0; i < 26; i++) { ctx.globalAlpha = 0.5 * a; R(ctx, i % 3 ? '#ffffff' : '#c0b0d0', ((i * 53 + this.trans.t * 60 * this.trans.dir) % (W + 80)) - 40, (i * 37) % H, 70, 1 + (i % 2)); }
         ctx.globalAlpha = 0.7 * a; R(ctx, '#000', 0, 0, W, H); ctx.globalAlpha = 1;
       }
+      if (this.weather === 'cash') { // money raining down
+        for (let i = 0; i < 40; i++) {
+          const x = (i * 97 + Math.sin((this.t + i * 13) / 9) * 12) % W, y = (i * 61 + this.t * (1.2 + (i % 4) * 0.3)) % (H + 20) - 10;
+          ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin((this.t + i * 7) / 6) * 0.8);
+          R(ctx, '#111', -5, -3, 10, 6); R(ctx, '#7ab05a', -4, -2, 8, 4); R(ctx, '#4a7a34', -1, -1, 2, 2); ctx.restore();
+        }
+      }
       if (this.weather === 'rain') {
         ctx.strokeStyle = 'rgba(170,190,230,0.45)';
         for (let i = 0; i < 90; i++) { const x = (i * 83 + this.t * 3) % (W + 40) - 20, y = (i * 47 + this.t * 9) % H; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 9); ctx.stroke(); }
@@ -740,6 +801,41 @@
       if (s && s.title) this.drawTitle(ctx, s.title);
       if (s && s.choose) this.drawChooser(ctx);
       if (this.fadeA > 0) { ctx.fillStyle = `rgba(0,0,0,${this.fadeA})`; ctx.fillRect(0, 0, W, H); }
+    }
+
+    // 3D moments. ORBIT: the camera circles the subject - everyone around them swings through
+    // depth (nearer = bigger and lower, farther = smaller and behind), the subject turns, and the
+    // background slides past in parallax. DOLLY: the "vertigo" shot - the subject stays the same
+    // size while the world behind them stretches away.
+    drawOrbit(ctx, sh, fy) {
+      const A = this.actors[sh.a], u = this.t - sh.t0, th = sh.type === 'orbit' ? u * sh.speed : 0;
+      const dz = sh.type === 'dolly' ? 1 + Math.min(1, u / 150) * 1.1 : 1.45;
+      ctx.save();
+      ctx.translate(W / 2, H / 2); ctx.scale(dz, dz); ctx.translate(-A.x - Math.sin(th) * 70, -(fy - 70));
+      if ('filter' in ctx) ctx.filter = 'blur(1.5px) brightness(0.8)';
+      if (this.stage) this.stage.draw(ctx, this.t); else { ctx.fillStyle = '#05000a'; ctx.fillRect(-W, -H, W * 3, H * 3); }
+      ctx.filter = 'none';
+      if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-W, -H, W * 3, H * 3); }
+      if (this.riftFx) drawRift(ctx, this.riftFx.x, fy - 50 * this.riftFx.size, this.riftFx.size, this.t);
+      ctx.restore();
+      const list = Object.values(this.actors).filter((a) => !a.stage && (sh.type === 'orbit' || a === A)).map((a) => {
+        const dx = a.x - A.x, r = Math.min(110, Math.abs(dx)), ang = (dx >= 0 ? 0 : Math.PI) + th;
+        const depth = a === A ? 0 : Math.sin(ang);
+        return { a, sx: W / 2 + Math.cos(ang) * r * 1.5, depth, k: 2 + depth * 0.45 };
+      }).sort((p, q) => p.depth - q.depth);
+      const ground = H / 2 + 74;
+      for (const o of list) {
+        const a = o.a, turn = a === A ? Math.cos(th) : 1, k = o.k * (sh.type === 'dolly' ? 1.05 : 1);
+        ctx.save(); ctx.translate(o.sx, ground + o.depth * 14);
+        ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 1, 14 * k, 3 * k, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.scale(k * Math.max(0.12, Math.abs(turn)), k);
+        if (o.depth < -0.3 && 'filter' in ctx) ctx.filter = 'brightness(0.55)';
+        const anim = a.anim === 'idle' ? 'idle' : a.anim, frame = anim === 'idle' ? ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2) : 1;
+        a.sprite.draw(ctx, anim, frame, 0, -a.y, turn < 0 ? -a.facing : a.facing);
+        ctx.filter = 'none'; ctx.restore();
+        if (a.rift) { ctx.save(); ctx.translate(o.sx, ground); ctx.scale(k, k); RF.MOVE_FX.riftAura({ x: 0, y: a.y, body: a.def.body, state: 'idle' }, ctx, 0, this.t); ctx.restore(); }
+      }
+      if (sh.type === 'dolly') { const g = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, W * 0.6); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(20,0,40,0.6)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
     }
 
     drawSubtitle(ctx, s) {

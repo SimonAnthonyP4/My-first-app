@@ -658,8 +658,9 @@ Character select is now 10 x 2.
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A cinematic campaign in four acts - about 23 minutes of film and 5
-fights.
+Main menu -> **STORY**. A cinematic campaign in four acts - about 30 minutes of film and only 3
+fights (The Climb, Show Your Work and the finale); everything else is scenes and scripted
+action.
 
 **The story.** In every universe Lopez Tuero has seen, Terramania High ends the same way: a
 last bell, a last day, and everyone walks out the doors and forgets each other - just like his
@@ -671,9 +672,9 @@ rings.
 | Act | # | Chapter | What happens | Fight |
 |---|---|---|---|---|
 | I | 0 | Midnight | the old class photo, the equation, the clock hits 12, the rift | - |
-| I | 1 | Bro Batch | flashback: how Nicholas and Anthony met at the corner table | Nicholas vs Rift Chris |
+| I | 1 | Bro Batch | flashback: how Nicholas and Anthony met; Nicholas takes down Rift Chris; ANOTHER UNIVERSE: Chris buys Bro Batch (the contract, SOLD, the CHRIS CORP sign, money raining) and Nicholas eats alone forever | - |
 | I | 2 | Lockdown | Brady and Sirven on the radio; Brady STOPs Rift Bandy; Sirven's secret: his last year | - |
-| I | 3 | Street Level | Fernando: "every other school kicked me out. This one kept me." | Bandy vs Rift Fernando |
+| I | 3 | Street Level | Bandy and Fernando tag-team his evil twin; "every other school kicked me out. This one kept me." | - |
 | I | 4 | Game Day | Mikey's scholarship, three states away: "so why does it feel like losing?" | - |
 | II | 5 | The Faculty Meeting | LOPEZ. TUERO. Jauregui: he was my student teacher, the best I ever had | - |
 | II | 6 | Every Universe | flashback: Lopez's first class graduates and never comes back | - |
@@ -695,6 +696,16 @@ same voices. Rift variants speak deeper and slower.
 
 **New Story**: the STORY menu has NEW STORY (ERASE PROGRESS) once you've started - press it
 twice to wipe your progress and start again from the cold open.
+
+**3D moments**: ORBIT shots - the camera circles a character, everyone around them swings
+through depth (nearer = bigger), the subject turns, the background slides past in parallax -
+and VERTIGO dolly zooms, at the big beats (the rift opening, Omega Lopez, Sirven's speech,
+graduation).
+
+**Voices that always work**: browsers only allow speech after a tap / click / key press (a
+controller press doesn't count), and some block it entirely. Speech is unlocked on your first
+tap or key; if the browser still won't speak, every character talks in their own built-in
+synthesized voice (their pitch, timbre and rhythm) as their line types out.
 
 **Pacing**: every line waits until it has been typed, *spoken in full* and given time to read;
 CONFIRM finishes a line, a second press moves on, ESC / BLOCK skips the scene.
