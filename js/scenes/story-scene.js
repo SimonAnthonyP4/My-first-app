@@ -78,31 +78,83 @@
 
   // ---------------------------------------------------------------- voices
   const voice = { speaking: false, endT: 0, clock: 0 };
-  function speak(def, text, { radio = false } = {}) {
+  // Every character has their own voice: male or female, an accent, a pitch and a pace that fit
+  // who they are. g = gender of the voice, lang = preferred accent, pitch 0..2, rate ~0.6..1.4.
+  const VOICES = {
+    sirven:      { g: 'm', lang: 'en-GB', pitch: 0.55, rate: 0.82 },  // the King: slow, deep, regal
+    brady:       { g: 'f', lang: 'en-US', pitch: 0.95, rate: 0.98 },  // firm, no-nonsense
+    landa:       { g: 'f', lang: 'en-GB', pitch: 0.7, rate: 0.85 },   // cold, menacing
+    lopez:       { g: 'm', lang: 'en-GB', pitch: 0.35, rate: 0.78 },  // the villain: slowest, deepest
+    anthony:     { g: 'm', lang: 'en-GB', pitch: 0.75, rate: 0.92 },  // the sorcerer: calm, wise
+    nicholas:    { g: 'm', lang: 'en-US', pitch: 1.15, rate: 1.12 },  // hyped gym bro
+    bandy:       { g: 'm', lang: 'en-US', pitch: 0.95, rate: 1.0 },   // laid-back skater cool
+    simon:       { g: 'm', lang: 'en-AU', pitch: 1.0, rate: 1.05 },   // focused fighter
+    mikey:       { g: 'm', lang: 'en-US', pitch: 0.5, rate: 0.95 },   // huge, booming
+    fernando:    { g: 'm', lang: 'en-US', pitch: 0.65, rate: 1.1 },   // raspy and unhinged
+    gabriel:     { g: 'm', lang: 'en-US', pitch: 1.3, rate: 1.25 },   // pure energy, 305
+    wuttke:      { g: 'm', lang: 'en-GB', pitch: 0.9, rate: 0.9 },    // the maestro: measured
+    tyler:       { g: 'm', lang: 'en-US', pitch: 0.85, rate: 0.82 },  // no stress, ever
+    alejandro:   { g: 'm', lang: 'es', pitch: 1.1, rate: 1.15 },      // fast, thrill-seeker
+    jauregui:    { g: 'm', lang: 'en-US', pitch: 0.8, rate: 0.9 },    // precise math teacher
+    escobedo:    { g: 'm', lang: 'es', pitch: 1.0, rate: 1.1 },       // DALE!
+    ruano:       { g: 'm', lang: 'es-ES', pitch: 1.05, rate: 0.95 },  // from Madrid, gentle
+    weissenberg: { g: 'm', lang: 'de', pitch: 0.85, rate: 0.95 },     // the scientist
+    dabalsa:     { g: 'm', lang: 'en-GB', pitch: 0.7, rate: 0.8 },    // the Shakespearean
+    chris:       { g: 'm', lang: 'en-GB', pitch: 1.2, rate: 1.0 },    // spoiled rich kid
+    tamayo:      { g: 'm', lang: 'en-US', pitch: 1.05, rate: 1.15 },  // cocky, quick
+    astuto:      { g: 'm', lang: 'en-US', pitch: 1.1, rate: 1.2 },    // still mad about the Constitution
+    holbrook:    { g: 'm', lang: 'en-AU', pitch: 0.9, rate: 0.95 },   // the geographer
+  };
+  const FEM_V = /female|samantha|victoria|zira|karen|moira|tessa|fiona|susan|serena|allison|\bava\b|kate|veena|hazel|heera|catherine|nicky|joanna|salli|kimberly|\bivy\b|emma|\bamy\b|aria|jenny|michelle|libby|sonia|natasha|clara|paulina|monica|helena|anna|google us english|google español$|marie|amelie|yuna|sara|elsa/i;
+  const MALE_V = /\bmale\b|daniel|\balex\b|fred|david|mark|rishi|aaron|arthur|gordon|\bguy\b|ryan|eric|christopher|george|james|\btom\b|oliver|\blee\b|matthew|ralph|bruce|junior|albert|jorge|diego|juan|carlos|pablo|thomas|stefan|markus|rocko|reed|eddy|grandpa/i;
+  const genderOf = (v) => (/\bfemale\b/i.test(v.name) ? 'f' : MALE_V.test(v.name) ? 'm' : FEM_V.test(v.name) ? 'f' : '?');
+  const hashId = (s) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+  const voiceCache = {}, voiceUse = new Map();
+  // Picks the browser voice for a character: right gender, preferred accent, and spread out so
+  // characters with similar profiles land on different voices.
+  function voiceFor(id, prof) {
+    if (voiceCache[id] !== undefined) return voiceCache[id];
+    const all = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+    if (!all.length) return null; // not loaded yet: try again next line
+    const g = prof.g, pick = (list) => (list.length ? list[hashId(id) % list.length] : null);
+    const english = all.filter((v) => /^en/i.test(v.lang));
+    const gendered = (list) => list.filter((v) => genderOf(v) === g);
+    const accent = all.filter((v) => v.lang.toLowerCase().startsWith(prof.lang.toLowerCase()));
+    // the first group that has any voices: right gender + accent, right gender, unknown, any English.
+    // Within it, take the voice the fewest characters already use, so everyone sounds different.
+    const group = [gendered(accent), gendered(english), english.filter((x) => genderOf(x) === '?'), english].find((l) => l.length) || [];
+    let v = null, best = Infinity;
+    group.forEach((c, i) => { const n = (voiceUse.get(c) || 0) * 100 + ((i + hashId(id)) % group.length); if (n < best) { best = n; v = c; } });
+    if (v) voiceUse.set(v, (voiceUse.get(v) || 0) + 1);
+    return (voiceCache[id] = v);
+  }
+  function speak(def, text, { radio = false, interrupt = true } = {}) {
     voice.speaking = false;
     if (!def || !RF.CONFIG.ANNOUNCER || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     if (RF.audio && (RF.audio.muted || !RF.audio.ctx)) return;
     try {
-      speechSynthesis.cancel();
-      const clean = text.replace(/\.\.\./g, ', ').replace(/DR\./g, 'doctor').replace(/MS\./g, 'miz').toLowerCase();
+      if (interrupt) speechSynthesis.cancel();
+      const clean = text.replace(/\.\.\./g, ', ').replace(/DR\./g, 'doctor').replace(/MS\./g, 'miz').replace(/MR\./g, 'mister').toLowerCase();
       if (!/[a-z]/.test(clean)) return;
       const u = new SpeechSynthesisUtterance(clean);
-      const id = (def.id || '').replace('rift', ''), voices = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
-      const fem = FEMALE.has(def.id);
-      const pick = voices.find((v) => (fem ? /female|samantha|victoria|zira|karen|moira|tessa|fiona|susan/i : /male|daniel|alex|fred|david|mark|rishi|aaron/i).test(v.name) && !(fem ? false : /female/i.test(v.name)));
-      if (pick) u.voice = pick;
-      let pitch = def.voicePitch != null ? def.voicePitch : 0.9, rate = 1.0;
-      if (fem && !pick) pitch = Math.max(pitch, 1.35);
-      if (id === 'lopez') { pitch = 0.4; rate = 0.82; }
-      if (def.rift) { pitch *= 0.6; rate *= 0.88; }
-      if (radio) rate *= 1.08;
-      u.pitch = Math.max(0.1, Math.min(2, pitch)); u.rate = rate;
+      const id = def.id, prof = VOICES[id] || { g: 'm', lang: 'en-US', pitch: def.voicePitch || 1, rate: 1 };
+      const v = voiceFor(id, prof);
+      if (v) { u.voice = v; u.lang = v.lang; }
+      let pitch = prof.pitch, rate = prof.rate;
+      // only one voice on this device? keep girls and boys apart with pitch alone
+      if (!v || genderOf(v) !== prof.g) pitch = prof.g === 'f' ? Math.max(pitch + 0.45, 1.35) : Math.min(pitch, 0.95);
+      if (def.rift) { pitch *= 0.62; rate *= 0.88; }                  // rift variants: deeper, slower, wrong
+      if (radio) rate *= 1.06;
+      u.pitch = Math.max(0.1, Math.min(2, pitch)); u.rate = Math.max(0.5, Math.min(1.6, rate));
       u.volume = Math.min(1, (RF.CONFIG.SFX_VOLUME || 0.8) * 1.25);
       u.onend = u.onerror = () => { voice.speaking = false; voice.endT = voice.clock; };
       voice.speaking = true;
       speechSynthesis.speak(u);
     } catch (e) { voice.speaking = false; }
   }
+  RF.speakAs = speak; // fights use the same voices (taunts, mid-fight lines)
+  RF.VOICES = VOICES;
+  try { if (window.speechSynthesis) speechSynthesis.addEventListener('voiceschanged', () => { for (const k in voiceCache) delete voiceCache[k]; voiceUse.clear(); }); } catch (e) { /* ok */ }
 
   // ---------------------------------------------------------------- ambient sound beds
   const amb = {
@@ -179,6 +231,14 @@
       const items = [];
       const next = Math.min(prog.reached, chs.length - 1);
       items.push({ label: prog.reached ? 'CONTINUE: ' + chs[next].title : 'NEW STORY', desc: chs[next].sub, onSelect: () => game.setScene(new StoryScene(game, next, 'intro')) });
+      if (prog.reached || prog.done) {
+        const reset = { label: 'NEW STORY (ERASE PROGRESS)', desc: 'START OVER FROM THE VERY BEGINNING', onSelect: () => {
+          if (!reset.armed) { reset.armed = true; reset.label = 'ARE YOU SURE? PRESS AGAIN'; reset.desc = 'ALL STORY PROGRESS WILL BE ERASED'; RF.audio.sfx('block'); return; }
+          RF.storyProgress.save({ reached: 0, done: false });
+          game.setScene(new StoryScene(game, 0, 'intro'));
+        } };
+        items.push(reset);
+      }
       chs.forEach((c, i) => {
         if (i === 0) return;
         const open = i <= prog.reached;
@@ -192,6 +252,8 @@
       this.t++;
       if (RF.menuPressed(this.game.kb, 'back')) return this.game.setScene(new RF.TitleScene(this.game));
       this.menu.update(this.game.kb);
+      const armed = this.menu.items.find((it) => it.armed); // moved away from the reset: disarm it
+      if (armed && this.menu.items[this.menu.index] !== armed) { armed.armed = false; armed.label = 'NEW STORY (ERASE PROGRESS)'; armed.desc = 'START OVER FROM THE VERY BEGINNING'; }
     }
     render(ctx) {
       this.stage.draw(ctx, this.t);

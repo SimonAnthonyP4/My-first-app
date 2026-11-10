@@ -685,6 +685,17 @@ rings.
 | IV | 12 | The Last Bell | you choose who goes in; Omega Lopez; the lost come back; Lopez takes Sirven's place | you vs **OMEGA LOPEZ** |
 | IV | 13 | Graduation | Principal Brady, Sirven's last announcement, the last bell - and this time it's okay; credits; post-credits | - |
 
+**Voices**: every character has their own voice profile (`VOICES` in story-scene.js): a male or
+female voice, an accent and a pitch/pace that fit them - King Sirven slow, deep and British,
+Lopez the slowest and deepest of all, Gabriel fast and hyped, Tyler unhurried, Ruano and
+Escobedo with Spanish accents, Dr. Weissenberg German, Ms. Brady and Lady Landa female voices.
+Each character gets the least-used fitting voice on the device, so they sound different from
+each other; on a device with only one voice, pitch keeps them apart. Fighters' taunts use the
+same voices. Rift variants speak deeper and slower.
+
+**New Story**: the STORY menu has NEW STORY (ERASE PROGRESS) once you've started - press it
+twice to wipe your progress and start again from the cold open.
+
 **Pacing**: every line waits until it has been typed, *spoken in full* and given time to read;
 CONFIRM finishes a line, a second press moves on, ESC / BLOCK skips the scene.
 

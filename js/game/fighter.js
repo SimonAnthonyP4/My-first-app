@@ -381,7 +381,8 @@
       const line = rival || (pool ? pool[Math.floor(Math.random() * pool.length)] : this.def.taunt || 'COME ON!');
       if (jokes) { RF.audio.sfx('laugh'); this.scene && this.scene.effects.spawnText('HA HA HA!', this.x, this.body.height + 26, '#ff9a40'); }
       if (this.scene) this.scene.effects.spawnText(line, this.x, this.body.height + 14, '#ffffff');
-      if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
+      if (RF.speakAs) RF.speakAs(this.def, line, { interrupt: false }); // each fighter's own voice (story-scene.js)
+      else if (RF.announcer) RF.announcer.say(line, { interrupt: false, rate: 1.05, pitch: this.def.voicePitch || 0.9 });
     }
 
     // Double-tap forward/back to dash. Remembers when each direction was last pressed.
