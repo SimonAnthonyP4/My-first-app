@@ -176,6 +176,7 @@
         return;
       }
       if (this.hitstop > 0) { this.hitstop--; return; }
+      if (this.opts.story && RF.storyTick) RF.storyTick(this);
 
       switch (this.phase) {
         case 'entrance': {
@@ -255,6 +256,7 @@
             if (this.wins.some((n) => n >= this.roundsToWin)) {
               this.recordMatch();
               if (this.opts.arcade) this.endMenu = this.arcadeMenu();
+              if (this.opts.story) this.endMenu = RF.storyEndMenu(this, this.wins[0] > this.wins[1]);
               if (this.opts.survival) this.endMenu = this.survivalMenu();
               if (this.opts.tournament) this.endMenu = new RF.ListMenu([{ label: 'BACK TO THE BRACKET', onSelect: () => RF.tournamentResult(this.game, this.opts.tournament, this.wins[0] > this.wins[1]) }]);
               this.setPhase('matchOver');

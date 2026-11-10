@@ -656,6 +656,42 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Story Mode: THE LAST BELL
+
+Main menu -> **STORY**. A cinematic campaign: a prologue, 10 chapters and an ending.
+
+At midnight Lopez Tuero finishes "the equation" and tears open a rift through every
+universe's Terramania High. The bell won't stop ringing, and purple **RIFT variants** of
+students and teachers pour out. Each chapter you play a different hero against one:
+
+| # | Chapter | You | vs | Stage |
+|---|---|---|---|---|
+| 0 | Prologue | (cutscene) | | Haunted Court |
+| 1 | Bro Batch | Nicholas | Rift Chris | Bro Batch HQ |
+| 2 | The Hall Monitor | Ms. Brady | Rift Bandy | Main Hallway |
+| 3 | Street Level | Bandy | Rift Fernando | Parking Lot |
+| 4 | Game Day | Simon | Rift Mikey | Football Field |
+| 5 | The Faculty Meeting | King Sirven | Rift Tamayo | Principal's Office |
+| 6 | Sound Check | Gabriel | Rift Wuttke | Music Room |
+| 7 | The Climb | Alejandro | Rift Lady Landa | The Crag |
+| 8 | The Back Nine | Tyler | Rift Holbrook | Golf Course |
+| 9 | Show Your Work | Jauregui | Lopez (1/3) | Haunted Court |
+| 10 | The Last Bell | **you choose** | **OMEGA LOPEZ** (boss) | Inside the rift |
+
+Then the ending at Bro Batch HQ and a full credits roll with the whole cast.
+
+- **Cinematics**: letterbox bars, a dialogue box with a typed-out line and the speaker's
+  portrait (radio calls crackle), captions, chapter title cards, camera pans and zooms, rift
+  portals opening and collapsing, rift variants shattering into purple glass, shakes,
+  flashes, fades and tints. ESC (or BLOCK) skips a cutscene; CONFIRM fills / advances a line.
+- **Fights**: normal matches (entrances, fatalities and all) against rift variants - purple
+  palette and rising wisps. The villain shouts a line at half health. Difficulty ramps from
+  easy to hard; Omega Lopez has 60% more health.
+- **Progress** is saved in the browser: CONTINUE picks up where you left off, and finished
+  chapters can be replayed from the STORY menu.
+- Code: the engine is `js/scenes/story-scene.js` (step list documented at the top), the
+  script is `js/config/story.js` - adding a chapter is just adding data.
+
 ## Ms. Brady (the assistant principal)
 
 Strict, demanding, and King Sirven's right hand. Home stage: **The Main Hallway** (lockers,

@@ -1003,6 +1003,7 @@
         ctx.restore();
       } else this.drawBody(ctx, anim, frame, x, floorY - this.y, this.flash > 1 ? 'white' : null);
       if (aura) aura(this, ctx, floorY, this.scene ? this.scene.frame : 0, 'front');
+      if (this.def.rift && RF.MOVE_FX.riftAura) RF.MOVE_FX.riftAura(this, ctx, floorY, this.scene ? this.scene.frame : 0); // story mode: a rift variant
       const t = this.scene ? this.scene.frame : 0;
       if (this.state === 'attack' && this.move.fx) RF.MOVE_FX[this.move.fx](this, ctx, floorY, t);
       if ((this.state === 'block' || this.state === 'blockstun') && this.def.blockFx) RF.BLOCK_FX[this.def.blockFx](this, ctx, floorY, t);
