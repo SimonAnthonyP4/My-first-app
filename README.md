@@ -658,39 +658,44 @@ Character select is now 10 x 2.
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A cinematic campaign: a prologue, 10 chapters and an ending.
+Main menu -> **STORY**. A cinematic campaign - about 80% film, 20% fighting: 10 chapters, 600+
+scripted steps, 5 fights.
 
 At midnight Lopez Tuero finishes "the equation" and tears open a rift through every
 universe's Terramania High. The bell won't stop ringing, and purple **RIFT variants** of
-students and teachers pour out. Each chapter you play a different hero against one:
+students and teachers pour out.
 
-| # | Chapter | You | vs | Stage |
-|---|---|---|---|---|
-| 0 | Prologue | (cutscene) | | Haunted Court |
-| 1 | Bro Batch | Nicholas | Rift Chris | Bro Batch HQ |
-| 2 | The Hall Monitor | Ms. Brady | Rift Bandy | Main Hallway |
-| 3 | Street Level | Bandy | Rift Fernando | Parking Lot |
-| 4 | Game Day | Simon | Rift Mikey | Football Field |
-| 5 | The Faculty Meeting | King Sirven | Rift Tamayo | Principal's Office |
-| 6 | Sound Check | Gabriel | Rift Wuttke | Music Room |
-| 7 | The Climb | Alejandro | Rift Lady Landa | The Crag |
-| 8 | The Back Nine | Tyler | Rift Holbrook | Golf Course |
-| 9 | Show Your Work | Jauregui | Lopez (1/3) | Haunted Court |
-| 10 | The Last Bell | **you choose** | **OMEGA LOPEZ** (boss) | Inside the rift |
+| # | Chapter | What happens | Fight |
+|---|---|---|---|
+| 0 | Midnight (cold open) | the school at night, Lopez's chalkboard, the clock hits 12, the bell, the rift | - |
+| 1 | Bro Batch | Nicholas and Anthony; Rift Chris tries to buy the company | Nicholas vs Rift Chris |
+| 2 | Lockdown | Ms. Brady and King Sirven on the radio (split screen); Brady STOPs Rift Bandy | - |
+| 3 | Street Level | Fernando meets his evil twin | Bandy vs Rift Fernando |
+| 4 | Game Day | Rift Mikey flattens Simon; the real Mikey tackles him | - |
+| 5 | The Faculty Meeting | the teachers work it out: LOPEZ. TUERO. Then: inside the rift | - |
+| 6 | Three Anchors | Wuttke hears the chord, Holbrook's map; Tyler holes out into anchor one | - |
+| 7 | The Climb | anchor two on the Crag | Alejandro vs Rift Lady Landa |
+| 8 | Show Your Work | anchor three in Room 314 | Jauregui vs Lopez (1/3) |
+| 9 | The Last Bell | the whole school at the rift, you pick the hero, Omega Lopez; the bell stops; Bro Batch party; credits; post-credits scene | you vs **OMEGA LOPEZ** |
 
-Then the ending at Bro Batch HQ and a full credits roll with the whole cast.
+**Cinematography** (`js/scenes/story-scene.js`): hard cuts between wide shots, medium shots,
+close-ups (background out of focus), extreme close-ups on the eyes, over-the-shoulder shots
+(the foreground shoulder dark and blurred), low angles that make villains loom, Dutch angles,
+two-shots and split-screen radio calls; full-screen insert shots (the school at night, the
+chalkboard equation writing itself, the clock hitting midnight, the ringing bell, the walkie-
+talkie, Holbrook's map, title cards); dissolves, whip pans, fades, slow push-ins and a subtle
+handheld sway; 2.35:1 letterbox with subtitles, vignette and film grain. Scripted action beats
+(dashes, impacts, a golf ball into a rift, shattering rift variants) without leaving the film.
 
-- **Cinematics**: letterbox bars, a dialogue box with a typed-out line and the speaker's
-  portrait (radio calls crackle), captions, chapter title cards, camera pans and zooms, rift
-  portals opening and collapsing, rift variants shattering into purple glass, shakes,
-  flashes, fades and tints. ESC (or BLOCK) skips a cutscene; CONFIRM fills / advances a line.
-- **Fights**: normal matches (entrances, fatalities and all) against rift variants - purple
-  palette and rising wisps. The villain shouts a line at half health. Difficulty ramps from
-  easy to hard; Omega Lopez has 60% more health.
-- **Progress** is saved in the browser: CONTINUE picks up where you left off, and finished
-  chapters can be replayed from the STORY menu.
-- Code: the engine is `js/scenes/story-scene.js` (step list documented at the top), the
-  script is `js/config/story.js` - adding a chapter is just adding data.
+**Audio**: every line is **spoken** (speech synthesis, each character with their own pitch;
+rift variants deeper and slower, Lopez slowest of all; turn off with the ANNOUNCER setting),
+plus ambient beds - the endlessly tolling bell, a rift drone, a heartbeat, a ticking clock,
+fluorescent hum, wind, crickets, a crowd, birds when it's over - and music that drops to
+silence for the big moments.
+
+Lines play on their own like a film; CONFIRM hurries a line along; ESC / BLOCK skips the
+scene. Progress is saved; finished chapters can be replayed. The script is data in
+`js/config/story.js` (step reference at the top of story-scene.js).
 
 ## Ms. Brady (the assistant principal)
 

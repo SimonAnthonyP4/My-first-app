@@ -1,29 +1,32 @@
-// STORY MODE: "THE LAST BELL". A cinematic engine for cutscenes (letterboxed, with a typed-out
-// dialogue box, portraits, camera moves, rifts and shatter effects), the story menu, the hero
-// picker for the finale, rift variants for the fights, and the credits roll.
-// The story itself (every chapter, every line) is data in js/config/story.js.
+// STORY MODE: "THE LAST BELL" - a cinematic engine. Scenes are shot like a film: hard cuts
+// between wide shots, medium shots, close-ups (background out of focus), extreme close-ups on
+// the eyes, over-the-shoulder shots, low angles, Dutch angles and split-screen radio calls;
+// full-screen insert shots (a chalkboard, the bell, a clock, a map...), dissolves and whip
+// pans; a 2.35:1 letterbox with subtitles, vignette and film grain. Every line is spoken
+// (each character with their own voice), and scenes have ambient sound beds.
+// The script is data: js/config/story.js.
 //
-// A cutscene is a list of steps, run one after another:
-//   { bg: 'stageId' | 'black' }           background (a stage, drawn live)
-//   { music: 'court' }  { sfx: 'boom' }   audio
-//   { cast: { key: [charId, x, facing, { rift, anim, y }] } }   put actors on stage
-//   { remove: 'key' }   { anim: ['key', 'victory'] }   { face: ['key', -1] }
-//   { say: ['key' | charId, 'TEXT', { radio }] }   dialogue (waits for a button)
-//   { narrate: 'TEXT' }                    caption (waits)
-//   { title: ['CHAPTER 1', 'BRO BATCH'] }  title card (waits)
-//   { walk: ['key', toX, frames] }         walk an actor (waits; add 'async' as a 4th item to not wait)
-//   { hop: 'key' }  { shatter: 'key' }     a jump / a rift variant breaking into purple glass
-//   { wait: frames }  { shake: n }  { flash: n }  { tint: 'rgba(..)' | null }
-//   { cam: [x, zoom, frames] }             camera pan + zoom (smooth, doesn't wait)
-//   { rift: [x, size] }  { riftOff: true } a rift portal (size 1 = person-sized)
-//   { fade: ['out' | 'in', frames] }       fade to / from black (waits)
-//   { choose: true }                       pick the hero for the finale ('$hero' afterwards)
-//   { credits: true }                      roll the credits
+// STEPS (run in order):
+//  staging   { bg: 'stageId' | 'black' }  { cast: { key: [charId, x, facing, { rift, anim, y, bg }] } }
+//            { remove: 'key' }  { face: ['key', dir] }  { tint: 'rgba()' | null }
+//  shots     { shot: 'wide' | ['medium'|'close'|'xcu'|'low', key] | ['two', keyA, keyB] |
+//                    ['ots', overKey, atKey] | ['split', keyA, keyB] , dutch?: rad }
+//            { insert: 'school'|'equation'|'bell'|'clock'|'radio'|'map'|'card', text? }
+//            { push: [zoomDelta, frames] }  { pan: [dx, frames] }  { handheld: amount }
+//            { dissolve: frames }  { whip: true }  { fade: ['out'|'in', frames] }
+//  action    { act: ['key', anim] }  { walk: ['key', x, frames, 'async'?] }  { dash: ['key', x, frames] }
+//            { rise: ['key', y, frames] }  { hop: 'key' }  { impact: ['key', power] }
+//            { shatter: 'key' }  { fly: ['fromKey', toX, art, frames] }  { rift: [x, size] }  { riftOff: true }
+//  words     { say: ['key' | charId, 'TEXT', { radio, shot }] }  { narrate: 'TEXT' }  { title: ['SMALL', 'BIG'] }
+//  sound     { music: 'song' | 'silence' }  { sfx: 'name' }  { amb: ['drone', 'bell', ...] | null }
+//  timing    { wait: frames }  { shake: n }  { flash: n }
+//  special   { choose: true } (pick the finale hero -> '$hero')  { credits: true }
 (function () {
   const T = (...a) => RF.font.drawText(...a);
-  const W = 384, H = 224, BAR = 18;
+  const W = 384, H = 224, BAR = 30;                       // 2.35:1 letterbox
   const KEY = 'terramania-story';
   const PURPLE = ['#ffffff', '#e0b0ff', '#a050ff', '#5a1a9a'];
+  const FEMALE = new Set(['brady', 'landa']);              // Ms. / Lady: female voices
 
   // ---------------------------------------------------------------- progress
   RF.storyProgress = {
@@ -34,7 +37,6 @@
   };
 
   // ---------------------------------------------------------------- rift variants
-  // A purple, shadowy copy of a fighter from another universe.
   RF.riftDef = function (def) {
     const pal = {};
     for (const k in (def.sprite.palette || {})) {
@@ -47,7 +49,6 @@
     }
     return Object.assign({}, def, { name: 'RIFT ' + def.name.toUpperCase(), costume: 'rift', rift: true, sprite: Object.assign({}, def.sprite, { palette: pal }) });
   };
-  // Wisps of purple rising off a rift variant.
   RF.MOVE_FX.riftAura = function (f, ctx, floorY, frame) {
     if (f.isKO || ['finished', 'thrown'].includes(f.state)) return;
     const top = floorY - f.y - f.body.height;
@@ -58,13 +59,12 @@
     }
     ctx.globalAlpha = 1;
   };
-
-  // Called every fight frame in story mode: the villain's mid-fight line.
   RF.storyTick = function (scene) {
     const st = scene.opts.story, foe = scene.fighters[1];
     if (st.mid && !scene.midShown && scene.phase === 'fight' && foe.health < foe.maxHealth * 0.5) {
       scene.midShown = true;
       scene.effects.spawnText(st.mid, foe.x, foe.body.height + 30, '#d090ff');
+      speak(foe.def, st.mid);
     }
   };
   RF.storyEndMenu = function (scene, won) {
@@ -76,10 +76,84 @@
     ]);
   };
 
+  // ---------------------------------------------------------------- voices
+  function speak(def, text, { radio = false } = {}) {
+    if (!def || !RF.CONFIG.ANNOUNCER || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    if (RF.audio && (RF.audio.muted || !RF.audio.ctx)) return;
+    try {
+      speechSynthesis.cancel();
+      const clean = text.replace(/\.\.\./g, ', ').replace(/DR\./g, 'doctor').replace(/MS\./g, 'miz').toLowerCase();
+      if (!/[a-z]/.test(clean)) return;
+      const u = new SpeechSynthesisUtterance(clean);
+      const id = (def.id || '').replace('rift', ''), voices = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
+      const fem = FEMALE.has(def.id);
+      const pick = voices.find((v) => (fem ? /female|samantha|victoria|zira|karen|moira|tessa|fiona|susan/i : /male|daniel|alex|fred|david|mark|rishi|aaron/i).test(v.name) && !(fem ? false : /female/i.test(v.name)));
+      if (pick) u.voice = pick;
+      let pitch = def.voicePitch != null ? def.voicePitch : 0.9, rate = 1.0;
+      if (fem && !pick) pitch = Math.max(pitch, 1.35);
+      if (id === 'lopez') { pitch = 0.4; rate = 0.82; }
+      if (def.rift) { pitch *= 0.6; rate *= 0.88; }
+      if (radio) rate *= 1.08;
+      u.pitch = Math.max(0.1, Math.min(2, pitch)); u.rate = rate;
+      u.volume = Math.min(1, (RF.CONFIG.SFX_VOLUME || 0.8) * 1.25);
+      speechSynthesis.speak(u);
+    } catch (e) { /* speech not available: subtitles only */ }
+  }
+
+  // ---------------------------------------------------------------- ambient sound beds
+  const amb = {
+    nodes: [], on: new Set(),
+    set(list) {
+      this.stop();
+      this.on = new Set(list || []);
+      const A = RF.audio, c = A && A.ctx;
+      if (!c) return;
+      const out = c.createGain(); out.gain.value = 0.0001; out.connect(A.sfxBus);
+      out.gain.linearRampToValueAtTime(1, c.currentTime + 1.2);
+      this.nodes.push(out);
+      const osc = (type, f, g, filt) => {
+        const o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.value = f; gn.gain.value = g;
+        let node = o; if (filt) { const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filt; o.connect(fl); node = fl; }
+        node.connect(gn).connect(out); o.start(); this.nodes.push(o, gn);
+        return o;
+      };
+      const noise = (type, f, g, q = 1) => {
+        if (!A.noise) return;
+        const s = c.createBufferSource(), fl = c.createBiquadFilter(), gn = c.createGain();
+        s.buffer = A.noise; s.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q; gn.gain.value = g;
+        s.connect(fl).connect(gn).connect(out); s.start(); this.nodes.push(s, gn);
+        return gn;
+      };
+      if (this.on.has('drone')) { osc('sawtooth', 55, 0.05, 260); osc('sawtooth', 55.6, 0.05, 260); osc('sine', 27.5, 0.12); }
+      if (this.on.has('hum')) { osc('square', 120, 0.012, 600); osc('sine', 60, 0.03); }
+      if (this.on.has('rain')) noise('lowpass', 1400, 0.16);
+      if (this.on.has('wind')) noise('bandpass', 400, 0.12, 0.6);
+      if (this.on.has('crowd')) noise('bandpass', 700, 0.1, 1.5);
+      if (this.on.has('room')) noise('lowpass', 300, 0.05);
+    },
+    stop() { for (const n of this.nodes) { try { if (n.stop) n.stop(); n.disconnect(); } catch (e) { /* gone */ } } this.nodes = []; this.on = new Set(); },
+    // the rhythmic ones run off the frame clock
+    tick(t) {
+      const A = RF.audio; if (!A || !A.ctx || !this.on.size) return;
+      if (this.on.has('bell') && t % 170 === 0) A.sfx('bell');
+      if (this.on.has('heartbeat') && (t % 54 === 0 || t % 54 === 12)) A.tone('sine', t % 54 ? 48 : 58, A.ctx.currentTime, 0.14, 0.5, null, 30);
+      if (this.on.has('clock') && t % 30 === 0) A.tone('square', 2400, A.ctx.currentTime, 0.015, 0.08);
+      if (this.on.has('crickets') && t % 23 < 3 && t % 160 < 90) A.tone('sine', 4200 + (t % 7) * 60, A.ctx.currentTime, 0.03, 0.03);
+      if (this.on.has('birds') && t % 140 === 0) A.sfx('birds');
+    },
+  };
+  function setMusic(name) {
+    const A = RF.audio; if (!A) return;
+    if (name === 'silence') { if (A.musicBus && A.ctx) A.musicBus.gain.linearRampToValueAtTime(0.0001, A.ctx.currentTime + 0.6); return; }
+    if (A.musicBus && A.ctx) { A.musicBus.gain.cancelScheduledValues(A.ctx.currentTime); A.musicBus.gain.value = RF.CONFIG.MUSIC_VOLUME; }
+    if (name) A.playSong(name);
+  }
+  function leaveStory() { amb.stop(); setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
+
   // ---------------------------------------------------------------- story menu
   class StoryMenuScene {
     constructor(game) {
-      RF.audio.playSong('court');
+      setMusic('court');
       this.game = game; this.t = 0;
       const prog = RF.storyProgress.get(), chs = RF.STORY.chapters;
       const items = [];
@@ -103,12 +177,12 @@
       this.stage.draw(ctx, this.t);
       ctx.fillStyle = 'rgba(20,0,40,0.72)'; ctx.fillRect(0, 0, W, H);
       drawRift(ctx, 320, 120, 1.6, this.t);
-      T(ctx, 'STORY MODE', W / 2, 10, { scale: 1, align: 'center', color: '#c080ff', outline: '#000' });
+      T(ctx, 'STORY MODE', W / 2, 10, { align: 'center', color: '#c080ff', outline: '#000' });
       T(ctx, 'THE LAST BELL', W / 2, 20, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
       const items = this.menu.items, y0 = 58;
       items.forEach((it, i) => {
         const sel = i === this.menu.index, y = y0 + i * 11;
-        if (sel) { ctx.fillStyle = 'rgba(160,80,255,0.35)'; ctx.fillRect(40, y - 2, 200, 11); }
+        if (sel) { ctx.fillStyle = 'rgba(160,80,255,0.35)'; ctx.fillRect(40, y - 2, 210, 11); }
         T(ctx, it.label, 48, y, { color: sel ? '#ffffff' : (it.desc === 'LOCKED' ? '#5a4a6a' : '#c8b0e0'), outline: '#000' });
       });
       const d = items[this.menu.index].desc;
@@ -116,7 +190,7 @@
     }
   }
 
-  // ---------------------------------------------------------------- the rift portal
+  // ---------------------------------------------------------------- shared drawing
   function drawRift(ctx, x, y, size, t) {
     const h = 46 * size, w = 16 * size;
     ctx.save();
@@ -129,17 +203,103 @@
       ctx.beginPath(); ctx.ellipse(x + wob * 0.3, y, Math.max(1, w * k + wob * 0.2), h * k, 0, 0, Math.PI * 2); ctx.fill();
     }
     ctx.fillStyle = '#14001e'; ctx.beginPath(); ctx.ellipse(x, y, w * 0.25, h * 0.55, 0, 0, Math.PI * 2); ctx.fill();
-    for (let i = 0; i < 10; i++) { // sparks spiralling in
+    for (let i = 0; i < 10; i++) {
       const a = t / 9 + i * 0.63, r = (h * 1.2) * (1 - ((t + i * 7) % 40) / 40);
       ctx.fillStyle = i % 2 ? '#ffffff' : '#c080ff';
       ctx.fillRect(Math.round(x + Math.cos(a) * r * 0.5), Math.round(y + Math.sin(a) * r), 2, 2);
     }
     ctx.restore();
   }
+  const R = (ctx, c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 
-  // ---------------------------------------------------------------- cutscene player
+  // Full-screen insert shots.
+  const INSERTS = {
+    // the school at night, from the street; purple light rising from the roof
+    school(ctx, t, o) {
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#05020e'); g.addColorStop(1, o.rift ? '#3a0f50' : '#141028');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 60; i++) R(ctx, '#ffffff', (i * 97) % W, (i * 53) % 90 + 30, 1, 1);
+      if (o.rift) { ctx.globalAlpha = 0.35 + Math.sin(t / 10) * 0.1; const rg = ctx.createRadialGradient(192, 70, 4, 192, 70, 120); rg.addColorStop(0, '#c080ff'); rg.addColorStop(1, 'rgba(160,80,255,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+      R(ctx, '#0c0a16', 60, 82, 264, 90); R(ctx, '#0c0a16', 150, 56, 84, 30);              // building + clock tower
+      ctx.fillStyle = '#e8e0c0'; ctx.beginPath(); ctx.arc(192, 70, 8, 0, Math.PI * 2); ctx.fill();
+      R(ctx, '#111', 191, 63, 1, 7); R(ctx, '#111', 191, 63, 1, 7);                         // midnight
+      for (let y = 92; y < 164; y += 16) for (let x = 72; x < 316; x += 20) R(ctx, ((x * 7 + y * 3) % 11 < 2) ? '#ffd890' : '#1a1628', x, y, 10, 9);
+      T(ctx, 'TERRAMANIA HIGH', 192, 176, { align: 'center', color: '#a898b8', outline: '#000' });
+      R(ctx, '#08060e', 0, 186, W, 40);                                                      // street
+      if (o.rift) for (let i = 0; i < 8; i++) R(ctx, '#e0b0ff', 192 + Math.sin(t / 7 + i) * 30, 56 - ((t * 1.5 + i * 13) % 50), 2, 2);
+    },
+    // a chalkboard: the equation writes itself
+    equation(ctx, t) {
+      R(ctx, '#3a2414', 0, 0, W, H); R(ctx, '#1e3a2a', 10, 10, W - 20, H - 20);
+      ctx.globalAlpha = 0.07; for (let i = 0; i < 30; i++) R(ctx, '#ffffff', (i * 41) % W, (i * 29) % H, 40, 2); ctx.globalAlpha = 1;
+      const steps = ['', 'TERRAMANIA(U) DU', '= EVERY UNIVERSE', '= ONE ANSWER', '= ME.'];
+      const n = Math.min(steps.length, Math.floor(t / 26) + 1);
+      ctx.strokeStyle = '#f0f0e8'; ctx.lineWidth = 3; ctx.beginPath();                         // a big integral sign
+      ctx.moveTo(84, 56); ctx.bezierCurveTo(100, 30, 96, 30, 84, 100); ctx.bezierCurveTo(72, 170, 68, 170, 84, 146); ctx.stroke();
+      T(ctx, 'INF', 100, 44, { color: '#f0f0e8' }); T(ctx, '0', 92, 150, { color: '#f0f0e8' });
+      for (let i = 1; i < n; i++) T(ctx, steps[i], 120 + (i > 1 ? 40 : 0), 70 + (i - 1) * 24, { scale: 2, color: i === 4 ? '#e0b0ff' : '#f0f0e8' });
+      R(ctx, '#ffffff', 300 + Math.sin(t / 3) * 4, 60 + (n - 1) * 24, 6, 2);                 // the chalk
+    },
+    // the school bell, ringing and ringing
+    bell(ctx, t) {
+      R(ctx, '#2a2420', 0, 0, W, H); R(ctx, '#3a322c', 0, 0, W, 60);
+      const a = Math.sin(t / 2.2) * 0.12, cx = 192, cy = 70;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, 30, 52, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#c8962a'; ctx.beginPath(); ctx.arc(0, 30, 48, Math.PI, 0); ctx.fill();
+      R(ctx, '#e8c050', -30, 0, 10, 26); R(ctx, '#8a6418', -48, 26, 96, 6);
+      ctx.fillStyle = '#5a4010'; ctx.beginPath(); ctx.arc(Math.sin(t / 1.1) * 30, 36, 7, 0, Math.PI * 2); ctx.fill(); // the clapper
+      ctx.restore();
+      ctx.strokeStyle = '#ffe080'; ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) { const r = 60 + ((t * 2 + i * 20) % 60); ctx.globalAlpha = Math.max(0, 1 - r / 120); ctx.beginPath(); ctx.arc(cx, cy + 30, r, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+      if (t % 20 < 12) T(ctx, 'RIIIIIING', 192, 130, { scale: 3, align: 'center', color: ['#fff6b0', '#ffd040', '#c08010'], outline: '#000' });
+    },
+    // a clock reaching midnight
+    clock(ctx, t, o) {
+      R(ctx, '#d8d4c4', 0, 0, W, H);
+      const cx = 192, cy = 112, p = Math.min(1, t / (o.frames || 90));
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f4f0e4'; ctx.beginPath(); ctx.arc(cx, cy, 64, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; R(ctx, '#111', cx + Math.sin(a) * 56 - 1, cy - Math.cos(a) * 56 - 1, 3, 3); }
+      const hand = (ang, len, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(ang) * len, cy - Math.cos(ang) * len); ctx.stroke(); };
+      const m = (59 + p) / 60 * Math.PI * 2;
+      hand(Math.PI * 2 * (11 + (59 + p) / 60) / 12, 34, 4, '#111'); hand(m, 52, 3, '#111'); hand(Math.floor(t / 4) / 60 * Math.PI * 2, 58, 1, '#c01818');
+      ctx.lineWidth = 1;
+      if (p >= 1 && t % 20 < 10) T(ctx, '12:00', cx, cy + 74, { scale: 2, align: 'center', color: '#c01818', outline: '#000' });
+    },
+    // a walkie-talkie, crackling
+    radio(ctx, t) {
+      R(ctx, '#1a1820', 0, 0, W, H);
+      ctx.save(); ctx.translate(192, 120); ctx.scale(6, 6); if (RF.drawWalkie) RF.drawWalkie(ctx, 0, 10, 1); ctx.restore();
+      ctx.strokeStyle = '#a0e0ff';
+      for (let i = 0; i < 4; i++) { ctx.globalAlpha = 0.7 - i * 0.15; ctx.beginPath(); ctx.arc(192, 40, 20 + i * 14 + (t % 14), Math.PI * 1.2, Math.PI * 1.8); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    },
+    // Holbrook's map: the three anchors
+    map(ctx, t) {
+      R(ctx, '#c8b48a', 0, 0, W, H); R(ctx, '#b8a07a', 12, 12, W - 24, H - 24);
+      ctx.strokeStyle = '#6a5030'; ctx.setLineDash([4, 3]); ctx.strokeRect(150, 90, 84, 50); ctx.setLineDash([]);
+      T(ctx, 'TERRAMANIA HIGH', 192, 110, { align: 'center', color: '#4a3020' });
+      const pts = [[70, 54, 'THE CLIFFS'], [300, 64, 'THE GOLF COURSE'], [200, 168, 'THE MATH WING']];
+      pts.forEach(([x, y, n], i) => {
+        if (t < 20 + i * 24) return;
+        const pulse = 6 + Math.sin(t / 5) * 2;
+        ctx.strokeStyle = '#7020d0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - pulse, y - pulse); ctx.lineTo(x + pulse, y + pulse); ctx.moveTo(x + pulse, y - pulse); ctx.lineTo(x - pulse, y + pulse); ctx.stroke(); ctx.lineWidth = 1;
+        T(ctx, n, x, y + 12, { align: 'center', color: '#3a1060', outline: '#e0d0b0' });
+      });
+    },
+    // a black card with words
+    card(ctx, t, o) {
+      R(ctx, '#000', 0, 0, W, H);
+      ctx.globalAlpha = Math.min(1, t / 20);
+      T(ctx, o.text || '', W / 2, 100, { scale: 2, align: 'center', color: o.color || '#e0d0ff' });
+      ctx.globalAlpha = 1;
+    },
+  };
+
+  // ---------------------------------------------------------------- the scene player
   class StoryScene {
-    // part: 'intro' | 'outro'
     constructor(game, index, part, opts = {}) {
       this.game = game; this.index = index; this.part = part;
       this.ch = RF.STORY.chapters[index];
@@ -147,15 +307,18 @@
       this.hero = opts.hero || null;
       this.i = -1; this.t = 0; this.stepT = 0;
       this.actors = {}; this.bgDef = null; this.stage = null;
-      this.cam = { x: W / 2, z: 1, tx: W / 2, tz: 1, k: 0.05 };
+      this.cam = { x: W / 2, y: H / 2, z: 1, rot: 0, tx: W / 2, ty: H / 2, tz: 1, trot: 0, k: 1 };
+      this.shot = { type: 'wide' }; this.handheld = 0.4;
       this.shake = 0; this.flash = 0; this.tintCol = null; this.fadeA = part === 'intro' ? 1 : 0;
-      this.shards = []; this.riftFx = null; this.cur = null;
+      this.shards = []; this.riftFx = null; this.cur = null; this.flies = [];
+      this.trans = null; this.snap = null;
       if (part === 'intro') RF.storyProgress.reach(index);
       this.next();
     }
 
     resolve(k) { return k === '$hero' ? this.hero : k; }
-    actorDef(id) { const d = RF.getCharacter(this.resolve(id)); return d; }
+    actor(k) { return this.actors[this.resolve(k)]; }
+    floorY() { return this.bgDef ? this.bgDef.floorY : 204; }
 
     next() {
       for (;;) {
@@ -164,43 +327,96 @@
         if (!s) return this.finish();
         if (this.instant(s)) continue;
         this.cur = s;
-        if (s.say || s.narrate || s.title) { this.typed = 0; this.text = s.say ? s.say[1] : s.narrate || (s.title ? s.title[1] : ''); }
-        if (s.say) { const a = this.actors[s.say[0]]; if (a) a.talk = true; RF.audio.sfx(s.say[2] && s.say[2].radio ? 'pa' : 'move'); }
-        if (s.walk) { const a = this.actors[this.resolve(s.walk[0])]; if (a) { a.from = a.x; a.to = s.walk[1]; a.wt = 0; a.wlen = s.walk[2] || 40; a.facing = a.to >= a.x ? 1 : -1; } if (s.walk[3] === 'async') continue; }
+        if (s.say || s.narrate || s.title) { this.typed = 0; this.text = s.say ? s.say[1] : s.narrate || s.title[1]; }
+        if (s.say) {
+          const o = s.say[2] || {}, a = this.actor(s.say[0]);
+          if (o.shot) this.setShot(Array.isArray(o.shot) ? o.shot : [o.shot, s.say[0]]);
+          if (a) a.talk = true;
+          if (o.radio) RF.audio.sfx('pa');
+          speak(a ? a.def : RF.getCharacter(this.resolve(s.say[0])), s.say[1], o);
+        }
+        if (s.narrate) RF.audio.sfx('paper');
+        if (s.walk || s.dash) {
+          const w = s.walk || s.dash, a = this.actor(w[0]);
+          if (a) { a.from = a.x; a.to = w[1]; a.wt = 0; a.wlen = w[2] || (s.dash ? 10 : 40); a.facing = a.to >= a.x ? 1 : -1; a.dashing = !!s.dash; if (s.dash) RF.audio.sfx('whoosh'); }
+          if (w[3] === 'async') continue;
+        }
+        if (s.rise) { const a = this.actor(s.rise[0]); if (a) { a.yFrom = a.y; a.yTo = s.rise[1]; a.yt = 0; a.ylen = s.rise[2] || 40; } if (s.rise[3] === 'async') continue; }
+        if (s.fly) {
+          const a = this.actor(s.fly[0]);
+          if (a) this.flies.push({ x: a.x + a.facing * 16, y: a.y + a.def.body.height * 0.55, from: a.x + a.facing * 16, to: s.fly[1], art: s.fly[2], len: s.fly[3] || 30, t: 0, dir: Math.sign(s.fly[1] - a.x) || 1 });
+          RF.audio.sfx('whoosh');
+        }
         if (s.choose) { this.picks = RF.STORY.heroes.filter((id) => RF.getCharacter(id)); this.pick = 0; }
-        if (s.credits) { this.creditY = H - 60; RF.audio.playSong('menu'); }
+        if (s.credits) { this.creditY = H - 60; setMusic('menu'); amb.set(null); }
         return;
       }
     }
 
-    // Steps that take no time.
+    setShot(spec, dutch = 0) {
+      const sh = Array.isArray(spec) ? spec : [spec];
+      this.shot = { type: sh[0], a: sh[1] && this.resolve(sh[1]), b: sh[2] && this.resolve(sh[2]), dutch };
+      this.insert = null;
+      this.frameShot(true);
+    }
+    // aim the camera for the current shot (cut = jump straight there)
+    frameShot(cut) {
+      const s = this.shot, c = this.cam, fy = this.floorY(), A = this.actors[s.a], B = this.actors[s.b];
+      let x = W / 2, y = H / 2, z = 1;
+      const head = (a) => fy - a.y - a.def.body.height * 0.86;
+      if (s.type === 'medium' && A) { z = 2.2; x = A.x; y = fy - A.y - A.def.body.height * 0.66; }
+      if (s.type === 'close' && A) { z = 4.2; x = A.x + A.facing * 2; y = head(A) + 5; }
+      if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - A.def.body.height * 0.72; }
+      if ((s.type === 'two') && A && B) { x = (A.x + B.x) / 2; z = Math.max(1, Math.min(2.2, 300 / (Math.abs(A.x - B.x) + 110))); y = fy - 46; }
+      if (s.type === 'ots' && B) { z = 2.7; x = B.x + (A && A.x < B.x ? -12 : 12); y = head(B) + 14; }
+      c.tx = x; c.ty = y; c.tz = z; c.trot = s.dutch || 0;
+      if (cut) { c.x = x; c.y = y; c.z = z; c.rot = c.trot; }
+    }
+
     instant(s) {
       if (s.bg) { this.bgDef = s.bg === 'black' ? null : RF.getStage(s.bg); this.stage = this.bgDef ? new RF.StageRenderer(this.bgDef) : null; return true; }
-      if (s.music) { RF.audio.playSong(s.music); return true; }
+      if (s.music) { setMusic(s.music); return true; }
       if (s.sfx) { RF.audio.sfx(s.sfx); return true; }
+      if (s.amb !== undefined) { amb.set(s.amb); return true; }
       if (s.cast) {
         for (const [k, v] of Object.entries(s.cast)) {
           const id = this.resolve(v[0]); let def = RF.getCharacter(id); if (!def) continue;
           const o = v[3] || {};
           if (o.rift) def = RF.riftDef(def);
-          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, seed: Math.random() * 100 };
+          this.actors[k === '$hero' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
         }
         return true;
       }
       if (s.remove) { delete this.actors[s.remove]; return true; }
-      if (s.anim) { const a = this.actors[this.resolve(s.anim[0])]; if (a) { a.anim = s.anim[1]; a.at = this.t; } return true; }
-      if (s.face) { const a = this.actors[this.resolve(s.face[0])]; if (a) a.facing = s.face[1]; return true; }
+      if (s.clear) { this.actors = {}; this.riftFx = null; this.shards = []; this.flies = []; this.insert = null; return true; }
+      if (s.act) { const a = this.actor(s.act[0]); if (a) { a.anim = s.act[1]; a.at = this.t; } return true; }
+      if (s.face) { const a = this.actor(s.face[0]); if (a) a.facing = s.face[1]; return true; }
       if (s.shake) { this.shake = s.shake; return true; }
       if (s.flash) { this.flash = s.flash; return true; }
       if (s.tint !== undefined) { this.tintCol = s.tint; return true; }
-      if (s.cam) { this.cam.tx = s.cam[0]; this.cam.tz = s.cam[1]; this.cam.k = 1 / Math.max(4, s.cam[2] || 30) * 3; return true; }
+      if (s.handheld !== undefined) { this.handheld = s.handheld; return true; }
+      if (s.shot) { this.setShot(s.shot, s.dutch); return true; }
+      if (s.insert) { this.insert = { name: s.insert, t: 0, o: s }; return true; }
+      if (s.push) { this.cam.tz = this.cam.z + s.push[0]; this.cam.k = 2 / (s.push[1] || 60); return true; }
+      if (s.pan) { this.cam.tx = this.cam.x + s.pan[0]; this.cam.k = 2 / (s.pan[1] || 60); return true; }
+      if (s.dissolve) { this.trans = { kind: 'dissolve', t: 0, len: s.dissolve, grab: true }; return true; }
+      if (s.whip) { this.trans = { kind: 'whip', t: 0, len: 10, dir: s.whip === -1 ? -1 : 1 }; RF.audio.sfx('whoosh'); return true; }
       if (s.rift) { this.riftFx = { x: s.rift[0], size: s.rift[1] || 1, t: 0 }; RF.audio.sfx('arcane'); this.flash = 4; return true; }
       if (s.riftOff) { if (this.riftFx) this.riftFx.closing = 1; RF.audio.sfx('boom'); return true; }
-      if (s.hop) { const a = this.actors[this.resolve(s.hop)]; if (a) a.hopT = 1; return true; }
-      if (s.shatter) {
-        const a = this.actors[this.resolve(s.shatter)];
+      if (s.hop) { const a = this.actor(s.hop); if (a) a.hopT = 1; return true; }
+      if (s.impact) {
+        const a = this.actor(s.impact[0]), p = s.impact[1] || 1;
         if (a) {
-          for (let i = 0; i < 40; i++) this.shards.push({ x: a.x + (Math.random() - 0.5) * 24, y: a.y + Math.random() * a.def.body.height, vx: (Math.random() - 0.5) * 4, vy: Math.random() * 4 + 1, c: PURPLE[i % 4], life: 50 + Math.random() * 30 });
+          a.hitT = 8; a.x += (a.facing > 0 ? -1 : 1) * 6 * p; a.anim = 'hit'; a.at = this.t;
+          for (let i = 0; i < 10; i++) this.shards.push({ x: a.x, y: a.y + a.def.body.height * 0.6, vx: (Math.random() - 0.5) * 5, vy: Math.random() * 3, c: i % 2 ? '#ffffff' : '#ffd040', life: 14 });
+        }
+        this.shake = Math.max(this.shake, 6 * p); RF.audio.sfx(p > 1 ? 'heavy' : 'hit');
+        return true;
+      }
+      if (s.shatter) {
+        const a = this.actor(s.shatter);
+        if (a) {
+          for (let i = 0; i < 44; i++) this.shards.push({ x: a.x + (Math.random() - 0.5) * 24, y: a.y + Math.random() * a.def.body.height, vx: (Math.random() - 0.5) * 4, vy: Math.random() * 4 + 1, c: PURPLE[i % 4], life: 50 + Math.random() * 30 });
           delete this.actors[this.resolve(s.shatter)];
           RF.audio.sfx('crack'); RF.audio.sfx('arcane'); this.flash = 6; this.shake = 8;
         }
@@ -212,174 +428,236 @@
     finish() {
       this.cur = null;
       const ch = this.ch, game = this.game;
-      if (this.part === 'intro' && ch.fight) return this.startFight();
-      // after the outro (or a chapter with no fight): the next chapter
+      if (this.part === 'intro' && ch.fight) { leaveStory(); return this.startFight(); }
       const n = this.index + 1;
-      if (n >= RF.STORY.chapters.length) { RF.storyProgress.finish(); return game.setScene(new RF.TitleScene(game)); }
-      RF.storyProgress.reach(n);
       if (this.part === 'intro' && !ch.fight && ch.outro) return game.setScene(new StoryScene(game, this.index, 'outro', { hero: this.hero }));
+      if (n >= RF.STORY.chapters.length) { leaveStory(); RF.storyProgress.finish(); return game.setScene(new RF.TitleScene(game)); }
+      RF.storyProgress.reach(n);
       game.setScene(new StoryScene(game, n, 'intro', { hero: this.hero }));
     }
 
     startFight() {
-      const f = this.ch.fight, hero = this.resolve(f.play);
+      const f = this.ch.fight, hero = this.resolve(f.play) || RF.STORY.heroes[0];
       const p1 = RF.getCharacter(hero), p2 = RF.riftDef(RF.getCharacter(f.vs));
       if (f.name) p2.name = f.name;
       this.game.setScene(new RF.VersusScene(this.game, {
         p1, p2, stage: f.stage, cpu: true, cpuLevel: f.cpu || 'normal', boss: f.boss || 0,
-        story: { index: this.index, mid: f.mid, hero: this.hero },
+        story: { index: this.index, mid: f.mid, hero: this.hero || hero },
       }));
     }
 
     // ---- update ----
     update() {
       this.t++; this.stepT++;
-      const kb = this.game.kb, s = this.cur;
+      amb.tick(this.t);
+      const kb = this.game.kb, s = this.cur, c = this.cam;
       if (this.fadeA > 0 && !(s && s.fade)) this.fadeA = Math.max(0, this.fadeA - 0.05);
       if (this.shake > 0) this.shake--;
       if (this.flash > 0) this.flash--;
-      const c = this.cam; c.x += (c.tx - c.x) * c.k; c.z += (c.tz - c.z) * c.k;
+      if (this.insert) this.insert.t++;
+      if (this.trans && ++this.trans.t > this.trans.len) { this.trans = null; this.snap = null; }
+      if (this.shot.a || this.shot.b) this.frameShot(false);
+      const k = Math.min(1, c.k); c.x += (c.tx - c.x) * k; c.y += (c.ty - c.y) * k; c.z += (c.tz - c.z) * k; c.rot += (c.trot - c.rot) * k;
+      if (c.k < 1) c.k = Math.max(c.k, 0.02);
       if (this.riftFx) { this.riftFx.t++; if (this.riftFx.closing && (this.riftFx.closing += 0.05) > 2) this.riftFx = null; }
       for (const p of this.shards) { p.x += p.vx; p.y += p.vy; p.vy -= 0.25; if (p.y < 0) { p.y = 0; p.vy *= -0.3; p.vx *= 0.7; } p.life--; }
       this.shards = this.shards.filter((p) => p.life > 0);
+      for (const f of this.flies) { f.t++; f.x = f.from + (f.to - f.from) * Math.min(1, f.t / f.len); }
+      this.flies = this.flies.filter((f) => f.t <= f.len);
       for (const a of Object.values(this.actors)) {
-        if (a.wlen) { a.wt++; const u = Math.min(1, a.wt / a.wlen); a.x = a.from + (a.to - a.from) * u; if (u >= 1) a.wlen = 0; }
+        if (a.wlen) { a.wt++; const u = Math.min(1, a.wt / a.wlen); a.x = a.from + (a.to - a.from) * (a.dashing ? 1 - (1 - u) * (1 - u) : u); if (u >= 1) { a.wlen = 0; a.dashing = false; } }
+        if (a.ylen) { a.yt++; const u = Math.min(1, a.yt / a.ylen); a.y = a.yFrom + (a.yTo - a.yFrom) * u; if (u >= 1) a.ylen = 0; }
         if (a.hopT) { a.hopT++; a.y = Math.max(0, Math.sin((a.hopT / 20) * Math.PI) * 16); if (a.hopT > 20) { a.hopT = 0; a.y = 0; } }
+        if (a.hitT) a.hitT--;
       }
-      // skip the whole cutscene
-      if (RF.menuPressed(kb, 'back') && !(s && s.choose)) { this.skipping = true; }
-      if (this.skipping) { if (!this.hero && this.steps.some((st) => st.choose)) this.hero = RF.STORY.heroes[0]; this.i = this.steps.length; return this.finish(); }
+      if (RF.menuPressed(kb, 'back') && !(s && s.choose)) {
+        if (!this.hero && this.steps.some((st) => st.choose)) this.hero = RF.STORY.heroes[0];
+        this.i = this.steps.length; return this.finish();
+      }
       if (!s) return;
-      const ok = RF.menuPressed(kb, 'confirm');
+      const ok = RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
       if (s.say || s.narrate || s.title) {
-        this.typed += 1.6;
-        if (s.title && this.stepT > 150) this.typed = Infinity; // title cards move on by themselves
-        if (ok || (s.title && this.stepT > 170)) { if (this.typed < this.text.length) this.typed = this.text.length; else { const a = s.say && this.actors[s.say[0]]; if (a) a.talk = false; this.next(); } }
-        else if (this.game.manualStep && this.stepT > 8) this.next(); // tests and recordings auto-advance
+        this.typed += 1.4;
+        // lines play on their own like a film (confirm hurries them along)
+        const done = this.typed >= this.text.length, hold = 46 + this.text.length * 1.6;
+        if (ok && !done) this.typed = this.text.length;
+        else if (ok || (done && this.stepT > hold) || (auto && this.stepT > 6)) { const a = s.say && this.actor(s.say[0]); if (a) a.talk = false; this.next(); }
         return;
       }
-      if (s.walk) { const a = this.actors[this.resolve(s.walk[0])]; if (!a || !a.wlen) this.next(); return; }
-      if (s.wait) { if (this.stepT >= s.wait) this.next(); return; }
+      if (s.walk || s.dash) { const a = this.actor((s.walk || s.dash)[0]); if (!a || !a.wlen) this.next(); return; }
+      if (s.rise) { const a = this.actor(s.rise[0]); if (!a || !a.ylen) this.next(); return; }
+      if (s.fly) { if (!this.flies.length) { RF.audio.sfx('hit'); this.next(); } return; }
+      if (s.wait) { if (this.stepT >= s.wait || (auto && this.stepT > 4)) this.next(); return; }
       if (s.fade) { const [dir, n] = s.fade; this.fadeA = dir === 'out' ? Math.min(1, this.stepT / (n || 30)) : Math.max(0, 1 - this.stepT / (n || 30)); if (this.stepT >= (n || 30)) this.next(); return; }
       if (s.choose) {
         if (RF.menuPressed(kb, 'left')) { this.pick = (this.pick + this.picks.length - 1) % this.picks.length; RF.audio.sfx('move'); }
         if (RF.menuPressed(kb, 'right')) { this.pick = (this.pick + 1) % this.picks.length; RF.audio.sfx('move'); }
-        if (ok || (this.game.manualStep && this.stepT > 8)) {
+        if (ok || (auto && this.stepT > 8)) {
           this.hero = this.picks[this.pick]; RF.audio.sfx('select');
           const def = RF.getCharacter(this.hero);
-          this.actors[this.hero] = { def, sprite: RF.createSprite(def), x: 150, y: 0, facing: 1, anim: 'victory', seed: 1 };
+          this.actors[this.hero] = { def, sprite: RF.createSprite(def), x: 230, y: 0, facing: 1, anim: 'victory', seed: 1 };
           this.next();
         }
         return;
       }
       if (s.credits) {
-        this.creditY -= 0.7;
-        if (ok) this.creditY -= 6;
-        if (this.creditY < -(RF.CHARACTERS.length * 74 + 300) || (this.game.manualStep && this.stepT > 30)) this.next();
+        this.creditY -= ok ? 6 : 0.7;
+        if (this.creditY < -(RF.CHARACTERS.length * 74 + 300) || (auto && this.stepT > 30)) this.next();
         return;
       }
       this.next();
     }
 
     // ---- render ----
-    render(ctx) {
-      const s = this.cur;
-      if (s && s.credits) return this.drawCredits(ctx);
-      const floorY = this.bgDef ? this.bgDef.floorY : 204;
-      ctx.save();
-      if (this.shake) ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake * 0.5));
-      const c = this.cam, pivot = floorY - 40;
-      if (Math.abs(c.z - 1) > 0.001 || Math.abs(c.x - W / 2) > 0.5) { ctx.translate(W / 2, pivot); ctx.scale(c.z, c.z); ctx.translate(-c.x, -pivot); }
-      if (this.stage) this.stage.draw(ctx, this.t); else { ctx.fillStyle = '#05000a'; ctx.fillRect(-W, -H, W * 3, H * 3); }
-      if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-W, -H, W * 3, H * 3); }
-      if (this.riftFx) { const r = this.riftFx, k = r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16); drawRift(ctx, r.x, floorY - 50 * r.size, r.size * k, this.t); }
-      // actors, back to front by x
-      const list = Object.values(this.actors).sort((a, b) => a.x - b.x);
+    drawActors(ctx, fy, only) {
+      const list = Object.values(this.actors).filter((a) => (only ? only.includes(a) : !a.stage)).sort((a, b) => a.x - b.x); // actors with their own stage only appear in split screens
       for (const a of list) {
         ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.ellipse(a.x, floorY + 1, 14, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.beginPath(); ctx.ellipse(a.x, fy + 1, 14, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
         let anim = a.anim, frame = 0;
-        if (a.wlen) { anim = 'walk'; frame = (a.wt / 5) % 4; }
+        if (a.wlen) { anim = a.dashing ? 'jump' : 'walk'; frame = a.dashing ? 0.5 : (a.wt / 5) % 4; }
+        else if (a.ylen) { anim = 'jump'; frame = 0.3; }
         else if (anim === 'idle') frame = ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
-        else if (anim === 'victory' || anim === 'taunt') frame = Math.floor((this.t + a.seed) / 16) % 2;
-        else if (anim === 'special' || anim === 'heavy' || anim === 'light') frame = Math.min(1, (this.t - (a.at || 0)) / 10);
+        else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((this.t + a.seed) / 16) % 2;
+        else if (['special', 'heavy', 'light', 'uppercut', 'throw'].includes(anim)) frame = Math.min(1, (this.t - (a.at || 0)) / 8);
         const bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0;
-        a.sprite.draw(ctx, anim, frame, a.x, floorY - a.y - bob, a.facing);
-        if (a.rift) RF.MOVE_FX.riftAura({ x: a.x, y: a.y, body: a.def.body, state: 'idle' }, ctx, floorY, this.t);
+        if (a.dashing) for (let i = 1; i <= 3; i++) { ctx.globalAlpha = 0.25 / i; a.sprite.draw(ctx, anim, frame, a.x - a.facing * i * 10, fy - a.y, a.facing); }
+        ctx.globalAlpha = 1;
+        a.sprite.draw(ctx, anim, frame, a.x, fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : null);
+        if (a.rift) RF.MOVE_FX.riftAura({ x: a.x, y: a.y, body: a.def.body, state: 'idle' }, ctx, fy, this.t);
       }
-      for (const p of this.shards) { ctx.globalAlpha = Math.min(1, p.life / 30); ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(floorY - p.y), 2, 2); }
+    }
+
+    drawWorld(ctx, cam, opts = {}) {
+      const fy = this.floorY(), z = cam.z;
+      ctx.save();
+      const hh = this.handheld * (z > 1.4 ? 1.5 : 0.6);
+      const sx = this.shake ? (Math.random() - 0.5) * this.shake : 0, sy = this.shake ? (Math.random() - 0.5) * this.shake * 0.5 : 0;
+      const hx = Math.sin(this.t / 47) * hh * 2, hy = Math.sin(this.t / 31) * hh * 1.5;
+      // keep the stage edges out of frame
+      const half = W / 2 / z, halfH = H / 2 / z;
+      const cx = Math.max(half, Math.min(W - half, cam.x)), cy = Math.max(halfH, Math.min(H - halfH, cam.y));
+      ctx.translate(W / 2 + sx + hx, H / 2 + sy + hy);
+      if (cam.rot) ctx.rotate(cam.rot);
+      ctx.scale(z, z * (opts.low ? 1.18 : 1));
+      ctx.translate(-cx, -cy);
+      const st = opts.stage || this.stage;
+      if (st) {
+        if (z >= 2 && 'filter' in ctx) ctx.filter = `blur(${z >= 2.8 ? 2 : 1}px)`; // depth of field
+        st.draw(ctx, this.t);
+        ctx.filter = 'none';
+      } else { ctx.fillStyle = '#05000a'; ctx.fillRect(-W, -H, W * 3, H * 3); }
+      if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-W, -H, W * 3, H * 3); }
+      if (this.riftFx) { const r = this.riftFx, k = r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16); drawRift(ctx, r.x, fy - 50 * r.size, r.size * k, this.t); }
+      this.drawActors(ctx, fy, opts.only);
+      for (const f of this.flies) { const art = RF.PROJECTILE_ART[f.art]; if (art) art(ctx, Math.round(f.x), Math.round(fy - f.y), f.t, f.dir, { w: 14, h: 10, cfg: {} }, fy); }
+      for (const p of this.shards) { ctx.globalAlpha = Math.min(1, p.life / 30); ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(fy - p.y), 2, 2); }
       ctx.globalAlpha = 1;
       ctx.restore();
+    }
 
-      // cinematic letterbox + film vignette
-      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, BAR); ctx.fillRect(0, H - BAR, W, BAR);
+    render(ctx) {
+      const s = this.cur;
+      ctx.imageSmoothingEnabled = false;
+      if (s && s.credits) return this.drawCredits(ctx);
+      // dissolve: remember the outgoing frame before drawing the new one
+      if (this.trans && this.trans.grab) { const [cv, c2] = RF.util.makeCanvas(W, H); c2.drawImage(ctx.canvas, 0, 0, W, H); this.snap = cv; this.trans.grab = false; }
+      const sh = this.shot, fy = this.floorY();
+      if (this.insert) {
+        INSERTS[this.insert.name](ctx, this.insert.t, this.insert.o);
+        if (this.shake) ctx.translate(0, 0);
+      } else if (sh.type === 'split' && this.actors[sh.a] && this.actors[sh.b]) {
+        [sh.a, sh.b].forEach((k, i) => {
+          const a = this.actors[k];
+          ctx.save(); ctx.beginPath(); ctx.rect(i * W / 2, 0, W / 2, H); ctx.clip();
+          ctx.translate(i ? W / 4 : -W / 4, 0);
+          this.drawWorld(ctx, { x: a.x, y: fy - a.y - a.def.body.height * 0.8, z: 2.6, rot: 0 }, { stage: a.stage, only: [a] });
+          ctx.restore();
+        });
+        R(ctx, '#000', W / 2 - 1, 0, 3, H);
+      } else if (sh.type === 'xcu' && this.actors[sh.a]) {
+        const a = this.actors[sh.a], band = 64, top = H / 2 - band / 2, s7 = 5;
+        R(ctx, '#000', 0, 0, W, H);
+        ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, band); ctx.clip();
+        if (this.stage) { if ('filter' in ctx) ctx.filter = 'blur(3px) brightness(0.5)'; ctx.drawImage(this.stage.bg, 0, 0, W, H); ctx.filter = 'none'; }
+        ctx.translate(W / 2 - a.facing * 8, H / 2 + a.def.body.height * 0.925 * s7); ctx.scale(s7, s7);
+        a.sprite.draw(ctx, 'idle', 0, 0, 0, a.facing);
+        ctx.restore();
+        if (a.rift || a.def.id === 'lopez') { ctx.globalAlpha = 0.18 + Math.sin(this.t / 6) * 0.08; R(ctx, '#a050ff', 0, top, W, band); ctx.globalAlpha = 1; }
+      } else {
+        this.drawWorld(ctx, this.cam, { low: sh.type === 'low' });
+        if (sh.type === 'ots' && this.actors[sh.a]) { // the foreground shoulder, dark and out of focus
+          const a = this.actors[sh.a], B = this.actors[sh.b], left = !B || a.x < B.x, k = 3.6;
+          ctx.save(); if ('filter' in ctx) ctx.filter = 'brightness(0.25) blur(1.5px)';
+          ctx.translate(left ? 46 : W - 46, H + a.def.body.height * k * 0.42); ctx.scale(k, k);
+          a.sprite.draw(ctx, 'idle', 0, 0, 0, left ? 1 : -1);
+          ctx.restore(); ctx.filter = 'none';
+        }
+        if (sh.type === 'low') { const g = ctx.createLinearGradient(0, 0, 0, H * 0.4); g.addColorStop(0, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+      }
+      // transitions
+      if (this.trans && this.snap && this.trans.kind === 'dissolve') { ctx.globalAlpha = Math.max(0, 1 - this.trans.t / this.trans.len); ctx.drawImage(this.snap, 0, 0); ctx.globalAlpha = 1; }
+      if (this.trans && this.trans.kind === 'whip') {
+        const u = this.trans.t / this.trans.len, a = Math.sin(u * Math.PI);
+        for (let i = 0; i < 26; i++) { ctx.globalAlpha = 0.5 * a; R(ctx, i % 3 ? '#ffffff' : '#c0b0d0', ((i * 53 + this.trans.t * 60 * this.trans.dir) % (W + 80)) - 40, (i * 37) % H, 70, 1 + (i % 2)); }
+        ctx.globalAlpha = 0.7 * a; R(ctx, '#000', 0, 0, W, H); ctx.globalAlpha = 1;
+      }
+      // film look: vignette, grain, flash
+      const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 0.06; for (let i = 0; i < 70; i++) R(ctx, (i + this.t) % 2 ? '#ffffff' : '#000', (i * 7919 + this.t * 131) % W, (i * 3571 + this.t * 71) % H, 1, 1); ctx.globalAlpha = 1;
       if (this.flash) { ctx.fillStyle = `rgba(255,240,255,${this.flash * 0.08})`; ctx.fillRect(0, 0, W, H); }
-      T(ctx, 'CHAPTER ' + this.index + '  ' + this.ch.title, 6, 5, { color: '#5a4a6a' });
-      if (!(s && s.choose)) T(ctx, 'ESC: SKIP', W - 6, 5, { align: 'right', color: '#5a4a6a' });
-      if (s && s.say) this.drawSay(ctx, s);
+      // letterbox
+      R(ctx, '#000', 0, 0, W, BAR); R(ctx, '#000', 0, H - BAR, W, BAR);
+      if (!(s && s.choose)) T(ctx, 'ESC: SKIP', W - 6, 4, { align: 'right', color: '#3a2a4a' });
+      if (s && s.say) this.drawSubtitle(ctx, s);
       if (s && s.narrate) this.drawCaption(ctx, this.text.slice(0, this.typed | 0));
       if (s && s.title) this.drawTitle(ctx, s.title);
       if (s && s.choose) this.drawChooser(ctx);
       if (this.fadeA > 0) { ctx.fillStyle = `rgba(0,0,0,${this.fadeA})`; ctx.fillRect(0, 0, W, H); }
     }
 
-    drawSay(ctx, s) {
-      const key = this.resolve(s.say[0]), a = this.actors[key], def = a ? a.def : this.actorDef(key);
+    drawSubtitle(ctx, s) {
+      const key = this.resolve(s.say[0]), a = this.actors[key], def = a ? a.def : RF.getCharacter(key);
       if (!def) return;
-      const radio = s.say[2] && s.say[2].radio, left = !a || a.x < W / 2;
-      const bx = 6, by = H - 60, bw = W - 12, bh = 52, col = a && a.rift ? '#a050ff' : radio ? '#ffd030' : '#ff7a2a';
-      ctx.fillStyle = 'rgba(8,4,16,0.92)'; ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = col; ctx.fillRect(bx, by, bw, 1); ctx.fillRect(bx, by + bh - 1, bw, 1);
-      // portrait
-      const px = left ? bx + 4 : bx + bw - 48, py = by + 4, ps = 44;
-      ctx.fillStyle = '#1a1028'; ctx.fillRect(px, py, ps, ps);
-      ctx.save(); ctx.beginPath(); ctx.rect(px, py, ps, ps); ctx.clip();
-      const sp = a ? a.sprite : RF.createSprite(def), k = 1.5;
-      ctx.translate(px + ps / 2, py + 6 + def.body.height * k); ctx.scale(k, k);
-      sp.draw(ctx, 'idle', 0, 0, 0, left ? 1 : -1);
-      if (radio && this.t % 6 < 3) { ctx.fillStyle = 'rgba(160,220,255,0.15)'; ctx.fillRect(-40, -200, 80, 200); }
-      ctx.restore();
-      ctx.strokeStyle = col; ctx.strokeRect(px + 0.5, py + 0.5, ps - 1, ps - 1);
-      // name + text
-      const tx = left ? px + ps + 8 : bx + 8;
-      const name = (a && a.rift ? 'RIFT ' : '') + def.name.toUpperCase() + (radio ? ' (RADIO)' : '');
-      T(ctx, name, tx, by + 5, { color: col, outline: '#000' });
-      const shown = this.text.slice(0, this.typed | 0);
-      RF.font.wrap(shown, 50).slice(0, 4).forEach((line, i) => T(ctx, line, tx, by + 17 + i * 9, { color: '#f0e8ff', outline: '#000' }));
-      if (this.typed >= this.text.length && this.t % 30 < 18) T(ctx, '>', left ? bx + bw - 10 : px - 10, by + bh - 11, { color: col });
+      const radio = s.say[2] && s.say[2].radio, rift = a && a.rift;
+      const col = rift ? '#c080ff' : radio ? '#ffd030' : '#ffb070';
+      const name = def.name.toUpperCase() + (radio ? ' (RADIO)' : ''); // rift variants are already named RIFT ...
+      const lines = RF.font.wrap(this.text.slice(0, this.typed | 0), 60).slice(0, 3);
+      const y0 = H - BAR + 3;
+      T(ctx, name, W / 2, y0 - (lines.length > 2 ? 9 : 0), { align: 'center', color: col, outline: '#000' });
+      lines.forEach((l, i) => T(ctx, l, W / 2, y0 + 9 + i * 9 - (lines.length > 2 ? 9 : 0), { align: 'center', color: '#ffffff', outline: '#000' }));
+      if (radio && this.t % 8 < 4) { ctx.globalAlpha = 0.1; R(ctx, '#a0e0ff', 0, BAR, W, H - BAR * 2); ctx.globalAlpha = 1; }
     }
 
     drawCaption(ctx, text) {
       const lines = RF.font.wrap(text, 56);
-      const h = lines.length * 10 + 10, y = 34;
-      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(30, y, W - 60, h);
-      ctx.fillStyle = '#a050ff'; ctx.fillRect(30, y, 2, h);
-      lines.forEach((l, i) => T(ctx, l, W / 2, y + 6 + i * 10, { align: 'center', color: '#e8dcff', outline: '#000' }));
+      lines.forEach((l, i) => T(ctx, l, W / 2, 9 + i * 9, { align: 'center', color: '#d8c8f0', outline: '#000' }));
     }
 
-    drawTitle(ctx, [big, small]) {
-      const k = Math.min(1, this.stepT / 20);
-      ctx.fillStyle = `rgba(0,0,0,${0.6 * k})`; ctx.fillRect(0, 70, W, 70);
-      ctx.fillStyle = '#a050ff'; ctx.fillRect(W / 2 - 120 * k, 74, 240 * k, 1); ctx.fillRect(W / 2 - 120 * k, 135, 240 * k, 1);
-      T(ctx, big, W / 2, 82, { align: 'center', color: '#c8b0e0', outline: '#000' });
-      T(ctx, small.slice(0, Math.ceil(this.typed / 1.5)), W / 2, 96, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
+    drawTitle(ctx, [small, big]) {
+      const k = Math.min(1, this.stepT / 24);
+      ctx.fillStyle = `rgba(0,0,0,${0.55 * k})`; ctx.fillRect(0, 76, W, 72);
+      ctx.fillStyle = '#a050ff'; ctx.fillRect(W / 2 - 130 * k, 80, 260 * k, 1); ctx.fillRect(W / 2 - 130 * k, 143, 260 * k, 1);
+      T(ctx, small, W / 2, 88, { align: 'center', color: '#c8b0e0', outline: '#000' });
+      T(ctx, big.slice(0, Math.ceil(this.typed / 1.2)), W / 2, 102, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
     }
 
     drawChooser(ctx) {
-      ctx.fillStyle = 'rgba(10,0,20,0.85)'; ctx.fillRect(0, BAR, W, H - BAR * 2);
-      T(ctx, 'WHO STEPS THROUGH THE RIFT?', W / 2, 30, { scale: 2, align: 'center', color: PURPLE, outline: '#000' });
+      ctx.fillStyle = 'rgba(10,0,20,0.88)'; ctx.fillRect(0, 0, W, H);
+      T(ctx, 'WHO STEPS THROUGH THE RIFT?', W / 2, 32, { scale: 2, align: 'center', color: PURPLE, outline: '#000' });
       const n = this.picks.length, per = 7, start = Math.max(0, Math.min(n - per, this.pick - 3));
       for (let j = 0; j < per && start + j < n; j++) {
-        const i = start + j, def = RF.getCharacter(this.picks[i]), x = 40 + j * 50, y = 70, sel = i === this.pick;
-        ctx.fillStyle = sel ? '#5a10a0' : '#1a1028'; ctx.fillRect(x - 22, y, 44, 80);
-        ctx.save(); ctx.beginPath(); ctx.rect(x - 22, y, 44, 80); ctx.clip();
-        RF.createSprite(def).draw(ctx, sel ? 'victory' : 'idle', sel ? Math.floor(this.t / 16) % 2 : 0, x, y + 76, 1);
+        const i = start + j, def = RF.getCharacter(this.picks[i]), x = 40 + j * 50, y = 62, sel = i === this.pick;
+        ctx.fillStyle = sel ? '#5a10a0' : '#1a1028'; ctx.fillRect(x - 22, y, 44, 84);
+        ctx.save(); ctx.beginPath(); ctx.rect(x - 22, y, 44, 84); ctx.clip();
+        RF.createSprite(def).draw(ctx, sel ? 'victory' : 'idle', sel ? Math.floor(this.t / 16) % 2 : 0, x, y + 82, 1);
         ctx.restore();
-        if (sel) { ctx.strokeStyle = '#ffffff'; ctx.strokeRect(x - 21.5, y + 0.5, 43, 79); }
+        if (sel) { ctx.strokeStyle = '#ffffff'; ctx.strokeRect(x - 21.5, y + 0.5, 43, 83); }
       }
       const d = RF.getCharacter(this.picks[this.pick]);
-      T(ctx, d.name.toUpperCase(), W / 2, 158, { scale: 2, align: 'center', color: '#ffffff', outline: '#000' });
-      T(ctx, '< LEFT / RIGHT >   CONFIRM TO CHOOSE', W / 2, 180, { align: 'center', color: '#c8b0e0', outline: '#000' });
+      T(ctx, d.name.toUpperCase(), W / 2, 154, { scale: 2, align: 'center', color: '#ffffff', outline: '#000' });
+      T(ctx, '< LEFT / RIGHT >   CONFIRM TO CHOOSE', W / 2, 176, { align: 'center', color: '#c8b0e0', outline: '#000' });
     }
 
     drawCredits(ctx) {
@@ -400,7 +678,8 @@
       line('DIRECTED BY', { color: '#a050ff', gap: 12 }); line('YOU AND YOUR FRIENDS', { scale: 2, gap: 30 });
       line('CODE', { color: '#a050ff', gap: 12 }); line('CLAUDE', { scale: 2, gap: 40 });
       line('THANKS FOR PLAYING.', { gap: 30 });
-      line('THE BELL HAS STOPPED... FOR NOW.', { color: '#c080ff' });
+      line('STAY FOR THE END...', { color: '#c080ff' });
+      R(ctx, '#000', 0, 0, W, BAR); R(ctx, '#000', 0, H - BAR, W, BAR);
     }
   }
 
