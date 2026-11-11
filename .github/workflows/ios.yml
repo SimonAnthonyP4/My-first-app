@@ -1,0 +1,17 @@
+name: iOS
+
+# Placeholder. The POS app (milestone M5) and the Rewards app (M7) are not in
+# the repository yet. When they land, this workflow will build both apps and
+# run their unit tests on a macOS runner.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pending:
+    name: iOS apps not built yet
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "No iOS code in the repository yet. See docs/PLAN.md, milestones M5 and M7."

@@ -1,0 +1,171 @@
+/* Bro Batch design tokens. Dark charcoal, warm cream, restrained gold.
+   The full component system arrives with the dashboard in M4; these tokens
+   are the shared starting point for it. */
+:root {
+  --charcoal-900: #161513;
+  --charcoal-800: #1f1d1a;
+  --charcoal-700: #2b2824;
+  --charcoal-500: #5c564d;
+  --charcoal-300: #968d7f;
+  --cream-50: #faf6ee;
+  --cream-100: #f3ebdd;
+  --cream-300: #d9cdb8;
+  --gold-400: #c9a45c;
+  --gold-600: #a07f3c;
+
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius: 2px;
+  --rule: 1px solid var(--charcoal-700);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--charcoal-900);
+  color: var(--cream-100);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: 3px;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-4) var(--space-12);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-400);
+}
+
+.title {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  color: var(--cream-50);
+  margin-top: var(--space-3);
+}
+
+.lede {
+  margin-top: var(--space-4);
+  max-width: 36rem;
+  color: var(--cream-300);
+}
+
+.section {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: var(--rule);
+}
+
+.section h2 {
+  font-size: 1.375rem;
+  color: var(--cream-50);
+}
+
+.section > p {
+  margin-top: var(--space-2);
+  color: var(--cream-300);
+}
+
+.ledger {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.ledger li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: var(--rule);
+}
+
+.ledger li:last-child {
+  border-bottom: 0;
+}
+
+.ledger .figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-400);
+  white-space: nowrap;
+}
+
+.status {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status[data-state='done'] {
+  color: var(--gold-400);
+}
+
+.status[data-state='todo'] {
+  color: var(--charcoal-300);
+}
+
+.note {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--gold-600);
+  background: var(--charcoal-800);
+  color: var(--cream-300);
+  font-size: 0.9375rem;
+}
+
+.note code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--cream-50);
+  overflow-wrap: anywhere;
+}
