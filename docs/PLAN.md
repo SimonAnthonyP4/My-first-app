@@ -93,7 +93,7 @@ Two rules follow from this flow:
 1. Employee selects a paid order in POS, picks items or the whole order, and enters a reason.
 2. `process-refund` Edge Function calls Stripe `refunds.create` with an idempotency key.
 3. The Stripe `charge.refunded` webhook confirms the refund. Our handler writes a `refunds` row and calls `reverse_points_for_refund()`.
-4. Reversal rule: points earned on the refunded amount are clawed back, and points spent on redemptions in that order are **not** restored unless the refund is for the redeemed item (open decision, see §8).
+4. Reversal rule: points earned on the refunded amount are clawed back, capped at the customer's current balance. Points already spent on redemptions are **not** restored. Any shortfall is forfeited, so the balance never goes below zero.
 
 ### 2.4 Authorization model
 
@@ -292,14 +292,13 @@ create table orders (
   subtotal_cents       bigint not null check (subtotal_cents >= 0),
   discount_cents       bigint not null default 0 check (discount_cents >= 0),
   reward_cents         bigint not null default 0 check (reward_cents >= 0),
-  tax_cents            bigint not null default 0 check (tax_cents >= 0),
   total_cents          bigint not null check (total_cents >= 0),
   points_reserved      int not null default 0 check (points_reserved >= 0),
   points_awarded       int not null default 0,
   idempotency_key      text unique not null,      -- client-generated UUID per checkout attempt
   created_at           timestamptz not null default now(),
   paid_at              timestamptz,
-  check (total_cents = subtotal_cents - discount_cents - reward_cents + tax_cents)
+  check (total_cents = subtotal_cents - discount_cents - reward_cents)
 );
 
 create table order_items (
@@ -366,7 +365,7 @@ create table refund_items (
 ```sql
 create table loyalty_accounts (
   customer_id     uuid primary key references customers(id),
-  balance         bigint not null default 0,          -- cached; may be negative after reversals
+  balance         bigint not null default 0 check (balance >= 0),   -- cached; never negative
   lifetime_earned bigint not null default 0 check (lifetime_earned >= 0),
   updated_at      timestamptz not null default now()
 );
@@ -473,7 +472,7 @@ Customer lookup from POS goes through a `SECURITY DEFINER` function that accepts
 ### 4.8 Core database functions (designed here, implemented in M2)
 
 - `award_points_for_payment(payment_id, event_id)`: idempotent. If `loyalty_transactions.source_event_id` already exists, it returns without change. Otherwise it locks the customer's `loyalty_accounts` row, computes points, inserts the ledger row, updates the balance and `orders.points_awarded`, and marks the payment succeeded.
-- `reverse_points_for_refund(refund_id)`: inserts `reverse_earn` for points proportional to the refunded amount, rounded down. It cannot reverse more than was awarded for that order.
+- `reverse_points_for_refund(refund_id)`: inserts `reverse_earn` for points proportional to the refunded amount, rounded down. It cannot reverse more than was awarded for that order, and it cannot reverse more than the customer's current balance. Any shortfall is forfeited rather than debited below zero.
 - `redeem_points(customer_id, reward_id, order_id, idem_key)`: checks the reward is active, `balance >= points_cost`, and the idempotency key is unused. It locks the account, debits the balance, and inserts a `reserved` redemption.
 - `release_redemption(redemption_id)`: called on failed or cancelled payment. Credits points back and marks the redemption released.
 - `set_updated_at()` and `audit_write()` triggers on mutable tables.
@@ -484,7 +483,7 @@ Each function sets `search_path = ''` and schema-qualifies every reference, whic
 
 ## 5. Loyalty rules (initial)
 
-- **Earn:** `points = floor(paid_amount_cents / 10)`. This is 10 points per $1, so $9.00 gives 90 points. Earn is calculated on the **net paid amount after discounts, excluding tax**. Rewards redeemed in the same order do not earn points.
+- **Earn:** `points = floor(paid_amount_cents / 10)`. This is 10 points per $1, so $9.00 gives 90 points. Earn is calculated on the **net paid amount after discounts**. No tax applies. Rewards redeemed in the same order do not earn points.
 - **Thresholds (configurable in admin):**
 
   | Reward | Points | Grants |
@@ -494,7 +493,7 @@ Each function sets `search_path = ''` and schema-qualifies every reference, whic
   | Free six-pack | 1,400 | 1 × six-pack |
 
 - **Redemption:** Debits points at the time of order creation (reserved). Fulfilled when the payment succeeds. Released if the payment fails or the order is cancelled before payment.
-- **Refund:** Claws back points earned on the refunded amount. Open decision on whether balance can go negative (see §8).
+- **Refund:** Claws back points earned on the refunded amount, capped at the customer's current balance. Points already spent on redemptions are not restored. The balance never goes below zero.
 - **Expiry:** None in v1. The schema has `expire` for later.
 
 ---
@@ -601,8 +600,8 @@ Suggested order: **M0 → M1 → M2 → M3 → M4 and M5 in parallel → M7 → 
 
 ## 8. Open decisions (need your answer)
 
-1. **Refund and points:** when a refund lands after points were redeemed on that order, should we (a) not restore redeemed points, (b) restore them, or (c) let the balance go negative and block new redemptions until it recovers? The default in this plan is (a) for the redeemed item and claw-back for earned points, with the balance allowed to go negative and redemptions blocked while negative.
-2. **Tax:** is sales tax applied at checkout? Rates by location? This affects `tax_cents` and whether earn is on pre-tax amount (plan assumes pre-tax).
+1. **Refund and points — DECIDED:** redeemed points stay spent. Refund clawback of earned points is capped at the current balance. The balance never goes negative.
+2. **Tax — DECIDED:** no tax. `tax_cents` is removed from the schema.
 3. **Refund approval threshold:** above what amount does a manager need to approve a refund? Plan default: $25.
 4. **Membership code:** static code per customer (simple, what the plan assumes) or rotating short-lived QR (harder to screenshot-share, more work)?
 5. **Customer sign-in:** email + password only, or also Sign in with Apple and Google? Sign in with Apple is required if any other third-party sign-in is offered.
@@ -652,7 +651,7 @@ I can write and test everything that does not depend on these: the SQL, Edge Fun
 
 Items to settle first, in order of how much they change the build:
 
-1. Answer the open decisions in §8, especially 1 (refunds and points) and 2 (tax). These change the schema and the loyalty functions.
+1. Decisions 1 (refunds and points) and 2 (tax) in §8 are settled and reflected in the plan. Decisions 3 to 8 remain open, and none of them blocks M0 or M1.
 2. Confirm whether you have, or will get, the Apple Developer account and the Tap to Pay entitlement request in progress. M6 depends on it and its lead time is outside our control.
 3. Decide where the Supabase and Stripe accounts live (your accounts, under what owner), so keys are created in the right place.
 4. Confirm a Mac is available for iOS builds, or that CI on a macOS runner is acceptable.
