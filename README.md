@@ -1016,6 +1016,15 @@ Character select is 10 x 3 (30 slots, 28 fighters).
 
 ## Menus
 
+**The look:** black steel and blood red. The logo bleeds, chains hang in the corners, red lightning
+flashes every few seconds, the chosen item sits on a dripping red slash between two skulls, and
+every menu has a vignette, drifting ash and scanlines (`RF.drawSlash`, `RF.drawSkull`, `RF.drawGrit`
+in `js/scenes/ui.js`). The layout, the items and the controls are unchanged.
+
+**The music** is downtuned a fourth (E becomes a low B) and a little slower, with more amp gain,
+a deeper kick, double-kick and blast-beat drums. `DOWNTUNE` and `DRAG` at the bottom of
+`js/config/music.js` put it back.
+
 The classic fire main menu and character select, polished: the main menu shows a one-line
 description of the highlighted option and name tags under the two featured fighters (who rise
 in with a flash when they change). On character select, the slot each player is on lights up in

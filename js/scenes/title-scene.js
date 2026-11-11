@@ -78,7 +78,8 @@
           stage: RF.STAGES[Math.floor(Math.random() * RF.STAGES.length)].id }));
       }
       const drop = this.logoDrop();
-      if (this.t === 22) { this.shake = 14; RF.audio.sfx('ko'); }
+      if (this.t === 22) { this.shake = 18; RF.audio.sfx('ko'); RF.audio.sfx('boom'); }
+      if (this.t > 60 && this.t % 400 === 0) RF.audio.sfx('rumble');   // thunder with the red lightning
       if (this.shake > 0) this.shake--;
       this.stepFire(drop);
       if (this.swapT > 0) this.swapT--;
@@ -110,63 +111,77 @@
         const rise = this.swapT ? this.swapT * 3 : 0; // new fighters rise into place
         ctx.translate(x, y + rise);
         ctx.scale(1.35, 1.35);
-        this.showcase[idx].draw(ctx, i === 0 ? 'victory' : 'idle', bob, 0, 0, i === 0 ? 1 : -1, this.swapT > 6 ? '#ffd080' : null);
+        this.showcase[idx].draw(ctx, i === 0 ? 'victory' : 'idle', bob, 0, 0, i === 0 ? 1 : -1, this.swapT > 6 ? '#ff2010' : null);
         ctx.restore();
         // name tag under each fighter
         const tw = RF.font.textWidth(def.name) + 8;
         ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(Math.round(x - tw / 2), 209, tw, 11);
-        ctx.fillStyle = '#ff7a2a'; ctx.fillRect(Math.round(x - tw / 2), 209, tw, 1);
-        T(ctx, def.name, x, 211, { align: 'center', color: '#ffe0b0', outline: '#000' });
+        ctx.fillStyle = '#c01010'; ctx.fillRect(Math.round(x - tw / 2), 209, tw, 1);
+        T(ctx, def.name, x, 211, { align: 'center', color: '#f0e8dc', outline: '#000' });
       }
       const glow = ctx.createLinearGradient(0, H - 90, 0, H);
-      glow.addColorStop(0, 'rgba(255,90,0,0)');
-      glow.addColorStop(1, 'rgba(255,90,0,0.25)');
+      glow.addColorStop(0, 'rgba(200,10,0,0)');
+      glow.addColorStop(1, 'rgba(200,10,0,0.3)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, H - 90, W, 90);
 
+      // chains hanging in the top corners, swaying
+      for (const [cx0, dir] of [[18, 1], [W - 18, -1], [40, 1], [W - 40, -1]]) for (let k = 0; k < (cx0 === 18 || cx0 === W - 18 ? 9 : 5); k++) {
+        const sx = Math.round(cx0 + Math.sin(this.t / 50 + cx0) * k * 0.5 * dir), sy = k * 6 - 2;
+        ctx.fillStyle = '#0a0a0c'; ctx.fillRect(sx - 2, sy, 5, 7); ctx.fillStyle = k % 2 ? '#6a6a72' : '#4a4a52'; ctx.fillRect(sx - 1, sy + 1, 3, 5); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(sx, sy + 2, 1, 3);
+      }
+      // red lightning: a flash every few seconds
+      const lt = this.t % 400;
+      if (this.t > 60 && (lt < 4 || (lt > 8 && lt < 11))) { ctx.fillStyle = 'rgba(255,40,30,0.22)'; ctx.fillRect(0, 0, W, H); }
+
       // Logo: dark outline, molten gradient, white-hot flicker
       const drop = this.logoDrop();
-      const molten = ['#ffffff', '#fff6b0', '#ffd040', '#ff9a10', '#ff5a00', '#d02000', '#7a0800'];
+      const molten = ['#ffffff', '#f4e4dc', '#e8a090', '#e02818', '#b00c0c', '#780404', '#3a0000']; // bone to blood
+      // blood running down from the letters
+      if (!drop) for (let i = 0; i < 22; i++) {
+        const dx = 70 + i * 11 + (i * 7) % 5, len = Math.min(dx > 98 && dx < 286 ? 5 + (i * 13) % 4 : 6 + (i * 13) % 22,   // short over the tagline
+          Math.max(0, (this.t - 30 - i * 3) * 0.25)) + Math.sin(this.t / 30 + i) * 1.5;
+        if (len > 0) { ctx.fillStyle = '#6a0202'; ctx.fillRect(dx, LOGO_Y + 33, 2, Math.round(len)); ctx.fillStyle = '#c01010'; ctx.fillRect(dx, LOGO_Y + 33, 1, Math.round(len)); ctx.fillRect(dx, LOGO_Y + 33 + Math.round(len), 2, 2); }
+      }
+      T(ctx, RF.CONFIG.TITLE, W / 2 + 2, LOGO_Y - drop + 3, { scale: LOGO_SCALE, align: 'center', color: '#000000' });
       T(ctx, RF.CONFIG.TITLE, W / 2, LOGO_Y - drop + 1, { scale: LOGO_SCALE, align: 'center', color: '#1a0000' });
       T(ctx, RF.CONFIG.TITLE, W / 2, LOGO_Y - drop, { scale: LOGO_SCALE, align: 'center', color: molten, outline: '#2a0000' });
       if (this.t < 30 && this.t > 20) {
         ctx.fillStyle = `rgba(255,220,150,${(30 - this.t) / 12})`;
         ctx.fillRect(0, 0, W, H); // impact flash
       }
-      T(ctx, 'NO RULES. NO MERCY. NO LUNCH.', W / 2, LOGO_Y + 42, { align: 'center', color: '#ffb060', outline: '#000' });
+      T(ctx, 'NO RULES. NO MERCY. NO LUNCH.', W / 2, LOGO_Y + 43, { align: 'center', color: '#e02818', outline: '#000' });
       const desc = this.menu.items[this.menu.index].desc;
-      if (desc) T(ctx, desc, W / 2, LOGO_Y + 52, { align: 'center', color: '#c8a090', outline: '#000' });
+      if (desc) T(ctx, desc, W / 2, LOGO_Y + 52, { align: 'center', color: '#a89490', outline: '#000' });
 
-      // Menu plate + items
-      ctx.fillStyle = 'rgba(10,0,0,0.65)';
+      // Menu plate + items: a black steel slab with blood-red rails
+      ctx.fillStyle = 'rgba(0,0,0,0.82)';
       const n = this.menu.items.length, rows = Math.min(VISIBLE, n), first = Math.max(0, Math.min(n - rows, this.menu.index - Math.floor(rows / 2)));
       ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, ITEM_GAP * rows + 6);
-      ctx.fillStyle = '#8a2a0a';
-      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, 1);
-      ctx.fillRect(W / 2 - 74, ITEM_Y - 2 + ITEM_GAP * rows - 1, 148, 1);
-      const more = (y, up) => { ctx.fillStyle = this.t % 40 < 26 ? '#ffb060' : '#8a4a20'; ctx.beginPath(); ctx.moveTo(W / 2 + 62, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 70, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 66, y + (up ? 0 : 5)); ctx.fill(); };
+      ctx.fillStyle = '#c01010';
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, 2);
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 2 + ITEM_GAP * rows - 2, 148, 2);
+      ctx.fillStyle = '#3a0000'; ctx.fillRect(W / 2 - 74, ITEM_Y - 6, 1, ITEM_GAP * rows + 2); ctx.fillRect(W / 2 + 73, ITEM_Y - 6, 1, ITEM_GAP * rows + 2);
+      for (const bx of [W / 2 - 72, W / 2 + 69]) for (const by of [ITEM_Y - 5, ITEM_Y + ITEM_GAP * rows - 7]) { ctx.fillStyle = '#5a5a60'; ctx.fillRect(bx, by, 3, 3); ctx.fillStyle = '#b0b0b8'; ctx.fillRect(bx, by, 1, 1); } // rivets
+      const more = (y, up) => { ctx.fillStyle = this.t % 40 < 26 ? '#e02818' : '#5a0808'; ctx.beginPath(); ctx.moveTo(W / 2 + 62, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 70, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 66, y + (up ? 0 : 5)); ctx.fill(); };
       if (first > 0) more(ITEM_Y - 5, true);            // more above
       if (first + rows < n) more(ITEM_Y + ITEM_GAP * rows - 9, false); // more below
       this.menu.items.forEach((item, i) => {
         if (i < first || i >= first + rows) return;
         const sel = i === this.menu.index, y = ITEM_Y + (i - first) * ITEM_GAP;
         if (sel) {
-          // Burning highlight bar behind the chosen item
-          const g = ctx.createLinearGradient(W / 2 - 70, 0, W / 2 + 70, 0);
-          g.addColorStop(0, 'rgba(255,60,0,0)');
-          g.addColorStop(0.5, 'rgba(255,90,0,0.45)');
-          g.addColorStop(1, 'rgba(255,60,0,0)');
-          ctx.fillStyle = g;
-          ctx.fillRect(W / 2 - 70, y - 2, 140, 11);
-          this.drawFlame(ctx, W / 2 - RF.font.textWidth(item.label) / 2 - 12, y + 7);
-          this.drawFlame(ctx, W / 2 + RF.font.textWidth(item.label) / 2 + 12, y + 7);
+          // A blood-red slash behind the chosen item, a skull on either side
+          RF.drawSlash(ctx, W / 2, y, 132, 11, this.t);
+          RF.drawSkull(ctx, Math.round(W / 2 - RF.font.textWidth(item.label) / 2 - 15), y, this.t);
+          RF.drawSkull(ctx, Math.round(W / 2 + RF.font.textWidth(item.label) / 2 + 8), y, this.t);
         }
         T(ctx, item.label, W / 2 + (sel ? Math.round(Math.sin(this.t / 5)) : 0), y, {
           align: 'center', outline: '#000',
-          color: sel ? ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#ff9a10', '#ff7000', '#e04000'] : '#b8a090',
+          color: sel ? '#ffffff' : '#7a6a68',
         });
       });
       ctx.restore();
+      RF.drawGrit(ctx, this.t);
 
       const mods = RF.MOD_SETTINGS.filter((m) => RF.CONFIG[m.id]).length;
       if (mods) T(ctx, mods + ' PARTY MOD' + (mods > 1 ? 'S' : '') + ' ON', W - 6, H - 10, { align: 'right', color: '#ff9a40', outline: '#000' });

@@ -124,16 +124,16 @@
     // (scooped mids, rolled-off fizz) -> pan. Notes plug into `.input`.
     makeAmp(pan, drive, out) {
       const c = this.ctx, input = c.createGain();
-      const tight = c.createBiquadFilter(); tight.type = 'highpass'; tight.frequency.value = 110;
+      const tight = c.createBiquadFilter(); tight.type = 'highpass'; tight.frequency.value = 70;   // (downtuned: let the low B through)
       const pre = c.createGain(); pre.gain.value = drive;
       const shaper = c.createWaveShaper();
       const curve = new Float32Array(2048);
-      for (let i = 0; i < 2048; i++) { const x = (i / 2047) * 2 - 1; curve[i] = Math.tanh(x * 3 + 0.15) - Math.tanh(0.15); } // slightly asymmetric = more harmonics
+      for (let i = 0; i < 2048; i++) { const x = (i / 2047) * 2 - 1; curve[i] = Math.tanh(x * 4.5 + 0.2) - Math.tanh(0.2); } // slightly asymmetric = more harmonics
       shaper.curve = curve; shaper.oversample = '4x';
-      const low = c.createBiquadFilter(); low.type = 'lowshelf'; low.frequency.value = 160; low.gain.value = 5;      // chug thump
-      const scoop = c.createBiquadFilter(); scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -7; // metal mid scoop
+      const low = c.createBiquadFilter(); low.type = 'lowshelf'; low.frequency.value = 140; low.gain.value = 8;      // chug thump
+      const scoop = c.createBiquadFilter(); scoop.type = 'peaking'; scoop.frequency.value = 650; scoop.Q.value = 0.8; scoop.gain.value = -9; // metal mid scoop
       const pres = c.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 2400; pres.Q.value = 1; pres.gain.value = 4;     // bite
-      const cab1 = c.createBiquadFilter(); cab1.type = 'lowpass'; cab1.frequency.value = 5200; cab1.Q.value = 0.7;  // speaker cabinet
+      const cab1 = c.createBiquadFilter(); cab1.type = 'lowpass'; cab1.frequency.value = 4500; cab1.Q.value = 0.7;  // speaker cabinet
       const cab2 = c.createBiquadFilter(); cab2.type = 'lowpass'; cab2.frequency.value = 7000;
       const lvl = c.createGain(); lvl.gain.value = out;
       const p = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
@@ -151,15 +151,15 @@
       comp.attack.value = 0.004; comp.release.value = 0.15;
       const makeup = c.createGain(); makeup.gain.value = 1.3;
       this.band.connect(comp).connect(makeup).connect(this.musicBus);
-      this.ampL = this.makeAmp(-0.75, 9, 0.2);   // rhythm guitar, double-tracked left...
-      this.ampR = this.makeAmp(0.75, 9, 0.2);    // ...and right
+      this.ampL = this.makeAmp(-0.75, 13, 0.2);   // rhythm guitar, double-tracked left...
+      this.ampR = this.makeAmp(0.75, 13, 0.2);    // ...and right
       this.ampLead = this.makeAmp(0, 7, 0.32);   // lead guitar, centre
       // Bass: growly, lightly driven.
       const bin = c.createGain(), bshape = c.createWaveShaper(), bcurve = new Float32Array(1024);
-      for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; bcurve[i] = Math.tanh(x * 2.2); }
+      for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; bcurve[i] = Math.tanh(x * 3.6); }
       bshape.curve = bcurve;
       const blp = c.createBiquadFilter(); blp.type = 'lowpass'; blp.frequency.value = 1400;
-      const bout = c.createGain(); bout.gain.value = 0.28;
+      const bout = c.createGain(); bout.gain.value = 0.34;
       bin.connect(bshape).connect(blp).connect(bout).connect(this.band);
       this.bassIn = bin;
       // Room reverb (a generated impulse response) for drums and leads.
@@ -226,7 +226,7 @@
     bassNote(f, t, dur, mute, vol) {
       const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
       o.type = 'sawtooth'; o2.type = 'square';
-      o.frequency.value = f; o2.frequency.value = f / 2;
+      o.frequency.value = f; o2.frequency.value = f < 45 ? f * 2 : f / 2;   // very low notes get an octave above, not a sub nobody can hear
       const len = mute ? Math.min(dur, 0.16) : dur;
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.005);
       g.gain.setValueAtTime(vol * 0.8, t + Math.max(0.01, len - 0.03)); g.gain.linearRampToValueAtTime(0.0001, t + len);
@@ -279,8 +279,8 @@
         return g;
       };
       if (type === 'k') {                       // punchy metal kick: beater click + low thump
-        thump(170, 48, 0.17, 0.75);
-        this.noiseBurst(t, 0.012, 0.35, 'highpass', 3000, bus);
+        thump(150, 38, 0.2, 0.95);                // deeper and harder
+        this.noiseBurst(t, 0.012, 0.42, 'highpass', 3000, bus);
       } else if (type === 's') {               // cracking snare with room
         const g = thump(230, 170, 0.08, 0.35);
         this.noiseBurst(t, 0.18, 0.4, 'bandpass', 2200, bus);

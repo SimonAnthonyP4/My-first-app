@@ -30,12 +30,13 @@
   const rep = (bar, n) => Array(n).fill(bar);
 
   // Drum patterns
-  const SKANK = 'k+h . s . k+h . s . k+h . s . k+h . s .';           // thrash beat
+  const SKANK = 'k+h k s k k+h k s k k+h k s k k+h k s k';           // thrash beat over rolling double kick
+  const BLAST = 'k+h s k+h s k+h s k+h s k+h s k+h s k+h s k+h s';   // blast beat
   const GALLOP = 'k+h . k k s . k k k+h . k k s . k k';              // double-kick gallop
-  const HALF = 'k+h . k . s . . k k . k . s . . .';                  // half-time, huge
+  const HALF = 'k+c k k k s . k k k k k k s . k k';                  // half-time, huge, double kick underneath
   const DBEAT = 'k+h . s . k+h k s . k+h . s . k+h k s .';           // punk d-beat
-  const GROOVE = 'k+h . h k s . h . k+h k h . s . h .';              // mid-tempo groove
-  const DOOM = 'k+h . . . . . h . s . . . . . k .';                   // slow and crushing
+  const GROOVE = 'k+h k h k s . h k k+h k h k s . k k';              // mid-tempo groove, heavy-footed
+  const DOOM = 'k+h . . . k k h . s . . . k k k .';                   // slow and crushing
   const FILL_A = 'k+h . s . k+h . s . s s s s T T t t';
   const FILL_B = 'k+h . k k s . k k s s T T t t t t';
   const STOP = 'k+c . . . . . . . . . . . s s s s';
@@ -105,7 +106,7 @@
         },
         drums: {
           bars: [
-            crash(SKANK), SKANK, SKANK, FILL_A,
+            crash(SKANK), SKANK, crash(BLAST), FILL_A,
             crash(GALLOP), GALLOP, GALLOP, FILL_B,
             crash(HALF), HALF, crash(HALF), FILL_B,
             crash(SKANK), SKANK, SKANK, STOP,
@@ -129,7 +130,7 @@
             'E5 - - - - - - - - - - - . . . .',
           ],
         },
-        drums: { bars: [crash(SKANK), SKANK, SKANK, FILL_A, crash(GALLOP), GALLOP, crash(SKANK), FILL_B] },
+        drums: { bars: [crash(SKANK), SKANK, crash(BLAST), FILL_A, crash(GALLOP), GALLOP, crash(BLAST), FILL_B] },
       },
     },
 
@@ -190,6 +191,15 @@
       },
     },
   };
+
+  // DOWNTUNED: every riff, bass line and solo is dropped a fourth (E becomes a low B) and each
+  // song is pulled back a little, so the whole soundtrack sits deeper and hits harder.
+  // (Set DOWNTUNE to 0 and DRAG to 1 for the original tuning and tempos.)
+  const DOWNTUNE = -5, DRAG = 0.93;
+  for (const song of Object.values(RF.MUSIC)) {
+    song.bpm = Math.round(song.bpm * DRAG);
+    for (const [name, tr] of Object.entries(song.tracks)) if (name !== 'drums') tr.bars = tr.bars.map((b) => shift(b, DOWNTUNE));
+  }
 
   // Every bar must be exactly 16 steps; catch typos early.
   for (const [id, song] of Object.entries(RF.MUSIC)) {

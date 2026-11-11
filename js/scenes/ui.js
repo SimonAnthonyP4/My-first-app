@@ -3,7 +3,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const C = RF.CONTROLS;
 
-  RF.TITLE_COLORS = ['#fff8c0', '#fff070', '#ffd030', '#ffa020', '#ff7010', '#e04010', '#a02008'];
+  RF.TITLE_COLORS = ['#ffffff', '#f0d8d0', '#e88070', '#e02818', '#b80c0c', '#7a0404', '#400000'];   // bone white bleeding into dark red
 
   // Menus accept either player's keys, plus Enter/Space/Escape.
   const MENU_KEYS = {
@@ -46,8 +46,9 @@
       const spacing = opts.spacing || 14;
       this.items.forEach((item, i) => {
         const sel = i === this.index;
-        const color = sel ? '#ffd030' : '#b8a8a0';
+        const color = sel ? '#ffffff' : '#8a7a78';
         const yy = y + i * spacing;
+        if (sel) RF.drawSlash(ctx, x, yy, Math.max(120, RF.font.textWidth(item.label, opts.scale || 1) + 60), 7 * (opts.scale || 1) + 4, t);
         if (item.setting) {
           T(ctx, item.label, x - 8, yy, { align: 'right', color, outline: '#000' });
           const v = RF.settings.valueLabel(item.setting);
@@ -57,8 +58,8 @@
           if (sel) {
             const w = RF.font.textWidth(item.label, opts.scale || 1);
             const bob = Math.floor(t / 8) % 2;
-            T(ctx, '>', x - w / 2 - 12 - bob, yy + ((opts.scale || 1) - 1) * 3, { color: '#ff5020', outline: '#000' });
-            T(ctx, '<', x + w / 2 + 6 + bob, yy + ((opts.scale || 1) - 1) * 3, { color: '#ff5020', outline: '#000' });
+            RF.drawSkull(ctx, Math.round(x - w / 2 - 14 - bob), yy + ((opts.scale || 1) - 1) * 3, t);
+            RF.drawSkull(ctx, Math.round(x + w / 2 + 7 + bob), yy + ((opts.scale || 1) - 1) * 3, t);
           }
         }
       });
@@ -66,22 +67,58 @@
   }
   RF.ListMenu = ListMenu;
 
+  // A blood-red slash behind the chosen item: a slanted bar with a torn edge.
+  RF.drawSlash = (ctx, cx, y, w, h, t) => {
+    const l = Math.round(cx - w / 2), top = y - 2, k = 0.82 + 0.18 * Math.sin(t / 6);
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(l + 5, top - 1); ctx.lineTo(l + w + 7, top - 1); ctx.lineTo(l + w - 3, top + h + 1); ctx.lineTo(l - 5, top + h + 1); ctx.fill();
+    const g = ctx.createLinearGradient(l, 0, l + w, 0);
+    g.addColorStop(0, `rgba(90,0,0,${k})`); g.addColorStop(0.5, `rgba(200,10,10,${k})`); g.addColorStop(1, `rgba(90,0,0,${k})`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(l + 6, top); ctx.lineTo(l + w + 5, top); ctx.lineTo(l + w - 4, top + h); ctx.lineTo(l - 3, top + h); ctx.fill();
+    ctx.fillStyle = 'rgba(255,120,100,0.7)'; ctx.fillRect(l + 8, top, w - 6, 1);
+    for (let i = 0; i < 5; i++) { const dx = l + 10 + ((i * 53) % (w - 20)), len = 2 + ((i * 7 + (t >> 3)) % 4); ctx.fillStyle = '#7a0404'; ctx.fillRect(dx, top + h, 1, len); } // it drips
+  };
+  // A tiny skull: the menu cursor.
+  RF.drawSkull = (ctx, x, y, t) => {
+    const P = ['.#####.', '#######', '#.###.#', '#.###.#', '###.###', '.#####.', '.#.#.#.'];
+    const hot = Math.floor(t / 10) % 2;
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+      const on = P[r][c] === '#';
+      ctx.fillStyle = on ? '#f0e8dc' : ((r === 2 || r === 3) && (c === 1 || c === 5) ? (hot ? '#ff2010' : '#a00808') : null);
+      if (ctx.fillStyle && (on || ((r === 2 || r === 3) && (c === 1 || c === 5)))) ctx.fillRect(x + c, y + r, 1, 1);
+    }
+  };
+  // Film-grain vignette, ash, and scratches: laid over every menu.
+  RF.drawGrit = (ctx, t) => {
+    const W = RF.CONFIG.WIDTH, H = RF.CONFIG.HEIGHT;
+    const v = ctx.createRadialGradient(W / 2, H / 2, 70, W / 2, H / 2, 230);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.85)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 26; i++) { // ash drifting down
+      const x = (i * 61 + Math.sin(t / 40 + i) * 12 + 400) % W, y = (t * (0.25 + (i % 5) * 0.09) + i * 37) % H;
+      ctx.fillStyle = i % 4 ? 'rgba(160,150,150,0.35)' : 'rgba(255,90,40,0.6)'; ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.16)'; for (let y = (t >> 2) % 3; y < H; y += 3) ctx.fillRect(0, y, W, 1); // scanlines
+  };
+
   // Darkened, animated first stage behind all menus.
   let backdrop = null;
   RF.drawMenuBackdrop = (ctx, t, darkness = 0.6) => {
     if (!backdrop) backdrop = new RF.StageRenderer(RF.STAGES[0]);
     backdrop.draw(ctx, t);
-    ctx.fillStyle = `rgba(8,0,0,${darkness})`;
+    ctx.fillStyle = `rgba(6,0,0,${Math.min(0.94, darkness + 0.1)})`;
     ctx.fillRect(0, 0, RF.CONFIG.WIDTH, RF.CONFIG.HEIGHT);
+    RF.drawGrit(ctx, t);
   };
 
-  RF.drawPanel = (ctx, x, y, w, h, border = '#6a2a1a') => {
+  RF.drawPanel = (ctx, x, y, w, h, border = '#7a0808') => {
     ctx.fillStyle = '#000';
     ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
     ctx.fillStyle = border;
     ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = 'rgba(14,4,4,0.92)';
+    ctx.fillStyle = 'rgba(8,2,2,0.94)';
     ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = '#e02818';                                   // bolted corners
+    for (const [cx, cy] of [[x, y], [x + w - 3, y], [x, y + h - 3], [x + w - 3, y + h - 3]]) ctx.fillRect(cx, cy, 3, 3);
   };
 
   RF.drawTitle = (ctx, text, y, scale = 2) => {
