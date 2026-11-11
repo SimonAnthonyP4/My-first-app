@@ -348,7 +348,8 @@
       this.vx = 0; this.move = null;
       this.state = null; this.setState('taunt');
       const jokes = this.def.jokes, opp = this.scene && this.scene.opponentOf(this);
-      const rival = opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
+      const many = opp && this.def.rivalTaunts && this.def.rivalTaunts[opp.def.id]; // a whole set of lines for one rival (Trump vs Jauregui)
+      const rival = many ? many[Math.floor(Math.random() * many.length)] : opp && this.def.rivalTaunt && this.def.rivalTaunt[opp.def.id]; // special lines for a rival (Bro Batch!)
       const live = this.scene && this.scene.phase === 'fight';
       // STRICT (Ms. Brady): taunting in front of her gets you written up - she takes your meter.
       if (live && opp && opp.def.strict) {

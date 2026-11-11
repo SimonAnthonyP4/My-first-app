@@ -968,7 +968,33 @@ chill line ("NO STRESS, BRO.", "WAKE ME UP AT THE 19TH HOLE.", "IS THIS ON THE P
   and down into the cup. HOLE IN ONE!
 - **Entrance:** rolls in on a golf cart and hops out. **Brutality:** FORE!
 
-Character select is 9 x 2 (18 slots, now full with Fernando).
+## Javan
+
+The Eagles superfan (superfan, **116% health**, from Section 104, The Linc). Drawn from a friend's
+picture: curly hair, glasses, green EAGLES hoodie, cargo shorts. Bleeds green, votes red, and every
+taunt is one or the other ("E-A-G-L-E-S! EAGLES!", "LOWER MY TAXES.", "THE TUSH PUSH IS LEGAL.").
+
+- **Special: Call the President.** MR. PRESIDENT! WE NEED YOU! - and Donald Trump storms in from
+  behind him and charges across the stage. YOU'RE FIRED! With a super, a second wave follows.
+  Against Trump himself the line is busy, so Javan throws a perfect spiral instead.
+- **Command specials:** Perfect Spiral (a football) and Tush Push (a shoulder-down drive).
+- **Throw:** Touchdown Spike. **Finisher:** Liberty Bell. **Brutality:** TUSH PUSH.
+- **Super:** FLY EAGLES FLY. Tag team with Trump for LANDSLIDE, or with Mikey for SUPER BOWL SUNDAY.
+
+## Donald Trump
+
+A parody president (president, **126% health**, from The Oval Office). Navy suit, very long red
+tie, the hair. Slow walk, heavy hands, and the most to say of anyone on the roster.
+
+- **Special: You're Fired.** Points, and a pink slip reading FIRED flies across the stage.
+- **Command specials:** Rally (TREMENDOUS!) and The Wall (a counter: I BUILT A WALL.).
+- **Throw:** Hostile Takeover. **Finisher:** Impeachment. **Brutality:** LANDSLIDE.
+- **Against Jauregui** he has his own entrance line, his own win line, versus-screen banter both
+  ways, and a set of ten taunts used only on her ("I AM PUTTING A TARIFF ON YOUR HOMEWORK.",
+  "I AM DEREGULATING THE QUADRATIC FORMULA."). Add more in `rivalTaunts` in
+  `js/config/characters.js`; a character can have a list like this for any rival.
+
+Character select is 10 x 3 (30 slots, 27 fighters).
 
 ## Menus
 

@@ -21,6 +21,8 @@
     sirven: { title: 'ROYAL DECREE', line: 'THIS IS YOUR PRINCIPAL SPEAKING.', color: '#ffd030', style: 'rays' },
     lopez: { title: 'INTEGRAL TO INFINITY', line: 'CLASS DISMISSED.', color: '#a050ff', style: 'math' },
     jauregui: { title: 'FINAL EXAM', line: 'PENCILS DOWN.', color: '#f0e8c8', style: 'math' },
+    javan: { title: 'FLY EAGLES FLY', line: 'GO BIRDS!', color: '#3ad070', style: 'streaks' },
+    trump: { title: 'YOU\'RE FIRED', line: 'TREMENDOUS.', color: '#ff3030', style: 'rays' },
     bandy: { title: 'ENCORE', line: 'TURN IT UP!', color: '#ff60a0', style: 'rays' },
     mikey: { title: 'BLITZ', line: 'NOBODY HITS MY TEAMMATES!', color: '#60e860', style: 'streaks' },
     simon: { title: 'EIGHT LIMBS', line: 'ONE KNEE. THAT IS ALL I NEED.', color: '#ffb030', style: 'streaks' },
@@ -41,7 +43,7 @@
   };
   // pairs with a team super of their own (ids in alphabetical order)
   const DUOS = {
-    'anthony+nicholas': 'BRO BATCH BLITZ', 'brady+sirven': 'THE ADMINISTRATION', 'mikey+simon': 'GAME DAY',
+    'anthony+nicholas': 'BRO BATCH BLITZ', 'brady+sirven': 'THE ADMINISTRATION', 'javan+trump': 'LANDSLIDE', 'javan+mikey': 'SUPER BOWL SUNDAY', 'mikey+simon': 'GAME DAY',
     'bandy+fernando': 'STREET LEVEL', 'jauregui+lopez': 'SHOW YOUR WORK', 'alejandro+tyler': 'NO STRESS. SEND IT.',
     'landa+wuttke': 'REQUIEM', 'gabriel+mikey': 'THE 305 BLITZ', 'anthony+lopez': 'EVERY UNIVERSE', 'bandy+wuttke': 'THE LAST BELL',
   };

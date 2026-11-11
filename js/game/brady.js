@@ -54,8 +54,8 @@
       if (t === 1) { RF.audio.sfx('pa'); scene.effects.spawnText(s.callout, f.x, f.body.height + 16, '#ffd030'); }
       if (t === s.startup) {
         if (opp.def.id === s.actor) { // can't call the boss on the boss
-          scene.effects.spawnText('...FINE. I\'LL DO IT MYSELF.', f.x, f.body.height + 26, '#ffffff');
-          scene.spawnProjectile(f, RF.BRADY_SLIP);
+          scene.effects.spawnText(s.fallbackLine || '...FINE. I\'LL DO IT MYSELF.', f.x, f.body.height + 26, '#ffffff');
+          scene.spawnProjectile(f, (s.fallback && RF.SPECIALS[s.fallback]) || RF.BRADY_SLIP);
         } else {
           RF.spawnAssist(scene, f, s.actor, { damage: s.damage, speed: f.superActive ? 8.5 : 6.5, line: s.line, hitText: s.hitText });
           if (f.superActive) RF.spawnAssist(scene, f, s.actor, { damage: s.damage * 0.5, speed: 5, line: '', hitText: 'AND STAY OUT!' }); // the super sends a second wave

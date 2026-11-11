@@ -873,6 +873,17 @@
     for (let i = 1; i <= 3; i++) ctx.fillRect(Math.round(x - dir * (14 + i * 5)), Math.round(y - 2 + i), 4, 1);
   };
 
+  // Trump's pink slip: YOU'RE FIRED.
+  RF.PROJECTILE_ART.firedSlip = function (ctx, x, y, t, dir) {
+    const tilt = Math.round(Math.sin(t / 3) * 2);
+    ctx.fillStyle = '#111'; ctx.fillRect(x - 12, y - 7 + tilt, 24, 14);
+    ctx.fillStyle = '#ffd0d8'; ctx.fillRect(x - 11, y - 6 + tilt, 22, 12);
+    ctx.fillStyle = '#d02030'; ctx.fillRect(x - 11, y - 6 + tilt, 22, 2);
+    RF.font.drawText(ctx, 'FIRED', x, y - 3 + tilt, { align: 'center', color: '#a00818' });
+    ctx.fillStyle = 'rgba(255,96,96,0.4)';
+    for (let i = 1; i <= 3; i++) ctx.fillRect(Math.round(x - dir * (13 + i * 5)), Math.round(y - 2 + i), 4, 1);
+  };
+
   RF.PROJECTILE_ART.voidOrb = function (ctx, x, y, t, dir) {
     // Lady Landa's purple energy blast: swirling violet orb with a black core.
     const g = ctx.createRadialGradient(x, y, 0, x, y, 16);

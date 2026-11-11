@@ -85,6 +85,12 @@
     // ---- Ms. Brady ----
     writeUp: Object.assign({ name: 'Write-Up', kind: 'projectile', startup: 9, recovery: 16, speed: 6, size: 14, height: 0.6, art: 'detentionSlip', sound: 'paper', hitText: 'WRITTEN UP!', colors: ['#ffffff', '#ff9ac8', '#d0507a'] }, hit(9)),
     zeroTolerance: Object.assign({ name: 'Zero Tolerance', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'NOT IN MY SCHOOL.' }, hit(13, { launch: 5 })),
+    // ---- Javan ----
+    spiral: Object.assign({ name: 'Perfect Spiral', kind: 'projectile', startup: 9, recovery: 16, speed: 7, size: 12, height: 0.62, art: 'football', sound: 'whoosh', hitText: 'FIRST DOWN!', colors: ['#ffffff', '#c06030', '#7a3418'] }, hit(9)),
+    tushPush: Object.assign({ name: 'Tush Push', kind: 'rush', startup: 6, speed: 8.5, duration: 15, reach: 16, recovery: 15, color: '#3ad070', callout: 'TUSH PUSH!', anim: 'heavy' }, hit(11, { pushback: 10 })),
+    // ---- Trump ----
+    theWall: Object.assign({ name: 'The Wall', kind: 'counter', startup: 2, window: 26, recovery: 17, color: '#ff3030', callout: 'I BUILT A WALL.' }, hit(13, { launch: 5 })),
+    rally: Object.assign({ name: 'Rally', kind: 'rush', startup: 8, speed: 8, duration: 16, reach: 16, recovery: 17, color: '#ff3030', callout: 'TREMENDOUS!', anim: 'heavy' }, hit(12, { pushback: 8 })),
     // ---- Bandy ----
     kickflip: Object.assign({ name: 'Kickflip', kind: 'rush', startup: 5, speed: 8.5, duration: 16, hop: 4.5, reach: 16, recovery: 14, color: '#ff60a0', callout: 'KICKFLIP!', anim: 'jump', board: true, sound: 'whoosh' }, hit(10, { pushback: 7, launch: 4 })),
     stageDive: Object.assign({ name: 'Stage Dive', kind: 'slam', startup: 8, leapPower: 8.5, maxLeapSpeed: 5, recovery: 20, radius: 48, height: 26, color: '#ff60a0' }, hit(12, { launch: 5 })),
@@ -119,6 +125,8 @@
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     brady: { commands: { qcf: 'writeUp', qcb: 'zeroTolerance' }, taunt: 'TUCK IN THAT SHIRT.', voicePitch: 0.85 },
     bandy: { commands: { qcf: 'kickflip', qcb: 'stageDive' }, taunt: 'TURN IT UP!', voicePitch: 1.05 },
+    javan: { commands: { qcf: 'spiral', qcb: 'tushPush' }, taunt: 'GO BIRDS.', voicePitch: 1.0 },
+    trump: { commands: { qcf: 'rally', qcb: 'theWall' }, taunt: 'TREMENDOUS.', voicePitch: 0.7 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
   };
   // LAST STAND: the once-a-match comeback strike (below 30% health, EX + HEAVY / L2 + R2).
