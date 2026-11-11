@@ -112,6 +112,7 @@
     anthony:     { g: 'm', lang: 'en-GB', pitch: 0.75, rate: 0.92 },  // the sorcerer: calm, wise
     nicholas:    { g: 'm', lang: 'en-US', pitch: 1.15, rate: 1.12 },  // hyped gym bro
     bandy:       { g: 'm', lang: 'en-US', pitch: 0.95, rate: 1.0 },   // laid-back skater cool
+    erick:       { g: 'm', lang: 'en-US', pitch: 1.1, rate: 1.05 },   // smooth, a little too confident
     javan:       { g: 'm', lang: 'en-US', pitch: 1.05, rate: 1.1 },   // loud Philly sports fan
     trump:       { g: 'm', lang: 'en-US', pitch: 0.7, rate: 0.88 },   // slow, sure of himself
     simon:       { g: 'm', lang: 'en-AU', pitch: 1.0, rate: 1.05 },   // focused fighter

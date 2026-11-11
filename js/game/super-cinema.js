@@ -21,6 +21,7 @@
     sirven: { title: 'ROYAL DECREE', line: 'THIS IS YOUR PRINCIPAL SPEAKING.', color: '#ffd030', style: 'rays' },
     lopez: { title: 'INTEGRAL TO INFINITY', line: 'CLASS DISMISSED.', color: '#a050ff', style: 'math' },
     jauregui: { title: 'FINAL EXAM', line: 'PENCILS DOWN.', color: '#f0e8c8', style: 'math' },
+    erick: { title: 'NOW SHOWING', line: 'W.', color: '#ff7ac8', style: 'rays' },
     javan: { title: 'FLY EAGLES FLY', line: 'GO BIRDS!', color: '#3ad070', style: 'streaks' },
     trump: { title: 'YOU\'RE FIRED', line: 'TREMENDOUS.', color: '#ff3030', style: 'rays' },
     bandy: { title: 'ENCORE', line: 'TURN IT UP!', color: '#ff60a0', style: 'rays' },

@@ -82,8 +82,8 @@
           def.x = att.x + att.facing * 8; def.y = 42; def.facing = att.facing; def.thrownPose = ['ko', 1];
           if (t % 8 === 0 && t > 8) scene.effects.spawn('dust', att.x - att.facing * 10, 1);
         }
-        if (t === 4) scene.effects.spawnText('HUT! HUT!', att.x, att.body.height + 20, '#ffffff');
-        if (t === 44) { def.y = 70; scene.effects.spawnText('TOUCHDOWN!', att.x, att.body.height + 30, '#ffd030'); }
+        if (t === 4) scene.effects.spawnText(T.runText || 'HUT! HUT!', att.x, att.body.height + 20, '#ffffff');
+        if (t === 44) { def.y = 70; scene.effects.spawnText(T.spikeText || 'TOUCHDOWN!', att.x, att.body.height + 30, '#ffd030'); }
         if (t === 50) { def.y = 0; def.x = att.x + att.facing * 24; scene.throwHit(att, def, T.spikeDamage, { vx: att.facing * 2, vy: 3 }); RF.audio.sfx('boom'); scene.shake = 14; }
         return t >= 70;
       },

@@ -252,7 +252,7 @@
           if (--this.stun <= 0 && this.grounded) this.setState('idle');
           break;
         case 'taunt':
-          if (this.stateTime === 50) { this.gainMeter(25); if (this.scene && this.scene.isHuman(this)) RF.records.count('taunt'); }
+          if (this.stateTime === 50) { this.gainMeter(25 + (this.def.rizz || 0)); if (this.def.rizz && this.scene) { this.scene.effects.spawnText('W RIZZ', this.x, this.body.height + 36, '#ff7ac8'); this.health = Math.min(this.maxHealth || this.health, this.health + 2); } if (this.scene && this.scene.isHuman(this)) RF.records.count('taunt'); }
           if (this.stateTime >= 56) this.setState('idle');
           break;
         case 'knockdown': // on the floor; BLOCK right as you land = quick-rise

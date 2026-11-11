@@ -994,7 +994,25 @@ tie, the hair. Slow walk, heavy hands, and the most to say of anyone on the rost
   "I AM DEREGULATING THE QUADRATIC FORMULA."). Add more in `rivalTaunts` in
   `js/config/characters.js`; a character can have a list like this for any rival.
 
-Character select is 10 x 3 (30 slots, 27 fighters).
+## Erick
+
+The theater guy (usher, **112% health**, from Regal Kendall Village). Drawn from a friend's picture:
+bomber jacket, cargos, one AirPod, a bucket of popcorn in the back hand. Movie theater tricks, and
+the best rizz on the roster.
+
+- **Special: Popcorn Barrage.** Flicks the bucket and a buttery cloud of kernels flies across the
+  stage. EXTRA BUTTER!
+- **W RIZZ:** every finished taunt gives him bonus meter (and a little health) on top of the normal
+  amount, and the taunts are all lines. Set the amount with `rizz` in his entry.
+- **Command specials:** Seats Are This Way (a flashlight rush) and W Rizz (a counter).
+- **Throw: Out of the Theater.** Takes their ticket and runs them out the exit. THIS SHOWING IS OVER!
+- **Finisher: Now Showing.** They become a movie poster on a light box... and get torn in half.
+  NO REFUNDS. **Brutality:** NO REFUNDS. **Super:** NOW SHOWING.
+- **Stage: Regal Kendall Village** (`js/stages/regal.js`). The lobby: wine-red walls, a chasing
+  marquee, made-up movie posters, SCREEN 7's doors, loud carpet. **Hazard: HOT BUTTER!** the popcorn
+  machine on the left wall.
+
+Character select is 10 x 3 (30 slots, 28 fighters).
 
 ## Menus
 

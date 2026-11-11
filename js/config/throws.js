@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  outOfTheater: {
+    name: 'Out of the Theater',
+    description: 'Takes their ticket, walks them down the aisle at full speed and throws them out the exit door. THIS SHOWING IS OVER.',
+    kind: 'touchdown',
+    spikeDamage: 15,
+    runText: 'THIS WAY, SIR.',
+    spikeText: 'THIS SHOWING IS OVER!',
+  },
   touchdownSpike: {
     name: 'Touchdown Spike',
     description: 'Tucks them under his arm like a football, charges downfield, and spikes them into the end zone. TOUCHDOWN!',
