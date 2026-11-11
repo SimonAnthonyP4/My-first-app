@@ -147,6 +147,9 @@
       const hide = new Set(s.hideWhenPosed || []);
       const liftRe = s.liftLeg ? new RegExp(s.liftLeg) : null;
       this.minCol = Infinity;
+      // No waistRow given: the legs start at the first row of trousers / shoes.
+      const waistRow = s.waistRow != null ? s.waistRow : s.grid.findIndex((row) => [...row].some((ch) => /^(pants|shoes)/.test(s.legend[ch] || '')));
+      this.waistRow = waistRow < 0 ? s.grid.length : waistRow;
       s.grid.forEach((row, r) => {
         [...row].forEach((ch, c) => {
           if (ch === '.' || ch === ' ') return;
@@ -156,12 +159,29 @@
           this.minCol = Math.min(this.minCol, c);
           const isLeg = /^(pants|shoes)/.test(name);
           if (r < s.neckRow && !cell.prop) this.cells.head.push(cell);
-          else if (r >= s.waistRow && isLeg) this.cells.legs.push(cell);
+          else if (r >= this.waistRow && isLeg) this.cells.legs.push(cell);
           else this.cells.torso.push(cell);
         });
       });
       this.rows = s.grid.length;
       this.cols = Math.max(...s.grid.map((r) => r.length));
+      // A drawing that shows two separate legs: find the gap between them, so a knee / kick pose
+      // can lift the FRONT leg instead of adding a third one. (liftLeg names it by hand instead.)
+      if (!liftRe && this.cells.legs.length) {
+        const byRow = new Map();
+        for (const c of this.cells.legs) { if (!byRow.has(c.r)) byRow.set(c.r, []); byRow.get(c.r).push(c.c); }
+        let crotch = null, gapRows = 0;
+        for (const r of [...byRow.keys()].sort((a, b) => a - b)) {
+          const cs = byRow.get(r).sort((a, b) => a - b); let best = 0, mid = null;
+          for (let i = 1; i < cs.length; i++) if (cs[i] - cs[i - 1] - 1 > best) { best = cs[i] - cs[i - 1] - 1; mid = (cs[i] + cs[i - 1]) / 2; }
+          if (best >= 2) { gapRows++; if (crotch == null) crotch = mid; }
+        }
+        if (crotch != null && gapRows > (this.rows - this.waistRow) * 0.4) {
+          this.autoLift = true;
+          this.frontHip = crotch + (Math.max(...this.cells.legs.filter((c) => c.r <= this.waistRow + 2).map((c) => c.c)) - crotch) / 2; // middle of the front thigh
+          for (const c of this.cells.legs) { const cs = byRow.get(c.r); let split = crotch, best = 0; for (let i = 1; i < cs.length; i++) if (cs[i] - cs[i - 1] - 1 > best) { best = cs[i] - cs[i - 1] - 1; split = (cs[i] + cs[i - 1]) / 2; } c.front = c.c > split; }
+        }
+      }
       this.sleeve = shade(s.palette[s.sleeveColor || 'coat'], s.sleeveShade == null ? -0.28 : s.sleeveShade);
       this.handColor = s.palette[s.handColor || 'skin'];     // palette names; e.g. Simon's wrapped fists
       this.pantsColor = s.palette[s.legColor || 'pants'];     // colour of an added kicking leg
@@ -228,6 +248,9 @@
     // Draw one frame recipe to a canvas.
     bake(p) {
       const U = this.U, s = this.s, k = this.k;
+      // An arm thrown back behind the body ('back', 'flail') only shows as a fist poking out past
+      // the head on a detailed drawing: it reads as a loose limb. Those keep their own drawn arms.
+      if (k >= 3 && s.backArm !== true && ['back', 'flail'].includes(p.armName || p.arm)) p = Object.assign({}, p, { arm: null, armName: null });
       const W = (this.cols + (MARGIN_X + EXTRA_W) * k) * U, H = (this.rows + this.topPad + (MARGIN_TOP + EXTRA_H) * k) * U;
       const [canvas, ctx] = makeCanvas(W, H);
       const ox = MARGIN_X * k * U, oy = (MARGIN_TOP * k + this.topPad) * U;
@@ -407,7 +430,9 @@
       };
 
       // Back arm, legs, body, head, front arm.
-      drawArm(p.backArm, true, p.armOff || [0, 0]);
+      // An added back arm is only for drawings without one (the small early sprites); the detailed
+      // ones already show both arms, and a second back arm reads as a third limb.
+      if (s.backArm != null ? s.backArm : this.k < 3) drawArm(p.backArm, true, p.armOff || [0, 0]);
       const armName = p.armName || p.arm;
       const armBehind = armName === 'back' || armName === 'flail'; // a cocked-back arm sits behind the body
       if (armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
@@ -437,13 +462,13 @@
     // Called twice: front=false for everything behind the body, front=true for
     // a leg that kicks out in front of it.
     drawLegs(p, put, blk, drop, front) {
-      const s = this.s, legs = this.cells.legs, wr = s.waistRow, k = this.k, U = this.U;
+      const s = this.s, legs = this.cells.legs, wr = this.waistRow, k = this.k, U = this.U;
       const dark = (c) => shade(c, -0.3);
       const mode = p.crouch && !p.legs ? 'crouch' : p.legs || 'stand';
       const lo = p.legsOff || [0, 0];
       const hip = legs.filter((c) => c.r === wr);
       const pants = this.pantsColor, shoes = this.shoeColor;
-      const [hc, hr] = [s.footCol + k, wr]; // front hip (art pixels)
+      const [hc, hr] = [this.autoLift ? this.frontHip - k / 2 : s.footCol + k, wr]; // front hip (art pixels)
       const B = (dx, dy, color) => blk(hc + dx * k, hr + dy * k, color); // limb block relative to the hip
 
       const kicking = ['sweep', 'chamber', 'kick'].includes(mode);
@@ -486,11 +511,12 @@
           for (const c of legs) put(c.c, c.r, c.color, lo[0] + (c.r === wr ? 0 : p.stride), lo[1]);
           break;
         case 'tuck': { // knees pulled up for a jump: thighs, then the shoes tucked up under them
-          const keep = wr + 2 * k, shoes = legs.filter((c) => c.shoe);
-          for (const c of legs) if (c.r <= keep) put(c.c, c.r, c.color, lo[0], lo[1]);
-          const shoeTop = Math.min(...shoes.map((c) => c.r));
-          const lift = Math.max(3 * k, shoeTop - keep - 1);
-          for (const c of shoes) put(c.c + k, c.r - lift, c.color, lo[0], lo[1]);
+          // the whole leg is squashed up toward the hips (knees forward), so nothing comes apart
+          const legH = this.rows - wr, f = 0.62;
+          for (const c of legs) {
+            const knee = Math.round(Math.sin(((c.r - wr) / legH) * Math.PI) * k * 0.8);
+            put(c.c + knee, wr + (c.r - wr) * f, c.color, lo[0], lo[1], Math.ceil(U * f) + 1);
+          }
           break;
         }
         case 'crouch':
@@ -513,7 +539,7 @@
         }
         case 'chamber': // back leg standing; the raised front knee is drawn in the front pass
         case 'kick':    // back leg standing; the kicking leg is drawn in the front pass
-          for (const c of legs) if (!c.lift) put(c.c, c.r, dark(c.color)); // a raised leg IS the kicking leg
+          for (const c of legs) if (!c.lift && !(this.autoLift && c.front)) put(c.c, c.r, this.autoLift ? c.color : dark(c.color)); // a raised leg IS the kicking leg
           break;
         default: { // stand (a raised leg can bob on its own)
           const lf = p.liftOff || [0, 0];

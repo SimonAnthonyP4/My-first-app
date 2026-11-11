@@ -21,7 +21,7 @@
 
   // ================================================================ FRIDAY NIGHT LIGHTS (Mikey)
   RF.registerStage({
-    id: 'field', name: 'Friday Night Lights', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'field', name: 'Friday Night Lights', music: 'field', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       const r = rng(4040);
       grad(ctx, 0, 0, W, 150, [[0, '#02030a'], [1, '#141a2e']]);
@@ -68,7 +68,7 @@
 
   // ================================================================ MUSIC ROOM (Wuttke)
   RF.registerStage({
-    id: 'musicroom', name: 'Music Room', music: 'office', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'musicroom', name: 'Music Room', music: 'musicroom', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 140, [[0, '#3a2418'], [1, '#5a3a24']]);
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; for (let x = 0; x < W; x += 16) ctx.fillRect(x, 0, 1, 140);   // wood panels
@@ -113,7 +113,7 @@
 
   // ================================================================ THE BACK NINE (Tyler)
   RF.registerStage({
-    id: 'golf', name: 'The Back Nine', music: 'menu', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'golf', name: 'The Back Nine', music: 'golf', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 130, [[0, '#4a90e0'], [1, '#bfe4ff']]);
       // far hills and trees
@@ -152,7 +152,7 @@
 
   // ================================================================ SOUTH BEACH (Gabriel)
   RF.registerStage({
-    id: 'miami', name: 'South Beach', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'miami', name: 'South Beach', music: 'miami', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 110, [[0, '#2a0a4a'], [0.55, '#ff4fb0'], [1, '#ffb040']]);
       ctx.fillStyle = '#ffd040'; ctx.beginPath(); ctx.arc(192, 108, 40, Math.PI, Math.PI * 2); ctx.fill();
@@ -197,7 +197,7 @@
 
   // ================================================================ BRO BATCH HQ (Anthony & Nicholas)
   RF.registerStage({
-    id: 'brobatch', name: 'Bro Batch HQ', music: 'court', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'brobatch', name: 'Bro Batch HQ', music: 'brobatch', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 140, [[0, '#18120e'], [1, '#2a1e16']]);
       ctx.fillStyle = 'rgba(0,0,0,0.3)'; for (let y = 6, row = 0; y < 140; y += 7, row++) { ctx.fillRect(0, y, W, 1); for (let x = (row % 2) * 9; x < W; x += 18) ctx.fillRect(x, y - 6, 1, 6); }
@@ -234,7 +234,7 @@
 
   // ================================================================ THE CRAG (Alejandro)
   RF.registerStage({
-    id: 'cliff', name: 'The Crag', music: 'court', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'cliff', name: 'The Crag', music: 'cliff', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 120, [[0, '#ff9850'], [1, '#ffd8a0']]);
       grad(ctx, 0, 100, W, 48, [[0, '#7a6078'], [1, '#4a3a40']]);   // the valley far below
@@ -271,7 +271,7 @@
 
   // ================================================================ PARKING LOT (Fernando)
   RF.registerStage({
-    id: 'parking', name: 'Parking Lot', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'parking', name: 'Parking Lot', music: 'parking', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 130, [[0, '#06060e'], [1, '#1a1626']]);
       // the school behind a chain-link fence
@@ -315,7 +315,7 @@
 
   // ================================================================ THE SKATEPARK (Bandy)
   RF.registerStage({
-    id: 'skatepark', name: 'The Skatepark', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'skatepark', name: 'The Skatepark', music: 'skatepark', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 140, [[0, '#0c0618'], [0.6, '#2a1030'], [1, '#4a1a3a']]);
       const r = rng(77);
@@ -385,7 +385,7 @@
 
   // ================================================================ THE MAIN HALLWAY (Ms. Brady)
   RF.registerStage({
-    id: 'hallway', name: 'The Main Hallway', music: 'office', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'hallway', name: 'The Main Hallway', music: 'hallway', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       grad(ctx, 0, 0, W, 140, [[0, '#d8d4c4'], [1, '#c4bea8']]);                         // painted cinder-block wall
       for (let y = 6; y < 140; y += 10) for (let x = (y / 10) % 2 ? 0 : 14; x < W; x += 28) rect(ctx, '#cac4b0', x, y, 27, 9);

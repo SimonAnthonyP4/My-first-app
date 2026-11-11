@@ -1096,6 +1096,26 @@ on the stage select screen automatically.
 
 ## Changing the music
 
+**Every stage has its own theme.** The song id is the stage id (`music: 'golf'` on the stage).
+
+| Stage | Theme | Feel |
+| --- | --- | --- |
+| Hell Cafeteria / NYC Street / Haunted Court / Sirven's Office | the original four | metal |
+| Friday Night Lights | Fourth and Goal | galloping stadium metal |
+| Bro Batch HQ | One More Rep | pumping groove metal |
+| Parking Lot | Burnout | slow sludge |
+| The Main Hallway | Hall Pass | tense march |
+| The Skatepark | Kickflip | fast pop punk |
+| The Back Nine | Sunday Round | chill: keys, pad, soft drums |
+| South Beach | Ocean Drive, 2 AM | chill synthwave |
+| Music Room | Practice Room B | quiet piano |
+| The Crag | Thin Air | ambient, almost still |
+| Regal Kendall Village | Now Showing | lobby jazz |
+
+The chill themes are marked `clean: true` and use the quiet band: instruments `keys`, `pad`, `sub`,
+`bell`, and the soft drum kit (`b` kick, `p` rim, `x` hat, `m` shaker). `drumVolume` turns a song's
+drums down. Clean songs are never downtuned.
+
 The soundtrack is original heavy metal played by a built-in synth "metal rig"
 (`js/core/audio.js`, no audio files): double-tracked distorted rhythm guitars panned
 left/right through a high-gain amp and speaker-cabinet simulation, a growling bass, a

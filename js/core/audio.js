@@ -14,6 +14,7 @@
 
   // Turn a track's bars into per-step events: { note, len } or drum hit lists.
   // A note ending in * is palm-muted (short, chunky chug) on guitar and bass.
+  const CLEAN = new Set(['keys', 'pad', 'sub', 'bell']);   // the quiet band, for the laid-back stage themes
   function parseTrack(track, drums) {
     const tokens = track.bars.join(' ').split(/\s+/).filter(Boolean);
     const steps = tokens.map(() => null);
@@ -90,6 +91,7 @@
       if (!def) { this.song = null; return; }
       const tracks = Object.entries(def.tracks).map(([name, t]) => parseTrack(t, name === 'drums'));
       this.song = { stepDur: 60 / def.bpm / 4, tracks, step: 0, next: this.ctx.currentTime + 0.08 };
+      if (this.drumBus) this.drumBus.gain.value = 0.85 * (def.drumVolume == null ? 1 : def.drumVolume);
     },
 
     stopSong() { this.song = null; this.songId = null; this.pendingSong = null; },
@@ -110,6 +112,7 @@
             this.guitarNote(this.ampR, ev.f, s.next + 0.006, dur, ev.mute, true, tr.volume, 13);
           }
           else if (ev.f && tr.instrument === 'lead') this.leadNote(ev.f, s.next, ev.len * s.stepDur * 0.96, tr.volume);
+          else if (ev.f && CLEAN.has(tr.instrument)) this.cleanNote(tr.instrument, ev.f, s.next, ev.len * s.stepDur, tr.volume, tr.pan);
           else if (ev.f && tr.instrument === 'bass') this.bassNote(ev.f, s.next, ev.len * s.stepDur * 0.92, ev.mute, tr.volume);
           else if (ev.f) this.tone(tr.wave, ev.f, s.next, ev.len * s.stepDur * 0.92, tr.volume, tr.distort ? this.distBus : this.musicBus);
         }
@@ -207,6 +210,35 @@
       }
     },
 
+    // The quiet band: electric-piano keys, a slow warm pad, a round sub bass and a glassy bell.
+    // They skip the amps and go to the music bus with a little room reverb.
+    cleanNote(kind, f, t, dur, vol, pan) {
+      const c = this.ctx;
+      if (!this.cleanBus) {
+        this.cleanBus = c.createGain(); this.cleanBus.gain.value = 0.9; this.cleanBus.connect(this.musicBus);
+        if (this.reverb) { const send = c.createGain(); send.gain.value = 0.3; this.cleanBus.connect(send).connect(this.reverb); }
+      }
+      const g = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass';
+      let out = g.connect(lp);
+      if (pan && c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = pan; out = lp.connect(pn); }
+      out.connect(this.cleanBus);
+      const osc = (type, freq, level, detune) => { const o = c.createOscillator(), og = c.createGain(); o.type = type; o.frequency.value = freq; if (detune) o.detune.value = detune; og.gain.value = level; o.connect(og).connect(g); o.start(t); o.stop(t + dur + 0.45); };
+      g.gain.setValueAtTime(0.0001, t);
+      if (kind === 'keys') {            // a soft pluck that rings and fades
+        lp.frequency.value = 2400; osc('triangle', f, 0.8); osc('sine', f * 2, 0.22); osc('sine', f * 3, 0.06);
+        g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(vol * 0.3, t + Math.min(dur, 0.9) + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.4);
+      } else if (kind === 'pad') {      // slow in, slow out
+        lp.frequency.value = 1100; osc('sawtooth', f, 0.35, -8); osc('sawtooth', f, 0.35, 8); osc('sine', f / 2, 0.3);
+        g.gain.linearRampToValueAtTime(vol, t + Math.min(0.25, dur * 0.4)); g.gain.setValueAtTime(vol, t + Math.max(0.26, dur - 0.1)); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.4);
+      } else if (kind === 'sub') {      // round and low
+        lp.frequency.value = 500; osc('sine', f, 0.9); osc('triangle', f * 2, 0.18);
+        g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.setValueAtTime(vol * 0.85, t + Math.max(0.02, dur - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.03);
+      } else {                          // bell: glassy, long tail
+        lp.frequency.value = 6000; osc('sine', f, 0.7); osc('sine', f * 2.76, 0.18); osc('sine', f * 4, 0.08);
+        g.gain.linearRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.5, dur) + 0.4);
+      }
+    },
+
     leadNote(f, t, dur, vol) {
       const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
       const vib = c.createOscillator(), vg = c.createGain();
@@ -298,6 +330,16 @@
       } else if (type === 'r') {
         this.tone('square', 2600, t, 0.12, 0.025, bus);
         this.noiseBurst(t, 0.2, 0.06, 'highpass', 6000, bus);
+      } else if (type === 'b') {               // --- the soft kit (chill themes): a round kick,
+        thump(105, 46, 0.18, 0.5);
+      } else if (type === 'p') {               // a rim click / brushed snare,
+        this.noiseBurst(t, 0.06, 0.13, 'bandpass', 1900, bus);
+        this.tone('triangle', 420, t, 0.03, 0.06, bus);
+        if (this.reverb) this.noiseBurst(t, 0.05, 0.08, 'bandpass', 1900, this.reverb);
+      } else if (type === 'x') {               // a tight little hat,
+        this.noiseBurst(t, 0.022, 0.06, 'highpass', 8500, bus);
+      } else if (type === 'm') {               // and a shaker
+        this.noiseBurst(t, 0.05, 0.035, 'highpass', 6000, bus);
       } else if (type === 't' || type === 'T') {
         const g = thump(type === 't' ? 110 : 170, type === 't' ? 70 : 110, 0.3, 0.6);
         verb(g, 0.5);

@@ -13,7 +13,7 @@
   const FLOOR = 204, TOP = 138;
 
   RF.registerStage({
-    id: 'regal', name: 'Regal Kendall Village', music: 'nyc', floorY: FLOOR, bounds: { left: 10, right: 374 },
+    id: 'regal', name: 'Regal Kendall Village', music: 'regal', floorY: FLOOR, bounds: { left: 10, right: 374 },
     drawStatic(ctx, W, H) {
       const r = rng(2026);
       // back wall: deep wine red with a darker band, and gold trim

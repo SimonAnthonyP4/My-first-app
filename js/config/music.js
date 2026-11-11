@@ -192,11 +192,118 @@
     },
   };
 
+  // ================================================================ STAGE THEMES
+  // One for every map. The heavy ones use the metal rig like the songs above; the laid-back
+  // ones (clean: true) use the quiet band - instruments 'keys', 'pad', 'sub', 'bell' and the
+  // soft drum kit: b kick, p rim, x hat, m shaker - and are never downtuned.
+  const arp = (...n) => n.map((x) => x + ' -').join(' ');          // eight notes, an eighth each
+  const hold = (n) => n + ' - - - - - - - - - - - - - - -';         // one note for the whole bar
+  const two = (a, b) => a + ' - - - - - - - ' + b + ' - - - - - - -'; // two half-bar notes
+  const loop = (bars, n) => Array(n).fill(bars).flat();
+  const SOFT = 'b . x . p . x . b b x . p . x .';
+  const SOFT2 = 'b . x . p . x x b . x b p . x m';
+  const BRUSH = 'b . m . p . m . . . m b p . m .';
+
+  // ---- FRIDAY NIGHT LIGHTS: "Fourth and Goal" - a galloping stadium anthem.
+  const F_1 = 'E2* E2* E2* G2 - E2* E2* A2 - E2* E2* B2 - A2 G2 -';
+  const F_2 = 'C3 - - - C3* C3* D3 - - - D3* D3* E3 - - -';
+  // ---- BRO BATCH HQ: "One More Rep" - a pumping mid-tempo groove.
+  const B_1 = 'E2* E2* . E2* E2* . G2 - E2* E2* . E2* A2 - G2 -';
+  const B_2 = 'E2* E2* . E2* E2* . G2 - A#2 - - - A2 - - -';
+  const B_3 = 'D3 - - - D3* D3* C3 - - - C3* C3* B2 - - -';
+  // ---- PARKING LOT: "Burnout" - slow, greasy sludge.
+  const P_1 = 'E2 - - - E2* E2* G2 - - - F#2 - F2 - - -';
+  const P_2 = 'E2 - - - E2* E2* A#2 - - - A2 - G2 - - -';
+  const P_3 = 'C3 - - - - - B2 - - - - - A#2 - A2 -';
+  // ---- THE MAIN HALLWAY: "Hall Pass" - a tense march.
+  const L_1 = 'E2* . E2* . E2* E2* F2 - E2* . E2* . G2 - F2 -';
+  const L_2 = 'E2* . E2* . E2* E2* F2 - A#2 - - - B2 - - -';
+  const MARCH = 'k+h . s s k+h . s . k+h . s s k+h s s s';
+  // ---- THE SKATEPARK: "Kickflip" - fast, bright pop punk (standard tuning).
+  const S_1 = 'A2* A2* A2* A2* A2* A2* A2* A2* E3* E3* E3* E3* E3* E3* E3* E3*';
+  const S_2 = 'F#2* F#2* F#2* F#2* F#2* F#2* F#2* F#2* D3* D3* D3* D3* D3* D3* D3* D3*';
+  const S_3 = 'A2 - - - - - - - E3 - - - - - - -';
+  const S_4 = 'F#2 - - - - - - - D3 - - - E3 - - -';
+  const metal = (bpm, gtr, lead, drums, extra) => Object.assign({ bpm, tracks: {
+    guitar: { instrument: 'guitar', volume: 0.5, bars: gtr }, bass: { instrument: 'bass', volume: 0.32, bars: bassOf(gtr) },
+    lead: { instrument: 'lead', volume: 0.36, bars: lead }, drums: { bars: drums } } }, extra);
+
+  Object.assign(RF.MUSIC, {
+    field: metal(168, [F_1, F_1, F_1, F_2, F_1, F_1, F_2, F_2], [
+      ...rest(4),
+      'E5 - - - G5 - - - B5 - - - A5 - G5 -', 'E5 - - - - - - - D5 - - - B4 - - -',
+      'E5 - G5 - B5 - - - D6 - - - B5 - A5 -', 'B5 - - - - - - - - - - - . . . .',
+    ], [crash(GALLOP), GALLOP, GALLOP, FILL_B, crash(GALLOP), GALLOP, crash(HALF), FILL_A]),
+    brobatch: metal(132, [B_1, B_2, B_1, B_2, B_3, B_3, B_1, B_2], [
+      ...rest(4),
+      'D5 - - - - - E5 - D5 - - - B4 - - -', 'D5 - - - - - E5 - G5 - - - F#5 - - -',
+      'E5 - G5 - E5 - - - A#5 A5 G5 - E5 - - -', 'E5 - - - - - - - . . . . . . . .',
+    ], [crash(GROOVE), GROOVE, GROOVE, FILL_A, crash(HALF), HALF, crash(GROOVE), FILL_B]),
+    parking: metal(100, [P_1, P_2, P_1, P_3, P_1, P_2, P_3, P_3], [
+      ...rest(4),
+      'E5 - - - - - - - G5 - - - F#5 - - -', 'E5 - - - - - D5 - B4 - - - - - - -',
+      'G5 - - - - - - - A#5 - - - A5 - G5 -', 'E5 - - - - - - - - - - - . . . .',
+    ], [crash(DOOM), DOOM, DOOM, 'k+h . . . k k h . s . . . s s T t', crash(HALF), HALF, crash(DOOM), FILL_B]),
+    hallway: metal(124, [L_1, L_2, L_1, L_2], [
+      ...rest(4),
+      'B4 - - - C5 - - - B4 - - - - - - -', 'B4 - - - C5 - - - E5 - - - D#5 - - -',
+      'E5 - - - F5 - - - E5 - - - - - B4 -', 'A#4 - - - - - - - B4 - - - . . . .',
+    ], [crash(MARCH), MARCH, MARCH, FILL_A]),
+    skatepark: metal(196, [S_1, S_2, S_1, S_2, S_3, S_4, S_3, S_4], [
+      'C#5 - E5 - A5 - - - G#5 - E5 - B4 - - -', 'A4 - C#5 - F#5 - - - F#5 - E5 - D5 - - -',
+      'C#5 - E5 - A5 - - - B5 - A5 - G#5 - - -', 'F#5 - - - A5 - - - F#5 - E5 - D5 - E5 -',
+      'A5 - - - - - - - G#5 - - - - - - -', 'F#5 - - - - - - - A5 - - - B5 - - -',
+      'C#6 - - - - - - - B5 - - - G#5 - - -', 'A5 - - - - - - - - - - - . . . .',
+    ], [crash(DBEAT), DBEAT, DBEAT, FILL_A, crash(DBEAT), DBEAT, DBEAT, FILL_B], { clean: true }),
+
+    // ---- THE BACK NINE: "Sunday Round" - an easy major-seventh stroll.
+    golf: { bpm: 92, clean: true, drumVolume: 0.6, tracks: {
+      keys: { instrument: 'keys', volume: 0.2, bars: loop([arp('C4', 'E4', 'G4', 'B4', 'G4', 'E4', 'G4', 'B4'), arp('A3', 'C4', 'E4', 'G4', 'E4', 'C4', 'E4', 'G4'), arp('F3', 'A3', 'C4', 'E4', 'C4', 'A3', 'C4', 'E4'), arp('G3', 'B3', 'D4', 'F4', 'D4', 'B3', 'D4', 'G4')], 2) },
+      pad: { instrument: 'pad', volume: 0.07, bars: [hold('E3'), hold('E3'), hold('C3'), hold('D3')] },
+      sub: { instrument: 'sub', volume: 0.3, bars: ['C2 - - - - - . . C2 - - - G2 - - -', 'A1 - - - - - . . A1 - - - E2 - - -', 'F1 - - - - - . . F1 - - - C2 - - -', 'G1 - - - - - . . G1 - - - B1 - D2 -'] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'E5 - - - - - G5 - - - - - E5 - - -', 'C5 - - - - - - - E5 - - - D5 - - -', 'C5 - - - - - A4 - - - - - C5 - - -', 'D5 - - - - - - - - - - - . . . .'] },
+      drums: { bars: [SOFT, SOFT, SOFT, SOFT2] },
+    } },
+    // ---- SOUTH BEACH: "Ocean Drive, 2 AM" - neon synthwave with the top down.
+    miami: { bpm: 104, clean: true, drumVolume: 0.7, tracks: {
+      sub: { instrument: 'sub', volume: 0.3, bars: ['A1 . A1 . A1 . A1 . A1 . A1 . A1 . A2 .', 'F1 . F1 . F1 . F1 . F1 . F1 . F1 . F2 .', 'C2 . C2 . C2 . C2 . C2 . C2 . C2 . C3 .', 'G1 . G1 . G1 . G1 . G1 . G1 . G1 . B1 .'] },
+      keys: { instrument: 'keys', volume: 0.15, pan: -0.3, bars: ['A3 C4 E4 A4 E4 C4 A3 C4 E4 A4 E4 C4 A3 C4 E4 A4', 'F3 A3 C4 F4 C4 A3 F3 A3 C4 F4 C4 A3 F3 A3 C4 F4', 'C4 E4 G4 C5 G4 E4 C4 E4 G4 C5 G4 E4 C4 E4 G4 C5', 'G3 B3 D4 G4 D4 B3 G3 B3 D4 G4 D4 B3 G3 B3 D4 G4'] },
+      pad: { instrument: 'pad', volume: 0.08, bars: [hold('E3'), hold('C3'), hold('E3'), hold('D3')] },
+      bell: { instrument: 'bell', volume: 0.13, pan: 0.3, bars: [...rest(4), 'E5 - - - - - - - C5 - - - D5 - E5 -', 'A5 - - - - - - - G5 - - - F5 - - -', 'G5 - - - - - E5 - - - - - C5 - - -', 'D5 - - - - - - - B4 - - - . . . .'] },
+      drums: { bars: ['b . x . p . x . b . x b p . x .', 'b . x . p . x . b . x b p . x x'] },
+    } },
+    // ---- MUSIC ROOM: "Practice Room B" - somebody is playing the piano after school.
+    musicroom: { bpm: 84, clean: true, drumVolume: 0.4, tracks: {
+      keys: { instrument: 'keys', volume: 0.22, bars: loop([arp('D3', 'A3', 'D4', 'F#4', 'A4', 'F#4', 'D4', 'A3'), arp('B2', 'F#3', 'B3', 'D4', 'F#4', 'D4', 'B3', 'F#3'), arp('G2', 'D3', 'G3', 'B3', 'D4', 'B3', 'G3', 'D3'), arp('A2', 'E3', 'A3', 'C#4', 'E4', 'C#4', 'A3', 'E3')], 2) },
+      top: { instrument: 'keys', volume: 0.2, bars: [...rest(4), 'F#5 - - - - - E5 - D5 - - - - - A4 -', 'D5 - - - - - C#5 - B4 - - - - - - -', 'B4 - - - D5 - - - G5 - - - F#5 - - -', 'E5 - - - - - - - - - - - . . . .'] },
+      pad: { instrument: 'pad', volume: 0.05, bars: [hold('F#3'), hold('F#3'), hold('D3'), hold('E3')] },
+      sub: { instrument: 'sub', volume: 0.2, bars: [hold('D2'), hold('B1'), hold('G1'), hold('A1')] },
+    } },
+    // ---- THE CRAG: "Thin Air" - high up, wide open, almost still.
+    cliff: { bpm: 70, clean: true, drumVolume: 0.45, tracks: {
+      pad: { instrument: 'pad', volume: 0.1, bars: [hold('E3'), hold('C3'), hold('G3'), hold('D3')] },
+      pad2: { instrument: 'pad', volume: 0.07, bars: [hold('B3'), hold('G3'), hold('D4'), hold('A3')] },
+      sub: { instrument: 'sub', volume: 0.24, bars: [hold('E1'), hold('C2'), hold('G1'), hold('D2')] },
+      bell: { instrument: 'bell', volume: 0.14, bars: ['B4 - - - - - - - G5 - - - - - F#5 -', 'E5 - - - - - - - - - - - G4 - - -', 'B4 - - - - - D5 - - - - - - - - -', 'A5 - - - - - - - F#5 - - - . . . .'] },
+      keys: { instrument: 'keys', volume: 0.1, pan: 0.4, bars: [...rest(4), '. . E4 - . . B4 - . . G4 - . . B4 -', '. . C4 - . . G4 - . . E4 - . . G4 -', '. . D4 - . . B4 - . . G4 - . . B4 -', '. . D4 - . . A4 - . . F#4 - . . A4 -'] },
+      drums: { bars: ['b . . . . . m . . . b . . . m .'] },
+    } },
+    // ---- REGAL KENDALL VILLAGE: "Now Showing" - lobby jazz while the trailers play.
+    regal: { bpm: 96, clean: true, drumVolume: 0.6, tracks: {
+      keys: { instrument: 'keys', volume: 0.17, bars: ['. . F4 - . . A4 - . . C5 - . F4 A4 -', '. . F4 - . . B4 - . . D5 - . F4 B4 -', '. . E4 - . . G4 - . . B4 - . E4 G4 -', '. . E4 - . . G4 - . . C5 - . E4 A4 -'] },
+      pad: { instrument: 'pad', volume: 0.06, bars: [hold('C4'), hold('B3'), hold('B3'), hold('C4')] },
+      sub: { instrument: 'sub', volume: 0.3, bars: ['D2 - - - F2 - - - A2 - - - C3 - A2 -', 'G1 - - - B1 - - - D2 - - - F2 - D2 -', 'C2 - - - E2 - - - G2 - - - B2 - G2 -', 'A1 - - - C2 - - - E2 - - - G2 - E2 -'] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'A5 - - - - - F5 - - - E5 - D5 - - -', 'D5 - - - - - - - F5 - - - G5 - - -', 'E5 - - - - - G5 - - - B5 - - - A5 -', 'E5 - - - - - - - - - - - . . . .'] },
+      drums: { bars: [BRUSH, BRUSH, BRUSH, 'b . m . p . m . . . m b p . p p'] },
+    } },
+  });
+
   // DOWNTUNED: every riff, bass line and solo is dropped a fourth (E becomes a low B) and each
   // song is pulled back a little, so the whole soundtrack sits deeper and hits harder.
   // (Set DOWNTUNE to 0 and DRAG to 1 for the original tuning and tempos.)
   const DOWNTUNE = -5, DRAG = 0.93;
   for (const song of Object.values(RF.MUSIC)) {
+    if (song.clean) continue;                    // the laid-back themes (and the skatepark) keep their own key
     song.bpm = Math.round(song.bpm * DRAG);
     for (const [name, tr] of Object.entries(song.tracks)) if (name !== 'drums') tr.bars = tr.bars.map((b) => shift(b, DOWNTUNE));
   }
