@@ -656,6 +656,30 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Cinematic supers
+
+A full super meter (LIGHT + HEAVY) now stops the fight for a short film: a full-screen card in
+the fighter's colours, the fighter sliding in huge, the name of the super slamming down, their
+line (spoken), a close-up on the eyes, then the move. The first super each fighter uses in a
+match gets the whole sequence; later ones use a short cut. When a super connects the screen
+snaps to a negative and speed lines burst from the hit.
+
+Every fighter has their own super name, line, colour and backdrop in `RF.SUPERS`
+(`js/game/super-cinema.js`) - MAX GAINS, ROYAL DECREE, INTEGRAL TO INFINITY, ZERO TOLERANCE...
+In **Tag Team**, a super with your partner still standing is a **TEAM SUPER**: both of you on
+the card, and the partner charges in behind the move. Ten pairs have a team super with its own
+name (Nicholas + Anthony: BRO BATCH BLITZ; Ms. Brady + King Sirven: THE ADMINISTRATION).
+
+## The Rift Tower (boss rush)
+
+Main menu -> **RIFT TOWER**. Ten floors of rift versions of the cast, one round each, and every
+floor changes the rules: LOW GRAVITY, LIGHTS OUT (you only see what is close to you), GLASS
+JAWS (triple damage), TURBO, PROTEIN MODE, DOUBLE HEALTH, a MIRROR MATCH against yourself, and
+Rift King Sirven halfway up. Your health carries over (30% patched up after each win); lose and
+you retry the floor. At the top is **OMEGA LOPEZ**, who gets back up once in a stronger final
+form. Clearing the tower unlocks the **RIFT costume** for every fighter (HEAVY on character
+select). Your best floor is saved. The mode lives in `js/scenes/tower-scene.js`.
+
 ## Tag Team (2 vs 2)
 
 Main menu -> **TAG TEAM**. Each side picks two fighters (THROW on the select screen switches

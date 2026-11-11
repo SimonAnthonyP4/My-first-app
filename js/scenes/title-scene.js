@@ -4,10 +4,11 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 88, ITEM_GAP = 9;
+  const ITEM_Y = 100, ITEM_GAP = 11, VISIBLE = 10; // the menu scrolls: ten items show at a time
 
   class TitleScene {
     constructor(game) {
+      if (RF.towerModsOff) RF.towerModsOff(); // a rift tower floor's rules never leak out of the tower
       RF.audio.playSong('menu');
       this.game = game;
       this.t = 0;
@@ -19,6 +20,7 @@
         { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
         { label: 'TAG TEAM', desc: '2 VS 2 - SWAP FIGHTERS MID-MATCH', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, tag: true })) },
         { label: 'ARCADE', desc: 'CLIMB THE TOWER, BEAT THE BOSS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
+        { label: 'RIFT TOWER', desc: 'BOSS RUSH: 10 FLOORS, NEW RULES EACH ONE', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, tower: true })) },
         { label: 'TOURNAMENT', desc: 'A BRACKET FOR 4 OR 8 - PARTY MODE', onSelect: () => this.go(new RF.TournamentSetupScene(game)) },
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
         { label: 'TRAINING', desc: 'PRACTICE COMBOS AND TRIALS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
@@ -137,12 +139,17 @@
 
       // Menu plate + items
       ctx.fillStyle = 'rgba(10,0,0,0.65)';
-      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, ITEM_GAP * this.menu.items.length + 6);
+      const n = this.menu.items.length, rows = Math.min(VISIBLE, n), first = Math.max(0, Math.min(n - rows, this.menu.index - Math.floor(rows / 2)));
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, ITEM_GAP * rows + 6);
       ctx.fillStyle = '#8a2a0a';
       ctx.fillRect(W / 2 - 74, ITEM_Y - 8, 148, 1);
-      ctx.fillRect(W / 2 - 74, ITEM_Y - 2 + ITEM_GAP * this.menu.items.length - 1, 148, 1);
+      ctx.fillRect(W / 2 - 74, ITEM_Y - 2 + ITEM_GAP * rows - 1, 148, 1);
+      const more = (y, up) => { ctx.fillStyle = this.t % 40 < 26 ? '#ffb060' : '#8a4a20'; ctx.beginPath(); ctx.moveTo(W / 2 + 62, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 70, y + (up ? 5 : 0)); ctx.lineTo(W / 2 + 66, y + (up ? 0 : 5)); ctx.fill(); };
+      if (first > 0) more(ITEM_Y - 5, true);            // more above
+      if (first + rows < n) more(ITEM_Y + ITEM_GAP * rows - 9, false); // more below
       this.menu.items.forEach((item, i) => {
-        const sel = i === this.menu.index, y = ITEM_Y + i * ITEM_GAP;
+        if (i < first || i >= first + rows) return;
+        const sel = i === this.menu.index, y = ITEM_Y + (i - first) * ITEM_GAP;
         if (sel) {
           // Burning highlight bar behind the chosen item
           const g = ctx.createLinearGradient(W / 2 - 70, 0, W / 2 + 70, 0);

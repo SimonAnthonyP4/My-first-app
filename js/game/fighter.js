@@ -880,6 +880,7 @@
 
     knockOut(dir) {
       // The match-deciding blow leaves them dazed instead: FINISH THEM!
+      if (this.scene && this.scene.secondWind && this.scene.secondWind(this)) return; // the rift tower's last boss gets back up once
       if (this.scene && this.scene.tryDaze(this)) return;
       this.setState('ko');
       this.vy = 5;

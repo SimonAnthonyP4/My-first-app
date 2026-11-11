@@ -91,7 +91,7 @@
       }
       this.fighters[0].reset(mid - START_GAP, 1);
       this.fighters[1].reset(mid + START_GAP, -1);
-      const run = this.opts.survival;
+      const run = this.opts.survival || this.opts.tower; // survival and the rift tower: health carries over
       if (run && run.health != null) { this.fighters[0].health = run.health; this.fighters[0].meter = run.meter || 0; } // survival: health carries over
       this.timer = RF.CONFIG.ROUND_TIME && !this.training && !this.tag ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
       this.comboDmg = 0; this.lastCombo = null; this.quietFrames = 0;
@@ -163,6 +163,7 @@
       this.effects.update();
       this.gore.update();
       if (this.redFlash > 0) this.redFlash--;
+      if (this.superHit && ++this.superHit.t > 15) this.superHit = null;
       if (this.shake > 0) this.shake--;
       if (this.flash > 0) this.flash--;
       if (this.comboText && --this.comboText.t <= 0) this.comboText = null;
@@ -174,7 +175,9 @@
       if (this.xray) return this.updateXray(); // X-ray close-up: the world holds still
       if (this.superFreeze) {
         // Everything stops while the super cut-in plays.
-        if (++this.superFreeze.t >= SUPER_FREEZE) this.superFreeze = null;
+        const sf = this.superFreeze;
+        if (sf.cine) RF.superTick(this, sf); // the cinematic super (game/super-cinema.js)
+        if (++sf.t >= (sf.len || SUPER_FREEZE)) { this.superFreeze = null; if (sf.cine) RF.superEnd(this, sf); }
         return;
       }
       if (this.hitstop > 0) { this.hitstop--; return; }
@@ -260,6 +263,7 @@
               if (this.opts.arcade) this.endMenu = this.arcadeMenu();
               if (this.opts.story) this.endMenu = RF.storyEndMenu(this, this.wins[0] > this.wins[1]);
               if (this.opts.survival) this.endMenu = this.survivalMenu();
+              if (this.opts.tower) this.endMenu = RF.towerMenu(this);
               if (this.opts.tournament) this.endMenu = new RF.ListMenu([{ label: 'BACK TO THE BRACKET', onSelect: () => RF.tournamentResult(this.game, this.opts.tournament, this.wins[0] > this.wins[1]) }]);
               this.setPhase('matchOver');
             }
@@ -892,6 +896,7 @@
       if (boneBreak) move = Object.assign({}, move, { damage: move.damage * 1.4, hitstun: (move.hitstun || 20) + 20, launch: move.launch || 4.5, launchVx: move.launchVx != null ? move.launchVx : 1.6 });
       const hpBefore = def.health;
       const blocked = def.receiveHit(att, move);
+      if (!blocked && move.tag === 'super' && RF.superImpact) RF.superImpact(this, att, def, ex, ey);
       if (move.lastStand) {
         att.lastStandUsed = true; // spent once it connects or is blocked (a whiff can be tried again)
         if (!blocked) this.startXray(att, def, 3, 'LAST STAND!');
@@ -1174,8 +1179,10 @@
       if (this.tag) RF.drawTagHud(ctx, this);
       if (ent) RF.drawEntranceCard(ctx, ent.f, ent.t);
       if (this.training) this.drawTrainingHud(ctx, W);
+      if (this.opts.tower) RF.drawTowerFx(ctx, this);
       if (this.opts.survival) T(ctx, 'SURVIVAL - STREAK ' + this.opts.survival.streak, W / 2, 30, { align: 'center', color: '#ffd030', outline: '#000' });
       if (this.opts.demo && Math.floor(this.frame / 30) % 2) T(ctx, 'DEMO - PRESS ANY KEY', W / 2, 196, { align: 'center', color: '#ffe0b0', outline: '#000' });
+      if (this.superHit) RF.drawSuperHit(ctx, this);
       if (this.superFreeze) this.drawSuperCutIn(ctx, W, H);
       if (this.xray) { // the title of the moment, slammed in at the top
         const x = this.xray, sc = x.t < 4 ? 5 - x.t / 2 : 3;
