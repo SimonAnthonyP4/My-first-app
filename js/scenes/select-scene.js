@@ -31,6 +31,8 @@
       this.arcade = !!(prev && (prev.arcade || prev.survival));
       this.survivalMode = !!(prev && prev.survival);
       this.training = !!(prev && prev.training);
+      this.tag = !!(prev && prev.tag);   // TAG TEAM: everyone picks two
+      this.picks = [[], []];             // tag team: the first pick of each side (slot numbers)
       this.labels = this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
       RF.announcer.say('CHOOSE YOUR FIGHTER');
       this.ready = [false, false];
@@ -71,6 +73,10 @@
       if (kb.justPressed('Escape') && !this.ready[0] && !this.ready[1]) {
         return this.game.setScene(new RF.TitleScene(this.game));
       }
+      if (this.tag && !this.ready[0] && !this.picks[0].length && !this.picks[1].length && kb.justPressed(...RF.CONTROLS.p1.throw, ...RF.CONTROLS.p2.throw)) {
+        RF.audio.sfx('select'); // tag team: THROW switches between playing the computer and a second player
+        return this.game.setScene(new SelectScene(this.game, { tag: true, cpu: !this.cpu }));
+      }
       if (this.cpu) this.updateCpuMode(kb);
       else for (let p = 0; p < 2; p++) this.updateCursor(p, (act) => kb.justPressed(...this.inputs[p][act]));
       if (this.ready[0] && this.ready[1]) {
@@ -88,17 +94,18 @@
       if (this.survivalMode) return RF.startSurvival(this.game, this.slots[this.cursor[0]], this.costume[0]);
       if (this.arcade) return RF.startArcade(this.game, this.slots[this.cursor[0]], this.costume[0]); // the tower picks your opponents
       if (!this.ready[1]) {
-        if (pressed('block')) { this.ready[0] = false; return; }
+        if (pressed('block') && !this.picks[1].length) { this.ready[0] = false; this.picks[0].pop(); return; }
         return this.updateCursor(1, pressed);
       }
-      if (pressed('block')) this.ready[1] = false;
+      if (pressed('block')) { this.ready[1] = false; this.picks[1].pop(); }
     }
 
     updateCursor(p, pressed) {
       if (this.ready[p]) {
-        if (pressed('block')) this.ready[p] = false;
+        if (pressed('block')) { this.ready[p] = false; this.picks[p].pop(); }
         return;
       }
+      if (this.tag && this.picks[p].length && pressed('block')) { this.picks[p].pop(); RF.audio.sfx('block'); return; } // undo the first pick
       let c = this.cursor[p];
       const n = this.slots.length, rows = Math.ceil(n / COLS);
       if (pressed('left')) c = (c % COLS === 0) ? c + COLS - 1 : c - 1;
@@ -110,19 +117,25 @@
       this.cursor[p] = Math.min(c, n - 1);
       if (moved) RF.audio.sfx('move');
       if (pressed('light')) {
-        if (this.slots[this.cursor[p]]) { this.ready[p] = true; this.notice[p] = 0; this.flash[p] = 12; RF.audio.sfx('select'); }
+        const need = this.tag ? 2 : 1;
+        if (this.slots[this.cursor[p]] && this.picks[p].includes(this.cursor[p])) RF.audio.sfx('block'); // a team needs two different fighters
+        else if (this.slots[this.cursor[p]]) { this.picks[p].push(this.cursor[p]); this.ready[p] = this.picks[p].length >= need; if (!this.tag) this.picks[p] = []; this.notice[p] = 0; this.flash[p] = 12; RF.audio.sfx('select'); }
         else { this.notice[p] = 90; RF.audio.sfx('block'); }
       }
     }
 
     startFight() {
       const p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
+      if (this.tag) { // the first pick leads, the second waits on the bench; player 2's copies of player 1's fighters wear the alternate colours
+        const [a, b] = this.picks.map((pk) => pk.map((i) => this.slots[i])), alt = (d) => (a.some((x) => x.id === d.id) ? 1 : 0);
+        return this.game.setScene(new RF.StageSelectScene(this.game, { p1: a[0], p2: b[0], costumes: [0, alt(b[0])], tag: { p1b: a[1], p2b: b[1], costumes: [0, alt(b[1])] }, cpu: this.cpu, stage: this.stage }));
+      }
       this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, costumes: this.costumesFor(), cpu: this.cpu, training: this.training, stage: this.stage }));
     }
 
     render(ctx) {
       RF.drawMenuBackdrop(ctx, this.t, 0.72);
-      T(ctx, 'SELECT YOUR FIGHTER', W / 2, 5, { align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
+      T(ctx, this.tag ? 'TAG TEAM: PICK TWO FIGHTERS' : 'SELECT YOUR FIGHTER', W / 2, 5, { align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
 
       // Grid
       this.slots.forEach((def, i) => {
@@ -162,6 +175,11 @@
         T(ctx, this.labels[p], p === 0 ? x + 1 : x + SLOT - 1, y + SLOT - 9, { align: p === 0 ? 'left' : 'right', color: PCOL[p], outline: '#000' });
       }
       ctx.lineWidth = 1;
+      if (this.tag) this.picks.forEach((pk, p) => pk.forEach((i, n) => { // tag team: who is already on each team
+        const x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP), bx = p === 0 ? x : x + SLOT - 8;
+        ctx.fillStyle = '#000'; ctx.fillRect(bx, y, 8, 9); ctx.fillStyle = PCOL[p]; ctx.fillRect(bx + 1, y + 1, 6, 7);
+        T(ctx, String(n + 1), bx + 1, y + 1, { color: '#ffffff' });
+      }));
 
       // Big previews either side of the grid
       for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
@@ -182,6 +200,10 @@
         ctx.ellipse(x, 101, 22, 3, 0, 0, Math.PI * 2);
         ctx.fill();
         this.sprite(def, cos).draw(ctx, anim, Math.floor(this.t / 18) % 2, x, 101, p === 0 ? 1 : -1, this.flash[p] > 5 ? 'white' : null);
+        if (this.tag && this.picks[p].length) { // tag team: the first pick, waiting behind
+          const d1 = this.slots[this.picks[p][0]];
+          ctx.save(); ctx.translate(p === 0 ? x - 18 : x + 18, 99); ctx.scale(0.6, 0.6); this.sprite(d1).draw(ctx, 'idle', 0, 0, 0, p === 0 ? 1 : -1); ctx.restore();
+        }
         if (this.ready[p]) { // READY! stamp across their legs
           ctx.fillStyle = '#000'; ctx.fillRect(x - 25, 80, 50, 12);
           ctx.fillStyle = '#ffd030'; ctx.fillRect(x - 24, 81, 48, 10);
@@ -208,7 +230,12 @@
         T(ctx, 'VS', W / 2, 78, { scale: 3, align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
       }
       let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT/ENTER = SELECT - HEAVY = COSTUME - BLOCK = CANCEL';
-      if (this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY (F OR ENTER)' : 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
+      if (this.tag && !(this.ready[0] && this.ready[1])) {
+        const who = this.cpu && this.ready[0] ? 'THE CPU TEAM' : 'YOUR TEAM', n = this.picks[this.cpu && this.ready[0] ? 1 : 0].length;
+        hint = this.cpu ? who + ': PICK FIGHTER ' + (n + 1) + ' OF 2 - BLOCK = UNDO' : 'PICK TWO EACH - LIGHT = SELECT - BLOCK = UNDO';
+        if (!this.picks[0].length && !this.picks[1].length && !this.ready[0]) hint += ' - THROW = ' + (this.cpu ? '2 PLAYERS' : 'VS CPU');
+      }
+      if (!this.tag && this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY (F OR ENTER)' : 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
       if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK ANOTHER ONE';
       T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });
     }

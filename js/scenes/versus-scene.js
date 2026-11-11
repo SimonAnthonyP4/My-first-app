@@ -12,12 +12,14 @@
       this.duration = this.banter ? 210 : DURATION;
       const cos = opts.costumes || [0, opts.p2Alt ? 1 : 0];
       this.sprites = [RF.createSprite(RF.costume(opts.p1, cos[0])), RF.createSprite(RF.costume(opts.p2, cos[1]))];
+      const tc = (opts.tag && opts.tag.costumes) || [0, 0];
+      this.partners = opts.tag ? [RF.createSprite(RF.costume(opts.tag.p1b, tc[0])), RF.createSprite(RF.costume(opts.tag.p2b, tc[1]))] : null; // tag team
     }
 
     update() {
       this.t++;
       for (const s of this.sprites) if (s.warm) s.warm(2); // build the fight's frames during the intro (no hitch later)
-      if (this.t === 12) RF.announcer.say(this.opts.p1.name + ' versus ' + this.opts.p2.name, { rate: 0.9 });
+      if (this.t === 12) RF.announcer.say(this.opts.tag ? 'TAG TEAM!' : this.opts.p1.name + ' versus ' + this.opts.p2.name, { rate: 0.9 });
       if (this.t > 20 && RF.menuPressed(this.game.kb, 'confirm')) this.t = this.duration;
       if (this.t >= this.duration) this.game.setScene(new RF.FightScene(this.game, this.opts));
     }
@@ -40,12 +42,20 @@
       const defs = [this.opts.p1, this.opts.p2];
       for (let p = 0; p < 2; p++) {
         const x = p === 0 ? 96 - slide : W - 96 + slide;
+        if (this.partners) { // the partner, a step behind
+          ctx.save(); ctx.translate(x + (p === 0 ? -46 : 46), 186); ctx.scale(1.2, 1.2);
+          this.partners[p].draw(ctx, 'idle', Math.floor((this.t + 9) / 20) % 2, 0, 0, p === 0 ? 1 : -1, '#000000'); ctx.restore();
+          ctx.save(); ctx.globalAlpha = 0.7; ctx.translate(x + (p === 0 ? -46 : 46), 186); ctx.scale(1.2, 1.2);
+          this.partners[p].draw(ctx, 'idle', Math.floor((this.t + 9) / 20) % 2, 0, 0, p === 0 ? 1 : -1); ctx.restore();
+        }
         ctx.save();
         ctx.translate(x, 190);
         ctx.scale(1.6, 1.6);
         this.sprites[p].draw(ctx, 'idle', Math.floor(this.t / 20) % 2, 0, 0, p === 0 ? 1 : -1);
         ctx.restore();
-        T(ctx, defs[p].name, x, 196, { scale: 2, align: 'center', color: '#fff', outline: '#000' });
+        const tagName = this.partners && defs[p].name + ' & ' + (p === 0 ? this.opts.tag.p1b : this.opts.tag.p2b).name;
+        if (tagName) T(ctx, tagName, Math.max(RF.font.textWidth(tagName) / 2 + 4, Math.min(W - RF.font.textWidth(tagName) / 2 - 4, x)), 199, { align: 'center', color: '#fff', outline: '#000' });
+        else T(ctx, defs[p].name, x, 196, { scale: 2, align: 'center', color: '#fff', outline: '#000' });
         T(ctx, p === 1 && this.opts.cpu ? 'CPU' : 'PLAYER ' + (p + 1), x, 214, { align: 'center', color: p === 0 ? '#ff6050' : '#60a0ff', outline: '#000' });
       }
       if (this.t > 18) {

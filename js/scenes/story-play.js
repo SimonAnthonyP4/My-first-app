@@ -11,6 +11,8 @@
 //     The pick is saved as vars[id] = set; later scenes read it with { if: (v) => ..., then, else }.
 //  BRANCHING           { if: (vars, state) => bool, then: [...], else: [...] }   { set: [key, value] }
 //                      a walk / dash target of [key, gap] closes in on that actor; { depth: [key, z, frames] } walks in 3D
+//  MEMORY              { recall: { bg, cast, shot | cam3d, say: [key, 'LINE'] | text: 'CAPTION', frames } }
+//                      a flash of an earlier moment, in sepia, then straight back to the scene as it was
 //  ACTING              { emote: [key, '!' | '?' | '...' | 'heart' | 'anger' | 'sweat' | 'tear' | 'note' | 'idea'] }
 //                      { tremble: [key, frames] }   { card: [key, 'TAGLINE'] } (freeze-frame intro card)
 //                      { place: ['WHERE', 'WHEN'] } (a location stamp over the picture; does not stop the scene)
@@ -61,7 +63,7 @@
       if (a.trembleT > 0) a.trembleT--;
       if (a.zlen) { a.zt++; const u = Math.min(1, a.zt / a.zlen); a.z = a.zFrom + (a.zTo - a.zFrom) * u; if (u >= 1) a.zlen = 0; } // walking toward / away from the camera
     }
-    const s = this.cur, busy = s && (s.choose || s.choice || s.qte || s.rank || s.credits);
+    const s = this.cur, busy = s && (s.choose || s.choice || s.qte || s.rank || s.credits || s.recall);
     const held = !busy && BACK().some((c) => kb.down.has(c));
     this.skipT = held ? (this.skipT || 0) + 1 : 0;
     if (this.skipT > 42) {
@@ -105,6 +107,17 @@
       this.c = { t: 0, opts, sel: Math.max(0, opts.findIndex((o) => !o.off)) };
       RF.audio.sfx('paper');
     }
+    if (s.recall) { // a memory: put the present away, stage the past
+      const r = s.recall;
+      this.rc = { t: 0, len: r.frames || 80, text: r.text || (r.say && r.say[1]) || '', who: null,
+        save: { actors: this.actors, bgDef: this.bgDef, stage: this.stage, shot: this.shot, cam: Object.assign({}, this.cam), tintCol: this.tintCol, flashback: this.flashback, weather: this.weather, grade: this.grade, riftFx: this.riftFx, insert: this.insert, rays: this.rays, spotKey: this.spotKey } };
+      this.actors = {}; this.riftFx = null; this.insert = null; this.tintCol = null; this.weather = null; this.grade = null; this.rays = false; this.spotKey = null; this.flashback = true;
+      if (r.bg) this.instant({ bg: r.bg });
+      if (r.cast) this.instant({ cast: r.cast });
+      if (r.cam3d) this.instant({ cam3d: r.cam3d }); else this.setShot(r.shot || 'wide');
+      if (r.say) { const a = this.actor(r.say[0]), def = a ? a.def : RF.getCharacter(this.resolve(r.say[0])); this.rc.who = def; if (a) a.talk = true; K.speak(def, r.say[1]); }
+      this.flash = 9; RF.audio.sfx('whoosh');
+    }
     if (s.card) { this.cardT = 0; this.cardN = (this.cardN || 0) + 1; RF.audio.sfx('clang'); this.flash = 5; }
     if (s.rank) RF.audio.sfx('paper');
   };
@@ -114,6 +127,16 @@
   P.updateExtra = function (s, kb, ok, auto) {
     if (s.qte) return this.updateQTE(s, kb, auto);
     if (s.choice) return this.updateChoice(s, kb, auto);
+    if (s.recall) { // held until its line has been heard, then the present snaps back
+      const rc = this.rc; rc.t++;
+      const heard = !K.voice.speaking || rc.t > rc.len + 260;
+      if ((rc.t >= rc.len && heard) || (ok && rc.t > 24) || (auto && rc.t > 4)) {
+        if (ok) K.voice.stop();
+        Object.assign(this, rc.save, { cam: rc.save.cam }); this.rc = null; this.trans = null;
+        this.flash = 9; this.next();
+      }
+      return true;
+    }
     if (s.card) { this.cardT++; if (this.cardT > 170 || (ok && this.cardT > 34) || (auto && this.cardT > 4)) this.next(); return true; }
     if (s.rank) { if (this.stepT > 360 || (ok && this.stepT > 80) || (auto && this.stepT > 4)) this.next(); return true; }
     return false;
@@ -257,6 +280,14 @@
 
   // ---------------------------------------------------------------- UI: prompts, choices, cards, ranks
   P.drawUI = function (ctx, s) {
+    if (this.rc) { // the remembered line, under a soft white edge
+      const rc = this.rc, g = ctx.createRadialGradient(W / 2, H / 2, 70, W / 2, H / 2, 230);
+      g.addColorStop(0, 'rgba(255,250,235,0)'); g.addColorStop(1, 'rgba(255,250,235,0.5)');
+      ctx.fillStyle = g; ctx.fillRect(0, BAR, W, H - BAR * 2);
+      const lines = RF.font.wrap(rc.text.slice(0, Math.floor(rc.t * 0.9)), 58);
+      if (rc.who) T(ctx, rc.who.name.toUpperCase(), W / 2, H - BAR + 3, { align: 'center', color: '#d8c090', outline: '#000' });
+      lines.slice(0, 2).forEach((l, i) => T(ctx, l, W / 2, H - BAR + (rc.who ? 12 : 6) + i * 9, { align: 'center', color: '#fff4dc', outline: '#000' }));
+    }
     if (s && s.card) this.drawCard(ctx, s);
     if (s && s.qte && this.q && !this.q.result) this.drawQTE(ctx, s);
     if (this.qf) { // PERFECT / GOOD / MISS, over the action
@@ -275,7 +306,7 @@
       T(ctx, this.toast.text, 14 - (1 - k) * 20, BAR + 8, { color: '#e8d8ff', outline: '#000' });
       ctx.globalAlpha = 1;
     }
-    if (this.sup && this.sup.ins === this.insert && !this.qf && !(s && (s.choice || s.choose || s.qte || s.rank || s.card || s.title))) { // where and when, lower left (it gives way to inserts and prompts)
+    if (this.sup && this.sup.ins === this.insert && !this.qf && !this.rc && !(s && (s.choice || s.choose || s.qte || s.rank || s.card || s.title))) { // where and when, lower left (it gives way to inserts and prompts)
       const p = this.sup, t = p.t, k = Math.max(0, Math.min(1, t / 10, (200 - t) / 16)), x = 12 - (1 - k) * 14, y = H - BAR - 27;
       ctx.globalAlpha = k;
       R(ctx, '#000', x - 1, y - 1, 4, 24); R(ctx, '#c080ff', x, y, 2, 22);

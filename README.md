@@ -656,6 +656,22 @@ Pure energy from Miami (hyper, **105% health**, from the 305). Fast everything, 
 
 Character select is now 10 x 2.
 
+## Tag Team (2 vs 2)
+
+Main menu -> **TAG TEAM**. Each side picks two fighters (THROW on the select screen switches
+between playing the computer and a second player). The first pick starts; the second waits on
+the bench.
+
+- **TAUNT** tags your partner in - they arrive swinging (4 second cooldown).
+- **DOWN + TAUNT** calls your partner for an **assist**: they charge across the stage (7 seconds).
+- The partner on the bench slowly recovers up to a quarter of their health (the pale part of
+  their small bar). Super meter is shared by the team.
+- When a fighter is knocked out their partner steps in. A team loses when both are down, and
+  only the last one standing can be finished. One long round, no timer.
+- The computer's team tags out when hurt and calls assists from range.
+
+The mode lives in `js/game/tag-team.js`; the fight itself is the normal FightScene.
+
 ## Story Mode: THE LAST BELL
 
 Main menu -> **STORY**. A generational, cinematic campaign you **play**: **24 chapters** across
@@ -742,6 +758,14 @@ clock, the bell and its signatures, a handwritten letter, a crown on the gym flo
 plaque, one empty chair, a 120-metre rock face); freeze-frame character cards; location stamps;
 dissolves, whip pans, fades and a handheld sway; colour grading, light shafts, a spotlight,
 slow motion, impact frames, rain, embers, confetti; 2.35:1 letterbox, vignette and film grain.
+
+**Recorded lines.** The story's key lines ("IS THIS SEAT TAKEN?", "THIS IS YOUR PRINCIPAL
+SPEAKING.", "CLASS DISMISSED." and a dozen more) are real recordings in `assets/voice/`, listed
+in `js/config/story-voice.js`. To add your own: drop an mp3 in that folder and add a line
+`'characterId|THE EXACT LINE': 'file-name'`. Every other line uses the speech voice.
+
+**Memory flashes.** `{ recall: { bg, cast, shot, say } }` cuts to an earlier moment in sepia
+for one line and snaps back - the first lunch as Anthony is taken, 1994 as Sirven volunteers.
 
 **Audio**: every line is **spoken** (each character with their own voice; rift variants deeper
 and slower), over ambient beds - the tolling bell, a rift drone, a heartbeat, a clock, rain,

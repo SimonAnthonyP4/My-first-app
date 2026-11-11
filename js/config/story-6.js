@@ -75,6 +75,7 @@
       { say: ['junior', "THEN IT'S MINE. WANT HALF A PROTEIN BAR? MY DAD MAKES THEM. THEY USED TO BE TERRIBLE."] },
       { cast: { nicholas: ['nicholas', 30, 1, { z: 60 }], anthony: ['anthony', 62, 1, { z: 70 }] } },
       { shot: ['close', 'nicholas'] }, { emote: ['nicholas', 'tear'] }, { wait: 80 },
+      { recall: { bg: 'cafeteria', cast: { anthony: ['anthony', 190, 1], nicholas: ['nicholas', 232, -1] }, shot: ['two', 'anthony', 'nicholas'], say: ['anthony', 'IS THIS SEAT TAKEN?'] } },
       { cam3d: [['nicholas', 'anthony'], 'two'] }, { score: 'bro' },
       { if: when('table', 'somebody'), then: [
         { say: ['anthony', '"AS LONG AS SOMEBODY DOES." YOU SAID THAT. AT THIS TABLE.'] },

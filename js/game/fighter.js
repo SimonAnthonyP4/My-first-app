@@ -552,7 +552,7 @@
       if (this.wantsSuper(input)) return this.startSuper();
       const cmd = this.commandPressed(input);
       if (cmd) return this.startCommand(cmd);
-      if (input.pressed('taunt')) { input.consume('taunt'); return this.startTaunt(); }
+      if (input.pressed('taunt')) { input.consume('taunt'); if (this.scene && this.scene.tag && RF.tagRequest(this.scene, this, input)) return; return this.startTaunt(); }
       if (down && this.meter >= RF.CONFIG.EX_COST && input.pressed('throw')) { input.consume('throw'); return this.startEX(); } // DOWN + THROW = EX special
       if (input.pressed('ex')) { // EX button (L2): one press, no motion needed
         input.consume('ex');

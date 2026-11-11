@@ -32,9 +32,10 @@
       const cos = opts.costumes || [0, opts.p2Alt ? 1 : 0];
       this.fighters = [new RF.Fighter(opts.p1, 0, cos[0]), new RF.Fighter(opts.p2, 1, cos[1])];
       for (const f of this.fighters) f.scene = this;
+      if (opts.tag) RF.tagSetup(this); // two a side (game/tag-team.js)
       if (opts.boss) this.fighters[1].maxHealth = Math.round(this.fighters[1].maxHealth * opts.boss); // arcade final boss
       this.training = !!opts.training;
-      this.roundsToWin = opts.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN;
+      this.roundsToWin = this.tag ? 1 : opts.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN;
       this.projectiles = [];
       this.inputs = [
         new RF.PlayerInput(game.kb, RF.CONTROLS.p1),
@@ -79,7 +80,8 @@
 
     startRound() {
       const b = this.stageDef.bounds, mid = (b.left + b.right) / 2;
-      if (RF.CONFIG.MOD_RANDOM && !this.training) { // party mod: new random fighters every round
+      if (this.tag) RF.tagRound(this);
+      if (RF.CONFIG.MOD_RANDOM && !this.training && !this.tag) { // party mod: new random fighters every round
         this.fighters = this.fighters.map((old, i) => {
           const def = RF.CHARACTERS[Math.floor(Math.random() * RF.CHARACTERS.length)];
           const f = new RF.Fighter(def, i, i === 1 && def.id === this.fighters[0].def.id ? 1 : 0);
@@ -91,7 +93,7 @@
       this.fighters[1].reset(mid + START_GAP, -1);
       const run = this.opts.survival;
       if (run && run.health != null) { this.fighters[0].health = run.health; this.fighters[0].meter = run.meter || 0; } // survival: health carries over
-      this.timer = RF.CONFIG.ROUND_TIME && !this.training ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
+      this.timer = RF.CONFIG.ROUND_TIME && !this.training && !this.tag ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
       this.comboDmg = 0; this.lastCombo = null; this.quietFrames = 0;
       this.hitstop = 0;
       this.shake = 0;
@@ -288,7 +290,9 @@
       RF.checkHazards(this); // also ticks the hazard's effect
       if (this.phase === 'fight' || (this.phase === 'finish' && !this.finisher)) {
         this.checkHits();
-        if (a.isKO || b.isKO) this.endRound('ko');
+        if (this.tag && this.phase === 'fight') RF.tagUpdate(this);
+        const [p, q] = this.fighters; // (a tag may have changed who is in the ring)
+        if ((p.isKO || q.isKO) && !(this.tag && RF.tagKO(this))) this.endRound('ko');
       }
     }
 
@@ -658,6 +662,7 @@
       const opp = this.opponentOf(f);
       if (this.phase !== 'fight' || this.finishOffered || f.state === 'dazed' || opp.isKO || opp.health <= 0) return false;
       if (this.wins[opp.side] + 1 < this.roundsToWin) return false;
+      if (this.tag && this.tag.bench[f.side].health > 0) return false; // their partner is still coming
       this.finishOffered = true;
       this.finishVictim = f;
       f.health = 0;
@@ -762,6 +767,7 @@
     }
 
     opponentOf(f) {
+      if (this.tag) return this.fighters[f.side ? 0 : 1]; // whoever is in the ring on the other side
       return this.fighters[0] === f ? this.fighters[1] : this.fighters[0];
     }
 
@@ -1096,9 +1102,10 @@
         if (!this.finisher.kind.banner) RF.announcer.say('FATALITY!');
       } else if (reason === 'ko') {
         RF.audio.sfx('ko');
-        RF.announcer.say(a.isKO && b.isKO ? 'DOUBLE K O' : 'K O!');
-        if (a.isKO && b.isKO) this.banner = 'DOUBLE K.O.';
-        else { winner = a.isKO ? 1 : 0; this.banner = 'K.O.'; }
+        const outA = this.tag ? RF.tagTeamOut(this, 0) : a.isKO, outB = this.tag ? RF.tagTeamOut(this, 1) : b.isKO; // tag team: the whole team is down
+        RF.announcer.say(outA && outB ? 'DOUBLE K O' : 'K O!');
+        if (outA && outB) this.banner = 'DOUBLE K.O.';
+        else { winner = outA ? 1 : 0; this.banner = 'K.O.'; }
       } else {
         this.banner = 'TIME';
         RF.announcer.say('TIME!');
@@ -1164,6 +1171,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       this.hud.draw(ctx, this);
+      if (this.tag) RF.drawTagHud(ctx, this);
       if (ent) RF.drawEntranceCard(ctx, ent.f, ent.t);
       if (this.training) this.drawTrainingHud(ctx, W);
       if (this.opts.survival) T(ctx, 'SURVIVAL - STREAK ' + this.opts.survival.streak, W / 2, 30, { align: 'center', color: '#ffd030', outline: '#000' });
@@ -1208,7 +1216,8 @@
         }
       } else if (this.phase === 'matchOver') {
         const w = this.wins[0] > this.wins[1] ? 0 : 1;
-        big(this.fighters[w].def.name + ' WINS', 70, 3);
+        if (this.tag) big(this.tag.leads[w].def.name + ' & ' + this.tag.partners[w].def.name + ' WIN', 74, 2);
+        else big(this.fighters[w].def.name + ' WINS', 70, 3);
         T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
         if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
       }

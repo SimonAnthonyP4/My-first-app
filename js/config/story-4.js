@@ -2,6 +2,8 @@
 // Step reference and the list of choices: the top of story.js.
 (function () {
   const C = RF.STORY.chapters, when = RF.STORY.when;
+  // the first lunch, three years ago: it comes back in flashes (see { recall } in story-play.js)
+  const TABLE = { bg: 'cafeteria', cast: { anthony: ['anthony', 190, 1], nicholas: ['nicholas', 232, -1] } };
 
   // ================================================================== ACT III - DOOMSDAY
   // 16 ----------------------------------------------------------------- DOOMSDAY
@@ -60,6 +62,7 @@
       { say: ['nicholas', 'WHAT? NO. NO, WE GO TOGETHER-'] },
       { shot: ['close', 'anthony'] },
       { say: ['anthony', 'YOU NEVER ATE ALONE AGAIN. THAT WAS THE WHOLE POINT.'] },
+      { recall: Object.assign({ shot: ['two', 'anthony', 'nicholas'], say: ['anthony', 'IS THIS SEAT TAKEN?'] }, TABLE) },
       // ---- he throws Nicholas clear, and is taken: you reach for him, and it is not enough ----
       { shot: 'wide' }, { dash: ['anthony', 276, 12] }, { act: ['anthony', 'special'] }, { flash: 10 }, { shake: 12 },
       { dash: ['nicholas', 96, 10] }, { face: ['nicholas', 1] },
@@ -69,6 +72,8 @@
       { qte: { type: 'mash', key: 'heavy', text: 'REACH HIM!', who: 'nicholas', len: 160, need: 16, rigged: true },
         hit: [{ shot: ['xcu', 'nicholas'] }, { wait: 30 }, { say: ['nicholas', 'I HAD HIM. I HAD HIS HAND.'] }],
         miss: [{ shot: ['xcu', 'nicholas'] }, { wait: 30 }, { say: ['nicholas', "I WASN'T FAST ENOUGH. I WASN'T FAST ENOUGH."] }] },
+      { recall: Object.assign({ shot: ['close', 'anthony'], say: ['anthony', 'I KNOW. HELP ME MAKE IT BETTER.'] }, TABLE) },
+      { shot: ['xcu', 'nicholas'] },
       { say: ['nicholas', 'ANTHONY!!!'] },
       { cast: { jauregui: ['jauregui', -40, 1] } }, { shot: 'wide' }, { dash: ['jauregui', 60, 14] },
       { say: ['jauregui', 'NICHOLAS! WE HAVE TO GO. NOW!'] },
@@ -81,6 +86,8 @@
       { shot: ['close', 'nicholas'] }, { score: 'sad' }, { wait: 120 },
       { shot: ['close', 'mikey'] },
       { say: ['mikey', '...GABRIEL. SIMON. BANDY. ANTHONY.'] },
+      { shot: ['close', 'nicholas'] }, { tremble: ['nicholas', 120] },
+      { say: ['nicholas', 'HE THREW ME CLEAR. HE COULD HAVE RUN. HE THREW ME CLEAR.'] },
       { cam3d: ['nicholas', 'pullback'] }, { emote: ['nicholas', 'tear'] }, { wait: 110 },
       { score: null }, { fade: ['out', 80] },
     ],
@@ -201,6 +208,8 @@
       { say: ['fernando', 'YOUR BOY TOLD ME SOMETHING ONCE. WHEN I WAS BUMMING A BAR OFF HIM.'] },
       { say: ['fernando', 'HE SAID BRO BATCH WAS NEVER ABOUT THE BARS.'] },
       { shot: ['xcu', 'nicholas'] }, { wait: 60 },
+      { recall: Object.assign({ shot: ['close', 'nicholas'], say: ['nicholas', '...NOBODY EVER SITS HERE.'] }, TABLE) },
+      { shot: ['close', 'nicholas'] }, { emote: ['nicholas', 'tear'] },
       { say: ['nicholas', '...IT WAS ABOUT NOBODY EATING ALONE.'] },
       { cam3d: [['nicholas', 'fernando'], 'two'] }, { score: 'hope' },
       { say: ['fernando', "SO GO GET HIM. HE'S EATING ALONE RIGHT NOW, KID. SOMEWHERE OUT THERE."] },
@@ -217,6 +226,7 @@
       { score: null }, { amb: ['rain'] }, { cam3d: ['sirven', 'still'] }, { wait: 120 },
       { cam3d: ['sirven', 'hero'] },
       { say: ['sirven', 'THEN IT IS ME.'] },
+      { recall: { bg: 'hallway', cast: { sirven: ['sirven', 150, 1, { name: 'MR. SIRVEN, AGE 24' }], ortega: ['dabalsa', 232, -1, { ghost: true, name: 'PRINCIPAL ORTEGA' }] }, shot: ['two', 'sirven', 'ortega'], say: ['ortega', 'A PRINCIPAL IS ALWAYS THE LAST ONE OUT OF THE BUILDING.'] } },
       { shot: ['close', 'brady'] }, { emote: ['brady', '!'] },
       { say: ['brady', 'SIR. NO.'] },
       { cam3d: [['brady', 'sirven'], 'ots'] }, { score: 'requiem' },
@@ -299,6 +309,18 @@
       { say: ['mikey', 'IF ANYTHING HAPPENS TOMORROW: I ATE MY VEGETABLES.'] }, { wait: 40 },
       { shot: ['close', 'mikey'] }, { emote: ['mikey', 'tear'] },
       { say: ['mikey', "...NO I DIDN'T. I LOVE YOU, MOM. TELL DAD I KEPT THE LETTER."] },
+      // the corner table, in the dark
+      { dissolve: 50 }, { clear: true }, { bg: 'cafeteria' }, { tint: 'rgba(10,10,40,0.55)' }, { amb: ['room'] }, { score: 'seat' },
+      { cast: { nicholas: ['nicholas', 232, -1] } },
+      { cam3d: ['nicholas', 'top'] }, { spot: 'nicholas' },
+      { place: ['THE CAFETERIA', '3:00 AM. THE CORNER TABLE.'] }, { wait: 70 },
+      { narrate: 'HE BROKE A PROTEIN BAR IN HALF, AND PUT ONE HALF ON THE EMPTY SIDE OF THE TABLE.' },
+      { spot: null }, { shot: ['close', 'nicholas'] },
+      { say: ['nicholas', 'SAVED YOUR HALF, BRO. LIKE ALWAYS.'] },
+      { recall: Object.assign({ shot: ['two', 'anthony', 'nicholas'], say: ['anthony', 'IS THIS SEAT TAKEN?'] }, TABLE) },
+      { shot: ['close', 'nicholas'] }, { emote: ['nicholas', 'tear'] }, { wait: 50 },
+      { say: ['nicholas', "IT'S TAKEN. IT'S YOURS. I'M COMING TO GET YOU."] },
+      { cam3d: ['nicholas', 'pullback'] }, { wait: 90 },
       { dissolve: 50 }, { clear: true }, { bg: 'musicroom' }, { tint: 'rgba(10,10,40,0.45)' }, { amb: ['room'] }, { score: null },
       { cast: { wuttke: ['wuttke', 150, 1], landa: ['landa', 250, -1] } },
       { cam3d: [['wuttke', 'landa'], 'two'] },

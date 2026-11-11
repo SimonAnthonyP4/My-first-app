@@ -288,6 +288,7 @@
       { say: ['jauregui', 'I WAS PROUD OF YOU, LOPEZ. I STILL AM. THAT IS WHY THIS HURTS.'] },
       { shot: ['close', 'rlo'] }, { wait: 40 },
       { say: ['rlo', '...THEN WHY DID YOU NEVER SAY IT?'] },
+      { recall: { bg: 'office', cast: { young: ['lopez', 160, 1, { name: 'LOPEZ, AGE 22' }], teacher: ['jauregui', 244, -1] }, shot: ['close', 'young'], say: ['young', '...YES, SIR.'], frames: 90 } },
       { shot: ['xcu', 'jauregui'] }, { wait: 50 },
       { choice: { id: 'jauregui', who: 'jauregui', timer: 480, timeout: 1, options: [
         { text: '"I AM SAYING IT NOW. I AM PROUD OF YOU."', set: 'said', note: 'SOMEWHERE, THE REST OF HIM HEARD THAT.', then: [

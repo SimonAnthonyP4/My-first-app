@@ -152,9 +152,60 @@
     if (v) voiceUse.set(v, (voiceUse.get(v) || 0) + 1);
     return (voiceCache[id] = v);
   }
-  function speak(def, text, { radio = false, interrupt = true } = {}) {
+  // Recorded lines (js/config/story-voice.js -> assets/voice/*.mp3). They are fetched once and
+  // played through the game's own audio, so they work wherever the music does; if a file cannot
+  // be loaded or played, the line falls back to the speech voice.
+  const clips = { buf: {}, raw: {}, bad: {}, started: false, src: null, el: null };
+  function loadClips() {
+    const A = RF.audio, map = RF.STORY_VOICE || {};
+    if (!clips.started) {
+      clips.started = true;
+      if (location.protocol !== 'file:') for (const f of new Set(Object.values(map))) { // (opened straight from a file, fetch is not allowed: the audio element is used)
+        try { fetch('assets/voice/' + f + '.mp3').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => { clips.raw[f] = b; loadClips(); }).catch(() => { /* played as a plain audio element instead */ }); } catch (e) { /* no fetch */ }
+      }
+    }
+    if (A && A.ctx) for (const f in clips.raw) { const b = clips.raw[f]; delete clips.raw[f]; try { A.ctx.decodeAudioData(b, (d) => { clips.buf[f] = d; }, () => { clips.bad[f] = true; }); } catch (e) { clips.bad[f] = true; } }
+  }
+  function stopClip() {
+    try { if (clips.src) clips.src.stop(); } catch (e) { /* already ended */ }
+    try { if (clips.el) clips.el.pause(); } catch (e) { /* ok */ }
+    clips.src = clips.el = null;
+  }
+  voice.stop = () => { stopClip(); voice.speaking = false; try { speechSynthesis.cancel(); } catch (e) { /* ok */ } };
+  function playClip(file, def, text, opts) {
+    const A = RF.audio, vol = Math.min(1, (RF.CONFIG.SFX_VOLUME == null ? 0.8 : RF.CONFIG.SFX_VOLUME) * 1.3), rate = def.rift ? 0.86 : 1;
+    if (clips.bad[file] || (A && A.muted)) return false;
+    const done = () => { voice.speaking = false; voice.endT = voice.clock; };
+    voice.stop();
+    voice.speaking = true; voice.started = true; voice.askedAt = voice.clock;
+    const d = clips.buf[file];
+    if (d && A && A.ctx && A.ctx.state === 'running') {
+      const src = A.ctx.createBufferSource(), g = A.ctx.createGain();
+      src.buffer = d; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g).connect(A.master || A.ctx.destination);
+      src.onended = () => { if (clips.src === src) { clips.src = null; done(); } };
+      clips.src = src; src.start();
+      return true;
+    }
+    try { // not decoded (yet), or opened straight from a file: a plain audio element
+      const el = new Audio('assets/voice/' + file + '.mp3');
+      el.volume = vol; el.playbackRate = rate; el.preservesPitch = false;
+      const fail = () => { if (clips.el !== el) return; clips.el = null; clips.bad[file] = true; speak(def, text, opts); };
+      el.onended = () => { if (clips.el === el) { clips.el = null; done(); } };
+      el.onerror = fail;
+      clips.el = el;
+      const pr = el.play(); if (pr && pr.catch) pr.catch(fail);
+      return true;
+    } catch (e) { clips.bad[file] = true; voice.speaking = false; return false; }
+  }
+  function speak(def, text, opts = {}) {
+    const { radio = false, interrupt = true } = opts;
     voice.speaking = false;
     if (!def) return;
+    loadClips();
+    stopClip();
+    const file = RF.STORY_VOICE && RF.STORY_VOICE[def.id + '|' + text];
+    if (file && playClip(file, def, text, opts)) return;
     if (voice.mode === 'blip' || !window.speechSynthesis || !window.SpeechSynthesisUtterance) { voice.mode = 'blip'; return; }
     if (RF.audio && RF.audio.muted) return;
     try {
@@ -249,7 +300,7 @@
     if (A.musicBus && A.ctx) { A.musicBus.gain.cancelScheduledValues(A.ctx.currentTime); A.musicBus.gain.value = RF.CONFIG.MUSIC_VOLUME; }
     if (name) A.playSong(name);
   }
-  function leaveStory() { amb.stop(); if (RF.storyScore) RF.storyScore.stop(); setMusic(null); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* ok */ } }
+  function leaveStory() { amb.stop(); if (RF.storyScore) RF.storyScore.stop(); setMusic(null); voice.stop(); }
 
   // ---------------------------------------------------------------- story menu
   const ENDINGS = [['lopez', 'THE TEACHER'], ['sirven', 'THE LAST ONE OUT'], ['hero', 'THE EMPTY SEAT']];
@@ -585,6 +636,7 @@
       if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - tall(A) * 0.72; }
       if ((s.type === 'two') && A && B) { x = (A.x + B.x) / 2; z = Math.max(1, Math.min(2.2, 300 / (Math.abs(A.x - B.x) + 110))); y = fy - 46; }
       if (s.type === 'ots' && B) { z = 2.7; x = B.x + (A && A.x < B.x ? -12 : 12); y = head(B) + 14; }
+      if (z > 1) z *= 1 + Math.min(0.09, Math.max(0, this.t - (s.t0 || 0)) * 0.00032); // a slow push-in: a held shot is never a still frame
       c.tx = x; c.ty = y; c.tz = z; c.trot = s.dutch || 0;
       if (cut) { c.x = x; c.y = y; c.z = z; c.rot = c.trot; }
     }
@@ -715,7 +767,7 @@
         const before = this.typed | 0;
         this.typed += 0.75;
         if (voice.speaking && !voice.started && voice.clock - voice.askedAt > 50 && !voice.ok) { voice.mode = 'blip'; voice.speaking = false; try { speechSynthesis.cancel(); } catch (e) { /* ok */ } }
-        if (s.say && voice.mode === 'blip' && (this.typed | 0) !== before && before < this.text.length) {
+        if (s.say && voice.mode === 'blip' && !clips.src && !clips.el && (this.typed | 0) !== before && before < this.text.length) {
           const ch = this.text[before], def = (this.actor(s.say[0]) || {}).def || RF.getCharacter(this.resolve(s.say[0]));
           const every = Math.round(3 / ((VOICES[def && def.id] || {}).rate || 1));
           if (def && /[A-Z0-9]/.test(ch) && before % Math.max(2, every) === 0) blip(def);
@@ -729,7 +781,7 @@
         const stuck = this.stepT > 120 + this.text.length * 9; // a voice that never reports finishing
         if (ok && !done) this.typed = this.text.length;
         else if ((ok && done) || (done && this.stepT > read && (spoken || stuck)) || (auto && this.stepT > 6)) {
-          if (ok) try { speechSynthesis.cancel(); } catch (e) { /* ok */ }
+          if (ok) voice.stop();
           const a = s.say && this.actor(s.say[0]); if (a) a.talk = false; this.next();
         }
         return;

@@ -4,7 +4,7 @@
   const T = (...a) => RF.font.drawText(...a);
   const W = 384, H = 224;
   const LOGO_SCALE = 5, LOGO_Y = 26;
-  const ITEM_Y = 90, ITEM_GAP = 9;
+  const ITEM_Y = 88, ITEM_GAP = 9;
 
   class TitleScene {
     constructor(game) {
@@ -17,6 +17,7 @@
         { label: 'FIGHT NOW', desc: 'TWO PLAYERS, ONE KEYBOARD', onSelect: () => this.go(new RF.SelectScene(game)) },
         { label: 'ONLINE', desc: 'PLAY A FRIEND ON ANOTHER COMPUTER', onSelect: () => (RF.online.active ? RF.online.end('LEFT ONLINE MATCH') : RF.online.openMenu(game)) },
         { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true })) },
+        { label: 'TAG TEAM', desc: '2 VS 2 - SWAP FIGHTERS MID-MATCH', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, tag: true })) },
         { label: 'ARCADE', desc: 'CLIMB THE TOWER, BEAT THE BOSS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, arcade: true })) },
         { label: 'TOURNAMENT', desc: 'A BRACKET FOR 4 OR 8 - PARTY MODE', onSelect: () => this.go(new RF.TournamentSetupScene(game)) },
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },

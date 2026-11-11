@@ -53,7 +53,7 @@
         // Name + round wins
         const nameOpts = { color: '#ffffff', outline: '#000', align: i === 0 ? 'left' : 'right' };
         T(ctx, f.def.name, i === 0 ? x : x + BAR_W, BAR_Y + BAR_H + 4, nameOpts);
-        for (let r = 0; r < (scene.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN); r++) {
+        for (let r = 0; r < (scene.tag ? 0 : scene.roundsToWin || RF.CONFIG.ROUNDS_TO_WIN); r++) {
           const px = i === 0 ? x + BAR_W - 8 - r * 10 : x + r * 10 + 1;
           ctx.fillStyle = '#000';
           ctx.fillRect(px - 1, BAR_Y + BAR_H + 4, 9, 9);
@@ -66,13 +66,14 @@
       const c = scene.comboText;
       if (c && (c.t > 15 || c.t % 4 < 2)) {
         const pop = c.t > 62 ? 1 : 0, cx = c.side === 0 ? MARGIN : W - MARGIN, align = c.side === 0 ? 'left' : 'right';
-        T(ctx, c.hits + ' HITS!', cx, 40 - pop, {
+        const dy = scene.tag ? 14 : 0; // tag team: the partners' bars sit where the counter usually is
+        T(ctx, c.hits + ' HITS!', cx, 40 + dy - pop, {
           scale: 2, align, outline: '#200000',
           color: ['#fff8c0', '#fff070', '#ffd030', '#ffa020', '#ff7010', '#e04010', '#a02008'],
         });
         const praise = PRAISE.find(([n]) => c.hits >= n);
-        if (c.air) T(ctx, 'AIR COMBO', cx, 57, { align, color: '#8ff0ff', outline: '#000' });
-        if (praise) T(ctx, praise[1], cx, c.air ? 66 : 57, { align, outline: '#000', color: c.hits >= 9 ? (scene.frame % 6 < 3 ? '#ff4040' : '#ffd030') : '#ff9a40' });
+        if (c.air) T(ctx, 'AIR COMBO', cx, 57 + dy, { align, color: '#8ff0ff', outline: '#000' });
+        if (praise) T(ctx, praise[1], cx, (c.air ? 66 : 57) + dy, { align, outline: '#000', color: c.hits >= 9 ? (scene.frame % 6 < 3 ? '#ff4040' : '#ffd030') : '#ff9a40' });
       }
 
       // Super meters along the bottom.
