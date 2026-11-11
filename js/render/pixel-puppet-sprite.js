@@ -578,6 +578,50 @@
     }
   }
 
+  // ---- BACK VIEW (story mode's behind-the-back shots) ----
+  // There is no drawing of anyone's back, so one is made from the front: the face is filled in
+  // with the hair (or the bare scalp), and whatever sits on the chest - a tie, a logo, a zip -
+  // is painted over with the colour of the clothes around it. Built once per frame, then kept.
+  PixelPuppetSprite.prototype.backOf = function (f) {
+    if (f.back) return f.back;
+    const U = this.U, k = this.k, s = this.s, Wd = f.canvas.width, Hd = f.canvas.height;
+    const [c, x] = makeCanvas(Wd, Hd); x.drawImage(f.canvas, 0, 0);
+    let img; try { img = x.getImageData(0, 0, Wd, Hd); } catch (e) { return (f.back = f); }
+    const d = img.data, oy = (MARGIN_TOP * k + this.topPad) * U;
+    const neck = s.neckRow != null ? s.neckRow : Math.round(this.rows * 0.19);
+    const yNeck = Math.min(Hd, Math.round(oy + (neck + 1) * U)), yWaist = Math.min(Hd, Math.round(oy + this.waistRow * U));
+    const span = (y) => { let a = -1, b = -1; for (let i = 0; i < Wd; i++) if (d[(y * Wd + i) * 4 + 3] > 40) { if (a < 0) a = i; b = i; } return [a, b]; };
+    const mode = (y0, y1, x0, x1) => { // the commonest colour in a box
+      const n = new Map(); let best = null, bn = 0;
+      for (let y = y0; y < y1; y++) for (let i = x0 == null ? 0 : x0; i < (x1 == null ? Wd : x1); i++) { const o = (y * Wd + i) * 4; if (d[o + 3] < 40) continue; const key = (d[o] >> 3) << 10 | (d[o + 1] >> 3) << 5 | (d[o + 2] >> 3); const v = (n.get(key) || 0) + 1; n.set(key, v); if (v > bn) { bn = v; best = [d[o], d[o + 1], d[o + 2]]; } }
+      return best;
+    };
+    let top = 0; while (top < yNeck && span(top)[0] < 0) top++;
+    const hair = mode(top, Math.max(top + 1, Math.round(top + (yNeck - top) * 0.34)));
+    if (hair) for (let y = top; y < yNeck; y++) {       // the head: all hair, lighter down the middle
+      const [a, b] = span(y); if (a < 0) continue;
+      for (let i = a + 1; i < b; i++) { const o = (y * Wd + i) * 4; if (d[o + 3] < 40) continue; const sh = 0.78 + 0.26 * Math.sin(((i - a) / Math.max(1, b - a)) * Math.PI) - 0.1 * ((y - top) / Math.max(1, yNeck - top)); d[o] = hair[0] * sh; d[o + 1] = hair[1] * sh; d[o + 2] = hair[2] * sh; }
+    }
+    for (let y = yNeck; y < yWaist; y++) {              // the torso: plain cloth across the middle
+      const [a, b] = span(y); if (a < 0 || b - a < 6) continue;
+      const m = mode(y, y + 1, a, b + 1); if (!m) continue;
+      const lo = Math.round(a + (b - a) * 0.2), hi = Math.round(b - (b - a) * 0.2);
+      let same = 0, all = 0;                             // a patterned shirt has no "plain cloth": leave it alone
+      for (let i = lo; i <= hi; i++) { const o = (y * Wd + i) * 4; if (d[o + 3] < 40) continue; all++; if (Math.abs(d[o] - m[0]) + Math.abs(d[o + 1] - m[1]) + Math.abs(d[o + 2] - m[2]) <= 70) same++; }
+      if (same < all * 0.5) continue;
+      for (let i = lo; i <= hi; i++) { const o = (y * Wd + i) * 4; if (d[o + 3] < 40) continue; if (Math.abs(d[o] - m[0]) + Math.abs(d[o + 1] - m[1]) + Math.abs(d[o + 2] - m[2]) > 70) { const sh = 0.9 + 0.1 * Math.sin(i * 0.9 + y * 0.6); d[o] = m[0] * sh; d[o + 1] = m[1] * sh; d[o + 2] = m[2] * sh; } }
+    }
+    x.putImageData(img, 0, 0);
+    return (f.back = { canvas: c, anchorX: f.anchorX, anchorY: f.anchorY });
+  };
+  PixelPuppetSprite.prototype.drawBack = function (ctx, anim, frame, x, y, facing, tint) {
+    if (!this.recipes[anim]) anim = 'idle';
+    const list = this.frameList(anim), loop = LOOPING.has(anim);
+    let i = Math.round(frame * SUB);
+    i = loop ? ((i % list.length) + list.length) % list.length : Math.max(0, Math.min(list.length - 1, i));
+    RF.drawBakedFrame(ctx, this.backOf(list[i]), x, y, facing, tint);
+  };
+
   RF.PUPPET_POSES = PUPPET_POSES;
   RF.PixelPuppetSprite = PixelPuppetSprite;
 })();

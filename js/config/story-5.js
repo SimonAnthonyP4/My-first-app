@@ -169,7 +169,7 @@
       { cast: { '$hero': ['$hero', 110, 1], omega: ['lopez', 290, -1, { rift: true }] } },
       { cam3d: ['$hero', 'wide'] },
       { narrate: 'INSIDE THE RIFT. FOR THE LAST TIME.' },
-      { cam3d: ['$hero', 'orbit'] }, { wait: 80 },
+      { cam3d: ['$hero', 'circle'] }, { wait: 80 },
       { shot: ['xcu', 'omega'] }, { wait: 60 },
       { cam3d: ['omega', 'hero'] }, { score: 'omega' },
       { say: ['omega', 'YOU CAME BACK. EVERYONE ALWAYS LEAVES. WHY DO YOU KEEP COMING BACK?'] },

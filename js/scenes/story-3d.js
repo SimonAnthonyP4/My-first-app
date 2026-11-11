@@ -8,7 +8,9 @@
 //   { cam3d: [who, 'preset', { ...overrides }] }   or  { cam3d: [who, { yaw, dist, ... }] }
 //   presets: flyin orbit crane pullback truck low top push spiral reveal whirl rise drop
 //            vertigo (a real dolly zoom) hero still wide tilt
-//            ots ([over, at]: a shoulder in the foreground)   two ([a, b]: both in frame)
+//            ots ([over, at]: from BEHIND the listener, past their shoulder)   two ([a, b]: both in frame)
+//            behind (their back, looking where they look)   follow (behind, as they walk)
+//            face (straight at them)   circle (all the way round)   otsf (the old front ots)
 // Loaded after story-scene.js; replaces its simpler draw3D.
 (function () {
   const K = RF.storyKit, P = RF.StoryScene.prototype, W = 384, H = 224, CAM3 = K.CAM3, drawRift = K.drawRift;
@@ -25,6 +27,7 @@
     still: { yaw: [0.2, 0.2], dist: [220, 220], height: [60, 60], frames: 1 },
     wide: { yaw: [-0.25, 0.25], dist: [430, 430], height: [110, 110], frames: 420 },
     tilt: { yaw: [-0.2, 0.2], dist: [200, 180], height: [50, 50], roll: [-0.14, 0.14], frames: 260 },
+    behind: {}, follow: {}, face: {}, circle: {}, otsf: {},   // filled in by cam3dStep (they depend on the actors)
   });
 
   // { cam3d: [who, preset | params, overrides?] }
@@ -34,10 +37,20 @@
     const sh = Object.assign({ type: '3d', a: keys, t0: this.t, shift: [0, 0] }, CAM3.orbit, typeof spec === 'string' ? CAM3[spec] : spec);
     const A = this.actors[keys[0]], B = this.actors[keys[1]];
     if (spec === 'ots' && A && B) {
-      // the camera sits in front of and beside the listener; the speaker is framed past them
+      // a real over-the-shoulder: the camera stands BEHIND the listener (their back and shoulder
+      // dark in the foreground) and looks past them at the speaker
+      const dx = B.x - A.x, dz = (B.z || 0) - (A.z || 0), d = Math.hypot(dx, dz);
+      Object.assign(sh, { a: [keys[1]], over: keys[0], yaw0: Math.atan2(-dx, dz), yaw: [0.3, 0.2], dist: [d + 86, d + 70], height: [58, 56], aim: 50, frames: 260 });
+    }
+    if (spec === 'otsf' && A && B) { // the old one: from the front, beside the listener
       const d = Math.hypot(A.x - B.x, (A.z || 0) - (B.z || 0)), side = A.x < B.x ? -1 : 1;
       Object.assign(sh, { a: [keys[1]], over: keys[0], yaw0: side * 1.0, yaw: [-0.08, 0.08], dist: [d * 0.85 + 100, d * 0.85 + 84], height: [50, 52], frames: 260 });
     }
+    // shots that depend on which way the subject faces
+    if (spec === 'behind' && A) Object.assign(sh, { yaw0: -A.facing * Math.PI / 2, yaw: [0.56 * A.facing, 0.36 * A.facing], dist: [180, 132], height: [64, 58], aim: 50, frames: 240 });   // off to one side, so what they face is in view
+    if (spec === 'follow' && A) Object.assign(sh, { yaw0: -A.facing * Math.PI / 2, yaw: [-0.22 * A.facing, 0.22 * A.facing], dist: [128, 128], height: [58, 58], aim: 46, frames: 300 });
+    if (spec === 'face' && A) Object.assign(sh, { yaw0: A.facing * Math.PI / 2, yaw: [0.22, 0.06], dist: [230, 124], height: [50, 52], aim: 48, frames: 240 });
+    if (spec === 'circle') Object.assign(sh, { yaw: [0, Math.PI * 2], dist: [185, 185], height: [78, 56], frames: 400 });
     if (spec === 'two' && A && B) {
       const d = Math.hypot(A.x - B.x, (A.z || 0) - (B.z || 0));
       Object.assign(sh, { yaw: [-0.3, 0.3], dist: [d * 0.9 + 190, d * 0.9 + 160], height: [56, 56], frames: 320 });
@@ -50,6 +63,7 @@
   // ---- per-stage setup: colours, a floor texture, a buffer for the animated wall ----
   const GLOSSY = new Set(['hallway', 'court', 'cafeteria', 'office', 'musicroom', 'brobatch']);
   const ROUGH = new Set(['field', 'golf', 'cliff', 'miami']);
+  const OUTDOOR = new Set(['field', 'golf', 'cliff', 'miami', 'nyc', 'parking', 'skatepark']);   // no room here: the surroundings stand far off
   function prep(st, def, fy, ctx) {
     if (st.k3) return st.k3;
     const k = st.k3 = {};
@@ -86,9 +100,19 @@
     const ax = sh.ax, az = sh.az;
     const hh = this.handheld || 0;
     const yaw = (sh.yaw0 || 0) + L(sh.yaw) + Math.sin(this.t / 53) * 0.012 * hh;
-    const dist = Math.max(40, L(sh.dist)), F = sh.f ? L(sh.f) : 260, roll = sh.roll ? L(sh.roll) : 0;
-    const cy = Math.cos(yaw), sn = Math.sin(yaw);
+    let dist = Math.max(40, L(sh.dist)), F = sh.f ? L(sh.f) : 260; const roll = sh.roll ? L(sh.roll) : 0;
+    let cy = Math.cos(yaw), sn = Math.sin(yaw);
     const C = { x: ax + L(sh.shift) + sn * dist, y: Math.max(4, L(sh.height) + Math.sin(this.t / 37) * 1.2 * hh), z: az - cy * dist };
+    // the set is a room: the camera stays inside its walls, and keeps looking at its subject
+    const out = this.bgDef && OUTDOOR.has(this.bgDef.id), WZ = 84, XL = out ? -620 : -330, XR = W - XL, ZF = out ? -760 : -460;
+    const cx2 = Math.max(XL + 26, Math.min(XR - 26, C.x)), cz2 = Math.max(ZF + 26, Math.min(WZ - 18, C.z));
+    if (cx2 !== C.x || cz2 !== C.z) {
+      C.x = cx2; C.z = cz2;
+      const d2 = Math.max(30, Math.hypot(C.x - ax, az - C.z)), want = [(C.x - ax) / d2, (az - C.z) / d2];
+      sn = want[0]; cy = want[1];
+      if (d2 < dist) F *= Math.max(0.42, d2 / dist);   // pressed against a wall: a wider lens keeps the subject the same size
+      dist = d2;
+    }
     const lift = (C.y - (sh.aim == null ? 44 : sh.aim)) * F / dist;
     const kx = this.shake ? (Math.random() - 0.5) * this.shake : 0, ky = this.shake ? (Math.random() - 0.5) * this.shake * 0.5 : 0;
     const proj = (x, y, z) => {
@@ -125,17 +149,33 @@
     // the stage as a wall behind the actors (five tiles wide, mirrored, so it never runs out)
     if (k3) {
       st.draw(k3.bc, this.t);
-      const WZ = 84, SL = 8;
-      for (let x0 = -2 * W; x0 < 3 * W; x0 += SL) {
-        const b0 = proj(x0, 0, WZ), b1 = proj(x0 + SL, 0, WZ);
-        if (!b0 || !b1 || b1.x <= b0.x || b1.x < -8 || b0.x > W + 8) continue;
-        const t0 = proj(x0, fy, WZ), t1 = proj(x0, fy + 160, WZ);
-        const m = ((x0 % (2 * W)) + 2 * W) % (2 * W), sx = m < W ? m : 2 * W - m - SL;   // mirror every other tile
-        const w = b1.x - b0.x + 0.7, hgt = b0.y - t0.y;
-        ctx.drawImage(k3.buf, sx, 0, SL, 2, b0.x, t1.y, w, t0.y - t1.y + 0.5);            // the wall carries on upward
-        ctx.drawImage(k3.buf, sx, 0, SL, fy, b0.x, t0.y, w, hgt);
-        if (k3.gloss) { ctx.globalAlpha = k3.gloss; ctx.drawImage(k3.buf, sx, fy * 0.45, SL, fy * 0.55, b0.x, b0.y + hgt * 0.55, w, -hgt * 0.55); ctx.globalAlpha = 1; } // reflection
-      }
+      // a darker copy of the stage for the other three walls (they are in shadow)
+      if (!k3.dim) { const m = RF.util.makeCanvas(W, H); k3.dim = m[0]; k3.dc = m[1]; }
+      k3.dc.drawImage(k3.buf, 0, 0); k3.dc.fillStyle = out ? 'rgba(0,0,0,0.34)' : 'rgba(0,0,0,0.5)'; k3.dc.fillRect(0, 0, W, H);
+      const SL = 8;
+      // one wall from (x0, z0) to (x1, z1), in thin upright slices of the stage picture
+      const wall = (x0, z0, x1, z1, tex, gloss) => {
+        const len = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(len / SL), ux = (x1 - x0) / len, uz = (z1 - z0) / len;
+        for (let i = 0; i < n; i++) {
+          const px = x0 + ux * i * SL, pz = z0 + uz * i * SL, qx = px + ux * SL, qz = pz + uz * SL;
+          const b0 = proj(px, 0, pz), b1 = proj(qx, 0, qz);
+          if (!b0 || !b1) continue;
+          const xa = Math.min(b0.x, b1.x), w = Math.abs(b1.x - b0.x) + 0.7;
+          if (xa > W + 8 || xa + w < -8) continue;
+          const near = b0.k > b1.k ? proj(px, fy, pz) : proj(qx, fy, qz), up = b0.k > b1.k ? proj(px, fy + 160, pz) : proj(qx, fy + 160, qz), base = Math.max(b0.y, b1.y);
+          if (!near || !up) continue;
+          const m = (((i * SL) % (2 * W)) + 2 * W) % (2 * W), sx = Math.max(0, Math.min(W - SL, m < W ? m : 2 * W - m - SL));   // mirror every other tile
+          const hgt = base - near.y;
+          ctx.drawImage(tex, sx, 0, SL, 2, xa, up.y, w, near.y - up.y + 0.5);              // the wall carries on upward
+          ctx.drawImage(tex, sx, 0, SL, fy, xa, near.y, w, hgt);
+          if (gloss) { ctx.globalAlpha = gloss; ctx.drawImage(tex, sx, fy * 0.45, SL, fy * 0.55, xa, base + hgt * 0.55, w, -hgt * 0.55); ctx.globalAlpha = 1; } // reflection
+        }
+      };
+      wall(XL, ZF, XR, ZF, k3.dim, 0);                         // the wall behind the usual camera
+      wall(XL, WZ, XL, ZF, k3.dim, 0); wall(XR, ZF, XR, WZ, k3.dim, 0);   // the side walls
+      wall(-W, WZ, 2 * W, WZ, k3.buf, k3.gloss);                         // the stage itself
+      if (XL < -W) wall(XL, WZ, -W, WZ, k3.dim, 0);
+      if (XR > 2 * W) wall(2 * W, WZ, XR, WZ, k3.dim, 0);
     }
     if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-20, -20, W + 40, H + 40); }
     if (this.riftFx) {
@@ -161,16 +201,17 @@
       else frame = Math.min(1, (this.t - (a.at || 0)) / 8);
       const jx = a.trembleT > 0 ? ((this.t >> 1) % 2 ? 0.8 : -0.8) : 0, bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0;
       const face = cy >= 0 ? a.facing : -a.facing;
+      const back = -sn * a.facing > 0.5 && a.sprite.drawBack;   // the camera is behind them: show their back
       const alpha = clear * (a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1);
       const tint = a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null;
       ctx.save(); ctx.translate(p.x + jx, p.y);
       ctx.globalAlpha = 0.35 * alpha; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 1, 15 * p.k, 3.5 * p.k, 0, 0, Math.PI * 2); ctx.fill();
       const sz = p.k * (a.scale || 1);
-      if (k3 && k3.gloss && !a.y) { ctx.save(); ctx.globalAlpha = k3.gloss * alpha; ctx.scale(sz, -sz * 0.85); a.sprite.draw(ctx, anim, frame, 0, 0, face, tint); ctx.restore(); } // reflection
+      if (k3 && k3.gloss && !a.y) { ctx.save(); ctx.globalAlpha = k3.gloss * alpha; ctx.scale(sz, -sz * 0.85); (back ? a.sprite.drawBack : a.sprite.draw).call(a.sprite, ctx, anim, frame, 0, 0, face, tint); ctx.restore(); } // reflection
       ctx.globalAlpha = alpha;
       ctx.scale(sz, sz);
       if ('filter' in ctx) { if (p.rz < Math.max(74, dist * 0.66)) ctx.filter = 'brightness(0.36)'; else if (p.rz > dist * 1.7) ctx.filter = 'brightness(0.72)'; } // someone close to the lens is a dark shape; far people fade
-      a.sprite.draw(ctx, anim, frame, 0, -a.y - bob, face, tint);
+      (back ? a.sprite.drawBack : a.sprite.draw).call(a.sprite, ctx, anim, frame, 0, -a.y - bob, face, tint);
       ctx.filter = 'none';
       if (a.rift) RF.MOVE_FX.riftAura({ x: 0, y: a.y, body: a.def.body, state: 'idle' }, ctx, 0, this.t);
       ctx.restore();

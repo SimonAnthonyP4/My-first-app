@@ -80,6 +80,8 @@
       { say: ['rr', 'IN MY UNIVERSE, THE ANGEL STOPPED FORGIVING.'] },
       { shot: ['close', 'ruano'] },
       { say: ['ruano', 'THEN YOU ARE NOT AN ANGEL. YOU ARE ONLY A MAN WHO IS TIRED. REST.'] },
+      { cam3d: ['ruano', 'behind'] }, { wait: 50 },
+      { brawl: { play: 'ruano', vs: 'ruano', stage: 'court', name: 'THE TIRED ANGEL', mid: 'I STOPPED FORGIVING LONG AGO.' } },
       { shot: 'wide' }, { act: ['rr', 'special'] }, { slowmo: 40 },
       { qte: { type: 'ring', key: 'light', text: 'FORGIVE HIM.', who: 'ruano' },
         perfect: [{ act: ['ruano', 'special'] }, { flash: 14 }, { sfx: 'bell' }, { impact: ['rr', 3] }, { wait: 20 }],

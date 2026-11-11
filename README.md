@@ -1014,6 +1014,32 @@ the best rizz on the roster.
 
 Character select is 10 x 3 (30 slots, 28 fighters).
 
+## Story mode: the 3D camera, fights and the bonus chapter
+
+**A real room.** In a 3D shot the set is now a closed room: the stage picture is the far wall,
+darker copies make the two side walls and the wall behind the usual camera, and the camera is kept
+inside the walls (it widens its lens instead of passing through one). Outdoors the "walls" stand far
+off, like a horizon.
+
+**Backs.** Nobody has a drawing of their back, so one is made from the front (`backOf` in
+`js/render/pixel-puppet-sprite.js`): the face is filled with the hair or bare scalp, and anything on
+the chest (a tie, a logo) is painted over with the cloth around it. Whenever the camera is behind
+someone, that is what it shows. A real back drawing would look better; none exist yet.
+
+**New shots** (`{ cam3d: [who, 'name'] }`): `behind` (their back, looking where they look),
+`follow` (behind, as they walk), `face` (straight at them), `circle` (all the way round), and `ots`
+is now a true over-the-shoulder from behind the listener (`otsf` is the old front one).
+
+**Fights in the middle of a scene.** `{ brawl: { play, vs, stage, name, mid } }` stops the scene,
+plays one round against the rift version of `vs`, and on a win the same scene carries on from the
+next step (`js/scenes/story-fights.js`). The quick-time moments are all still there: each rift fight
+opens with them and ends on its last one. The story now has ten fights, six of them new: Nicholas
+vs Rift Chris, Ms. Brady vs Rift Bandy, Bandy vs Rift Fernando, Simon vs Rift Mikey, Ruano vs the
+Tired Angel, and Nicholas vs Omega Lopez.
+
+**Bonus chapter: MOVIE NIGHT** (`js/config/story-7.js`, `side: true`). Erick, Javan and the
+President at Regal Kendall Village, with two fights. Always open from the story menu.
+
 ## Menus
 
 **The look:** black steel and blood red. The logo bleeds, chains hang in the corners, red lightning

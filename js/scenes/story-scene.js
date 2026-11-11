@@ -314,7 +314,7 @@
       const prog = RF.storyProgress.get(), chs = RF.STORY.chapters;
       this.prog = prog;
       const items = [];
-      const next = Math.min(prog.reached, chs.length - 1);
+      const next = Math.min(prog.reached, chs.filter((c) => !c.side).length - 1);
       const start = (i) => { leaveStory(); game.setScene(new StoryScene(game, i, 'intro')); };
       items.push({ label: prog.reached ? 'CONTINUE: ' + chs[next].title : 'NEW STORY', desc: chs[next].sub, onSelect: () => start(next) });
       if (prog.reached || prog.done) {
@@ -330,6 +330,7 @@
       items.push(cine);
       chs.forEach((c, i) => {
         if (i === 0) return;
+        if (c.side) { items.push({ label: 'BONUS: ' + c.title, desc: c.sub, rank: prog.ranks[c.title], onSelect: () => start(i) }); return; }
         const open = i <= prog.reached;
         items.push({ label: open ? (i + '. ' + c.title) : (i + '. ??????'), desc: open ? c.sub : 'LOCKED', rank: open && prog.ranks[c.title], onSelect: () => open && start(i) });
       });
@@ -569,7 +570,7 @@
       this.shake = 0; this.flash = 0; this.tintCol = null; this.fadeA = part === 'intro' ? 1 : 0;
       this.shards = []; this.riftFx = null; this.cur = null; this.flies = [];
       this.trans = null; this.snap = null;
-      if (part === 'intro') RF.storyProgress.reach(index);
+      if (part === 'intro' && !this.ch.side) RF.storyProgress.reach(index);   // (a bonus chapter is outside the main run)
       this.next();
     }
 
@@ -715,8 +716,9 @@
       const ch = this.ch, game = this.game;
       if (this.part === 'intro' && ch.fight) { leaveStory(); return this.startFight(); }
       const n = this.index + 1;
+      if (ch.side) { leaveStory(); return game.setScene(new StoryMenuScene(game)); }   // a bonus chapter goes back to the menu
       if (this.part === 'intro' && !ch.fight && ch.outro) return game.setScene(new StoryScene(game, this.index, 'outro', { hero: this.hero }));
-      if (n >= RF.STORY.chapters.length) { leaveStory(); RF.storyProgress.finish(this.vars.ending || 'lopez'); return game.setScene(new StoryMenuScene(game)); }
+      if (n >= RF.STORY.chapters.length || RF.STORY.chapters[n].side) { leaveStory(); RF.storyProgress.finish(this.vars.ending || 'lopez'); return game.setScene(new StoryMenuScene(game)); }
       RF.storyProgress.reach(n);
       game.setScene(new StoryScene(game, n, 'intro', { hero: this.hero }));
     }
