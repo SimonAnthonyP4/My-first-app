@@ -1,19 +1,21 @@
 # Bro Batch — Architecture & Milestone Plan
 
-Status: **Planning only. No product code has been written yet.**
+Status: **M0 and M1 are complete. M2 onward is not started.**
 This document covers architecture, repository layout, database schema, payment and loyalty rules, milestones, and the external dependencies that block parts of the build.
+
+It is the design plan. Where the build has since diverged, the as-built documents win: `ARCHITECTURE.md` for the system, `DATABASE.md` for the schema (it lists every difference from this plan and why), and the migrations in `supabase/migrations` for exact definitions.
 
 ---
 
 ## 1. What is being built
 
-| Component | Users | Platform | Built with |
-|---|---|---|---|
-| Bro Batch POS | Employees | iPhone (SwiftUI) | SwiftUI, Stripe Terminal iOS SDK, Supabase Swift SDK |
-| Bro Batch Rewards | Customers | iPhone (SwiftUI) | SwiftUI, Supabase Swift SDK, APNs |
-| Bro Batch Admin | Owners, managers | Web | Next.js (App Router), TypeScript |
-| Shared backend | All of the above | Supabase | Postgres, Auth, Row-Level Security, Edge Functions, Storage |
-| Payments | — | Stripe | Stripe Payments, Stripe Terminal, Tap to Pay on iPhone, webhooks |
+| Component         | Users            | Platform         | Built with                                                       |
+| ----------------- | ---------------- | ---------------- | ---------------------------------------------------------------- |
+| Bro Batch POS     | Employees        | iPhone (SwiftUI) | SwiftUI, Stripe Terminal iOS SDK, Supabase Swift SDK             |
+| Bro Batch Rewards | Customers        | iPhone (SwiftUI) | SwiftUI, Supabase Swift SDK, APNs                                |
+| Bro Batch Admin   | Owners, managers | Web              | Next.js (App Router), TypeScript                                 |
+| Shared backend    | All of the above | Supabase         | Postgres, Auth, Row-Level Security, Edge Functions, Storage      |
+| Payments          | —                | Stripe           | Stripe Payments, Stripe Terminal, Tap to Pay on iPhone, webhooks |
 
 All three clients talk to **one** Supabase project. Clients never hold secrets. Anything that moves money or changes loyalty balances runs server-side in an Edge Function or a database function.
 
@@ -57,7 +59,7 @@ All three clients talk to **one** Supabase project. Clients never hold secrets. 
 
 1. **Single source of truth in Postgres.** Orders, payments, refunds and loyalty are rows in Postgres. Stripe is the source of truth for money movement. Our `payments` table mirrors Stripe state through webhooks.
 2. **Points are only awarded on confirmed payment.** The award happens in the `payment_intent.succeeded` webhook handler, not when the POS app says the sale finished. The POS UI may show "points pending" until the webhook lands. This prevents a client from awarding points by faking a sale.
-3. **Append-only loyalty ledger.** `loyalty_transactions` is never updated or deleted. `loyalty_accounts.balance` is a cached sum, updated in the same DB transaction as each ledger insert under a row lock. Refunds write a *reversal* row. They never edit the original earn row.
+3. **Append-only loyalty ledger.** `loyalty_transactions` is never updated or deleted. `loyalty_accounts.balance` is a cached sum, updated in the same DB transaction as each ledger insert under a row lock. Refunds write a _reversal_ row. They never edit the original earn row.
 4. **Idempotency everywhere money or points move.** Every Stripe webhook event ID, every POS checkout attempt and every redemption carries a unique key. Replays are no-ops.
 5. **No raw card data, ever.** Card entry and tap happen in Stripe Terminal. The apps receive only a PaymentIntent status. Our database stores Stripe IDs, last4 and brand at most.
 6. **Secrets stay server-side.** The Stripe secret key, the webhook signing secret, the APNs `.p8` key and the Supabase service-role key live only in Edge Function secrets or the Next.js server environment. The iOS apps ship only the Supabase URL, the anon key and the Stripe publishable key, and Terminal uses short-lived connection tokens from the server.
@@ -97,14 +99,16 @@ Two rules follow from this flow:
 
 ### 2.4 Authorization model
 
-| Role | Who | Can do |
-|---|---|---|
-| `customer` | Rewards app users | Read own profile, card, balance, ledger, redemptions. Update own profile. Request a redemption (through a function). |
-| `employee` | POS users | Read catalog and inventory. Create orders. Look up customers by membership code. Process payments and refunds within limits. |
-| `manager` | Store managers | Everything employee can do, plus inventory adjustments and void/refund approval above a threshold. |
-| `owner` | Owner | Everything, including employee management, reward configuration and analytics. |
+| Role       | Who               | Can do                                                                                                                       |
+| ---------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `customer` | Rewards app users | Read own profile, card, balance, ledger, redemptions. Update own profile. Request a redemption (through a function).         |
+| `employee` | POS users         | Read catalog and inventory. Create orders. Look up customers by membership code. Process payments and refunds within limits. |
+| `manager`  | Store managers    | Everything employee can do, plus inventory adjustments and void/refund approval above a threshold.                           |
+| `owner`    | Owner             | Everything, including employee management, reward configuration and analytics.                                               |
 
-Roles come from `employees.role`, mirrored into the Supabase JWT via a custom access token hook so RLS can read them without a join. Admin dashboard access requires `manager` or `owner`.
+Roles come from `employees.role`. RLS policies read that table directly on every statement (through `private.is_staff()`, `is_manager()` and `is_owner()`), so deactivating or demoting an employee takes effect immediately. A custom access token hook also mirrors the role into the JWT as `user_role`, but only so the apps can choose which screens to show; no security decision depends on the claim. Admin dashboard access requires `manager` or `owner`.
+
+_Changed during M1._ The original plan had RLS read the role from the JWT. A token can be up to an hour stale, which would let a just-deactivated employee keep working.
 
 ---
 
@@ -118,13 +122,14 @@ My-first-app/
 ├── docs/
 │   ├── PLAN.md                  ← this document
 │   ├── ARCHITECTURE.md          ← kept current as built
-│   ├── PAYMENTS.md              ← Stripe modes, webhook list, refund rules
-│   ├── LOYALTY.md               ← earn/reverse/redeem rules, worked examples
-│   └── RUNBOOK.md               ← deploy, secrets rotation, incident steps
+│   ├── DATABASE.md              ← tables, invariants, access matrix, testing
+│   ├── PAYMENTS.md              ← Stripe modes, webhook list, refund rules (M3)
+│   ├── LOYALTY.md               ← earn/reverse/redeem rules, worked examples (M2)
+│   └── RUNBOOK.md               ← setup, first owner, secrets, external accounts
 ├── .github/
 │   └── workflows/
 │       ├── backend.yml          ← SQL migrations + pgTAP + Edge Function tests
-│       ├── admin.yml            ← lint, typecheck, unit, e2e, build
+│       ├── web.yml              ← contracts + admin: lint, typecheck, unit, build
 │       └── ios.yml              ← build + unit tests (macOS runner, added in M5)
 ├── supabase/
 │   ├── config.toml
@@ -206,6 +211,8 @@ My-first-app/
 ## 4. Database schema
 
 All money is stored as **integer cents** (`bigint`). Floats are never used for money. All timestamps are `timestamptz` in UTC. Primary keys are `uuid` unless noted.
+
+> The SQL below is the original design sketch. The schema was built in M1 and differs in places (for example: no `pin_hash`, added `app_settings`, `rewards.grants_category` and `bar_count`). `docs/DATABASE.md` lists the differences; `supabase/migrations` is authoritative.
 
 ### 4.1 Identity and people
 
@@ -455,17 +462,17 @@ create table push_tokens (
 
 ### 4.7 Row-Level Security summary
 
-| Table | Customer | Employee | Manager/Owner | Writes |
-|---|---|---|---|---|
-| `customers` | own row (read/update own profile) | read (for lookup, minimal columns via view) | read | customer self-update; create via sign-up function |
-| `loyalty_accounts` | own | read via view | read | functions only |
-| `loyalty_transactions` | own | read via view | read | functions only |
-| `rewards` | read active | read active | full | owner/manager only |
-| `redemptions` | own | read | read | functions only |
-| `products`, `inventory_*` | read active products | read | write (manager) | manager; movements via function |
-| `orders`, `order_items`, `payments`, `refunds` | none | own store's recent | read | Edge Functions only |
-| `stripe_events`, `audit_log` | none | none | read (owner) | service role only |
-| `employees` | none | self | full (owner) | owner |
+| Table                                          | Customer                          | Employee                                    | Manager/Owner   | Writes                                            |
+| ---------------------------------------------- | --------------------------------- | ------------------------------------------- | --------------- | ------------------------------------------------- |
+| `customers`                                    | own row (read/update own profile) | read (for lookup, minimal columns via view) | read            | customer self-update; create via sign-up function |
+| `loyalty_accounts`                             | own                               | read via view                               | read            | functions only                                    |
+| `loyalty_transactions`                         | own                               | read via view                               | read            | functions only                                    |
+| `rewards`                                      | read active                       | read active                                 | full            | owner/manager only                                |
+| `redemptions`                                  | own                               | read                                        | read            | functions only                                    |
+| `products`, `inventory_*`                      | read active products              | read                                        | write (manager) | manager; movements via function                   |
+| `orders`, `order_items`, `payments`, `refunds` | none                              | own store's recent                          | read            | Edge Functions only                               |
+| `stripe_events`, `audit_log`                   | none                              | none                                        | read (owner)    | service role only                                 |
+| `employees`                                    | none                              | self                                        | full (owner)    | owner                                             |
 
 Customer lookup from POS goes through a `SECURITY DEFINER` function that accepts a membership code and returns only name, first name, tier and balance. It never returns email or phone to a cashier.
 
@@ -486,11 +493,11 @@ Each function sets `search_path = ''` and schema-qualifies every reference, whic
 - **Earn:** `points = floor(paid_amount_cents / 10)`. This is 10 points per $1, so $9.00 gives 90 points. Earn is calculated on the **net paid amount after discounts**. No tax applies. Rewards redeemed in the same order do not earn points.
 - **Thresholds (configurable in admin):**
 
-  | Reward | Points | Grants |
-  |---|---|---|
-  | Free protein bar | 300 | 1 × bar (product selectable) |
-  | Free three-pack | 750 | 1 × three-pack |
-  | Free six-pack | 1,400 | 1 × six-pack |
+  | Reward           | Points | Grants                       |
+  | ---------------- | ------ | ---------------------------- |
+  | Free protein bar | 300    | 1 × bar (product selectable) |
+  | Free three-pack  | 750    | 1 × three-pack               |
+  | Free six-pack    | 1,400  | 1 × six-pack                 |
 
 - **Redemption:** Debits points at the time of order creation (reserved). Fulfilled when the payment succeeds. Released if the payment fails or the order is cancelled before payment.
 - **Refund:** Claws back points earned on the refunded amount, capped at the customer's current balance. Points already spent on redemptions are not restored. The balance never goes below zero.
@@ -519,21 +526,26 @@ Each function sets `search_path = ''` and schema-qualifies every reference, whic
 
 Each milestone has the same definition of done: code, migrations, tests that pass in CI, a doc update, and a short demo or screenshot. A milestone is not "done" if it only works on the happy path.
 
-### M0 — Foundations (repo, tooling, CI)
+### M0 — Foundations (repo, tooling, CI) — DONE
+
 - Monorepo layout from §3, `docs/` skeleton, `.editorconfig`, `.gitignore`, pre-commit lint.
 - `packages/contracts` with money type, points constants, and zod schemas for every API payload.
 - Supabase project config, local stack (`supabase start`), seed script.
 - GitHub Actions: backend, admin workflows. iOS workflow stubbed.
 - **Done when:** a fresh clone runs `make setup && make test` green.
+- **Outcome:** done. pnpm workspace, Makefile, git hooks, `packages/contracts` (98 tests), a minimal admin app that builds (19 tests), Supabase config, sandbox seed, and three CI workflows. The API payload schemas for Edge Functions will be added with those functions in M3.
 
-### M1 — Database schema and security
+### M1 — Database schema and security — DONE
+
 - Migrations for §4 tables, enums, constraints, indexes, triggers.
 - RLS policies for every table, per §4.7.
 - Custom access token hook to put `role` into the JWT.
 - pgTAP tests: every table has RLS enabled; customer A cannot read customer B; employee cannot write `orders` directly; check constraints reject negative money.
 - **Done when:** all pgTAP tests pass in CI and a negative-test suite proves the RLS rules.
+- **Outcome:** done. 9 migrations, 18 tables, 220 pgTAP tests, a concurrency test, and a contract drift check. The suite was checked against 20 deliberately introduced defects and caught all of them. M1 also took one item forward from M2: the trigger that keeps each loyalty balance equal to its ledger and rejects overdrafts. M2 still owns the award, reversal and redemption functions.
 
 ### M2 — Loyalty ledger engine
+
 - `award_points_for_payment`, `reverse_points_for_refund`, `redeem_points`, `release_redemption`.
 - Concurrency tests: 50 parallel redemptions against a balance of 300 produce exactly one success.
 - Idempotency tests: same webhook event applied 5 times produces one ledger row.
@@ -541,6 +553,7 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** the loyalty worked examples in `docs/LOYALTY.md` are executable tests.
 
 ### M3 — Payments backend (Stripe sandbox)
+
 - `create-payment-intent`, `terminal-connection-token`, `stripe-webhook`, `process-refund`, `redeem-reward`.
 - Server-side price calculation and reward reservation.
 - Webhook handler for `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `charge.refunded`.
@@ -548,6 +561,7 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** a sandbox sale end-to-end produces an order, a payment and points, and a sandbox refund reverses them, all idempotent under replayed webhooks.
 
 ### M4 — Admin dashboard (web)
+
 - Login with Supabase Auth, role gate (manager/owner only).
 - Read dashboards: total revenue, daily and monthly sales, bars sold, best-selling flavors, inventory levels, refund report, loyalty analytics.
 - Management pages: customers (search, detail, ledger), products and inventory adjustments, employees (owner only), reward configuration with threshold edits and audit log.
@@ -556,6 +570,7 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** all dashboards render from sandbox data and a reward threshold change is reflected in the next Edge Function response.
 
 ### M5 — POS iOS app (without card payments)
+
 - Sign-in, role-aware navigation.
 - Product catalog with images and flavor categories, cart, quantity controls, subtotal/total (display only, server recalculates).
 - Customer QR scan (AVFoundation) and membership-code lookup.
@@ -566,12 +581,14 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** the app runs on a simulator against the sandbox backend. Tests run in CI on a macOS runner.
 
 ### M6 — Tap to Pay on iPhone
+
 - Stripe Terminal iOS SDK integration, connection token fetch, `collectPaymentMethod`, `processPayment`.
 - Tap to Pay requires Apple's entitlement. Code is gated behind a feature flag and a runtime capability check, so the app degrades to a clear "Tap to Pay unavailable" state without the entitlement.
 - Unpaid or cancelled PaymentIntents release reserved rewards.
 - **Done when:** the flow is verified on a real device with the entitlement. Until then this milestone is **blocked** on Apple approval (see §9), and everything else is built and tested with simulated or test-mode reader paths.
 
 ### M7 — Rewards iOS app (customer)
+
 - Account registration, login, sign-out, account deletion.
 - Digital membership card with QR rendered from `membership_code`.
 - Live balance (Realtime subscription on `loyalty_accounts`).
@@ -581,12 +598,14 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** a customer can sign up, see points after a sandbox sale, and redeem a reward that the POS then honors.
 
 ### M8 — Push notifications
+
 - APNs key setup, device token registration, `push_tokens` storage.
 - `send-push` triggered from database events or the webhook: points earned, reward available, refund processed.
 - Per-customer opt-out respected.
 - **Done when:** a sandbox sale delivers a push to a test device.
 
 ### M9 — Hardening and launch preparation
+
 - Load test on the payment and redemption paths.
 - Observability: structured logs, alerts on webhook failures and reconciliation gaps.
 - Nightly reconciliation job: Stripe balance transactions vs `payments` vs `loyalty_transactions`.
@@ -615,16 +634,16 @@ Suggested order: **M0 → M1 → M2 → M3 → M4 and M5 in parallel → M7 → 
 
 These cannot be completed by code alone. The plan does not assume any of them are configured.
 
-| Dependency | Needed for | Owner action | Blocks |
-|---|---|---|---|
-| Supabase project (prod + staging) | Everything backend | Create project, supply URL and keys | M1 onward in hosted form (local dev works without it) |
-| Stripe account, test-mode keys | Payments sandbox | Create account, enable Terminal, create a Terminal location | M3 |
-| Stripe Terminal location + reader or Tap to Pay setup | M6 | Configure in Stripe Dashboard | M6 |
-| **Apple Developer Program membership** | Any iOS build for devices, TestFlight, APNs | Enroll ($99/yr) | M5 device testing, M7, M8 |
-| **Tap to Pay on iPhone entitlement** | Real card acceptance on iPhone | Request from Apple, approval required | M6 device verification |
-| APNs key (`.p8`) | Push notifications | Create in Apple Developer portal | M8 |
-| Domain + hosting for admin | Admin dashboard in production | Choose host (e.g. Vercel) and domain | M4 deploy only; local dev works |
-| Privacy policy, terms | App Store review | Legal review | M9 launch |
+| Dependency                                            | Needed for                                  | Owner action                                                | Blocks                                                |
+| ----------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
+| Supabase project (prod + staging)                     | Everything backend                          | Create project, supply URL and keys                         | M1 onward in hosted form (local dev works without it) |
+| Stripe account, test-mode keys                        | Payments sandbox                            | Create account, enable Terminal, create a Terminal location | M3                                                    |
+| Stripe Terminal location + reader or Tap to Pay setup | M6                                          | Configure in Stripe Dashboard                               | M6                                                    |
+| **Apple Developer Program membership**                | Any iOS build for devices, TestFlight, APNs | Enroll ($99/yr)                                             | M5 device testing, M7, M8                             |
+| **Tap to Pay on iPhone entitlement**                  | Real card acceptance on iPhone              | Request from Apple, approval required                       | M6 device verification                                |
+| APNs key (`.p8`)                                      | Push notifications                          | Create in Apple Developer portal                            | M8                                                    |
+| Domain + hosting for admin                            | Admin dashboard in production               | Choose host (e.g. Vercel) and domain                        | M4 deploy only; local dev works                       |
+| Privacy policy, terms                                 | App Store review                            | Legal review                                                | M9 launch                                             |
 
 I can write and test everything that does not depend on these: the SQL, Edge Functions, Next.js admin, and Swift code. I **cannot** compile or run the Swift apps in this environment, since it is Linux. I also cannot create accounts, obtain keys or request Apple entitlements. Swift code will be checked by careful review and by CI on a macOS runner once that exists.
 
@@ -633,6 +652,7 @@ I can write and test everything that does not depend on these: the SQL, Edge Fun
 ## 10. What I can do in this environment, and what I can't
 
 **I can do here:**
+
 - Write and version-control all SQL migrations, RLS policies and pgTAP tests. Run them if a local Postgres is available (I will check when M1 starts; a Supabase local stack needs Docker, which may not be available here).
 - Write TypeScript Edge Functions and unit-test them with Deno or Vitest, using mocked Stripe responses and signed fixtures.
 - Build and test the Next.js admin: typecheck, lint, Vitest, Playwright against a local or sandbox backend.
@@ -640,6 +660,7 @@ I can write and test everything that does not depend on these: the SQL, Edge Fun
 - Set up GitHub Actions and the project docs.
 
 **I cannot do here:**
+
 - Compile or run the SwiftUI apps or the iOS simulator (no Xcode on Linux). Swift will be unverified until a macOS runner or your machine builds it.
 - Test real Tap to Pay, real Terminal readers, or real APNs delivery.
 - Create Stripe, Supabase, Apple or APNs accounts, or enter their secrets for you. Secrets will be requested through the secure form, never pasted in chat.
