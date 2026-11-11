@@ -47,9 +47,11 @@ No hosted project exists yet. When one is created (a staging project first, then
 7. Run the pgTAP suite against a staging project before trusting it:
    `pnpm exec supabase test db --remote`.
 
-The migrations have been verified on PostgreSQL 16 with a shim and on the Supabase local image in
-CI. The first push to a hosted project is still the first time they meet a real one; do it on
-staging.
+The migrations have been verified on PostgreSQL 16 with a shim, and applied with the Supabase CLI
+(`supabase db push`) to that same database. They have **not yet been verified on a real Supabase
+Postgres image**: the CI job that does this (`Database tests (Supabase local stack)`) is set up
+but had not completed a run when this was written. Check that job is green before the first push,
+and do the first push on staging.
 
 ## Create the first owner
 
