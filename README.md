@@ -1083,6 +1083,15 @@ ENERGY DRINK ("FIRED UP") gives 1.5x damage for 8 seconds. Not in training, tag,
 
 ## Menus
 
+**Fighter select** (`js/scenes/select-scene.js`): the two fighters stand big on either side on a red
+and a blue wedge with stripes racing down, a giant shadow of each behind them and their name slashed
+across their feet; type, four stats and the special sit in the middle around the VS; the roster runs
+along the bottom, 15 x 2, with breathing corner-bracket cursors. Controls are unchanged.
+
+**Arms** on the detailed fighters bend at the elbow and are sized to each fighter's height
+(`NAT` in `js/render/pixel-puppet-sprite.js`; `armLength` on a sprite changes the length, and
+`arms: 'classic'` brings back the old blocky ones).
+
 **The look:** black steel and blood red. The logo bleeds, chains hang in the corners, red lightning
 flashes every few seconds, the chosen item sits on a dripping red slash between two skulls, and
 every menu has a vignette, drifting ash and scanlines (`RF.drawSlash`, `RF.drawSkull`, `RF.drawGrit`

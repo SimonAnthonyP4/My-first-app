@@ -42,6 +42,21 @@
     slam: [[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5]], // swinging down hard
   };
 
+  // The same arms for detailed drawings, shaped like real arms: shoulder -> elbow -> hand, in
+  // units of one arm SEGMENT (upper arm = forearm = 1), scaled to each fighter's height when the
+  // sprite is built. A raised arm bends at the elbow and stays close to the head instead of
+  // sticking out sideways and then straight up.
+  const NAT = {
+    forward: [[0.5, 0.12], [1.0, 0.2], [1.5, 0.15], [2.0, 0.1]],
+    forwardShort: [[0.4, 0.3], [0.75, 0.55], [1.15, 0.4], [1.55, 0.2]],
+    back: [[-0.4, 0.3], [-0.8, 0.5], [-1.2, 0.5], [-1.6, 0.45]],
+    block: [[0.4, 0.35], [0.8, 0.6], [0.95, 0.1], [1.0, -0.4]],
+    up: [[0.3, -0.4], [0.55, -0.85], [0.65, -1.35], [0.7, -1.85]],
+    flail: [[-0.4, -0.3], [-0.8, -0.7], [-1.1, -1.1], [-1.3, -1.5]],
+    low: [[0.35, 0.45], [0.65, 0.9], [1.1, 1.1], [1.55, 1.25]],
+    slam: [[0.45, 0.3], [0.9, 0.55], [1.3, 0.95], [1.65, 1.35]],
+  };
+
   // Frame recipes for every animation. Offsets are in game pixels.
   //   head/torso/legsOff: [dx, dy]   arm/backArm: ARMS key   legs: leg mode
   //   crouch: sink the body           rotate: lying on the floor (KO)
@@ -102,7 +117,7 @@
   const SUB = 3;                                     // frames per pose step (1 pose + 2 in-betweens)
   const LOOPING = new Set(['idle', 'walk']);
   // An arm as a list of cells; named arms from ARMS, or an already-blended list.
-  const armCells = (a) => (Array.isArray(a) ? a : ARMS[a]);
+  const armCells = (a, arms = ARMS) => (Array.isArray(a) ? a : arms[a]);
   // Resample an arm path (shoulder at [0,0] plus its cells) to n evenly spaced points.
   function resample(cells, n) {
     const pts = [[0, 0], ...cells], len = [0];
@@ -118,14 +133,14 @@
   }
   const lerp2 = (a, b, u) => [(a ? a[0] : 0) * (1 - u) + (b ? b[0] : 0) * u, (a ? a[1] : 0) * (1 - u) + (b ? b[1] : 0) * u];
   // A pose part-way (u = 0..1) between recipes p and q.
-  function tween(p, q, u) {
+  function tween(p, q, u, arms) {
     const r = Object.assign({}, u < 0.5 ? p : q);
     if (p.rotate || q.rotate) return r;
     for (const k of ['head', 'torso', 'armOff', 'legsOff', 'liftOff']) if (p[k] || q[k]) r[k] = lerp2(p[k], q[k], u);
     const sp = p.legs === 'stride' ? p.stride : (!p.legs ? 0 : null), sq = q.legs === 'stride' ? q.stride : (!q.legs ? 0 : null);
     if (sp !== null && sq !== null && (p.legs === 'stride' || q.legs === 'stride')) { r.legs = 'stride'; r.stride = sp * (1 - u) + sq * u; }
     if (p.arm && q.arm) {
-      const a = armCells(p.arm), b = armCells(q.arm);
+      const a = armCells(p.arm, arms), b = armCells(q.arm, arms);
       if (a && b) {
         const n = Math.max(a.length, b.length), ra = resample(a, n), rb = resample(b, n);
         r.arm = ra.map((c, i) => [c[0] + (rb[i][0] - c[0]) * u, c[1] + (rb[i][1] - c[1]) * u]);
@@ -165,6 +180,13 @@
       });
       this.rows = s.grid.length;
       this.cols = Math.max(...s.grid.map((r) => r.length));
+      // which arms: natural, sized to this fighter (one segment = about 15% of their height), or the
+      // old blocky ones for the tiny early sprites (or `arms: 'classic'`)
+      this.arms = ARMS;
+      if (this.k >= 3 && s.arms !== 'classic') {
+        const seg = (this.rows * (s.armLength || 0.152)) / this.k;
+        this.arms = {}; for (const n in NAT) this.arms[n] = NAT[n].map(([x, y]) => [x * seg, y * seg]);
+      }
       // A drawing that shows two separate legs: find the gap between them, so a knee / kick pose
       // can lift the FRONT leg instead of adding a third one. (liftLeg names it by hand instead.)
       if (!liftRe && this.cells.legs.length) {
@@ -208,7 +230,7 @@
         out.push(p.rotate ? this.bakeLying() : this.bake(p)); recs.push(p);
         if (i === n - 1 && !loop) break;
         for (let k = 1; k < SUB; k++) {
-          const tw = tween(p, q, k / SUB);
+          const tw = tween(p, q, k / SUB, this.arms);
           out.push(tw.rotate ? this.bakeLying() : this.bake(tw)); recs.push(tw);
         }
       }
@@ -236,7 +258,7 @@
       if (f === undefined) {
         this.frameList(from.anim); this.frameList(to.anim);
         const a = this.recipeLists[from.anim][from.i], b = this.recipeLists[to.anim][to.i];
-        f = !a || !b || a.rotate || b.rotate ? null : this.bake(tween(a, b, u));
+        f = !a || !b || a.rotate || b.rotate ? null : this.bake(tween(a, b, u, this.arms));
         if (this.blends.size > 400) this.blends.clear();
         this.blends.set(key, f);
       }
@@ -298,7 +320,7 @@
 
       const drawArm = (name, dark, extra = [0, 0]) => {
         if (!name) return;
-        const cells = Array.isArray(name) ? name : ARMS[name];
+        const cells = Array.isArray(name) ? name : this.arms[name];
         if (!cells) return;
         const [sc, sr] = s.shoulder;
         const dx = torsoOff[0] + extra[0], dy = torsoOff[1] + extra[1];

@@ -3,8 +3,9 @@
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384;
-  const SLOTS = 30, COLS = 10, SLOT = 22, GAP = 2; // 10 x 3 grid
-  const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 18;
+  const SLOTS = 30, COLS = 15, SLOT = 21, GAP = 2; // the roster: 15 x 2, along the bottom
+  const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 176;
+  const FEET = 138, SIDE = 130;                    // where the big fighters stand; how wide each side is
   const PCOL = ['#ff4a3a', '#4a8aff'];
   const ARCH = { tank: ['TANK', '#ff9a40'], light: ['LIGHT', '#60e0ff'], boss: ['BOSS', '#ffd040'], balanced: ['ALL-ROUND', '#80e080'], sorcerer: ['SORCERER', '#ff70b0'], rich: ['RICH KID', '#60d060'], angel: ['ANGEL', '#fff2a0'], defender: ['DEFENSIVE', '#80c0ff'], boxer: ['BOXER', '#ff6050'], golfer: ['GOLFER', '#80ffb0'], menace: ['MENACE', '#ff4060'], hyper: ['HYPER', '#40e8ff'], maestro: ['MAESTRO', '#c080ff'], genius: ['OMNISCIENT', '#00ffd0'], daredevil: ['DAREDEVIL', '#ff8030'], linebacker: ['LINEBACKER', '#60ff60'], skater: ['SKATER', '#ff60a0'], admin: ['ASST. PRINCIPAL', '#ffd030'] };
 
@@ -137,160 +138,141 @@
     }
 
     render(ctx) {
-      RF.drawMenuBackdrop(ctx, this.t, 0.72);
-      T(ctx, this.tag ? 'TAG TEAM: PICK TWO FIGHTERS' : 'SELECT YOUR FIGHTER', W / 2, 5, { align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
+      const t = this.t, H = 224, sides = this.arcade ? 1 : 2;
+      const RGB = ['255,60,40', this.arcade ? '255,200,60' : '60,120,255'], COL = [PCOL[0], this.arcade ? '#ffc83c' : PCOL[1]];
+      // ---- backdrop: black, a red wedge for player 1 and a blue one for player 2, stripes racing down them
+      ctx.fillStyle = '#040204'; ctx.fillRect(0, 0, W, H);
+      for (let p = 0; p < 2; p++) {
+        const x0 = p ? W : 0, d = p ? -1 : 1;
+        ctx.save(); ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + d * (SIDE + 26), 0); ctx.lineTo(x0 + d * (SIDE - 14), H); ctx.lineTo(x0, H); ctx.clip();
+        const g = ctx.createLinearGradient(x0, 0, x0 + d * (SIDE + 26), 0); g.addColorStop(0, `rgba(${RGB[p]},0.5)`); g.addColorStop(1, `rgba(${RGB[p]},0.06)`);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = `rgba(${RGB[p]},0.13)`;
+        for (let k = 0; k < 9; k++) { const y = ((k * 34 + t * (1.2 + (k % 3) * 0.5)) % (H + 80)) - 60, x = x0 + d * (10 + ((k * 37) % (SIDE - 10))); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + d * 5, y); ctx.lineTo(x + d * 5 - d * 8, y + 46); ctx.lineTo(x - d * 8, y + 46); ctx.fill(); }
+        ctx.restore();
+        ctx.strokeStyle = `rgba(${RGB[p]},0.8)`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + d * (SIDE + 26), 0); ctx.lineTo(x0 + d * (SIDE - 14), H); ctx.stroke(); ctx.lineWidth = 1;
+      }
 
-      // Grid
+      // ---- the two fighters: a giant shadow behind, the fighter in front, a name slashed across their feet
+      for (let p = 0; p < sides; p++) {
+        const def = this.slots[this.cursor[p]], x = p === 0 ? 62 : W - 62, dir = p === 0 ? 1 : -1;
+        if (!def) { T(ctx, '?', x, 60, { scale: 6, align: 'center', color: 'rgba(255,255,255,0.15)' }); continue; }
+        const cos = this.costumesFor()[p], sp = this.sprite(def, cos), k = Math.min(1.4, 118 / def.body.height);
+        const pop = this.flash[p] > 0 ? 1 + this.flash[p] * 0.012 : 1, frame = Math.floor(t / 18) % 2;
+        ctx.save(); ctx.globalAlpha = 0.3; ctx.translate(x - dir * 14, FEET + 40); ctx.scale(k * 2.1, k * 2.1); sp.draw(ctx, 'idle', 0, 0, 0, dir, p === 0 ? '#2a0604' : (this.arcade ? '#2a1c04' : '#04102a')); ctx.restore();
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.ellipse(x, FEET + 1, 30, 4, 0, 0, Math.PI * 2); ctx.fill();
+        const glow = ctx.createRadialGradient(x, FEET, 2, x, FEET, 46); glow.addColorStop(0, `rgba(${RGB[p]},0.5)`); glow.addColorStop(1, `rgba(${RGB[p]},0)`);
+        ctx.fillStyle = glow; ctx.fillRect(x - 46, FEET - 14, 92, 20);
+        if (this.tag && this.picks[p].length) { // tag team: the first pick, waiting behind
+          const d1 = this.slots[this.picks[p][0]];
+          ctx.save(); ctx.globalAlpha = 0.8; ctx.translate(x - dir * 34, FEET - 2); ctx.scale(0.8, 0.8); this.sprite(d1).draw(ctx, 'idle', 0, 0, 0, dir, '#000000'); ctx.globalAlpha = 0.55; this.sprite(d1).draw(ctx, 'idle', 0, 0, 0, dir); ctx.restore();
+        }
+        ctx.save(); ctx.translate(x, FEET); ctx.scale(k * pop, k * pop);
+        sp.draw(ctx, this.ready[p] ? 'victory' : 'idle', frame, 0, 0, dir, this.flash[p] > 5 ? 'white' : null); ctx.restore();
+        // the name: a black slash with a coloured edge
+        const bx = p === 0 ? 0 : W - SIDE, by = FEET + 4;
+        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(bx - 4, by); ctx.lineTo(bx + SIDE + 6, by); ctx.lineTo(bx + SIDE - 2, by + 19); ctx.lineTo(bx - 4, by + 19); ctx.fill();
+        ctx.fillStyle = this.ready[p] ? '#ffd030' : COL[p]; ctx.fillRect(bx, by, SIDE, 2);
+        const big = RF.font.textWidth(def.name, 2) <= SIDE - 12;
+        T(ctx, def.name.toUpperCase(), p === 0 ? 6 : W - 6, by + (big ? 4 : 7), { scale: big ? 2 : 1, align: p === 0 ? 'left' : 'right', color: '#ffffff', outline: '#000' });
+        const tagline = this.ready[p] ? 'LOCKED IN' : RF.COSTUMES[cos].name + (cos ? '' : ' - HEAVY: COSTUME');
+        T(ctx, tagline, p === 0 ? 6 : W - 6, by + 21, { align: p === 0 ? 'left' : 'right', color: this.ready[p] ? '#ffd030' : cos ? '#ffd030' : '#a89490', outline: '#000' });
+      }
+
+      // ---- the middle: who they are
+      T(ctx, this.tag ? 'TAG TEAM: PICK TWO' : this.towerMode ? 'RIFT TOWER' : this.survivalMode ? 'SURVIVAL' : this.arcade ? 'ARCADE' : 'CHOOSE YOUR FIGHTER', W / 2, 4, { align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
+      this.drawInfo(ctx, 0);
+      if (this.arcade) this.drawArcadeInfo(ctx); else this.drawInfo(ctx, 1);
+      const both = this.ready[0] && this.ready[1];
+      if (!this.arcade) {
+        const s = both ? 3 + Math.max(0, 8 - this.readyTime) * 0.25 : 2, w = Math.sin(t / 9) * (both ? 0 : 1);
+        T(ctx, 'VS', W / 2, 78 + w - s * 3, { scale: Math.round(s), align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
+      }
+
+      // ---- the roster
+      ctx.fillStyle = 'rgba(0,0,0,0.78)'; ctx.fillRect(0, GRID_Y - 5, W, H - GRID_Y + 5);
+      ctx.fillStyle = '#c01010'; ctx.fillRect(0, GRID_Y - 5, W, 1);
       this.slots.forEach((def, i) => {
         const x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x - 1, y - 1, SLOT + 2, SLOT + 2);
-        const hov = [0, 1].find((p) => p < (this.arcade ? 1 : 2) && this.cursor[p] === i);
-        const g = ctx.createLinearGradient(0, y, 0, y + SLOT);
-        g.addColorStop(0, hov === undefined ? (def ? '#4a1c14' : '#1a0a08') : hov === 0 ? '#8a2a20' : '#2a3a8a');
-        g.addColorStop(1, def ? '#1a0806' : '#100604');
-        ctx.fillStyle = g;
-        ctx.fillRect(x, y, SLOT, SLOT);
+        const hov = [0, 1].find((p) => p < sides && this.cursor[p] === i), lift = hov === undefined ? 0 : 2;
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 1, y - 1 - lift, SLOT + 2, SLOT + 2);
+        const g = ctx.createLinearGradient(0, y - lift, 0, y + SLOT);
+        g.addColorStop(0, hov === undefined ? (def ? '#3a1410' : '#140808') : hov === 0 ? '#b02a1c' : (this.arcade ? '#b08020' : '#2040b0'));
+        g.addColorStop(1, def ? '#120504' : '#0a0403');
+        ctx.fillStyle = g; ctx.fillRect(x, y - lift, SLOT, SLOT);
         if (def) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(x, y, SLOT, SLOT);
-          ctx.clip();
-          this.sprite(def).draw(ctx, 'idle', 0, x + SLOT / 2 - 2, y + 6 + def.body.height, 1);
-          if (hov === undefined) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y, SLOT, SLOT); } // others dimmed
+          ctx.save(); ctx.beginPath(); ctx.rect(x, y - lift, SLOT, SLOT); ctx.clip();
+          this.sprite(def).draw(ctx, 'idle', 0, x + SLOT / 2 - 2, y - lift + 5 + def.body.height, 1);
+          if (hov === undefined) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x, y, SLOT, SLOT); } // others dimmed
           ctx.restore();
-          ctx.fillStyle = (ARCH[def.archetype] || [0, '#a08878'])[1]; // fighter-type stripe
-          ctx.fillRect(x, y + SLOT - 2, SLOT, 2);
-        } else {
-          T(ctx, '?', x + SLOT / 2, y + SLOT / 2 - 7, { scale: 2, align: 'center', color: '#4a2a20' });
-        }
+          ctx.fillStyle = (ARCH[def.archetype] || [0, '#a08878'])[1]; ctx.fillRect(x, y - lift + SLOT - 2, SLOT, 2); // fighter-type stripe
+        } else T(ctx, '?', x + SLOT / 2, y + SLOT / 2 - 7, { scale: 2, align: 'center', color: '#3a1c16' });
       });
-      // Cursors (P1 outer frame, P2 inner frame, so both show on the same slot)
-      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
-        const i = this.cursor[p];
-        const x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP);
-        const blink = this.ready[p] || Math.floor(this.t / 6) % 4 !== 0;
-        if (!blink) continue;
-        const o = p === 0 ? -2 : 1;
-        ctx.strokeStyle = this.ready[p] ? '#ffd030' : PCOL[p];
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x + o, y + o, SLOT - o * 2, SLOT - o * 2);
-        T(ctx, this.labels[p], p === 0 ? x + 1 : x + SLOT - 1, y + SLOT - 9, { align: p === 0 ? 'left' : 'right', color: PCOL[p], outline: '#000' });
+      // cursors: corner brackets that breathe (P1 outside, P2 inside, so both show on one slot)
+      for (let p = 0; p < sides; p++) {
+        const i = this.cursor[p], x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP) - 2;
+        const o = (p === 0 ? 2 : -1) + (this.ready[p] ? 0 : Math.round(Math.sin(t / 5 + p) * 1)), c = this.ready[p] ? '#ffd030' : COL[p], L = 6;
+        ctx.fillStyle = c;
+        for (const [cx, cy, sx, sy] of [[x - o, y - o, 1, 1], [x + SLOT + o, y - o, -1, 1], [x - o, y + SLOT + o, 1, -1], [x + SLOT + o, y + SLOT + o, -1, -1]]) { ctx.fillRect(Math.min(cx, cx + sx * L), cy - (sy < 0 ? 2 : 0), L, 2); ctx.fillRect(cx - (sx < 0 ? 2 : 0), Math.min(cy, cy + sy * L), 2, L); }
+        T(ctx, this.labels[p], p === 0 ? x + 1 : x + SLOT - 1, y + SLOT - 8, { align: p === 0 ? 'left' : 'right', color: c, outline: '#000' });
       }
-      ctx.lineWidth = 1;
       if (this.tag) this.picks.forEach((pk, p) => pk.forEach((i, n) => { // tag team: who is already on each team
         const x = GRID_X + (i % COLS) * (SLOT + GAP), y = GRID_Y + Math.floor(i / COLS) * (SLOT + GAP), bx = p === 0 ? x : x + SLOT - 8;
         ctx.fillStyle = '#000'; ctx.fillRect(bx, y, 8, 9); ctx.fillStyle = PCOL[p]; ctx.fillRect(bx + 1, y + 1, 6, 7);
         T(ctx, String(n + 1), bx + 1, y + 1, { color: '#ffffff' });
       }));
 
-      // Big previews either side of the grid
-      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
-        const def = this.slots[this.cursor[p]];
-        const x = p === 0 ? 32 : W - 32;
-        if (!def) {
-          T(ctx, '?', x, 50, { scale: 4, align: 'center', color: '#3a2018' });
-          continue;
-        }
-        const cos = this.costumesFor()[p];
-        const anim = this.ready[p] ? 'victory' : 'idle';
-        const glow = ctx.createRadialGradient(x, 70, 4, x, 70, 46);
-        glow.addColorStop(0, p === 0 ? 'rgba(255,74,58,0.3)' : 'rgba(74,138,255,0.3)');
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = glow; ctx.fillRect(x - 46, 20, 92, 86);
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.beginPath();
-        ctx.ellipse(x, 101, 22, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-        this.sprite(def, cos).draw(ctx, anim, Math.floor(this.t / 18) % 2, x, 101, p === 0 ? 1 : -1, this.flash[p] > 5 ? 'white' : null);
-        if (this.tag && this.picks[p].length) { // tag team: the first pick, waiting behind
-          const d1 = this.slots[this.picks[p][0]];
-          ctx.save(); ctx.translate(p === 0 ? x - 18 : x + 18, 99); ctx.scale(0.6, 0.6); this.sprite(d1).draw(ctx, 'idle', 0, 0, 0, p === 0 ? 1 : -1); ctx.restore();
-        }
-        if (this.ready[p]) { // READY! stamp across their legs
-          ctx.fillStyle = '#000'; ctx.fillRect(x - 25, 80, 50, 12);
-          ctx.fillStyle = '#ffd030'; ctx.fillRect(x - 24, 81, 48, 10);
-          T(ctx, 'READY!', x, 83, { align: 'center', color: '#200000' });
-        }
-
-      }
-
-      this.drawInfo(ctx, 0);
-      if (this.arcade) this.drawArcadeInfo(ctx); else this.drawInfo(ctx, 1);
-      // Costume tags on the panels' top edges
-      for (let p = 0; p < (this.arcade ? 1 : 2); p++) {
-        if (!this.slots[this.cursor[p]]) continue;
-        const cos = this.costumesFor()[p], x = p === 0 ? 32 : W - 32;
-        if (this.ready[p] && !cos) continue;
-        const label = RF.COSTUMES[cos].name + (this.ready[p] ? '' : ' (HEAVY)'), tw = RF.font.textWidth(label) + 6;
-        const lx = Math.max(tw / 2 + 2, Math.min(W - tw / 2 - 2, x)); // keep the tag on screen
-        ctx.fillStyle = '#000'; ctx.fillRect(lx - tw / 2, 101, tw, 9);
-        T(ctx, label, lx, 102, { align: 'center', color: cos ? '#ffd030' : '#a08878' });
-      }
-
-      if (this.ready[0] && this.ready[1]) {
-        if (this.readyTime < 8) { ctx.fillStyle = `rgba(255,240,200,${(8 - this.readyTime) / 10})`; ctx.fillRect(0, 0, W, 224); }
-        T(ctx, 'VS', W / 2, 78, { scale: 3, align: 'center', color: RF.TITLE_COLORS, outline: '#200000' });
-      }
-      let hint = this.ready[0] && this.ready[1] ? 'GET READY...' : 'LIGHT/ENTER = SELECT - HEAVY = COSTUME - BLOCK = CANCEL';
-      if (this.tag && !(this.ready[0] && this.ready[1])) {
+      // ---- what to press (only when it is not obvious)
+      let hint = '';
+      if (this.tag && !both) {
         const who = this.cpu && this.ready[0] ? 'THE CPU TEAM' : 'YOUR TEAM', n = this.picks[this.cpu && this.ready[0] ? 1 : 0].length;
-        hint = this.cpu ? who + ': PICK FIGHTER ' + (n + 1) + ' OF 2 - BLOCK = UNDO' : 'PICK TWO EACH - LIGHT = SELECT - BLOCK = UNDO';
+        hint = this.cpu ? who + ': PICK FIGHTER ' + (n + 1) + ' OF 2' : 'PICK TWO EACH';
         if (!this.picks[0].length && !this.picks[1].length && !this.ready[0]) hint += ' - THROW = ' + (this.cpu ? '2 PLAYERS' : 'VS CPU');
       }
-      if (!this.tag && this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY (F OR ENTER)' : 'NOW PICK YOUR CPU OPPONENT (F OR ENTER)';
-      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON - PICK ANOTHER ONE';
-      T(ctx, hint, W / 2, 214, { align: 'center', color: '#a08878', outline: '#000' });
+      if (!this.tag && this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY' : 'NOW PICK YOUR OPPONENT';
+      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON';
+      if (both) hint = 'GET READY...';
+      if (hint) { const tw = RF.font.textWidth(hint) + 12; ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(W / 2 - tw / 2, 14, tw, 11); T(ctx, hint, W / 2, 16, { align: 'center', color: '#ffd030', outline: '#000' }); }
+      if (both && this.readyTime < 8) { ctx.fillStyle = `rgba(255,240,220,${(8 - this.readyTime) / 10})`; ctx.fillRect(0, 0, W, H); }
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; for (let y = (t >> 2) % 3; y < H; y += 3) ctx.fillRect(0, y, W, 1);   // scanlines
     }
 
+    // the mode's rules, where player 2's card would be
     drawArcadeInfo(ctx) {
-      const x = W / 2 + 4, y = 106, w = W / 2 - 8;
-      RF.drawPanel(ctx, x, y, w, 104, '#c8a040');
-      T(ctx, this.towerMode ? 'RIFT TOWER' : this.survivalMode ? 'SURVIVAL' : 'ARCADE', x + 6, y + 4, { scale: 2, color: RF.TITLE_COLORS, outline: '#000' });
-      (this.towerMode
-        ? ['TEN FLOORS OF RIFT FIGHTERS.', 'EVERY FLOOR CHANGES THE RULES.', 'YOUR HEALTH CARRIES OVER.', 'AT THE TOP: OMEGA LOPEZ.', 'HE DOES NOT STAY DOWN.', '', 'BEST: FLOOR ' + ((RF.towerRecord().best) || 0) + (RF.towerRecord().cleared ? ' (CLEARED)' : '')]
+      const x = 256, y = 30, w = 124;
+      const rec = RF.towerRecord ? RF.towerRecord() : {};
+      const lines = this.towerMode
+        ? ['TEN FLOORS OF RIFT', 'FIGHTERS. EVERY ONE', 'CHANGES THE RULES.', 'THEN: OMEGA LOPEZ.', '', rec.cleared ? 'TOWER CLEARED' : 'BEST: FLOOR ' + (rec.best || 0)]
         : this.survivalMode
-        ? ['ONE HEALTH BAR. ENDLESS FIGHTS.', 'ONE ROUND EACH, 30% HEALED AFTER', 'EVERY WIN.', 'THE CPU GETS TOUGHER AS YOUR', 'STREAK GROWS.', '', 'BEST STREAK: ' + RF.records.data.best.survival]
-        : ['CLIMB THE TOWER: 5 OPPONENTS,', 'EACH ONE TOUGHER THAN THE LAST.', '', 'THEN THE FINAL BOSS,', 'KING SIRVEN, IN HIS OWN OFFICE.', '', 'LOSE? CONTINUE AND TRY AGAIN.'])
-        .forEach((l, i) => T(ctx, l, x + 6, y + 24 + i * 9, { color: i >= 3 && i <= 4 ? '#ff9a40' : '#e0d8d0', outline: '#000' }));
+        ? ['ONE HEALTH BAR.', 'ENDLESS FIGHTS, ONE', 'ROUND EACH. THE CPU', 'GETS TOUGHER.', '', 'BEST STREAK: ' + RF.records.data.best.survival]
+        : ['FIVE OPPONENTS,', 'EACH ONE TOUGHER.', 'THEN KING SIRVEN,', 'IN HIS OWN OFFICE.', '', 'LOSE? TRY AGAIN.'];
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x, y, w, 106); ctx.fillStyle = '#ffc83c'; ctx.fillRect(x, y, w, 2);
+      lines.forEach((l, i) => T(ctx, l, x + 5, y + 8 + i * 10, { color: i === 3 ? '#ff9a40' : i === 5 ? '#ffd030' : '#e0d8d0', outline: '#000' }));
     }
 
+    // one player's card in the middle column: type, where from, the bio, four stats, the special
     drawInfo(ctx, p) {
       const def = this.slots[this.cursor[p]];
-      const x = p === 0 ? 4 : W / 2 + 4, y = 106, w = W / 2 - 8, h = 104;
-      RF.drawPanel(ctx, x, y, w, h, this.ready[p] ? '#c8a040' : PCOL[p]);
+      const solo = this.arcade, w = solo ? 120 : 124, x = solo ? 132 : W / 2 - 62, y = solo ? 30 : (p === 0 ? 28 : 100), h = solo ? 106 : 44;
+      const c = this.ready[p] ? '#ffd030' : (p === 0 ? PCOL[0] : PCOL[1]);
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x, y, w, h); ctx.fillStyle = c; ctx.fillRect(p === 0 || solo ? x : x + w - 2, y, 2, h);
       const L = x + 6;
-      if (!def) {
-        T(ctx, '???', L, y + 6, { scale: 2, color: '#6a4a40', outline: '#000' });
-        T(ctx, 'COMING SOON', L, y + 26, { color: '#a08878', outline: '#000' });
-        T(ctx, 'MORE TEACHERS ARE', L, y + 40, { color: '#806860', outline: '#000' });
-        T(ctx, 'ON THE WAY...', L, y + 49, { color: '#806860', outline: '#000' });
-        return;
-      }
-      const [arch0] = ARCH[def.archetype] || [def.archetype.toUpperCase()];
-      const room = w - 24 - RF.font.textWidth(arch0) - (this.ready[p] ? 48 : 0);
-      const big = RF.font.textWidth(def.name, 2) <= room; // long names drop to small type
-      T(ctx, def.name, L, big ? y + 4 : y + 8, { scale: big ? 2 : 1, color: '#ffffff', outline: '#000' });
-      const [arch, archCol] = ARCH[def.archetype] || [def.archetype.toUpperCase(), '#fff'];
-      T(ctx, arch, x + w - 6, y + 8, { align: 'right', color: archCol, outline: '#000' });
-      if (this.ready[p]) T(ctx, 'READY!', x + w - 6 - RF.font.textWidth(arch) - 8, y + 8, { align: 'right', color: '#ffd030', outline: '#000' });
-      T(ctx, 'FROM: ' + def.origin, L, y + 20, { color: '#c8a888', outline: '#000' });
-      RF.font.wrap(def.bio, 29).slice(0, 2).forEach((line, i) => T(ctx, line, L, y + 29 + i * 8, { color: '#e0d8d0' }));
-
+      if (!def) { T(ctx, 'COMING SOON', L, y + 6, { color: '#6a4a40', outline: '#000' }); return; }
+      const [arch, archCol] = ARCH[def.archetype] || [def.archetype.toUpperCase(), '#ffffff'];
+      T(ctx, arch, L, y + 3, { color: archCol, outline: '#000' });
+      if (RF.font.textWidth(arch) + RF.font.textWidth(def.origin) + 16 <= w) T(ctx, def.origin.toUpperCase(), x + w - 4, y + 3, { align: 'right', color: '#8a7a78', outline: '#000' });   // where from, when there is room
       STAT_BARS.forEach(([label, fn], i) => {
-        const sx = L + (i % 2) * 88, sy = y + 47 + Math.floor(i / 2) * 9;
-        T(ctx, label, sx, sy, { color: '#a89080' });
-        const v = Math.max(0.05, Math.min(1, fn(def.stats)));
-        const bx = sx + 44, bw = 38;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(bx, sy, bw, 6);
-        ctx.fillStyle = '#ffd030';
-        ctx.fillRect(bx + 1, sy + 1, Math.round((bw - 2) * v), 4);
+        const sx = L + (i % 2) * 59, sy = y + 13 + Math.floor(i / 2) * 8, v = Math.max(0.05, Math.min(1, fn(def.stats)));
+        T(ctx, label.slice(0, 3), sx, sy, { color: '#a89490' });
+        ctx.fillStyle = '#000'; ctx.fillRect(sx + 21, sy, 32, 6);
+        ctx.fillStyle = v > 0.75 ? '#ff5030' : '#ffd030'; ctx.fillRect(sx + 22, sy + 1, Math.round(30 * v), 4);
       });
-
       const sp = RF.SPECIALS[def.special];
-      T(ctx, 'SPECIAL: ' + sp.name, L, y + 67, { color: '#8ff0ff', outline: '#000' });
-      RF.font.wrap(sp.description, 29).slice(0, 3).forEach((line, i) => T(ctx, line, L, y + 76 + i * 8, { color: '#d0d8e0' }));
+      T(ctx, sp.name.toUpperCase(), L, y + 31, { color: '#8ff0ff', outline: '#000' });
+      if (solo) { // room for the whole story
+        RF.font.wrap(def.bio.toUpperCase(), 19).slice(0, 3).forEach((l, i) => T(ctx, l, L, y + 44 + i * 9, { color: '#e0d8d0', outline: '#000' }));
+        RF.font.wrap(sp.description.toUpperCase(), 19).slice(0, 3).forEach((l, i) => T(ctx, l, L, y + 76 + i * 9, { color: '#a8c0c8', outline: '#000' }));
+      }
     }
   }
 
