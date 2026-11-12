@@ -431,8 +431,9 @@
         const pts = [P([0, 0]), ...cells.map(P)], n = pts.length, fist = pts[n - 1];
         const sleeve = dark ? shade(this.sleeve, -0.3) : this.sleeve, hand = dark ? shade(this.handColor, -0.3) : this.handColor;
         const armPts = pts.slice(0, n - 1).concat([[(pts[n - 2][0] + fist[0]) / 2, (pts[n - 2][1] + fist[1]) / 2]]);
-        const thick = s.armThickness || 1, rArm = (u) => k * thick * (0.6 - 0.16 * u);
+        const thick = s.armThickness || 1.3, rArm = (u) => k * thick * (0.6 - 0.12 * u);   // (a real arm: thicker than a stick, and it barely tapers)
         const sl = s.sleeveLength == null ? 1 : s.sleeveLength;   // short sleeves: bare forearm below
+        limb([pts[0], [pts[0][0] + 0.01, pts[0][1] + 0.01]], () => k * thick * 0.78, sleeve, dx, dy);   // a rounded shoulder joint, so the arm grows out of the body
         if (sl < 1) {
           limb(armPts, rArm, hand, dx, dy);
           // the sleeve: the first part of the arm, by length
@@ -445,7 +446,7 @@
           if (cut.length > 1) limb(cut, (u) => rArm(u * sl) + 0.4, sleeve, dx, dy);
         } else limb(armPts, rArm, sleeve, dx, dy);
         const [px, py] = pts[n - 2], dirX = Math.sign(fist[0] - px), dirY = Math.sign(fist[1] - py);
-        limb([[fist[0] - dirX * k * 0.15, fist[1] - dirY * k * 0.15], [fist[0] + dirX * k * 0.15, fist[1] + dirY * k * 0.15]], () => k * 0.62 * Math.max(1, (s.armThickness || 1) * 0.9), hand, dx, dy);
+        limb([[fist[0] - dirX * k * 0.15, fist[1] - dirY * k * 0.15], [fist[0] + dirX * k * 0.15, fist[1] + dirY * k * 0.15]], () => k * 0.62 * Math.max(1, thick * 0.9), hand, dx, dy);
         if (!dark && k >= 3) { // knuckles: a little darker line across the front of the fist
           const kn = shade(hand, -0.3), fx = fist[0] + dirX * k * 0.35, fy = fist[1] + dirY * k * 0.35;
           for (let t = -1; t <= 1; t++) put(Math.round(fx + (dirY ? t : 0)), Math.round(fy + (dirX ? t : 0)), kn, dx, dy);

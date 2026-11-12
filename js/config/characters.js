@@ -5009,6 +5009,7 @@ RF.CHARACTERS = [
       crouchDrop: 11,
       sleeveColor: 'colg',        // the black bomber jacket
       sleeveShade: 0,
+      armThickness: 1.8,           // a real arm, not a stick
       handColor: 'colm',
       legColor: 'pantsk',         // grey cargos
       footColor: 'shoeso',
@@ -5495,6 +5496,8 @@ RF.CHARACTERS = [
       crouchDrop: 11,
       sleeveColor: 'cola',
       sleeveShade: 0,
+      armThickness: 1.9,
+      sleeveLength: 0.3,           // short sleeves: a bare boxer's forearm
       handColor: 'col3',
       legColor: 'pantsg',
       footColor: 'shoes8',
