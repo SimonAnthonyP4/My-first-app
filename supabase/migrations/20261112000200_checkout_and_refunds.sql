@@ -190,7 +190,8 @@ create function public.create_order(
   p_customer_id uuid default null,
   p_rewards jsonb default '[]'::jsonb,
   p_discount_cents bigint default 0,
-  p_discount_reason text default null
+  p_discount_reason text default null,
+  p_discount_approved_by uuid default null
 )
 returns public.orders
 language plpgsql
@@ -219,6 +220,7 @@ declare
   v_free_so_far integer;
   v_reward_id uuid;
   v_product_id uuid;
+  v_discount_by uuid;
 begin
   select e.role into v_role from public.employees e where e.id = p_employee_id and e.is_active;
   if v_role is null then
@@ -345,11 +347,22 @@ begin
     if p_discount_reason is null or btrim(p_discount_reason) = '' then
       raise exception 'a discount needs a reason' using errcode = '22023';
     end if;
+    v_discount_by := p_employee_id;
     if v_role = 'employee' then
       select s.employee_discount_limit_percent into strict v_limit from public.app_settings s;
       if v_discount > (v_due * v_limit) / 100 then
-        raise exception 'this discount needs a manager (cashier limit is % percent)', v_limit
-          using errcode = 'BB008';
+        -- Over the cashier limit: a manager or owner must stand behind it.
+        -- The Edge Function verifies that person's own sign-in before passing
+        -- their id here; an id typed in by the cashier is never trusted.
+        if exists (
+          select 1 from public.employees e
+          where e.id = p_discount_approved_by and e.is_active and e.role in ('manager', 'owner')
+        ) then
+          v_discount_by := p_discount_approved_by;
+        else
+          raise exception 'this discount needs a manager (cashier limit is % percent)', v_limit
+            using errcode = 'BB008';
+        end if;
       end if;
     end if;
   end if;
@@ -369,7 +382,7 @@ begin
     v_order_id, p_customer_id, p_employee_id, v_subtotal, v_discount, v_reward_cents, v_total,
     p_idempotency_key,
     case when v_discount > 0 then btrim(p_discount_reason) end,
-    case when v_discount > 0 then p_employee_id end
+    case when v_discount > 0 then v_discount_by end
   );
 
   insert into public.order_items (
@@ -670,7 +683,8 @@ $$;
 -- every item returns exactly the amount paid.
 --
 -- Refunds above app_settings.refund_approval_threshold_cents need a manager
--- or owner: either the requester is one, or p_approved_by names one.
+-- or owner: either the requester is one, or p_approved_by names one. The Edge
+-- Function fills p_approved_by only from that person's own verified sign-in.
 -- ---------------------------------------------------------------------------
 
 create function public.request_refund(
@@ -1070,7 +1084,7 @@ revoke all on function private.begin_stripe_event(text, text, jsonb)        from
 revoke all on function private.finish_stripe_event(text, text, text)        from public, anon, authenticated;
 revoke all on function private.complete_order(uuid, text)                   from public, anon, authenticated;
 revoke all on function private.abandon_order(uuid)                          from public, anon, authenticated;
-revoke all on function public.create_order(uuid, text, jsonb, uuid, jsonb, bigint, text) from public, anon, authenticated;
+revoke all on function public.create_order(uuid, text, jsonb, uuid, jsonb, bigint, text, uuid) from public, anon, authenticated;
 revoke all on function public.record_payment_intent(uuid, text, bigint)     from public, anon, authenticated;
 revoke all on function public.handle_payment_succeeded(text, text, jsonb, text, bigint, text, text, text, text) from public, anon, authenticated;
 revoke all on function public.handle_payment_intent_update(text, text, jsonb, text, text) from public, anon, authenticated;
@@ -1086,7 +1100,7 @@ grant execute on function private.begin_stripe_event(text, text, jsonb)     to s
 grant execute on function private.finish_stripe_event(text, text, text)     to service_role;
 grant execute on function private.complete_order(uuid, text)                to service_role;
 grant execute on function private.abandon_order(uuid)                       to service_role;
-grant execute on function public.create_order(uuid, text, jsonb, uuid, jsonb, bigint, text) to service_role;
+grant execute on function public.create_order(uuid, text, jsonb, uuid, jsonb, bigint, text, uuid) to service_role;
 grant execute on function public.record_payment_intent(uuid, text, bigint)  to service_role;
 grant execute on function public.handle_payment_succeeded(text, text, jsonb, text, bigint, text, text, text, text) to service_role;
 grant execute on function public.handle_payment_intent_update(text, text, jsonb, text, text) to service_role;

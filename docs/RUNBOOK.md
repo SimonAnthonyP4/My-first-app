@@ -7,7 +7,7 @@ that only the business owner can provide.
 
 ```bash
 make setup      # pnpm install, enable .githooks
-make test       # unit tests + database tests
+make test       # unit tests, Edge Function tests, database tests
 make dev-admin  # admin placeholder on http://127.0.0.1:3000
 ```
 
@@ -50,6 +50,45 @@ No hosted project exists yet. When one is created (a staging project first, then
 The migrations and the full pgTAP suite pass in CI on both plain PostgreSQL 16 and the Supabase
 local Postgres image. The first push to a hosted project is still the first time they meet a real
 one, so do it on staging.
+
+## Stripe sandbox — not done
+
+No Stripe account exists for this project. The payment code has only been run against a faked
+Stripe. To take it to a real test-mode run, with a staging Supabase project already set up:
+
+1. Create a Stripe account. Stay in **test mode**. Enable Terminal.
+2. Deploy the functions:
+   ```bash
+   pnpm exec supabase functions deploy
+   ```
+3. In Stripe (test mode) → Developers → Webhooks, add an endpoint:
+   `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`, subscribed to
+   `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.processing`,
+   `payment_intent.canceled`, `refund.created`, `refund.updated`, `refund.failed` and
+   `charge.refund.updated`. Copy its signing secret.
+4. Set the secrets. They are entered once and never committed:
+   ```bash
+   pnpm exec supabase secrets set STRIPE_SECRET_KEY=<test secret key> \
+     STRIPE_WEBHOOK_SECRET=<signing secret> STRIPE_MODE=test
+   ```
+5. Run one sale with a simulated Terminal reader and one refund, and check the order, payment,
+   points and stock in the database. This is the acceptance test for milestone M3; record the
+   result in `PAYMENTS.md` under "Not yet verified".
+
+Going live later means a second set of secrets with `STRIPE_MODE=live`, a live webhook endpoint,
+and Apple's Tap to Pay entitlement. The backend refuses a live key while `STRIPE_MODE` is `test`.
+
+### Events that need a person
+
+Some webhook events are stored and flagged instead of applied: a payment for the wrong amount, a
+payment for a cancelled order, a second payment for one order, a refund made in the Stripe
+Dashboard. Find them with:
+
+```sql
+select id, type, error, received_at from stripe_events where status = 'failed' order by received_at;
+```
+
+`PAYMENTS.md` lists what each one means and what to do.
 
 ## Create the first owner
 
@@ -105,8 +144,8 @@ history. Rotation is what makes it safe; deleting the commit is not enough.
 
 ## CI
 
-| Workflow      | Runs on                                       | Does                                                         |
-| ------------- | --------------------------------------------- | ------------------------------------------------------------ |
-| `backend.yml` | Changes to `supabase/`, `scripts/`, contracts | Database tests on plain PostgreSQL and on the Supabase image |
-| `web.yml`     | Changes to `apps/admin`, `packages/`          | Format check, lint, typecheck, unit tests, admin build       |
-| `ios.yml`     | Manual                                        | Placeholder until the iOS apps exist                         |
+| Workflow      | Runs on                                       | Does                                                                                                                             |
+| ------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `backend.yml` | Changes to `supabase/`, `scripts/`, contracts | Database tests on plain PostgreSQL (with the Edge Function integration test) and on the Supabase image; Edge Function unit tests |
+| `web.yml`     | Changes to `apps/admin`, `packages/`          | Format check, lint, typecheck, unit tests, admin build                                                                           |
+| `ios.yml`     | Manual                                        | Placeholder until the iOS apps exist                                                                                             |

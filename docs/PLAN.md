@@ -1,6 +1,6 @@
 # Bro Batch — Architecture & Milestone Plan
 
-Status: **M0, M1 and M2 are complete. M3 onward is not started.**
+Status: **M0, M1 and M2 are complete. M3 is built and tested against a faked Stripe, but has not been run against a Stripe sandbox (no account exists yet). M4 onward is not started.**
 This document covers architecture, repository layout, database schema, payment and loyalty rules, milestones, and the external dependencies that block parts of the build.
 
 It is the design plan. Where the build has since diverged, the as-built documents win: `ARCHITECTURE.md` for the system, `DATABASE.md` for the schema (it lists every difference from this plan and why), and the migrations in `supabase/migrations` for exact definitions.
@@ -553,13 +553,15 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** the loyalty worked examples in `docs/LOYALTY.md` are executable tests.
 - **Outcome:** done. Five service-role functions (`award_points_for_order`, `reverse_points_for_refund`, `redeem_points`, `release_redemption`, `fulfill_redemption`), 106 pgTAP tests covering the 20 worked examples in `docs/LOYALTY.md`, five concurrency races, and a check that the SQL and TypeScript points formulas agree. The award function is keyed on the order rather than the payment, because points depend on the order total and a fully reward-covered order has no payment. M2 also fixed a weakness in the M1 ledger trigger (see `docs/DATABASE.md`).
 
-### M3 — Payments backend (Stripe sandbox)
+### M3 — Payments backend (Stripe sandbox) — BUILT, SANDBOX RUN PENDING
 
 - `create-payment-intent`, `terminal-connection-token`, `stripe-webhook`, `process-refund`, `redeem-reward`.
 - Server-side price calculation and reward reservation.
 - Webhook handler for `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `charge.refunded`.
 - Tests run against Stripe **test mode** with the `stripe-mock` or real test keys. Signature tests use fixtures.
 - **Done when:** a sandbox sale end-to-end produces an order, a payment and points, and a sandbox refund reverses them, all idempotent under replayed webhooks.
+
+- **Outcome:** code complete, acceptance test not yet possible. Five Edge Functions and ten database functions; 204 pgTAP tests, 103 Deno tests with Stripe faked, three more concurrency races, and a 14-step integration test running the real handlers against the real database. The "done when" above needs a Stripe test-mode account, which does not exist yet; the steps are in `docs/RUNBOOK.md`. Changes from this plan: rewards are reserved inside checkout rather than by a separate `redeem-reward` function; a `cancel-order` function was added; refund webhooks use the `refund.*` events. Details in `docs/PAYMENTS.md`.
 
 ### M4 — Admin dashboard (web)
 

@@ -3,7 +3,7 @@
 begin;
 set local search_path = public, extensions;
 
-select plan(110);
+select plan(113);
 
 -- Fixtures ----------------------------------------------------------------------
 select tests.create_employee('owner', 'owner');
@@ -234,6 +234,20 @@ select is(
 select throws_ok(
   $$ select tests.checkout('o_disc_1', 'cashier', null, tests.items('bar_a', '3'), '[]', 50, 'regular') $$,
   'BB008', null, 'by default a cashier cannot give a discount'
+);
+select results_eq(
+  $$ select discount_cents, total_cents, discount_by
+     from tests.checkout('o_disc_1b', 'cashier', null, tests.items('bar_a', '3'), '[]', 50, 'regular', 'manager') $$,
+  $$ select 50::bigint, 850::bigint, tests.id('manager') $$,
+  'with a manager approving, the cashier discount is accepted and recorded against the manager'
+);
+select throws_ok(
+  $$ select tests.checkout('o_disc_1c', 'cashier', null, tests.items('bar_a', '3'), '[]', 50, 'regular', 'other_cashier') $$,
+  'BB008', null, 'another cashier cannot approve a discount'
+);
+select throws_ok(
+  $$ select tests.checkout('o_disc_1d', 'cashier', null, tests.items('bar_a', '3'), '[]', 50, 'regular', 'inactive') $$,
+  'BB008', null, 'a deactivated employee cannot approve a discount'
 );
 select results_eq(
   $$ select discount_cents, total_cents, discount_reason, discount_by

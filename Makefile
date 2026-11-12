@@ -2,7 +2,7 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-.PHONY: help setup lint typecheck format format-check test test-web db-test db-test-plain db-test-supabase build dev-admin check
+.PHONY: help setup lint typecheck format format-check test test-web test-functions db-test db-test-plain db-test-supabase build dev-admin check
 
 help: ## Show this list
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -44,7 +44,11 @@ db-test: ## Database tests, using whichever of the two setups is available
 	  exit 2; \
 	fi
 
-test: test-web db-test ## Run every test suite
+test-functions: ## Edge Function unit tests (Deno; Stripe, database and auth faked)
+	pnpm check:functions
+	pnpm test:functions
+
+test: test-web test-functions db-test ## Run every test suite
 
 build: ## Production build of the admin app
 	pnpm build

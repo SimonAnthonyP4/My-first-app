@@ -26,7 +26,8 @@ set up and how to work with them.
 | `audit_log`            | Append-only record of configuration changes   | Trigger only                |
 | `push_tokens`          | APNs device tokens                            | Customers (own)             |
 
-"Server" means the service role: Edge Functions and the admin server. Neither exists yet (M3, M4).
+"Server" means the service role: the Edge Functions (`supabase/functions`) and, from M4, the admin
+server.
 
 ## Invariants
 
@@ -38,7 +39,8 @@ service role.
 - All amounts are integer cents (`bigint`), never negative.
 - `orders.total_cents = subtotal_cents − discount_cents − reward_cents`. There is no tax.
 - `order_items.line_total_cents = unit_price_cents × quantity`.
-- A paid order has `paid_at`; an unpaid one does not.
+- A paid order has `paid_at`; an unpaid one does not. A cancelled order has `cancelled_at`.
+- A discount always records its reason and who gave or approved it.
 - An order can have at most one succeeded payment.
 - A Stripe PaymentIntent, charge or refund id appears at most once.
 - `card_last4` is exactly four digits. No column can hold a card number.
@@ -128,6 +130,23 @@ Column-level limits: customers cannot change their own `email`, `membership_code
 
 Rules, error codes and worked examples: `LOYALTY.md`.
 
+### Checkout and refunds (service role only)
+
+| Function                       | What it does                                                                            |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| `create_order`                 | Prices the cart from the catalog, applies rewards and discount, reserves reward points. |
+| `record_payment_intent`        | Links a Stripe PaymentIntent to an order. Amount must equal the total.                  |
+| `handle_payment_succeeded`     | Webhook: payment and order paid, rewards fulfilled, stock moved, points awarded.        |
+| `handle_payment_intent_update` | Webhook: declined card (checkout stays open) or cancellation.                           |
+| `cancel_order`                 | Abandons an unpaid checkout and releases reserved rewards.                              |
+| `request_refund`               | Validates units, prices the refund, enforces manager approval.                          |
+| `record_refund_submitted`      | Stores Stripe's refund id.                                                              |
+| `complete_refund`              | Stripe confirmed: refund succeeded, stock returned, points reversed.                    |
+| `fail_refund`                  | Stripe refused: refund failed, units refundable again.                                  |
+| `handle_refund_update`         | Webhook: completes or fails a refund.                                                   |
+
+Flow, endpoints and edge cases: `PAYMENTS.md`.
+
 ## Running the tests
 
 `make db-test` picks whichever setup is available.
@@ -175,17 +194,20 @@ check; CI runs both setups.
 
 ## Differences from the original plan
 
-| Plan                                            | Built                                                      | Why                                                                                                                              |
-| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| RLS reads the role from the JWT                 | RLS reads the `employees` table                            | Deactivation takes effect at once, not at token expiry                                                                           |
-| `employees.pin_hash`                            | Left out                                                   | Not in the requirements; one less secret to store                                                                                |
-| `rewards.product_id` only                       | Added `rewards.grants_category`                            | "Free protein bar" means any flavor, not one product                                                                             |
-| —                                               | Added `products.bar_count`, `order_items.bar_count`        | Needed for the "bars sold" metric (a six-pack is six bars)                                                                       |
-| —                                               | Added `app_settings`                                       | Earn rate and refund threshold must be configurable                                                                              |
-| Balance maintained by M2 functions              | Balance maintained by a trigger on the ledger              | Balance cannot diverge from the ledger, whoever writes                                                                           |
-| `tax_cents`                                     | Removed                                                    | No sales tax                                                                                                                     |
-| Customers cannot read orders                    | Customers read their own completed orders                  | The Rewards app needs purchase history                                                                                           |
-| `audit_log.entity_id uuid`                      | `text`                                                     | Not every audited table has a uuid key                                                                                           |
-| Balance applied in a BEFORE INSERT trigger (M1) | Split into BEFORE (lock, validate) and AFTER (apply) in M2 | A BEFORE trigger also runs for rows skipped by `ON CONFLICT DO NOTHING`, which would have moved the balance without a ledger row |
-| `award_points_for_payment(payment, event)`      | `award_points_for_order(order, event)`                     | Points depend on the order total, and an order fully covered by a reward has no payment                                          |
-| —                                               | Added `refunds.points_reversal_processed_at`               | Makes reversal idempotent even when zero points were taken back                                                                  |
+| Plan                                            | Built                                                                                                                                                                                          | Why                                                                                                                              |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| RLS reads the role from the JWT                 | RLS reads the `employees` table                                                                                                                                                                | Deactivation takes effect at once, not at token expiry                                                                           |
+| `employees.pin_hash`                            | Left out                                                                                                                                                                                       | Not in the requirements; one less secret to store                                                                                |
+| `rewards.product_id` only                       | Added `rewards.grants_category`                                                                                                                                                                | "Free protein bar" means any flavor, not one product                                                                             |
+| —                                               | Added `products.bar_count`, `order_items.bar_count`                                                                                                                                            | Needed for the "bars sold" metric (a six-pack is six bars)                                                                       |
+| —                                               | Added `app_settings`                                                                                                                                                                           | Earn rate and refund threshold must be configurable                                                                              |
+| Balance maintained by M2 functions              | Balance maintained by a trigger on the ledger                                                                                                                                                  | Balance cannot diverge from the ledger, whoever writes                                                                           |
+| `tax_cents`                                     | Removed                                                                                                                                                                                        | No sales tax                                                                                                                     |
+| Customers cannot read orders                    | Customers read their own completed orders                                                                                                                                                      | The Rewards app needs purchase history                                                                                           |
+| `audit_log.entity_id uuid`                      | `text`                                                                                                                                                                                         | Not every audited table has a uuid key                                                                                           |
+| Balance applied in a BEFORE INSERT trigger (M1) | Split into BEFORE (lock, validate) and AFTER (apply) in M2                                                                                                                                     | A BEFORE trigger also runs for rows skipped by `ON CONFLICT DO NOTHING`, which would have moved the balance without a ledger row |
+| `award_points_for_payment(payment, event)`      | `award_points_for_order(order, event)`                                                                                                                                                         | Points depend on the order total, and an order fully covered by a reward has no payment                                          |
+| —                                               | Added `refunds.points_reversal_processed_at`                                                                                                                                                   | Makes reversal idempotent even when zero points were taken back                                                                  |
+| `redeem-reward` Edge Function                   | Rewards are reserved inside `create_order`                                                                                                                                                     | Reserving at checkout keeps the reward and the order in one transaction                                                          |
+| —                                               | Added `orders.discount_reason`, `discount_by`, `cancelled_at`; `order_items.reward_quantity`; `refund_items.restock`; `refunds.failure_reason`; `app_settings.employee_discount_limit_percent` | Needed by checkout and refunds                                                                                                   |
+| Webhook handles `charge.refunded`               | Handles `refund.created`, `refund.updated`, `refund.failed`, `charge.refund.updated`                                                                                                           | These carry the refund itself, with our refund id in its metadata                                                                |

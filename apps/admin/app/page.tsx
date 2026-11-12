@@ -12,13 +12,15 @@ import { readPublicEnv } from '@/lib/env.ts';
 // customers, rewards configuration) is milestone M4. This page exists so the
 // app builds, deploys and proves the shared contracts package is wired in.
 
-const MILESTONES = [
-  { id: 'M0', label: 'Foundations', done: true },
-  { id: 'M1', label: 'Database schema and security', done: true },
-  { id: 'M2', label: 'Loyalty engine', done: true },
-  { id: 'M3', label: 'Payments (Stripe sandbox)', done: false },
-  { id: 'M4', label: 'Admin dashboard', done: false },
-] as const;
+type MilestoneState = 'done' | 'partial' | 'todo';
+
+const MILESTONES: readonly { id: string; label: string; state: MilestoneState; note: string }[] = [
+  { id: 'M0', label: 'Foundations', state: 'done', note: 'Complete' },
+  { id: 'M1', label: 'Database schema and security', state: 'done', note: 'Complete' },
+  { id: 'M2', label: 'Loyalty engine', state: 'done', note: 'Complete' },
+  { id: 'M3', label: 'Payments', state: 'partial', note: 'Built, not yet run against Stripe' },
+  { id: 'M4', label: 'Admin dashboard', state: 'todo', note: 'Not started' },
+];
 
 const EXAMPLE_SPEND = cents(900);
 
@@ -42,8 +44,8 @@ export default function HomePage() {
               <span>
                 {milestone.id} — {milestone.label}
               </span>
-              <span className="status" data-state={milestone.done ? 'done' : 'todo'}>
-                {milestone.done ? 'Complete' : 'Not started'}
+              <span className="status" data-state={milestone.state}>
+                {milestone.note}
               </span>
             </li>
           ))}

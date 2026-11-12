@@ -1,6 +1,6 @@
 # Architecture — as built
 
-This describes what is in the repository today (milestones M0, M1 and M2). The target design for the
+This describes what is in the repository today (milestones M0 to M2, and M3 up to the Stripe boundary). The target design for the
 whole platform is in `PLAN.md`.
 
 ## What exists
@@ -25,8 +25,11 @@ whole platform is in `PLAN.md`.
                  └──────────────────────────┘
 ```
 
-Not built: Edge Functions, Stripe integration, the dashboard screens, and both iOS apps. Until
-the Edge Functions exist (M3) nothing calls the loyalty functions except the tests.
+Also built: five Edge Functions for checkout, payment confirmation and refunds (M3), with ten
+database functions behind them. They are tested with Stripe faked. **They have never been run
+against Stripe**, because no Stripe account exists yet; see `PAYMENTS.md`.
+
+Not built: the dashboard screens and both iOS apps.
 
 ## Layers and their jobs
 
@@ -55,6 +58,26 @@ examples are in `LOYALTY.md`.
 
 They sit on top of the ledger trigger rather than replacing it. A function decides the amount; the
 trigger still refuses any row that would overdraw the account, whoever wrote it.
+
+### Checkout and refunds (`supabase/migrations/20261112000200_checkout_and_refunds.sql`)
+
+Ten service-role functions, each one transaction and safe to repeat: `create_order` prices the
+cart from the catalog and reserves rewards; `handle_payment_succeeded` marks an order paid,
+fulfils rewards, moves stock and awards points; `request_refund` and `complete_refund` price and
+finish refunds. Webhook events are logged and locked by event id, so the same event delivered
+twice, even at the same moment, is applied once.
+
+### Edge Functions (`supabase/functions`)
+
+The HTTP layer between the apps, Stripe and the database. A function authenticates the caller,
+validates the request, calls Stripe if needed, and calls one database function. It holds no
+business rules.
+
+- Handlers take their dependencies (database, auth, Stripe, clock) as arguments, so tests run
+  them with in-memory fakes and no network.
+- `_shared/runtime.ts` is the only module that reads secrets.
+- `_shared/stripe.ts` is a small fetch-based client for the four Stripe calls used.
+- `_shared/webhook.ts` verifies Stripe's signature over the raw request body.
 
 ### Contracts (`packages/contracts`)
 
@@ -102,16 +125,18 @@ table closes the window in which a just-deactivated employee could keep working.
 
 ## Testing strategy
 
-| Suite                | What it proves                                                                                        | Where                              |
-| -------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| pgTAP (326 tests)    | Structure, constraints, RLS isolation, privileges, triggers, RPCs, and the 20 worked loyalty examples | `supabase/tests`                   |
-| Concurrency test     | Five races on real connections: points are never created, lost or double-spent                        | `scripts/db-concurrency-test.sh`   |
-| Contract drift check | TypeScript enums, error codes and the points formula match the database                               | `scripts/check-contract-drift.mjs` |
-| Vitest (117 tests)   | Money math, points formula, QR format, validation, env guard                                          | `packages/contracts`, `apps/admin` |
+| Suite                   | What it proves                                                                                   | Where                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| pgTAP (530 tests)       | Structure, constraints, RLS isolation, privileges, triggers, loyalty examples, checkout, refunds | `supabase/tests`                               |
+| Concurrency (28 checks) | Eight races on real connections: points, stock and orders are never duplicated or lost           | `scripts/db-concurrency-test.sh`               |
+| Contract drift check    | TypeScript enums, error codes and the points formula match the database                          | `scripts/check-contract-drift.mjs`             |
+| Deno (103 tests)        | Edge Function handlers, Stripe client, webhook signatures, error mapping                         | `supabase/functions/tests`                     |
+| Integration (14 steps)  | Real handlers against the real database, checkout through refund                                 | `supabase/functions/tests/integration_test.ts` |
+| Vitest (117 tests)      | Money math, points formula, QR format, validation, env guard                                     | `packages/contracts`, `apps/admin`             |
 
-The database suite was checked against 46 deliberately introduced defects (disabled RLS, removed
-guards, wrong rounding, missing idempotency checks and so on). It caught 45. The remaining one
-changed no behaviour, because a second guard still blocked the operation.
+The suites were checked against 87 deliberately introduced defects (disabled RLS, removed guards,
+wrong rounding, skipped signature checks, unverified amounts and so on). They caught 85. The other
+two changed no behaviour, because a second guard still blocked the operation.
 
 CI runs the database suite twice: on plain PostgreSQL with a shim for Supabase's roles (fast, and
 what runs locally without Docker), and on the real Supabase Postgres image.

@@ -372,7 +372,8 @@ create or replace function tests.checkout(
   p_items jsonb,
   p_rewards jsonb default '[]'::jsonb,
   p_discount_cents bigint default 0,
-  p_discount_reason text default null
+  p_discount_reason text default null,
+  p_discount_approved_by text default null
 )
 returns public.orders
 language plpgsql
@@ -382,7 +383,7 @@ declare
 begin
   v_order := public.create_order(
     tests.id(p_employee), 'test-checkout-' || p_name, p_items, tests.id(p_customer),
-    p_rewards, p_discount_cents, p_discount_reason
+    p_rewards, p_discount_cents, p_discount_reason, tests.id(p_discount_approved_by)
   );
   insert into tests.fixtures (name, id) values (p_name, v_order.id) on conflict (name) do nothing;
   return v_order;

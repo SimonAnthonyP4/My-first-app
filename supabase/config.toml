@@ -54,3 +54,21 @@ secure_password_change = true
 [auth.hook.custom_access_token]
 enabled = true
 uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+# Edge Functions. The gateway checks the caller's JWT for every function
+# except the Stripe webhook, which Stripe calls without one: it is
+# authenticated by its signature instead (see _shared/webhook.ts).
+[functions.create-payment-intent]
+verify_jwt = true
+
+[functions.cancel-order]
+verify_jwt = true
+
+[functions.process-refund]
+verify_jwt = true
+
+[functions.terminal-connection-token]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

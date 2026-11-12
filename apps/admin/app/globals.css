@@ -140,14 +140,18 @@ p {
 
 .status {
   display: inline-block;
+  text-align: right;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .status[data-state='done'] {
   color: var(--gold-400);
+}
+
+.status[data-state='partial'] {
+  color: var(--cream-300);
 }
 
 .status[data-state='todo'] {

@@ -4,7 +4,7 @@
 begin;
 set local search_path = public, extensions;
 
-select plan(90);
+select plan(91);
 
 -- Fixtures ----------------------------------------------------------------------
 select tests.create_employee('owner', 'owner');
@@ -12,8 +12,9 @@ select tests.create_employee('manager', 'manager');
 select tests.create_employee('cashier', 'employee');
 select tests.create_employee('other_cashier', 'employee');
 
-select tests.create_customer(name) from unnest(array['amy', 'ben', 'dan', 'eve', 'hal']) as t(name);
+select tests.create_customer(name) from unnest(array['amy', 'ben', 'dan', 'eve', 'fay', 'hal']) as t(name);
 select tests.grant_points('eve', 300);
+select tests.grant_points('fay', 300);
 
 select tests.create_product('bar_a', 'bar', 300);
 select tests.create_product('six', 'six_pack', 1600, 6);
@@ -39,13 +40,15 @@ select tests.checkout('o_hal', 'cashier', 'hal', tests.items('bar_a', '3'));
 select tests.checkout('o_hal_2', 'cashier', 'hal', tests.items('bar_a', '3'));
 select tests.checkout('o_hal_3', 'cashier', 'hal', tests.items('bar_a', '3'));
 select tests.checkout('o_unpaid', 'cashier', null, tests.items('bar_a', '3'));
+select tests.checkout('o_free', 'cashier', 'fay', tests.items('bar_a', '1'),
+                      tests.rewards('Free protein bar', 'bar_a'));
 
 select tests.pay(name) from unnest(array[
   'o_amy', 'o_ben', 'o_dan', 'o_eve', 'o_val', 'o_big_1', 'o_big_2', 'o_big_3', 'o_damaged',
   'o_hal', 'o_hal_2', 'o_hal_3'
 ]) as t(name);
 
-select is(tests.stock('bar_a'), 100 - 23, 'setup: 23 bars sold');
+select is(tests.stock('bar_a'), 100 - 24, 'setup: 24 bars sold, one of them free');
 select is(tests.stock('six'), 20 - 7, 'setup: 7 six-packs sold');
 
 -- ===============================================================================
@@ -71,7 +74,7 @@ select results_eq(
   'requesting a refund changes nothing on the order yet'
 );
 select is(tests.balance('amy'), 90::bigint, 'the points stay until the provider confirms');
-select is(tests.stock('bar_a'), 77, 'stock stays until the provider confirms');
+select is(tests.stock('bar_a'), 76, 'stock stays until the provider confirms');
 
 select is(
   (select status from public.record_refund_submitted(tests.id('rf_amy'), 're_test_amy')), 'pending',
@@ -100,13 +103,13 @@ select is(
   (select refunded_quantity from public.order_items where order_id = tests.id('o_amy')), 3,
   'the line shows three units refunded'
 );
-select is(tests.stock('bar_a'), 80, 'the three bars are back in stock');
+select is(tests.stock('bar_a'), 79, 'the three bars are back in stock');
 select is(tests.balance('amy'), 0::bigint, 'the customer balance is back to 0');
 select lives_ok(
   $$ select public.complete_refund(tests.id('rf_amy'), 're_test_amy', 900) $$,
   'confirming again raises no error'
 );
-select is(tests.stock('bar_a'), 80, 'and restocks nothing more');
+select is(tests.stock('bar_a'), 79, 'and restocks nothing more');
 select is(
   (select count(*) from public.loyalty_transactions where refund_id = tests.id('rf_amy')), 1::bigint,
   'and reverses nothing more'
@@ -250,6 +253,11 @@ select throws_ok(
   $$ select public.request_refund(tests.id('o_unpaid'), tests.id('cashier'), 'test-refund-unpaid',
        tests.refund_lines(tests.id('o_unpaid'), 'bar_a', 1), 'customer_request') $$,
   'BB002', null, 'an unpaid order cannot be refunded'
+);
+select throws_ok(
+  $$ select public.request_refund(tests.id('o_free'), tests.id('cashier'), 'test-refund-free',
+       tests.refund_lines(tests.id('o_free'), 'bar_a', 1), 'customer_request') $$,
+  'BB002', null, 'an order that was free has no card payment to refund'
 );
 select throws_ok(
   $$ select public.request_refund(gen_random_uuid(), tests.id('cashier'), 'test-refund-missing',
