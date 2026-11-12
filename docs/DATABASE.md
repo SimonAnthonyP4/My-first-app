@@ -50,6 +50,11 @@ service role.
   the balance.
 - The balance is never negative. A debit larger than the balance fails with SQLSTATE `BB001`.
 - Ledger rows cannot be updated, deleted or truncated.
+- A ledger insert that the database skips (`ON CONFLICT DO NOTHING`) does not move the balance,
+  and two rows for one customer cannot be written in a single statement.
+- A redemption moves from `reserved` to `fulfilled`, `released` or `expired` and then never
+  changes. Its customer, reward, cost and key never change. Redemptions cannot be deleted.
+- Once a refund's point reversal is recorded it cannot be altered.
 - An order earns points at most once. A refund reverses at most once. A redemption is debited at
   most once and released at most once. A webhook event id is used at most once.
 - Earns are positive, debits negative. Manual adjustments need a reason and the employee's id.
@@ -111,7 +116,17 @@ Column-level limits: customers cannot change their own `email`, `membership_code
 | `find_customer_by_contact(text)`         | Staff          | Exact match on email or phone, at most 5 rows, same columns. No partial search.                                                       |
 | `custom_access_token_hook(event)`        | Auth service   | Adds the `user_role` claim to access tokens.                                                                                          |
 
-The functions that award, reverse and redeem points are milestone M2.
+### Loyalty engine (service role only)
+
+| Function                                       | What it does                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| `award_points_for_order(order, event?)`        | Awards points for a paid order, once. Returns the points.               |
+| `reverse_points_for_refund(refund, event?)`    | Takes back earned points for a succeeded refund, capped at the balance. |
+| `redeem_points(customer, reward, key, order?)` | Reserves a reward and debits its cost. Idempotent on the key.           |
+| `release_redemption(redemption, expired?)`     | Returns the points of an unfulfilled reservation.                       |
+| `fulfill_redemption(redemption, order)`        | Marks a reservation as honored on a paid order.                         |
+
+Rules, error codes and worked examples: `LOYALTY.md`.
 
 ## Running the tests
 
@@ -160,14 +175,17 @@ check; CI runs both setups.
 
 ## Differences from the original plan
 
-| Plan                               | Built                                               | Why                                                        |
-| ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
-| RLS reads the role from the JWT    | RLS reads the `employees` table                     | Deactivation takes effect at once, not at token expiry     |
-| `employees.pin_hash`               | Left out                                            | Not in the requirements; one less secret to store          |
-| `rewards.product_id` only          | Added `rewards.grants_category`                     | "Free protein bar" means any flavor, not one product       |
-| —                                  | Added `products.bar_count`, `order_items.bar_count` | Needed for the "bars sold" metric (a six-pack is six bars) |
-| —                                  | Added `app_settings`                                | Earn rate and refund threshold must be configurable        |
-| Balance maintained by M2 functions | Balance maintained by a trigger on the ledger       | Balance cannot diverge from the ledger, whoever writes     |
-| `tax_cents`                        | Removed                                             | No sales tax                                               |
-| Customers cannot read orders       | Customers read their own completed orders           | The Rewards app needs purchase history                     |
-| `audit_log.entity_id uuid`         | `text`                                              | Not every audited table has a uuid key                     |
+| Plan                                            | Built                                                      | Why                                                                                                                              |
+| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| RLS reads the role from the JWT                 | RLS reads the `employees` table                            | Deactivation takes effect at once, not at token expiry                                                                           |
+| `employees.pin_hash`                            | Left out                                                   | Not in the requirements; one less secret to store                                                                                |
+| `rewards.product_id` only                       | Added `rewards.grants_category`                            | "Free protein bar" means any flavor, not one product                                                                             |
+| —                                               | Added `products.bar_count`, `order_items.bar_count`        | Needed for the "bars sold" metric (a six-pack is six bars)                                                                       |
+| —                                               | Added `app_settings`                                       | Earn rate and refund threshold must be configurable                                                                              |
+| Balance maintained by M2 functions              | Balance maintained by a trigger on the ledger              | Balance cannot diverge from the ledger, whoever writes                                                                           |
+| `tax_cents`                                     | Removed                                                    | No sales tax                                                                                                                     |
+| Customers cannot read orders                    | Customers read their own completed orders                  | The Rewards app needs purchase history                                                                                           |
+| `audit_log.entity_id uuid`                      | `text`                                                     | Not every audited table has a uuid key                                                                                           |
+| Balance applied in a BEFORE INSERT trigger (M1) | Split into BEFORE (lock, validate) and AFTER (apply) in M2 | A BEFORE trigger also runs for rows skipped by `ON CONFLICT DO NOTHING`, which would have moved the balance without a ledger row |
+| `award_points_for_payment(payment, event)`      | `award_points_for_order(order, event)`                     | Points depend on the order total, and an order fully covered by a reward has no payment                                          |
+| —                                               | Added `refunds.points_reversal_processed_at`               | Makes reversal idempotent even when zero points were taken back                                                                  |

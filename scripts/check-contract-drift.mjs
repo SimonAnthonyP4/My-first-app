@@ -11,7 +11,11 @@
 import { execFileSync } from 'node:child_process';
 
 import * as enums from '../packages/contracts/src/enums.ts';
-import { DEFAULT_POINTS_PER_DOLLAR, LAUNCH_REWARDS } from '../packages/contracts/src/loyalty.ts';
+import {
+  DEFAULT_POINTS_PER_DOLLAR,
+  LAUNCH_REWARDS,
+  pointsForPurchase,
+} from '../packages/contracts/src/loyalty.ts';
 
 const database = process.argv[2];
 if (!database) {
@@ -137,6 +141,45 @@ if (JSON.stringify(rewards) !== JSON.stringify(LAUNCH_REWARDS)) {
   );
 }
 
+// The points formula exists twice: in SQL (the authority, used when points are
+// awarded) and in TypeScript (used to preview "you will earn N points").
+// Compare them over a spread of amounts and earn rates.
+const formulaCases = [];
+for (const rate of [0, 1, 7, 10, 13, 20, 100, 1000]) {
+  for (const amount of [
+    0, 1, 9, 10, 99, 100, 101, 335, 850, 900, 999, 1005, 1999, 123457, 100000000,
+  ]) {
+    formulaCases.push([amount, rate]);
+  }
+}
+const formulaRows = query(`
+  select c.amount, c.rate, private.points_for_amount(c.amount, c.rate::integer)
+  from (values ${formulaCases.map(([amount, rate]) => `(${amount}::bigint, ${rate})`).join(', ')})
+    as c(amount, rate)`);
+for (const [amount, rate, sqlPoints] of formulaRows) {
+  const tsPoints = pointsForPurchase(Number(amount), Number(rate));
+  if (Number(sqlPoints) !== tsPoints) {
+    problems.push(
+      `points formula for ${amount} cents at ${rate}/dollar: database ${sqlPoints}, contracts ${tsPoints}`,
+    );
+  }
+}
+if (formulaRows.length !== formulaCases.length) {
+  problems.push(
+    `points formula: expected ${formulaCases.length} results, got ${formulaRows.length}`,
+  );
+}
+
+// Every custom error code in the contracts must be raised somewhere in the
+// database, and every BBnnn code raised there must be known to the contracts.
+const raisedCodes = query(`
+  select distinct m[1]
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace,
+  lateral regexp_matches(p.prosrc, '(BB[0-9]{3})', 'g') as m
+  where n.nspname in ('public', 'private')`).map(([code]) => code);
+compare('custom error codes (BBnnn)', raisedCodes, Object.values(enums.DB_ERROR));
+
 if (problems.length > 0) {
   console.error('Contracts and database disagree:\n');
   for (const problem of problems) {
@@ -146,4 +189,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log('    ok - contracts match the database (12 value sets, earn rate, launch rewards)');
+console.log(
+  `    ok - contracts match the database (12 value sets, ${formulaCases.length} points-formula cases, error codes, launch config)`,
+);

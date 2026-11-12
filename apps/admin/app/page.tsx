@@ -15,7 +15,7 @@ import { readPublicEnv } from '@/lib/env.ts';
 const MILESTONES = [
   { id: 'M0', label: 'Foundations', done: true },
   { id: 'M1', label: 'Database schema and security', done: true },
-  { id: 'M2', label: 'Loyalty engine', done: false },
+  { id: 'M2', label: 'Loyalty engine', done: true },
   { id: 'M3', label: 'Payments (Stripe sandbox)', done: false },
   { id: 'M4', label: 'Admin dashboard', done: false },
 ] as const;

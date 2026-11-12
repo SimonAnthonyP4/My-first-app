@@ -1,6 +1,6 @@
 # Architecture — as built
 
-This describes what is in the repository today (milestones M0 and M1). The target design for the
+This describes what is in the repository today (milestones M0, M1 and M2). The target design for the
 whole platform is in `PLAN.md`.
 
 ## What exists
@@ -21,11 +21,12 @@ whole platform is in `PLAN.md`.
                  │  row-level security      │
                  │  integrity triggers      │
                  │  3 client RPCs + 1 hook  │
+                 │  5 loyalty functions     │   built and tested in M2
                  └──────────────────────────┘
 ```
 
-Not built: Edge Functions, Stripe integration, the loyalty award/refund/redeem functions, the
-dashboard screens, and both iOS apps.
+Not built: Edge Functions, Stripe integration, the dashboard screens, and both iOS apps. Until
+the Edge Functions exist (M3) nothing calls the loyalty functions except the tests.
 
 ## Layers and their jobs
 
@@ -44,6 +45,16 @@ The database enforces the rules that must hold no matter which client or server 
   lock, so concurrent writers cannot race past the check.
 - **Duplicate protection.** Unique keys on webhook event ids, checkout idempotency keys, refund
   and redemption idempotency keys, one earn per order, one reversal per refund.
+
+### Loyalty engine (`supabase/migrations/20261112000100_loyalty_engine.sql`)
+
+Five functions, callable by the service role only, are the single place that decides how many
+points move: `award_points_for_order`, `reverse_points_for_refund`, `redeem_points`,
+`release_redemption` and `fulfill_redemption`. Each is safe to call repeatedly. Rules and worked
+examples are in `LOYALTY.md`.
+
+They sit on top of the ledger trigger rather than replacing it. A function decides the amount; the
+trigger still refuses any row that would overdraw the account, whoever wrote it.
 
 ### Contracts (`packages/contracts`)
 
@@ -91,12 +102,16 @@ table closes the window in which a just-deactivated employee could keep working.
 
 ## Testing strategy
 
-| Suite                | What it proves                                                    | Where                              |
-| -------------------- | ----------------------------------------------------------------- | ---------------------------------- |
-| pgTAP (220 tests)    | Structure, constraints, RLS isolation, privileges, triggers, RPCs | `supabase/tests`                   |
-| Concurrency test     | 25 simultaneous debits cannot overdraw a loyalty account          | `scripts/db-concurrency-test.sh`   |
-| Contract drift check | TypeScript enums match database constraints                       | `scripts/check-contract-drift.mjs` |
-| Vitest (117 tests)   | Money math, points formula, QR format, validation, env guard      | `packages/contracts`, `apps/admin` |
+| Suite                | What it proves                                                                                        | Where                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| pgTAP (326 tests)    | Structure, constraints, RLS isolation, privileges, triggers, RPCs, and the 20 worked loyalty examples | `supabase/tests`                   |
+| Concurrency test     | Five races on real connections: points are never created, lost or double-spent                        | `scripts/db-concurrency-test.sh`   |
+| Contract drift check | TypeScript enums, error codes and the points formula match the database                               | `scripts/check-contract-drift.mjs` |
+| Vitest (117 tests)   | Money math, points formula, QR format, validation, env guard                                          | `packages/contracts`, `apps/admin` |
+
+The database suite was checked against 46 deliberately introduced defects (disabled RLS, removed
+guards, wrong rounding, missing idempotency checks and so on). It caught 45. The remaining one
+changed no behaviour, because a second guard still blocked the operation.
 
 CI runs the database suite twice: on plain PostgreSQL with a shim for Supabase's roles (fast, and
 what runs locally without Docker), and on the real Supabase Postgres image.

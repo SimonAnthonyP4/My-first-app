@@ -19,6 +19,8 @@ create table tests.fixtures (
   id   uuid not null
 );
 grant select on tests.fixtures to anon, authenticated, service_role;
+-- Server-side tests register ids returned by the functions they call.
+grant insert on tests.fixtures to service_role;
 
 create or replace function tests.id(p_name text)
 returns uuid
@@ -191,6 +193,103 @@ begin
 
   return v_order_id;
 end;
+$$;
+
+-- A bare order (no line items) with a given total, registered as a fixture.
+-- Needs an employee fixture named 'cashier'. p_customer may be null (walk-in).
+create or replace function tests.create_order(
+  p_name text,
+  p_customer text,
+  p_total_cents bigint,
+  p_status public.order_status default 'paid',
+  p_discount_cents bigint default 0,
+  p_reward_cents bigint default 0
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  insert into public.orders (
+    id, customer_id, employee_id, status, subtotal_cents, discount_cents, reward_cents,
+    total_cents, idempotency_key, paid_at
+  )
+  values (
+    v_id, tests.id(p_customer), tests.id('cashier'), p_status,
+    p_total_cents + p_discount_cents + p_reward_cents, p_discount_cents, p_reward_cents,
+    p_total_cents, 'test-order-' || p_name,
+    case when p_status in ('paid', 'partially_refunded', 'refunded') then now() end
+  );
+  insert into tests.fixtures (name, id) values (p_name, v_id);
+  return v_id;
+end;
+$$;
+
+-- A refund against an order fixture, registered as a fixture. Creates the
+-- order's succeeded payment on first use.
+create or replace function tests.create_refund(
+  p_name text,
+  p_order text,
+  p_amount_cents bigint,
+  p_status text default 'succeeded'
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+  v_order public.orders;
+  v_payment_id uuid;
+begin
+  select * into strict v_order from public.orders where id = tests.id(p_order);
+
+  select id into v_payment_id from public.payments where order_id = v_order.id and status = 'succeeded';
+  if v_payment_id is null then
+    insert into public.payments (
+      order_id, provider_payment_intent, amount_cents, status, reader_type, succeeded_at
+    )
+    values (
+      v_order.id, 'pi_test_' || replace(v_order.id::text, '-', ''), v_order.total_cents,
+      'succeeded', 'simulated', now()
+    )
+    returning id into v_payment_id;
+  end if;
+
+  insert into public.refunds (
+    id, order_id, payment_id, amount_cents, reason, status, provider_refund_id,
+    idempotency_key, requested_by, completed_at
+  )
+  values (
+    v_id, v_order.id, v_payment_id, p_amount_cents, 'customer_request', p_status,
+    're_test_' || replace(v_id::text, '-', ''), 'test-refund-' || p_name, tests.id('cashier'),
+    case when p_status in ('succeeded', 'failed', 'canceled') then now() end
+  );
+  insert into tests.fixtures (name, id) values (p_name, v_id);
+  return v_id;
+end;
+$$;
+
+-- Current points balance of a customer fixture, read as the test runner.
+create or replace function tests.balance(p_customer text)
+returns bigint
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select a.balance from public.loyalty_accounts a where a.customer_id = tests.id(p_customer)
+$$;
+
+-- Id of a launch reward by name.
+create or replace function tests.reward(p_name text)
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select r.id from public.rewards r where r.name = p_name
 $$;
 
 set search_path = public, extensions;

@@ -9,7 +9,7 @@ customer Rewards app for iPhone, a web admin dashboard, and one shared Supabase 
 | --------- | ------------------------------------------------ | ----------- |
 | M0        | Repository, tooling, CI, shared contracts        | Done        |
 | M1        | Database schema, row-level security, tests       | Done        |
-| M2        | Loyalty engine (earn, reverse, redeem functions) | Not started |
+| M2        | Loyalty engine (earn, reverse, redeem functions) | Done        |
 | M3        | Payments backend (Stripe sandbox, webhooks)      | Not started |
 | M4        | Admin dashboard                                  | Not started |
 | M5        | POS iOS app (without card payments)              | Not started |
@@ -52,6 +52,7 @@ make help     # all tasks
 - `docs/PLAN.md` — full architecture, schema design and milestone plan.
 - `docs/ARCHITECTURE.md` — what exists today and how the pieces fit.
 - `docs/DATABASE.md` — tables, invariants, who can read and write what, how to test.
+- `docs/LOYALTY.md` — how points are earned, spent and taken back, with worked examples.
 - `docs/RUNBOOK.md` — local setup, creating the hosted project, first owner account, secrets.
 
 ## Ground rules

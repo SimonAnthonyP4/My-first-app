@@ -1,6 +1,6 @@
 # Bro Batch — Architecture & Milestone Plan
 
-Status: **M0 and M1 are complete. M2 onward is not started.**
+Status: **M0, M1 and M2 are complete. M3 onward is not started.**
 This document covers architecture, repository layout, database schema, payment and loyalty rules, milestones, and the external dependencies that block parts of the build.
 
 It is the design plan. Where the build has since diverged, the as-built documents win: `ARCHITECTURE.md` for the system, `DATABASE.md` for the schema (it lists every difference from this plan and why), and the migrations in `supabase/migrations` for exact definitions.
@@ -544,13 +544,14 @@ Each milestone has the same definition of done: code, migrations, tests that pas
 - **Done when:** all pgTAP tests pass in CI and a negative-test suite proves the RLS rules.
 - **Outcome:** done. 9 migrations, 18 tables, 220 pgTAP tests, a concurrency test, and a contract drift check. The suite was checked against 20 deliberately introduced defects and caught all of them. M1 also took one item forward from M2: the trigger that keeps each loyalty balance equal to its ledger and rejects overdrafts. M2 still owns the award, reversal and redemption functions.
 
-### M2 — Loyalty ledger engine
+### M2 — Loyalty ledger engine — DONE
 
 - `award_points_for_payment`, `reverse_points_for_refund`, `redeem_points`, `release_redemption`.
 - Concurrency tests: 50 parallel redemptions against a balance of 300 produce exactly one success.
 - Idempotency tests: same webhook event applied 5 times produces one ledger row.
 - Rounding tests: $9.00 → 90, $0.99 → 9, $10.05 → 100 (floor).
 - **Done when:** the loyalty worked examples in `docs/LOYALTY.md` are executable tests.
+- **Outcome:** done. Five service-role functions (`award_points_for_order`, `reverse_points_for_refund`, `redeem_points`, `release_redemption`, `fulfill_redemption`), 106 pgTAP tests covering the 20 worked examples in `docs/LOYALTY.md`, five concurrency races, and a check that the SQL and TypeScript points formulas agree. The award function is keyed on the order rather than the payment, because points depend on the order total and a fully reward-covered order has no payment. M2 also fixed a weakness in the M1 ledger trigger (see `docs/DATABASE.md`).
 
 ### M3 — Payments backend (Stripe sandbox)
 

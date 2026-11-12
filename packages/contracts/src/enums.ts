@@ -84,8 +84,22 @@ export type ManualInventoryReason = (typeof MANUAL_INVENTORY_REASONS)[number];
 export const STRIPE_EVENT_STATUSES = ['received', 'processed', 'failed', 'ignored'] as const;
 export type StripeEventStatus = (typeof STRIPE_EVENT_STATUSES)[number];
 
-/** Custom SQLSTATE codes raised by database functions and triggers. */
+/**
+ * Custom SQLSTATE codes raised by the loyalty functions and triggers. The
+ * server maps these to user-facing messages; anything else is unexpected.
+ */
 export const DB_ERROR = {
-  /** A loyalty debit would take the balance below zero. */
+  /** A debit or redemption would take the balance below zero. */
   INSUFFICIENT_POINTS: 'BB001',
+  /** The order or refund is not in a state that allows the operation. */
+  INVALID_STATE: 'BB002',
+  /** An idempotency key was reused with different arguments. */
+  IDEMPOTENCY_KEY_MISMATCH: 'BB003',
+  /** The reward is retired or outside its window, or the account is closed. */
+  NOT_AVAILABLE: 'BB004',
+  /** The redemption is already fulfilled, released or expired. */
+  REDEMPTION_FINAL: 'BB005',
+  /** The order, refund, redemption or customer does not exist. */
+  NOT_FOUND: 'BB006',
 } as const;
+export type DbErrorCode = (typeof DB_ERROR)[keyof typeof DB_ERROR];
