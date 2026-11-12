@@ -1,0 +1,30 @@
+# Shopify app configuration for Bro Batch Rewards.
+#
+# NOT YET CONNECTED TO A SHOPIFY APP. The three placeholders below are filled
+# in once the app exists in the Shopify Dev Dashboard and the Supabase project
+# exists. See docs/RUNBOOK.md, "Connect Shopify".
+#
+# Nothing in this file is secret: the client ID is public. The client secret
+# is never stored in the repository; it is set as an Edge Function secret.
+
+name = "Bro Batch Rewards"
+client_id = "REPLACE_WITH_SHOPIFY_CLIENT_ID"
+application_url = "https://REPLACE_WITH_PROJECT_REF.supabase.co/functions/v1"
+embedded = false
+
+[access_scopes]
+# read_orders:      receive orders/paid and refunds/create webhooks
+# read/write_customers: match a rewards member to a Shopify customer, or create one
+# read_products:    read a product's price and collection when a reward is applied
+# read/write_discounts: create and delete the single-use reward codes
+scopes = "read_orders,read_customers,write_customers,read_products,read_discounts,write_discounts"
+
+[webhooks]
+api_version = "2026-10"
+
+[[webhooks.subscriptions]]
+topics = ["orders/paid", "refunds/create"]
+uri = "https://REPLACE_WITH_PROJECT_REF.supabase.co/functions/v1/shopify-webhook"
+
+[pos]
+embedded = false

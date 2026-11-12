@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+node_modules
+.next
+dist
+coverage
+supabase/.branches
+supabase/.temp
+# SQL and Swift are formatted by hand / their own tools.
+*.sql
+*.swift

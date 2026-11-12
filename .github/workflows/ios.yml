@@ -1,0 +1,17 @@
+name: iOS
+
+# Placeholder. The Rewards iPhone app (milestone S5) is not in the repository
+# yet. When it lands, this workflow will build it and run its unit tests on a
+# macOS runner. The till is Shopify POS, so there is no POS app to build.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pending:
+    name: iOS apps not built yet
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "No iOS code in the repository yet. See docs/PLAN.md, milestone S5."
