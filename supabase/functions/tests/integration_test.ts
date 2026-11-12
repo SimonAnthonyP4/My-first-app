@@ -1,31 +1,44 @@
 // End-to-end: the real handlers against a real, migrated PostgreSQL database.
-// Only Stripe and the auth server are faked. This proves that the handlers
-// and the database functions fit together (names, argument types, error
-// codes) and that a sale flows from checkout to refund correctly.
+// Only Shopify is faked. This proves that the handlers and the database
+// functions fit together (names, argument types, error codes) and that a
+// sale flows from scan to reward to payment to refund correctly.
 //
 // Needs a database prepared by scripts/db-test.sh (migrations + seed); it
 // passes the name in BROBATCH_TEST_DB. Without it these tests are skipped.
 import assert from 'node:assert/strict';
 
-import type { Db, Deps } from '../_shared/deps.ts';
+import type { Db, Deps, RedemptionRow, WebhookDeps } from '../_shared/deps.ts';
 import { DbError } from '../_shared/errors.ts';
-import { handleCancelOrder } from '../_shared/handlers/cancel_order.ts';
-import { handleConnectionToken } from '../_shared/handlers/connection_token.ts';
-import { handleCreatePaymentIntent } from '../_shared/handlers/create_payment_intent.ts';
-import { handleProcessRefund } from '../_shared/handlers/process_refund.ts';
-import { handleStripeWebhook } from '../_shared/handlers/stripe_webhook.ts';
+import { handlePosMember } from '../_shared/handlers/pos_member.ts';
+import { handlePosReleaseReward } from '../_shared/handlers/pos_release_reward.ts';
+import { handlePosReserveReward } from '../_shared/handlers/pos_reserve_reward.ts';
+import { handleShopifyWebhook } from '../_shared/handlers/shopify_webhook.ts';
 import { respond } from '../_shared/http.ts';
-import { computeSignature } from '../_shared/webhook.ts';
-import { body, FakeAuth, FakeStripe, NOW, post } from './fakes.ts';
+import { computeWebhookHmac } from '../_shared/shopify_hmac.ts';
+import {
+  body,
+  CLIENT_ID,
+  CLIENT_SECRET,
+  FakeShopify,
+  idToken,
+  NOW,
+  posRequest,
+  SHOP,
+} from './fakes.ts';
 
 const DATABASE = Deno.env.get('BROBATCH_TEST_DB');
-const WEBHOOK_SECRET = ['whsec', 'integration', 'fixture'].join('_');
 
 const OWNER = 'aaaaaaaa-0000-4000-8000-000000000001';
-const MANAGER = 'aaaaaaaa-0000-4000-8000-000000000002';
-const CASHIER = 'aaaaaaaa-0000-4000-8000-000000000003';
-const CUSTOMER = 'aaaaaaaa-0000-4000-8000-000000000004';
-const FORMER = 'aaaaaaaa-0000-4000-8000-000000000005';
+const MIA = 'aaaaaaaa-0000-4000-8000-000000000002';
+const MIA_CODE = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+// Deliberately beyond 2^53: these must survive the whole path unrounded.
+const MIA_SHOPIFY = '6000000000000000001';
+const ORDER_1 = '9000000000000003001';
+const ORDER_2 = '9000000000000003002';
+const LINE_1 = '9100000000000003001';
+const LINE_2 = '9100000000000003002';
+const REFUND_1 = '9200000000000003001';
+const REFUND_2 = '9200000000000003002';
 
 async function psql(sql: string): Promise<string> {
   const command = new Deno.Command('psql', {
@@ -54,28 +67,29 @@ async function psql(sql: string): Promise<string> {
   return new TextDecoder().decode(stdout).trim();
 }
 
-async function scalar(sql: string): Promise<string> {
-  return await psql(sql);
-}
-
 /** Calls database functions the way the service role does, by argument name. */
 class PostgresDb implements Db {
-  private signatures = new Map<string, Map<string, string>>();
+  private signatures = new Map<string, { args: Map<string, string>; returnsSet: boolean }>();
 
-  private async signature(fn: string): Promise<Map<string, string>> {
+  private async signature(fn: string) {
     let signature = this.signatures.get(fn);
     if (!signature) {
       const rows = await psql(`
-        select a.name || '=' || a.type::regtype
+        select p.proretset::text || '|' || a.name || '=' || a.type::regtype
+        from pg_proc p, unnest(p.proargnames, p.proallargtypes) with ordinality as a(name, type, n)
+        where p.pronamespace = 'public'::regnamespace and p.proname = '${fn}' and a.n <= p.pronargs
+        union all
+        select p.proretset::text || '|' || a.name || '=' || a.type::regtype
         from pg_proc p, unnest(p.proargnames, p.proargtypes::oid[]) as a(name, type)
-        where p.pronamespace = 'public'::regnamespace and p.proname = '${fn}'`);
-      signature = new Map(
-        rows
-          .split('\n')
-          .filter(Boolean)
-          .map((row) => row.split('=') as [string, string]),
-      );
-      assert.ok(signature.size > 0, `database function public.${fn} does not exist`);
+        where p.pronamespace = 'public'::regnamespace and p.proname = '${fn}' and p.proallargtypes is null`);
+      const lines = rows.split('\n').filter(Boolean);
+      assert.ok(lines.length > 0, `database function public.${fn} does not exist`);
+      signature = {
+        returnsSet: lines[0]!.startsWith('true|'),
+        args: new Map(
+          lines.map((line) => line.slice(line.indexOf('|') + 1).split('=') as [string, string]),
+        ),
+      };
       this.signatures.set(fn, signature);
     }
     return signature;
@@ -84,483 +98,434 @@ class PostgresDb implements Db {
   async rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
     const signature = await this.signature(fn);
     const named = Object.keys(args).map((name) => {
-      const type = signature.get(name);
+      const type = signature.args.get(name);
       assert.ok(type, `public.${fn} has no parameter named ${name}`);
-      return type === 'jsonb'
-        ? `${name} => j -> '${name}'`
-        : `${name} => (j ->> '${name}')::${type}`;
+      return `${name} => (j ->> '${name}')::${type}`;
     });
+    const call = `public.${fn}(${named.join(', ')})`;
     const out = await psql(`
       set role service_role;
-      select to_jsonb(r) from (select $bbjson$${JSON.stringify(args)}$bbjson$::jsonb as j) s,
-        lateral public.${fn}(${named.join(', ')}) as r`);
+      select ${signature.returnsSet ? "coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb)" : 'to_jsonb(r)'}
+      from (select $bbjson$${JSON.stringify(args)}$bbjson$::jsonb as j) s, lateral ${call} as r`);
     const value = JSON.parse(out);
     // A function returning a scalar comes back as {"fn": value}.
-    return (value !== null && typeof value === 'object' && fn in value ? value[fn] : value) as T;
+    return (
+      !signature.returnsSet && value !== null && typeof value === 'object' && fn in value
+        ? value[fn]
+        : value
+    ) as T;
   }
 
-  async getActiveEmployee(userId: string) {
-    const out = await psql(
-      `select to_jsonb(e) from (select id, role from public.employees where id = '${userId}' and is_active) e`,
-    );
+  async getRedemption(redemptionId: string): Promise<RedemptionRow | null> {
+    const out = await psql(`select to_jsonb(r) from (
+      select id, customer_id, reward_id, status, points_cost, discount_code, shopify_discount_id, expires_at
+      from public.redemptions where id = '${redemptionId}') r`);
     return out ? JSON.parse(out) : null;
   }
 
-  async listOpenPaymentIntents(orderId: string) {
-    const out = await psql(`select provider_payment_intent from public.payments
-      where order_id = '${orderId}' and status in ('requires_payment_method', 'processing')`);
-    return out.split('\n').filter(Boolean);
-  }
-
-  async getRefundPaymentIntent(refundId: string) {
-    const out = await psql(`select p.provider_payment_intent from public.refunds r
-      join public.payments p on p.id = r.payment_id where r.id = '${refundId}'`);
-    return out || null;
+  async getPointsPerDollar(): Promise<number> {
+    return Number(await psql('select points_per_dollar from public.app_settings'));
   }
 }
 
-async function webhookRequest(event: unknown, secret = WEBHOOK_SECRET): Promise<Request> {
-  const raw = JSON.stringify(event);
-  const signature = await computeSignature(secret, NOW, raw);
-  return new Request('http://localhost/stripe-webhook', {
+async function webhook(
+  topic: string,
+  webhookId: string,
+  raw: string,
+  secret = CLIENT_SECRET,
+): Promise<Request> {
+  return new Request('http://localhost/shopify-webhook', {
     method: 'POST',
-    headers: { 'stripe-signature': `t=${NOW},v1=${signature}` },
+    headers: {
+      'x-shopify-topic': topic,
+      'x-shopify-shop-domain': SHOP,
+      'x-shopify-webhook-id': webhookId,
+      'x-shopify-event-id': `event-${webhookId}`,
+      'x-shopify-hmac-sha256': await computeWebhookHmac(secret, new TextEncoder().encode(raw)),
+    },
     body: raw,
   });
 }
 
-function paidEvent(eventId: string, paymentIntent: string, amount: number) {
-  return {
-    id: eventId,
-    type: 'payment_intent.succeeded',
-    created: NOW,
-    livemode: false,
-    data: {
-      object: {
-        id: paymentIntent,
-        object: 'payment_intent',
-        status: 'succeeded',
-        amount,
-        amount_received: amount,
-        currency: 'usd',
-        latest_charge: `ch_${paymentIntent.slice(3)}`,
-        metadata: { reader_type: 'simulated' },
-      },
-    },
-  };
+/** An orders/paid body, written as text so the large ids stay exact. */
+function orderBody(orderId: string, lineId: string, quantity: number, code?: string): string {
+  const gross = 3 * quantity;
+  const discount = code ? 3 : 0;
+  return `{"id":${orderId},"name":"#${orderId.slice(-4)}","financial_status":"paid","currency":"USD",
+    "test":false,"source_name":"pos","location_id":70000000001,"user_id":80000000001,
+    "created_at":"2026-11-12T10:00:00-05:00","processed_at":"2026-11-12T10:00:05-05:00",
+    "total_line_items_price":"${gross}.00","total_discounts":"${discount}.00",
+    "subtotal_price":"${gross - discount}.00","total_tax":"0.00","total_price":"${gross - discount}.00",
+    "discount_codes":${code ? `[{"code":"${code}","amount":"3.00","type":"fixed_amount"}]` : '[]'},
+    "customer":{"id":${MIA_SHOPIFY},"email":"it-mia@test.brobatch"},
+    "line_items":[{"id":${lineId},"variant_id":111,"product_id":11,"title":"Chocolate Bar",
+      "sku":"BAR-CHOC","price":"3.00","quantity":${quantity}}]}`;
+}
+
+function refundBody(
+  refundId: string,
+  orderId: string,
+  lineId: string,
+  quantity: number,
+  amount: string,
+): string {
+  return `{"id":${refundId},"order_id":${orderId},"note":"integration test",
+    "created_at":"2026-11-12T11:00:00-05:00","processed_at":"2026-11-12T11:00:02-05:00",
+    "refund_line_items":[{"line_item_id":${lineId},"quantity":${quantity},
+      "subtotal_set":{"shop_money":{"amount":"${amount}","currency_code":"USD"}}}]}`;
 }
 
 Deno.test({
-  name: 'integration: checkout, payment, refund and cancellation against the real database',
+  name: 'integration: scan, reward, sale, refund and release against the real database',
   ignore: !DATABASE,
   async fn(t) {
     const db = new PostgresDb();
-    const auth = new FakeAuth();
-    auth.tokens = new Map([
-      ['cashier-token', CASHIER],
-      ['manager-token', MANAGER],
-      ['customer-token', CUSTOMER],
-      ['former-token', FORMER],
-    ]);
-    const stripe = new FakeStripe();
-    stripe.echo = true;
+    const shopify = new FakeShopify();
+    shopify.customerIdByEmail = MIA_SHOPIFY;
     const logs: string[] = [];
     const deps: Deps = {
       db,
-      auth,
-      stripe,
-      stripeMode: 'test',
+      shopify,
+      idToken: { clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, shopDomain: SHOP },
       log: (message) => logs.push(message),
       now: () => NOW,
     };
-    const webhookDeps = { ...deps, webhookSecret: WEBHOOK_SECRET };
+    const webhookDeps: WebhookDeps = {
+      db,
+      log: (message) => logs.push(message),
+      webhookSecret: CLIENT_SECRET,
+      shopDomain: SHOP,
+    };
 
     await psql(`
       insert into auth.users (id, email) values
-        ('${OWNER}', 'it-owner@test.brobatch'), ('${MANAGER}', 'it-manager@test.brobatch'),
-        ('${CASHIER}', 'it-cashier@test.brobatch'), ('${CUSTOMER}', 'it-customer@test.brobatch'),
-        ('${FORMER}', 'it-former@test.brobatch');
-      insert into public.employees (id, full_name, role, is_active) values
-        ('${OWNER}', 'IT Owner', 'owner', true), ('${MANAGER}', 'IT Manager', 'manager', true),
-        ('${CASHIER}', 'IT Cashier', 'employee', true), ('${FORMER}', 'IT Former', 'employee', false);
-      insert into public.customers (id, full_name, email)
-        values ('${CUSTOMER}', 'IT Customer', 'it-customer@test.brobatch');
+        ('${OWNER}', 'it-owner@test.brobatch'), ('${MIA}', 'it-mia@test.brobatch');
+      insert into public.employees (id, full_name, role) values ('${OWNER}', 'IT Owner', 'owner');
+      insert into public.customers (id, full_name, email, membership_code)
+        values ('${MIA}', 'Mia Member', 'it-mia@test.brobatch', '${MIA_CODE}');
       insert into public.loyalty_transactions (customer_id, kind, points, reason, created_by)
-        values ('${CUSTOMER}', 'adjust', 300, 'integration test: opening balance', '${OWNER}');`);
+        values ('${MIA}', 'adjust', 600, 'integration test: opening balance', '${OWNER}');
+      update public.rewards set shopify_collection_id = 4000000000001 where name = 'Free protein bar';`);
 
-    const bar = await scalar(`select id from public.products where sku = 'BAR-CHOC-PB'`);
-    const six = await scalar(`select id from public.products where sku = '6PK-VARIETY'`);
-    const barStock = () =>
-      scalar(`select on_hand from public.inventory_levels where product_id = '${bar}'`);
+    const rewardId = await psql(`select id from public.rewards where name = 'Free protein bar'`);
     const balance = () =>
-      scalar(`select balance from public.loyalty_accounts where customer_id = '${CUSTOMER}'`);
-    const order = (id: string, column: string) =>
-      scalar(`select ${column} from public.orders where id = '${id}'`);
-    const stockAtStart = Number(await barStock());
+      psql(`select balance from public.loyalty_accounts where customer_id = '${MIA}'`);
+    const scalar = psql;
 
-    let orderId = '';
-    let paymentIntent = '';
+    await t.step(
+      'scanning the QR finds the member and links her to her Shopify customer',
+      async () => {
+        const response = await respond(
+          handlePosMember,
+          await posRequest({ membership_code: `brobatch:member:${MIA_CODE}` }),
+          deps,
+        );
+        assert.equal(response.status, 200);
+        const result = await body(response);
+        assert.equal(result.member.customer_id, MIA);
+        assert.equal(result.member.points_balance, 600);
+        assert.equal(result.member.shopify_customer_id, MIA_SHOPIFY);
+        assert.equal(result.points_per_dollar, 10);
+        const bar = result.rewards.find((r: { name: string }) => r.name === 'Free protein bar');
+        assert.deepEqual(
+          [bar.points_cost, bar.affordable, bar.available_at_pos],
+          [300, true, true],
+        );
+        const six = result.rewards.find((r: { name: string }) => r.name === 'Free six-pack');
+        assert.deepEqual([six.affordable, six.available_at_pos], [false, false]);
+        assert.equal(
+          await scalar(`select shopify_customer_id from public.customers where id = '${MIA}'`),
+          MIA_SHOPIFY,
+          'the Shopify id is stored exactly',
+        );
+      },
+    );
 
-    await t.step('a cashier starts a checkout; the server prices it', async () => {
+    await t.step('scanning again does not call Shopify to link a second time', async () => {
+      const before = shopify.calls.length;
       const response = await respond(
-        handleCreatePaymentIntent,
-        post(
-          {
-            idempotency_key: 'it-checkout-0001',
-            items: [{ product_id: bar, quantity: 3 }],
-            customer_id: CUSTOMER,
-            reader_type: 'simulated',
-          },
-          'cashier-token',
-        ),
+        handlePosMember,
+        await posRequest({ membership_code: MIA_CODE }),
+        deps,
+      );
+      assert.equal(response.status, 200);
+      assert.equal(shopify.calls.length, before);
+    });
+
+    await t.step('a QR code that is not a membership is refused', async () => {
+      const response = await respond(
+        handlePosMember,
+        await posRequest({ membership_code: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }),
+        deps,
+      );
+      assert.equal(response.status, 404);
+    });
+
+    await t.step('a request without a valid Shopify POS session is refused', async () => {
+      const forged = await idToken({}, { secret: 'not-the-secret' });
+      const response = await respond(
+        handlePosMember,
+        await posRequest({ membership_code: MIA_CODE }, forged),
+        deps,
+      );
+      assert.equal(response.status, 401);
+    });
+
+    let code = '';
+    let redemptionId = '';
+
+    await t.step('applying a reward debits the points and issues a single-use code', async () => {
+      const response = await respond(
+        handlePosReserveReward,
+        await posRequest({
+          customer_id: MIA,
+          reward_id: rewardId,
+          idempotency_key: 'it-apply-0001',
+          variant_id: 111,
+        }),
         deps,
       );
       assert.equal(response.status, 200);
       const result = await body(response);
-      orderId = result.order.id;
-      paymentIntent = result.payment_intent.id;
-      assert.equal(result.order.status, 'pending');
-      assert.equal(result.order.total_cents, 900);
-      assert.ok(result.payment_intent.client_secret);
-      assert.equal(await order(orderId, 'status'), 'pending');
+      code = result.redemption.discount_code;
+      redemptionId = result.redemption.id;
+      assert.match(code, /^BB-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      assert.equal(result.redemption.discount_cents, 300);
+      assert.equal(result.points_balance, 300);
+      assert.equal(await balance(), '300');
+
+      const created = shopify.called('createRewardDiscount')[0]!.params as Record<string, unknown>;
+      assert.equal(created.code, code);
+      assert.equal(created.shopifyCustomerId, MIA_SHOPIFY);
+      assert.equal(created.amountCents, 300);
       assert.equal(
-        await scalar(
-          `select status || ':' || amount_cents from public.payments where order_id = '${orderId}'`,
-        ),
-        'requires_payment_method:900',
+        await scalar(`select status || ':' || shopify_discount_id || ':' || reserved_by_shopify_user_id
+                      from public.redemptions where id = '${redemptionId}'`),
+        'reserved:gid://shopify/DiscountCodeNode/555:80000000001',
       );
-      assert.equal(await balance(), '300', 'no points before payment');
-      assert.equal(Number(await barStock()), stockAtStart, 'no stock moved before payment');
     });
 
-    await t.step('retrying the checkout returns the same order and PaymentIntent', async () => {
+    await t.step(
+      'retrying the same tap returns the same code and creates nothing new',
+      async () => {
+        const response = await respond(
+          handlePosReserveReward,
+          await posRequest({
+            customer_id: MIA,
+            reward_id: rewardId,
+            idempotency_key: 'it-apply-0001',
+            variant_id: 111,
+          }),
+          deps,
+        );
+        assert.equal((await body(response)).redemption.discount_code, code);
+        assert.equal(shopify.called('createRewardDiscount').length, 1);
+        assert.equal(await balance(), '300');
+      },
+    );
+
+    await t.step('a reward cannot be applied to a product outside its collection', async () => {
+      shopify.variant = { title: 'Variety Six-Pack', priceCents: 1600, inCollection: false };
       const response = await respond(
-        handleCreatePaymentIntent,
-        post(
-          {
-            idempotency_key: 'it-checkout-0001',
-            items: [{ product_id: bar, quantity: 3 }],
-            customer_id: CUSTOMER,
-          },
-          'cashier-token',
-        ),
+        handlePosReserveReward,
+        await posRequest({
+          customer_id: MIA,
+          reward_id: rewardId,
+          idempotency_key: 'it-apply-0002',
+          variant_id: 666,
+        }),
         deps,
       );
-      const result = await body(response);
-      assert.equal(result.order.id, orderId);
-      assert.equal(result.payment_intent.id, paymentIntent);
-      assert.equal(
-        await scalar(`select count(*) from public.payments where order_id = '${orderId}'`),
-        '1',
-      );
+      assert.equal(response.status, 422);
+      assert.equal(await balance(), '300', 'no points moved');
+      shopify.variant = { title: 'Chocolate Bar', priceCents: 300, inCollection: true };
     });
 
-    await t.step('a forged webhook cannot mark the order paid', async () => {
+    await t.step('a forged order webhook does nothing', async () => {
       const response = await respond(
-        handleStripeWebhook,
-        await webhookRequest(
-          paidEvent('evt_it_forged', paymentIntent, 900),
-          'whsec_not_the_secret',
+        handleShopifyWebhook,
+        await webhook(
+          'orders/paid',
+          'it-forged',
+          orderBody(ORDER_1, LINE_1, 2, code),
+          'not-the-secret',
         ),
         webhookDeps,
       );
-      assert.equal(response.status, 400);
-      assert.equal(await order(orderId, 'status'), 'pending');
+      assert.equal(response.status, 401);
       assert.equal(
-        await scalar(`select count(*) from public.stripe_events where id = 'evt_it_forged'`),
+        await scalar(`select count(*) from public.orders where shopify_order_id = ${ORDER_1}`),
+        '0',
+      );
+      assert.equal(
+        await scalar(`select count(*) from public.shopify_webhook_events where id = 'it-forged'`),
         '0',
       );
     });
 
-    await t.step('a signed webhook for the wrong amount is flagged, not accepted', async () => {
-      const response = await respond(
-        handleStripeWebhook,
-        await webhookRequest(paidEvent('evt_it_wrong_amount', paymentIntent, 9)),
-        webhookDeps,
-      );
-      assert.equal(response.status, 200);
-      assert.equal((await body(response)).outcome, 'failed:amount_mismatch');
-      assert.equal(await order(orderId, 'status'), 'pending');
-    });
+    await t.step(
+      'the signed order webhook mirrors the sale, fulfils the reward and awards points',
+      async () => {
+        const response = await respond(
+          handleShopifyWebhook,
+          await webhook('orders/paid', 'it-order-1', orderBody(ORDER_1, LINE_1, 2, code)),
+          webhookDeps,
+        );
+        assert.equal(response.status, 200);
+        assert.equal((await body(response)).outcome, 'processed');
+        assert.equal(
+          await scalar(`select shopify_order_id || '|' || status || '|' || subtotal_cents || '|' || reward_cents
+                        || '|' || total_cents || '|' || points_awarded || '|' || source
+                      from public.orders where shopify_order_id = ${ORDER_1}`),
+          `${ORDER_1}|paid|600|300|300|30|pos`,
+        );
+        assert.equal(
+          await scalar(`select shopify_line_item_id from public.order_items i join public.orders o on o.id = i.order_id
+                      where o.shopify_order_id = ${ORDER_1}`),
+          LINE_1,
+          'the line item id survived unrounded',
+        );
+        assert.equal(
+          await scalar(`select status from public.redemptions where id = '${redemptionId}'`),
+          'fulfilled',
+        );
+        assert.equal(await balance(), '330', '300 left + 30 earned on the $3.00 paid');
+      },
+    );
 
-    await t.step('the signed payment confirmation completes the sale', async () => {
+    await t.step('the same delivery again changes nothing', async () => {
       const response = await respond(
-        handleStripeWebhook,
-        await webhookRequest(paidEvent('evt_it_paid_1', paymentIntent, 900)),
-        webhookDeps,
-      );
-      assert.equal(response.status, 200);
-      assert.equal((await body(response)).outcome, 'processed');
-      assert.equal(await order(orderId, 'status'), 'paid');
-      assert.equal(await order(orderId, 'points_awarded'), '90');
-      assert.equal(await balance(), '390', '300 + 90 earned on $9.00');
-      assert.equal(Number(await barStock()), stockAtStart - 3);
-      assert.equal(
-        await scalar(`select status || ':' || card_brand || ':' || card_last4 || ':' || reader_type
-                      from public.payments where order_id = '${orderId}'`),
-        'succeeded:visa:4242:simulated',
-      );
-    });
-
-    await t.step('the same confirmation delivered again changes nothing', async () => {
-      const response = await respond(
-        handleStripeWebhook,
-        await webhookRequest(paidEvent('evt_it_paid_1', paymentIntent, 900)),
+        handleShopifyWebhook,
+        await webhook('orders/paid', 'it-order-1', orderBody(ORDER_1, LINE_1, 2, code)),
         webhookDeps,
       );
       assert.equal((await body(response)).outcome, 'duplicate');
-      assert.equal(await balance(), '390');
-      assert.equal(Number(await barStock()), stockAtStart - 3);
+      assert.equal(await balance(), '330');
     });
 
-    await t.step('a paid order cannot be cancelled', async () => {
+    await t.step('a used reward cannot be taken back off', async () => {
       const response = await respond(
-        handleCancelOrder,
-        post({ order_id: orderId }, 'cashier-token'),
+        handlePosReleaseReward,
+        await posRequest({ redemption_id: redemptionId }),
         deps,
       );
       assert.equal(response.status, 409);
-      assert.equal(await order(orderId, 'status'), 'paid');
+      assert.equal(await balance(), '330');
     });
 
-    await t.step('refunding one bar returns $3.00, one bar to stock and 30 points', async () => {
-      const item = await scalar(`select id from public.order_items where order_id = '${orderId}'`);
+    await t.step('a refund takes back the earned points but not the reward', async () => {
       const response = await respond(
-        handleProcessRefund,
-        post(
-          {
-            order_id: orderId,
-            idempotency_key: 'it-refund-0001',
-            items: [{ order_item_id: item, quantity: 1 }],
-            reason: 'customer_request',
-          },
-          'cashier-token',
+        handleShopifyWebhook,
+        await webhook(
+          'refunds/create',
+          'it-refund-1',
+          refundBody(REFUND_1, ORDER_1, LINE_1, 2, '3.00'),
         ),
-        deps,
-      );
-      assert.equal(response.status, 200);
-      const result = await body(response);
-      assert.equal(result.refund.status, 'succeeded');
-      assert.equal(result.refund.amount_cents, 300);
-      assert.equal(result.refund.points_reversed, 30);
-      assert.equal(await order(orderId, 'status'), 'partially_refunded');
-      assert.equal(await balance(), '360');
-      assert.equal(Number(await barStock()), stockAtStart - 2);
-
-      // The refund webhook arriving afterwards changes nothing.
-      const webhook = await respond(
-        handleStripeWebhook,
-        await webhookRequest({
-          id: 'evt_it_refund_1',
-          type: 'refund.updated',
-          created: NOW,
-          livemode: false,
-          data: {
-            object: {
-              id: result.refund.provider_refund_id,
-              object: 'refund',
-              status: 'succeeded',
-              amount: 300,
-              currency: 'usd',
-              metadata: { refund_id: result.refund.id },
-            },
-          },
-        }),
         webhookDeps,
       );
-      assert.equal((await body(webhook)).outcome, 'processed');
+      assert.equal((await body(response)).outcome, 'processed');
+      assert.equal(
+        await scalar(`select status from public.orders where shopify_order_id = ${ORDER_1}`),
+        'refunded',
+      );
+      assert.equal(await balance(), '300', 'the 30 earned are gone; the 300 spent stay spent');
+      assert.equal(
+        await scalar(`select status from public.redemptions where id = '${redemptionId}'`),
+        'fulfilled',
+      );
+    });
+
+    await t.step('a refund that arrives before its order is retried, then processed', async () => {
+      const early = await respond(
+        handleShopifyWebhook,
+        await webhook(
+          'refunds/create',
+          'it-refund-2',
+          refundBody(REFUND_2, ORDER_2, LINE_2, 1, '3.00'),
+        ),
+        webhookDeps,
+      );
+      assert.equal(early.status, 503);
+
+      const order = await respond(
+        handleShopifyWebhook,
+        await webhook('orders/paid', 'it-order-2', orderBody(ORDER_2, LINE_2, 3)),
+        webhookDeps,
+      );
+      assert.equal((await body(order)).outcome, 'processed');
+      assert.equal(await balance(), '390', '300 + 90 earned on $9.00');
+
+      const again = await respond(
+        handleShopifyWebhook,
+        await webhook(
+          'refunds/create',
+          'it-refund-2',
+          refundBody(REFUND_2, ORDER_2, LINE_2, 1, '3.00'),
+        ),
+        webhookDeps,
+      );
+      assert.equal(again.status, 200);
+      assert.equal((await body(again)).outcome, 'processed');
       assert.equal(await balance(), '360');
-      assert.equal(Number(await barStock()), stockAtStart - 2);
     });
 
     await t.step(
-      "a large refund needs a manager, proven by the manager's own sign-in",
+      'a reward taken off the cart deletes its code and returns the points',
       async () => {
-        const checkout = await body(
+        const applied = await body(
           await respond(
-            handleCreatePaymentIntent,
-            post(
-              { idempotency_key: 'it-checkout-0002', items: [{ product_id: six, quantity: 3 }] },
-              'cashier-token',
-            ),
+            handlePosReserveReward,
+            await posRequest({
+              customer_id: MIA,
+              reward_id: rewardId,
+              idempotency_key: 'it-apply-0003',
+              variant_id: 111,
+            }),
             deps,
           ),
         );
-        assert.equal(checkout.order.total_cents, 4800);
-        await respond(
-          handleStripeWebhook,
-          await webhookRequest(paidEvent('evt_it_paid_2', checkout.payment_intent.id, 4800)),
-          webhookDeps,
-        );
-        const item = await scalar(
-          `select id from public.order_items where order_id = '${checkout.order.id}'`,
-        );
-        const request = {
-          order_id: checkout.order.id,
-          idempotency_key: 'it-refund-0002',
-          items: [{ order_item_id: item, quantity: 3 }],
-          reason: 'wrong_item',
-        };
+        assert.equal(await balance(), '60');
 
-        const alone = await respond(handleProcessRefund, post(request, 'cashier-token'), deps);
-        assert.equal(alone.status, 403);
-        assert.equal((await body(alone)).error.code, 'approval_required');
-
-        const forged = await respond(
-          handleProcessRefund,
-          post({ ...request, approver_access_token: 'cashier-token' }, 'cashier-token'),
+        const response = await respond(
+          handlePosReleaseReward,
+          await posRequest({ redemption_id: applied.redemption.id }),
           deps,
         );
-        assert.equal(forged.status, 403, 'a cashier cannot approve their own refund');
-
-        const approved = await respond(
-          handleProcessRefund,
-          post({ ...request, approver_access_token: 'manager-token' }, 'cashier-token'),
-          deps,
-        );
-        assert.equal(approved.status, 200);
-        assert.equal(await order(checkout.order.id, 'status'), 'refunded');
-        assert.equal(
-          await scalar(
-            `select approved_by from public.refunds where idempotency_key = 'it-refund-0002'`,
-          ),
-          MANAGER,
-        );
+        assert.equal(response.status, 200);
+        const result = await body(response);
+        assert.equal(result.redemption.status, 'released');
+        assert.equal(result.points_balance, 360);
+        assert.equal(await balance(), '360');
+        assert.equal(shopify.called('deleteDiscount').length, 1);
       },
     );
 
-    await t.step(
-      'a reward is reserved at checkout and returned when the cashier cancels',
-      async () => {
-        const reward = await scalar(
-          `select id from public.rewards where name = 'Free protein bar'`,
-        );
-        const checkout = await body(
-          await respond(
-            handleCreatePaymentIntent,
-            post(
-              {
-                idempotency_key: 'it-checkout-0003',
-                items: [{ product_id: bar, quantity: 2 }],
-                customer_id: CUSTOMER,
-                rewards: [{ reward_id: reward, product_id: bar }],
-              },
-              'cashier-token',
-            ),
-            deps,
-          ),
-        );
-        assert.equal(checkout.order.total_cents, 300);
-        assert.equal(checkout.order.reward_cents, 300);
-        assert.equal(await balance(), '60', '360 - 300 reserved');
-
-        const cancel = await respond(
-          handleCancelOrder,
-          post({ order_id: checkout.order.id }, 'cashier-token'),
-          deps,
-        );
-        assert.equal(cancel.status, 200);
-        assert.equal(await order(checkout.order.id, 'status'), 'cancelled');
-        assert.equal(await balance(), '360', 'the reserved points are back');
-        assert.equal(
-          stripe.called('cancelPaymentIntent').length,
-          1,
-          'the PaymentIntent was cancelled at Stripe',
-        );
-      },
-    );
-
-    await t.step('an order fully covered by a reward completes with no card payment', async () => {
-      const reward = await scalar(`select id from public.rewards where name = 'Free protein bar'`);
-      const before = stripe.called('createPaymentIntent').length;
+    await t.step('not enough points: refused, and no code is created in Shopify', async () => {
+      await psql(`insert into public.loyalty_transactions (customer_id, kind, points, reason, created_by)
+                  values ('${MIA}', 'adjust', -100, 'integration test: leave 260', '${OWNER}')`);
+      const before = shopify.called('createRewardDiscount').length;
       const response = await respond(
-        handleCreatePaymentIntent,
-        post(
-          {
-            idempotency_key: 'it-checkout-0004',
-            items: [{ product_id: bar, quantity: 1 }],
-            customer_id: CUSTOMER,
-            rewards: [{ reward_id: reward, product_id: bar }],
-          },
-          'cashier-token',
-        ),
+        handlePosReserveReward,
+        await posRequest({
+          customer_id: MIA,
+          reward_id: rewardId,
+          idempotency_key: 'it-apply-0004',
+          variant_id: 111,
+        }),
         deps,
       );
-      const result = await body(response);
-      assert.equal(result.payment_intent, null);
-      assert.equal(result.order.status, 'paid');
-      assert.equal(result.order.total_cents, 0);
-      assert.equal(stripe.called('createPaymentIntent').length, before, 'Stripe was not called');
-      assert.equal(await balance(), '60');
+      assert.equal(response.status, 409);
+      assert.equal((await body(response)).error.code, 'insufficient_points');
+      assert.equal(shopify.called('createRewardDiscount').length, before);
+      assert.equal(await balance(), '260');
     });
 
-    await t.step(
-      'a cashier discount needs a manager; with one it is recorded against the manager',
-      async () => {
-        const request = {
-          idempotency_key: 'it-checkout-0005',
-          items: [{ product_id: bar, quantity: 3 }],
-          discount_cents: 100,
-          discount_reason: 'regular customer',
-        };
-        const alone = await respond(
-          handleCreatePaymentIntent,
-          post(request, 'cashier-token'),
-          deps,
-        );
-        assert.equal(alone.status, 403);
-        assert.equal(
-          await scalar(
-            `select count(*) from public.orders where idempotency_key = 'it-checkout-0005'`,
-          ),
-          '0',
-        );
-
-        const approved = await respond(
-          handleCreatePaymentIntent,
-          post({ ...request, approver_access_token: 'manager-token' }, 'cashier-token'),
-          deps,
-        );
-        assert.equal(approved.status, 200);
-        const result = await body(approved);
-        assert.equal(result.order.total_cents, 800);
-        assert.equal(await order(result.order.id, 'discount_by'), MANAGER);
-      },
-    );
-
-    await t.step('customers and former employees cannot use the staff endpoints', async () => {
-      for (const token of ['customer-token', 'former-token']) {
-        const checkout = await respond(
-          handleCreatePaymentIntent,
-          post(
-            { idempotency_key: `it-denied-${token}`, items: [{ product_id: bar, quantity: 1 }] },
-            token,
-          ),
-          deps,
-        );
-        assert.equal(checkout.status, 403, token);
-        const tokenResponse = await respond(handleConnectionToken, post({}, token), deps);
-        assert.equal(tokenResponse.status, 403, token);
-      }
-      assert.equal(
-        await scalar(`select count(*) from public.orders where idempotency_key like 'it-denied-%'`),
-        '0',
-      );
-    });
-
-    await t.step('books balance: ledgers match their cached totals', async () => {
+    await t.step('books balance: every balance equals its ledger', async () => {
       assert.equal(
         await scalar(`select count(*) from public.loyalty_accounts a
           left join (select customer_id, sum(points) t from public.loyalty_transactions group by 1) x
             on x.customer_id = a.customer_id
           where a.balance <> coalesce(x.t, 0) or a.balance < 0`),
-        '0',
-      );
-      assert.equal(
-        await scalar(`select count(*) from public.inventory_levels l
-          left join (select product_id, sum(delta) t from public.inventory_movements group by 1) m
-            on m.product_id = l.product_id
-          where l.on_hand <> coalesce(m.t, 0)`),
         '0',
       );
     });

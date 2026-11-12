@@ -4,17 +4,14 @@
 begin;
 set local search_path = public, extensions;
 
-select plan(35);
+select plan(32);
 
 -- Tables -------------------------------------------------------------------
 select has_table('public', 'customers', 'customers table exists');
 select has_table('public', 'employees', 'employees table exists');
 select has_table('public', 'products', 'products table exists');
-select has_table('public', 'inventory_levels', 'inventory_levels table exists');
-select has_table('public', 'inventory_movements', 'inventory_movements table exists');
 select has_table('public', 'orders', 'orders table exists');
 select has_table('public', 'order_items', 'order_items table exists');
-select has_table('public', 'payments', 'payments table exists');
 select has_table('public', 'refunds', 'refunds table exists');
 select has_table('public', 'refund_items', 'refund_items table exists');
 select has_table('public', 'loyalty_accounts', 'loyalty_accounts table exists');
@@ -22,7 +19,7 @@ select has_table('public', 'loyalty_transactions', 'loyalty_transactions table e
 select has_table('public', 'rewards', 'rewards table exists');
 select has_table('public', 'redemptions', 'redemptions table exists');
 select has_table('public', 'app_settings', 'app_settings table exists');
-select has_table('public', 'stripe_events', 'stripe_events table exists');
+select has_table('public', 'shopify_webhook_events', 'shopify_webhook_events table exists');
 select has_table('public', 'audit_log', 'audit_log table exists');
 select has_table('public', 'push_tokens', 'push_tokens table exists');
 
@@ -35,16 +32,25 @@ select is_empty(
   'every table in public has row-level security enabled'
 );
 
--- A table with RLS on and no policy is closed to clients, which is correct for
--- stripe_events. Everything else must have at least one policy.
-select set_eq(
+-- RLS with no policy would silently hide a table from everyone. Every table
+-- has at least one.
+select is_empty(
   $$ select c.relname::text
      from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
      where n.nspname = 'public' and c.relkind = 'r'
        and not exists (select 1 from pg_policy p where p.polrelid = c.oid) $$,
-  array['stripe_events'],
-  'only stripe_events has no policies at all'
+  'every table has at least one policy'
+);
+
+-- What Shopify owns is not duplicated here.
+select is_empty(
+  $$ select c.relname::text
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname in ('payments', 'stripe_events', 'inventory_levels', 'inventory_movements') $$,
+  'there are no payment, card or stock tables: Shopify holds those'
 );
 
 -- anon ---------------------------------------------------------------------
@@ -132,8 +138,6 @@ select set_eq(
     'customers:UPDATE',
     'products:INSERT',
     'products:UPDATE',
-    'inventory_levels:UPDATE',
-    'inventory_movements:INSERT',
     'rewards:INSERT',
     'rewards:UPDATE',
     'app_settings:UPDATE',
@@ -147,18 +151,13 @@ select set_eq(
 select is_empty(
   $$ select t.name
      from unnest(array[
-       'orders', 'order_items', 'payments', 'refunds', 'refund_items',
+       'orders', 'order_items', 'refunds', 'refund_items',
        'loyalty_accounts', 'loyalty_transactions', 'redemptions',
-       'stripe_events', 'audit_log'
+       'shopify_webhook_events', 'audit_log'
      ]) as t(name)
      where has_table_privilege('authenticated', 'public.' || t.name, 'insert, update, delete, truncate')
         or has_any_column_privilege('authenticated', 'public.' || t.name, 'insert, update') $$,
-  'clients cannot write orders, payments, refunds, loyalty or audit tables'
-);
-
-select ok(
-  not has_table_privilege('authenticated', 'public.stripe_events', 'select'),
-  'clients cannot read stripe_events'
+  'clients cannot write orders, refunds, loyalty, webhook or audit tables'
 );
 
 -- Column-level limits that matter most.
@@ -169,8 +168,8 @@ select ok(
   'customers cannot change their email, membership code or deletion flag'
 );
 select ok(
-  not has_column_privilege('authenticated', 'public.inventory_levels', 'on_hand', 'update'),
-  'on_hand is not directly writable'
+  not has_column_privilege('authenticated', 'public.customers', 'shopify_customer_id', 'update'),
+  'customers cannot change which Shopify customer they are linked to'
 );
 
 -- SECURITY DEFINER hygiene ---------------------------------------------------
@@ -188,7 +187,7 @@ select is_empty(
 select ok(
   has_table_privilege('service_role', 'public.orders', 'insert, update')
   and has_table_privilege('service_role', 'public.loyalty_transactions', 'insert')
-  and has_table_privilege('service_role', 'public.stripe_events', 'insert, update'),
+  and has_table_privilege('service_role', 'public.shopify_webhook_events', 'insert, update'),
   'service_role can write the server-owned tables'
 );
 

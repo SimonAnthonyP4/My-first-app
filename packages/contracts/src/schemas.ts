@@ -85,6 +85,8 @@ export const rewardInputSchema = z
     points_cost: z.number().int().min(1).max(10_000_000),
     grants_category: productCategorySchema,
     product_id: uuidSchema.nullish(),
+    /** The Shopify collection the reward can be spent on. Required before it works at the till. */
+    shopify_collection_id: z.number().int().positive().nullish(),
     quantity: z.number().int().min(1).max(100).default(1),
     is_active: z.boolean().default(true),
     starts_at: z.iso.datetime({ offset: true }).nullish(),
@@ -103,6 +105,7 @@ export type RewardInput = z.input<typeof rewardInputSchema>;
 /** Owner-editable business settings (`app_settings`). */
 export const appSettingsInputSchema = z.object({
   points_per_dollar: z.number().int().min(0).max(1000),
-  refund_approval_threshold_cents: centsSchema,
+  reward_hold_minutes: z.number().int().min(2).max(1440),
+  accept_test_orders: z.boolean(),
 });
 export type AppSettingsInput = z.infer<typeof appSettingsInputSchema>;

@@ -14,4 +14,14 @@ export function parseBody<S extends z.ZodType>(schema: S, body: unknown): z.infe
 }
 
 export const idempotencyKeySchema = z.string().min(8).max(150);
-export const accessTokenSchema = z.string().min(10).max(8192);
+
+/**
+ * A Shopify numeric id. Accepted as a number or a string of digits and
+ * normalised to a string, so values beyond 2^53 are never rounded.
+ */
+export const shopifyIdSchema = z
+  .union([
+    z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    z.string().regex(/^[1-9][0-9]{0,18}$/),
+  ])
+  .transform((value) => String(value));

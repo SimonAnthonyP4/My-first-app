@@ -1,5 +1,5 @@
 import { AppError, appErrorFromDb, DbError } from './errors.ts';
-import { StripeError } from './stripe.ts';
+import { ShopifyError } from './shopify_admin.ts';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -33,12 +33,12 @@ export function responseFromError(error: unknown, log: Logger): Response {
     log('unexpected database error', { sqlstate: error.sqlstate, message: error.message });
     return errorResponse(500, 'internal_error', 'Something went wrong. Please try again.');
   }
-  if (error instanceof StripeError) {
-    log('stripe error', { status: error.status, type: error.type, code: error.code });
+  if (error instanceof ShopifyError) {
+    log('shopify error', { status: error.status, kind: error.kind });
     return errorResponse(
       502,
-      'payment_provider_error',
-      'The payment provider could not be reached. Please try again.',
+      'shopify_unavailable',
+      'Shopify could not be reached. Please try again.',
     );
   }
   log('unexpected error', { message: error instanceof Error ? error.message : String(error) });

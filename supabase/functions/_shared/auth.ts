@@ -1,36 +1,30 @@
 import type { Deps } from './deps.ts';
 import { AppError } from './errors.ts';
 import { bearerToken } from './http.ts';
+import { verifyIdToken } from './shopify_id_token.ts';
 
-/** The signed-in user making the request. Throws 401 if the token is missing or invalid. */
-export async function requireUserId(req: Request, deps: Pick<Deps, 'auth'>): Promise<string> {
-  const token = bearerToken(req);
-  if (!token) {
-    throw new AppError(401, 'unauthenticated', 'Sign in to continue.');
-  }
-  const userId = await deps.auth.getUserId(token);
-  if (!userId) {
-    throw new AppError(401, 'unauthenticated', 'Your session has expired. Sign in again.');
-  }
-  return userId;
+export interface PosCaller {
+  /** The Shopify account signed in to POS on the device. */
+  readonly shopifyUserId: string;
 }
 
 /**
- * Resolves a manager override. The approving manager signs in on the device
- * and the app sends their access token; we verify it here and pass on their
- * user id. The database then checks that this person is an active manager or
- * owner. An employee id supplied by the client is never accepted as approval.
+ * Authenticates a request from the POS extension. The extension sends the
+ * ID token Shopify gives it; only someone signed in to Shopify POS on our
+ * store can obtain one.
  */
-export async function resolveApprover(
-  approverAccessToken: string | null | undefined,
-  deps: Pick<Deps, 'auth'>,
-): Promise<string | null> {
-  if (!approverAccessToken) {
-    return null;
+export async function requirePosCaller(
+  req: Request,
+  deps: Pick<Deps, 'idToken' | 'now' | 'log'>,
+): Promise<PosCaller> {
+  const token = bearerToken(req);
+  if (!token) {
+    throw new AppError(401, 'unauthenticated', 'Open this from Shopify POS.');
   }
-  const approverId = await deps.auth.getUserId(approverAccessToken);
-  if (!approverId) {
-    throw new AppError(401, 'approver_unauthenticated', 'The manager sign-in is not valid.');
+  const result = await verifyIdToken(token, deps.idToken, deps.now());
+  if (!result.ok) {
+    deps.log('pos id token rejected', { reason: result.reason });
+    throw new AppError(401, 'unauthenticated', 'Your Shopify POS session could not be verified.');
   }
-  return approverId;
+  return { shopifyUserId: result.shopifyUserId };
 }

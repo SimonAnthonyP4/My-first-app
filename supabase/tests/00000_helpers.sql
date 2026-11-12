@@ -213,24 +213,20 @@ declare
 begin
   insert into public.orders (
     id, customer_id, employee_id, status, subtotal_cents, discount_cents, reward_cents,
-    total_cents, idempotency_key, paid_at, cancelled_at, discount_reason, discount_by
+    total_cents, idempotency_key, paid_at
   )
   values (
     v_id, tests.id(p_customer), tests.id('cashier'), p_status,
     p_total_cents + p_discount_cents + p_reward_cents, p_discount_cents, p_reward_cents,
     p_total_cents, 'test-order-' || p_name,
-    case when p_status in ('paid', 'partially_refunded', 'refunded') then now() end,
-    case when p_status = 'cancelled' then now() end,
-    case when p_discount_cents > 0 then 'test discount' end,
-    case when p_discount_cents > 0 then tests.id('cashier') end
+    case when p_status in ('paid', 'partially_refunded', 'refunded') then now() end
   );
   insert into tests.fixtures (name, id) values (p_name, v_id);
   return v_id;
 end;
 $$;
 
--- A refund against an order fixture, registered as a fixture. Creates the
--- order's succeeded payment on first use.
+-- A succeeded refund against an order fixture, registered as a fixture.
 create or replace function tests.create_refund(
   p_name text,
   p_order text,
@@ -242,30 +238,13 @@ language plpgsql
 as $$
 declare
   v_id uuid := gen_random_uuid();
-  v_order public.orders;
-  v_payment_id uuid;
 begin
-  select * into strict v_order from public.orders where id = tests.id(p_order);
-
-  select id into v_payment_id from public.payments where order_id = v_order.id and status = 'succeeded';
-  if v_payment_id is null then
-    insert into public.payments (
-      order_id, provider_payment_intent, amount_cents, status, reader_type, succeeded_at
-    )
-    values (
-      v_order.id, 'pi_test_' || replace(v_order.id::text, '-', ''), v_order.total_cents,
-      'succeeded', 'simulated', now()
-    )
-    returning id into v_payment_id;
-  end if;
-
   insert into public.refunds (
-    id, order_id, payment_id, amount_cents, reason, status, provider_refund_id,
-    idempotency_key, requested_by, completed_at
+    id, order_id, amount_cents, reason, status, idempotency_key, completed_at
   )
   values (
-    v_id, v_order.id, v_payment_id, p_amount_cents, 'customer_request', p_status,
-    're_test_' || replace(v_id::text, '-', ''), 'test-refund-' || p_name, tests.id('cashier'),
+    v_id, tests.id(p_order), p_amount_cents, 'customer_request', p_status,
+    'test-refund-' || p_name,
     case when p_status in ('succeeded', 'failed', 'canceled') then now() end
   );
   insert into tests.fixtures (name, id) values (p_name, v_id);
@@ -296,127 +275,115 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- Checkout helpers (M3)
+-- Shopify helpers
 -- ---------------------------------------------------------------------------
 
--- A catalog product registered as a fixture.
-create or replace function tests.create_product(
-  p_name text,
-  p_category text,
-  p_price_cents bigint,
-  p_bar_count integer default 1,
-  p_is_active boolean default true
+-- A Shopify orders/paid webhook body, as raw text. Ids are deliberately
+-- larger than JavaScript can represent exactly.
+--   p_lines: [{"id": 1, "variant_id": 11, "title": "Bar", "price": "3.00", "quantity": 3}, ...]
+--   p_codes: [{"code": "BB-....", "amount": "3.00"}, ...]
+create or replace function tests.shopify_order(
+  p_order_id bigint,
+  p_lines jsonb,
+  p_shopify_customer_id bigint default null,
+  p_email text default null,
+  p_codes jsonb default '[]'::jsonb,
+  p_overrides jsonb default '{}'::jsonb
 )
-returns uuid
-language plpgsql
-as $$
-declare
-  v_id uuid := gen_random_uuid();
-begin
-  insert into public.products (id, sku, name, flavor, category, bar_count, price_cents, is_active)
-  values (
-    v_id, 'T-' || upper(replace(p_name, '_', '-')), initcap(replace(p_name, '_', ' ')),
-    'Test Flavor', p_category, p_bar_count, p_price_cents, p_is_active
-  );
-  insert into tests.fixtures (name, id) values (p_name, v_id);
-  return v_id;
-end;
-$$;
-
--- Cart JSON from pairs: tests.items('bar_a', '3', 'six', '1').
-create or replace function tests.items(variadic p_pairs text[])
-returns jsonb
-language sql
-stable
-as $$
-  select jsonb_agg(
-           jsonb_build_object('product_id', tests.id(p_pairs[i]), 'quantity', p_pairs[i + 1]::integer)
-           order by i
-         )
-  from generate_series(1, array_length(p_pairs, 1), 2) as i
-$$;
-
--- Rewards JSON from pairs: tests.rewards('Free protein bar', 'bar_a').
-create or replace function tests.rewards(variadic p_pairs text[])
-returns jsonb
-language sql
-stable
-as $$
-  select jsonb_agg(
-           jsonb_build_object('reward_id', tests.reward(p_pairs[i]), 'product_id', tests.id(p_pairs[i + 1]))
-           order by i
-         )
-  from generate_series(1, array_length(p_pairs, 1), 2) as i
-$$;
-
--- Refund lines JSON from pairs of (order item id, quantity).
-create or replace function tests.refund_lines(p_order uuid, p_product text, p_quantity integer, p_restock boolean default true)
-returns jsonb
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select jsonb_build_array(jsonb_build_object(
-    'order_item_id', i.id, 'quantity', p_quantity, 'restock', p_restock
-  ))
-  from public.order_items i
-  where i.order_id = p_order and i.product_id = tests.id(p_product)
-$$;
-
--- Creates an order through create_order and registers it as a fixture.
-create or replace function tests.checkout(
-  p_name text,
-  p_employee text,
-  p_customer text,
-  p_items jsonb,
-  p_rewards jsonb default '[]'::jsonb,
-  p_discount_cents bigint default 0,
-  p_discount_reason text default null,
-  p_discount_approved_by text default null
-)
-returns public.orders
-language plpgsql
-as $$
-declare
-  v_order public.orders;
-begin
-  v_order := public.create_order(
-    tests.id(p_employee), 'test-checkout-' || p_name, p_items, tests.id(p_customer),
-    p_rewards, p_discount_cents, p_discount_reason, tests.id(p_discount_approved_by)
-  );
-  insert into tests.fixtures (name, id) values (p_name, v_order.id) on conflict (name) do nothing;
-  return v_order;
-end;
-$$;
-
--- Records a PaymentIntent for an order fixture and delivers the success webhook.
--- Returns the webhook handler's outcome.
-create or replace function tests.pay(p_order text)
 returns text
 language plpgsql
+stable
 as $$
 declare
-  v_order public.orders;
+  v_gross numeric;
+  v_discounts numeric;
 begin
-  select * into strict v_order from public.orders where id = tests.id(p_order);
-  perform public.record_payment_intent(v_order.id, 'pi_test_' || p_order, v_order.total_cents);
-  return public.handle_payment_succeeded(
-    'evt_test_paid_' || p_order, 'payment_intent.succeeded', '{}'::jsonb,
-    'pi_test_' || p_order, v_order.total_cents, 'ch_test_' || p_order, 'visa', '4242', 'simulated'
-  );
+  select sum((l ->> 'price')::numeric * (l ->> 'quantity')::integer) into v_gross
+  from jsonb_array_elements(p_lines) l;
+  select coalesce(sum((c ->> 'amount')::numeric), 0) into v_discounts
+  from jsonb_array_elements(p_codes) c;
+
+  return (
+    jsonb_build_object(
+      'id', p_order_id,
+      'name', '#' || (p_order_id % 100000),
+      'financial_status', 'paid',
+      'currency', 'USD',
+      'test', false,
+      'source_name', 'pos',
+      'location_id', 70000000001,
+      'user_id', 80000000001,
+      'created_at', '2026-11-12T10:00:00-05:00',
+      'processed_at', '2026-11-12T10:00:05-05:00',
+      'total_line_items_price', to_char(v_gross, 'FM999999990.00'),
+      'total_discounts', to_char(v_discounts, 'FM999999990.00'),
+      'subtotal_price', to_char(v_gross - v_discounts, 'FM999999990.00'),
+      'total_tax', '0.00',
+      'total_price', to_char(v_gross - v_discounts, 'FM999999990.00'),
+      'discount_codes', p_codes,
+      'line_items', p_lines,
+      'customer', case when p_shopify_customer_id is null then null
+                       else jsonb_build_object('id', p_shopify_customer_id, 'email', p_email) end
+    ) || p_overrides
+  )::text;
 end;
 $$;
 
--- Stock on hand for a product fixture.
-create or replace function tests.stock(p_product text)
-returns integer
+-- A Shopify refunds/create webhook body, as raw text.
+--   p_lines: [{"line_item_id": 1, "quantity": 1, "amount": "3.00"}, ...]
+create or replace function tests.shopify_refund(
+  p_refund_id bigint,
+  p_order_id bigint,
+  p_lines jsonb,
+  p_note text default null
+)
+returns text
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', p_refund_id,
+    'order_id', p_order_id,
+    'note', p_note,
+    'created_at', '2026-11-12T11:00:00-05:00',
+    'processed_at', '2026-11-12T11:00:02-05:00',
+    'refund_line_items', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'line_item_id', (l ->> 'line_item_id')::bigint,
+        'quantity', (l ->> 'quantity')::integer,
+        'subtotal', (l ->> 'amount')::numeric,
+        'subtotal_set', jsonb_build_object(
+          'shop_money', jsonb_build_object('amount', l ->> 'amount', 'currency_code', 'USD'))
+      ))
+      from jsonb_array_elements(p_lines) l
+    ), '[]'::jsonb)
+  )::text
+$$;
+
+-- Delivers an orders/paid webhook with a webhook id derived from the name.
+create or replace function tests.deliver_order(p_delivery text, p_raw text)
+returns text
+language sql
+as $$
+  select public.ingest_shopify_order('wh-' || p_delivery, 'orders/paid', 'ev-' || p_delivery, p_raw)
+$$;
+
+create or replace function tests.deliver_refund(p_delivery text, p_raw text)
+returns text
+language sql
+as $$
+  select public.ingest_shopify_refund('wh-' || p_delivery, 'refunds/create', 'ev-' || p_delivery, p_raw)
+$$;
+
+-- Our mirror row id for a Shopify order id.
+create or replace function tests.order_for(p_shopify_order_id bigint)
+returns uuid
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select l.on_hand from public.inventory_levels l where l.product_id = tests.id(p_product)
+  select o.id from public.orders o where o.shopify_order_id = p_shopify_order_id
 $$;
 
 -- Gives a customer fixture an opening points balance through the ledger.

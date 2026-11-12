@@ -82,12 +82,6 @@ compare(
   checkConstraintValues('rewards', 'grants_category'),
   enums.PRODUCT_CATEGORIES,
 );
-compare('payments.status', checkConstraintValues('payments', 'status'), enums.PAYMENT_STATUSES);
-compare(
-  'payments.reader_type',
-  checkConstraintValues('payments', 'reader_type'),
-  enums.READER_TYPES,
-);
 compare('refunds.reason', checkConstraintValues('refunds', 'reason'), enums.REFUND_REASONS);
 compare('refunds.status', checkConstraintValues('refunds', 'status'), enums.REFUND_STATUSES);
 compare(
@@ -96,14 +90,9 @@ compare(
   enums.LOYALTY_TRANSACTION_KINDS,
 );
 compare(
-  'inventory_movements.reason',
-  checkConstraintValues('inventory_movements', 'reason'),
-  enums.INVENTORY_REASONS,
-);
-compare(
-  'stripe_events.status',
-  checkConstraintValues('stripe_events', 'status'),
-  enums.STRIPE_EVENT_STATUSES,
+  'shopify_webhook_events.status',
+  checkConstraintValues('shopify_webhook_events', 'status'),
+  enums.WEBHOOK_EVENT_STATUSES,
 );
 compare('order_status enum', enumTypeValues('order_status'), enums.ORDER_STATUSES);
 compare('redemption_status enum', enumTypeValues('redemption_status'), enums.REDEMPTION_STATUSES);
@@ -111,11 +100,6 @@ compare('redemption_status enum', enumTypeValues('redemption_status'), enums.RED
 for (const value of [...enums.COMPLETED_ORDER_STATUSES]) {
   if (!enums.ORDER_STATUSES.includes(value)) {
     problems.push(`COMPLETED_ORDER_STATUSES contains unknown status "${value}"`);
-  }
-}
-for (const value of [...enums.MANUAL_INVENTORY_REASONS]) {
-  if (!enums.INVENTORY_REASONS.includes(value)) {
-    problems.push(`MANUAL_INVENTORY_REASONS contains unknown reason "${value}"`);
   }
 }
 
@@ -190,5 +174,5 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `    ok - contracts match the database (12 value sets, ${formulaCases.length} points-formula cases, error codes, launch config)`,
+  `    ok - contracts match the database (9 value sets, ${formulaCases.length} points-formula cases, error codes, launch config)`,
 );

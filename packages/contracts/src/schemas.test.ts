@@ -113,7 +113,8 @@ describe('appSettingsInputSchema', () => {
     expect(
       appSettingsInputSchema.safeParse({
         points_per_dollar: 10,
-        refund_approval_threshold_cents: 2500,
+        reward_hold_minutes: 15,
+        accept_test_orders: false,
       }).success,
     ).toBe(true);
   });
@@ -122,7 +123,8 @@ describe('appSettingsInputSchema', () => {
     expect(
       appSettingsInputSchema.safeParse({
         points_per_dollar: -1,
-        refund_approval_threshold_cents: 2500,
+        reward_hold_minutes: 15,
+        accept_test_orders: false,
       }).success,
     ).toBe(false);
   });

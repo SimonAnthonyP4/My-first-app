@@ -71,7 +71,7 @@ echo "==> Running concurrency test"
 
 # The Edge Function handlers, run against this real database with only Stripe
 # and the auth server faked. Needs Deno (installed by `pnpm install`).
-if (cd "$ROOT" && pnpm exec deno --version >/dev/null 2>&1); then
+if [[ -f "$ROOT/supabase/functions/tests/integration_test.ts" ]] && (cd "$ROOT" && pnpm exec deno --version >/dev/null 2>&1); then
   echo "==> Running Edge Function integration test"
   (cd "$ROOT" && BROBATCH_TEST_DB="$DB" NO_COLOR=1 pnpm -s exec deno test \
     --config supabase/functions/deno.json --no-lock --quiet \

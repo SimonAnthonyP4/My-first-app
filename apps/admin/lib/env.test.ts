@@ -45,6 +45,8 @@ describe('readPublicEnv', () => {
 
 describe('looksLikeServerSecret', () => {
   it.each([
+    ['a Shopify app client secret', 'shpss_' + 'a'.repeat(32)],
+    ['a Shopify Admin API token', 'shpat_' + 'a'.repeat(32)],
     ['a Stripe live secret key', 'sk_live_' + 'x'.repeat(24)],
     ['a Stripe test secret key', 'sk_test_' + 'x'.repeat(24)],
     ['a Stripe restricted key', 'rk_live_' + 'x'.repeat(24)],

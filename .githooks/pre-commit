@@ -9,7 +9,7 @@ if [[ -n "$staged_env" ]]; then
 fi
 
 # Block the most common secret shapes from ever entering history.
-secret_pattern='(sk_live_[A-Za-z0-9]{10,}|sk_test_[A-Za-z0-9]{10,}|rk_live_[A-Za-z0-9]{10,}|whsec_[A-Za-z0-9]{10,}|-----BEGIN (EC |RSA )?PRIVATE KEY-----)'
+secret_pattern='(shpss_[A-Fa-f0-9]{20,}|shpat_[A-Fa-f0-9]{20,}|sk_live_[A-Za-z0-9]{10,}|sk_test_[A-Za-z0-9]{10,}|rk_live_[A-Za-z0-9]{10,}|whsec_[A-Za-z0-9]{10,}|-----BEGIN (EC |RSA )?PRIVATE KEY-----)'
 staged_secrets="$(git diff --cached -U0 | grep -E '^\+' | grep -Ec "$secret_pattern" || true)"
 if [[ "$staged_secrets" != "0" ]]; then
   echo "pre-commit: staged changes look like they contain a secret key. Aborting." >&2

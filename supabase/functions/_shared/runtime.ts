@@ -1,12 +1,12 @@
-// Wires the handlers to the real world: Supabase (service role), Stripe and
+// Wires the handlers to the real world: Supabase (service role), Shopify and
 // the environment. This is the only module that reads secrets. Handlers and
 // their tests never import it.
 import { createClient } from '@supabase/supabase-js';
 
-import type { Auth, Db, Deps, WebhookDeps } from './deps.ts';
+import type { Db, Deps, WebhookDeps } from './deps.ts';
 import { DbError } from './errors.ts';
 import { type Logger, respond, responseFromError } from './http.ts';
-import { createStripeClient, type StripeMode } from './stripe.ts';
+import { createShopifyAdmin } from './shopify_admin.ts';
 
 function requireEnv(name: string): string {
   const value = Deno.env.get(name);
@@ -18,16 +18,16 @@ function requireEnv(name: string): string {
 
 const log: Logger = (message, detail) => {
   // Structured, one line per event. Callers pass ids and codes only: never
-  // request bodies, tokens, keys or customer details.
+  // request bodies, tokens, secrets or customer details.
   console.error(JSON.stringify({ level: 'error', message, ...detail }));
 };
 
-function createDeps(): Deps {
+function createDb(): Db {
   const client = createClient(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const db: Db = {
+  return {
     async rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
       const { data, error } = await client.rpc(fn, args);
       if (error) {
@@ -35,79 +35,62 @@ function createDeps(): Deps {
       }
       return data as T;
     },
-    async getActiveEmployee(userId) {
+    async getRedemption(redemptionId) {
       const { data, error } = await client
-        .from('employees')
-        .select('id, role')
-        .eq('id', userId)
-        .eq('is_active', true)
+        .from('redemptions')
+        .select(
+          'id, customer_id, reward_id, status, points_cost, discount_code, shopify_discount_id, expires_at',
+        )
+        .eq('id', redemptionId)
         .maybeSingle();
       if (error) {
         throw new DbError(error.code ?? 'XX000', error.message);
       }
       return data;
     },
-    async listOpenPaymentIntents(orderId) {
+    async getPointsPerDollar() {
       const { data, error } = await client
-        .from('payments')
-        .select('provider_payment_intent')
-        .eq('order_id', orderId)
-        .in('status', ['requires_payment_method', 'processing']);
+        .from('app_settings')
+        .select('points_per_dollar')
+        .single();
       if (error) {
         throw new DbError(error.code ?? 'XX000', error.message);
       }
-      return (data ?? []).map((row) => row.provider_payment_intent as string);
-    },
-    async getRefundPaymentIntent(refundId) {
-      const { data: refund, error: refundError } = await client
-        .from('refunds')
-        .select('payment_id')
-        .eq('id', refundId)
-        .maybeSingle();
-      if (refundError) {
-        throw new DbError(refundError.code ?? 'XX000', refundError.message);
-      }
-      if (!refund) {
-        return null;
-      }
-      const { data: payment, error: paymentError } = await client
-        .from('payments')
-        .select('provider_payment_intent')
-        .eq('id', refund.payment_id)
-        .maybeSingle();
-      if (paymentError) {
-        throw new DbError(paymentError.code ?? 'XX000', paymentError.message);
-      }
-      return (payment?.provider_payment_intent as string | undefined) ?? null;
+      return data.points_per_dollar as number;
     },
   };
-
-  const auth: Auth = {
-    async getUserId(accessToken) {
-      const { data, error } = await client.auth.getUser(accessToken);
-      return error ? null : (data.user?.id ?? null);
-    },
-  };
-
-  // Test mode unless the deployment explicitly says live.
-  const stripeMode: StripeMode = Deno.env.get('STRIPE_MODE') === 'live' ? 'live' : 'test';
-  const stripe = createStripeClient({
-    secretKey: requireEnv('STRIPE_SECRET_KEY'),
-    mode: stripeMode,
-    apiVersion: Deno.env.get('STRIPE_API_VERSION') || undefined,
-  });
-
-  return { db, auth, stripe, stripeMode, log, now: () => Math.floor(Date.now() / 1000) };
 }
 
-let cached: Deps | null = null;
+let cachedDb: Db | null = null;
+let cachedDeps: Deps | null = null;
+
+function db(): Db {
+  cachedDb ??= createDb();
+  return cachedDb;
+}
 
 function deps(): Deps {
-  cached ??= createDeps();
-  return cached;
+  if (!cachedDeps) {
+    const shopDomain = requireEnv('SHOPIFY_SHOP_DOMAIN');
+    const clientId = requireEnv('SHOPIFY_CLIENT_ID');
+    const clientSecret = requireEnv('SHOPIFY_CLIENT_SECRET');
+    cachedDeps = {
+      db: db(),
+      shopify: createShopifyAdmin({
+        shopDomain,
+        clientId,
+        clientSecret,
+        apiVersion: Deno.env.get('SHOPIFY_API_VERSION') || '2026-10',
+      }),
+      idToken: { clientId, clientSecret, shopDomain },
+      log,
+      now: () => Math.floor(Date.now() / 1000),
+    };
+  }
+  return cachedDeps;
 }
 
-/** Serves a handler, converting anything it throws into a safe response. */
+/** Serves a POS handler, converting anything it throws into a safe response. */
 export function serve(handler: (req: Request, deps: Deps) => Promise<Response>): void {
   Deno.serve((req) => {
     try {
@@ -125,8 +108,10 @@ export function serveWebhook(
   Deno.serve((req) => {
     try {
       return respond(handler, req, {
-        ...deps(),
-        webhookSecret: requireEnv('STRIPE_WEBHOOK_SECRET'),
+        db: db(),
+        log,
+        webhookSecret: requireEnv('SHOPIFY_CLIENT_SECRET'),
+        shopDomain: requireEnv('SHOPIFY_SHOP_DOMAIN'),
       });
     } catch (error) {
       return responseFromError(error, log);

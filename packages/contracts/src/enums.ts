@@ -30,18 +30,6 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 /** Statuses in which money was collected; the only orders a customer can see. */
 export const COMPLETED_ORDER_STATUSES = ['paid', 'partially_refunded', 'refunded'] as const;
 
-export const PAYMENT_STATUSES = [
-  'requires_payment_method',
-  'processing',
-  'succeeded',
-  'canceled',
-  'failed',
-] as const;
-export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
-
-export const READER_TYPES = ['tap_to_pay', 'reader', 'simulated'] as const;
-export type ReaderType = (typeof READER_TYPES)[number];
-
 export const REFUND_REASONS = [
   'customer_request',
   'damaged',
@@ -67,22 +55,15 @@ export type LoyaltyTransactionKind = (typeof LOYALTY_TRANSACTION_KINDS)[number];
 export const REDEMPTION_STATUSES = ['reserved', 'fulfilled', 'released', 'expired'] as const;
 export type RedemptionStatus = (typeof REDEMPTION_STATUSES)[number];
 
-export const INVENTORY_REASONS = [
-  'restock',
-  'sale',
-  'refund_restock',
-  'adjustment',
-  'waste',
-  'count',
+/** Outcome of a Shopify webhook delivery, as stored in `shopify_webhook_events`. */
+export const WEBHOOK_EVENT_STATUSES = [
+  'received',
+  'processed',
+  'ignored',
+  'flagged',
+  'retry',
 ] as const;
-export type InventoryReason = (typeof INVENTORY_REASONS)[number];
-
-/** Reasons a manager may record by hand. The rest are written by the server. */
-export const MANUAL_INVENTORY_REASONS = ['restock', 'adjustment', 'waste', 'count'] as const;
-export type ManualInventoryReason = (typeof MANUAL_INVENTORY_REASONS)[number];
-
-export const STRIPE_EVENT_STATUSES = ['received', 'processed', 'failed', 'ignored'] as const;
-export type StripeEventStatus = (typeof STRIPE_EVENT_STATUSES)[number];
+export type WebhookEventStatus = (typeof WEBHOOK_EVENT_STATUSES)[number];
 
 /**
  * Custom SQLSTATE codes raised by the database functions and triggers. The
@@ -101,11 +82,5 @@ export const DB_ERROR = {
   REDEMPTION_FINAL: 'BB005',
   /** The order, refund, redemption or customer does not exist. */
   NOT_FOUND: 'BB006',
-  /** The amount due is above zero but below the minimum card charge. */
-  BELOW_MINIMUM_CHARGE: 'BB007',
-  /** A manager or owner must approve (discount over the cashier limit, large refund). */
-  APPROVAL_REQUIRED: 'BB008',
-  /** A reward does not match any item in the cart. */
-  REWARD_NOT_APPLICABLE: 'BB009',
 } as const;
 export type DbErrorCode = (typeof DB_ERROR)[keyof typeof DB_ERROR];

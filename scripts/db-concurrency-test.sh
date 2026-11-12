@@ -10,11 +10,10 @@
 #   4. 20 deliveries of a payment event for one order: points are awarded once.
 #   5. Two partial refunds of one order, each delivered 10 times at once:
 #      each is reversed once and together they take back exactly what was earned.
-#   6. 20 retries of one checkout (same idempotency key): one order exists.
-#   7. 20 deliveries of one payment confirmation through the webhook handler:
-#      the order is completed once (stock, points, reward).
-#   8. 10 refund requests at once for the same 3 units: only as many succeed
-#      as there are units, and the money requested never exceeds what was paid.
+#   6. One Shopify order webhook delivered 20 times at once, then the same
+#      order under 20 different delivery ids: mirrored once, points once.
+#   7. 30 reward codes requested at once against 300 points: exactly 1 issued.
+#   8. One Shopify refund webhook delivered 20 times at once: reversed once.
 #
 # Usage: scripts/db-concurrency-test.sh <database>   (PG* variables as usual)
 set -euo pipefail
@@ -58,7 +57,6 @@ C5='00000000-0000-4000-f000-0000000000c5'
 C6='00000000-0000-4000-f000-0000000000c6'
 O4='00000000-0000-4000-f000-0000000000a4'
 O5='00000000-0000-4000-f000-0000000000a5'
-P5='00000000-0000-4000-f000-0000000000b5'
 R5A='00000000-0000-4000-f000-0000000000d1'
 R5B='00000000-0000-4000-f000-0000000000d2'
 
@@ -86,12 +84,10 @@ insert into public.orders (id, customer_id, employee_id, status, subtotal_cents,
 values
   ('$O4', '$C4', '$OWNER', 'paid', 900, 900, 'race-order-4', now()),
   ('$O5', '$C5', '$OWNER', 'paid', 901, 901, 'race-order-5', now());
-insert into public.payments (id, order_id, provider_payment_intent, amount_cents, status, succeeded_at)
-values ('$P5', '$O5', 'pi_race_5', 901, 'succeeded', now());
-insert into public.refunds (id, order_id, payment_id, amount_cents, reason, status, idempotency_key, requested_by, completed_at)
+insert into public.refunds (id, order_id, amount_cents, reason, status, idempotency_key, completed_at)
 values
-  ('$R5A', '$O5', '$P5', 450, 'other', 'succeeded', 'race-refund-5a', '$OWNER', now()),
-  ('$R5B', '$O5', '$P5', 451, 'other', 'succeeded', 'race-refund-5b', '$OWNER', now());
+  ('$R5A', '$O5', 450, 'other', 'succeeded', 'race-refund-5a', now()),
+  ('$R5B', '$O5', 451, 'other', 'succeeded', 'race-refund-5b', now());
 SQL
 
 REWARD="$(q -c "select id from public.rewards where points_cost = 300 and is_active limit 1")"
@@ -143,42 +139,40 @@ check "  together they take back exactly the 90 earned" \
 check "  balance is 0" "$(balance "$C5")" 0
 
 # 6 ---------------------------------------------------------------------------
-PRODUCT="$(q -c "select id from public.products where is_active and price_cents = 300 order by sku limit 1")"
-CART="[{\"product_id\": \"$PRODUCT\", \"quantity\": 3}]"
-STOCK_BEFORE="$(q -c "select on_hand from public.inventory_levels where product_id = '$PRODUCT'")"
+ORDER_BODY='{"id": 9000000000000002001, "name": "#2001", "financial_status": "paid", "currency": "USD", "test": false, "source_name": "pos", "total_line_items_price": "9.00", "total_discounts": "0.00", "subtotal_price": "9.00", "total_tax": "0.00", "total_price": "9.00", "discount_codes": [], "customer": {"id": 6000000000000002006, "email": "race-6@test.brobatch"}, "line_items": [{"id": 9100000000000002001, "variant_id": 111, "title": "Bar", "price": "3.00", "quantity": 3}]}'
 
-ok="$(race 20 "select public.create_order('$OWNER', 'race-checkout-same-key', '$CART'::jsonb, '$C6')")"
-check "20 retries of one checkout (same key): all 20 return" "$ok" 20
-check "  one order exists" \
-  "$(q -c "select count(*) from public.orders where idempotency_key = 'race-checkout-same-key'")" 1
-O6="$(q -c "select id from public.orders where idempotency_key = 'race-checkout-same-key'")"
-check "  it has one line" "$(q -c "select count(*) from public.order_items where order_id = '$O6'")" 1
+ok="$(race 20 "select public.ingest_shopify_order('wh-race-order', 'orders/paid', 'ev-race', '$ORDER_BODY')")"
+check "one order webhook delivered 20 times at once: all 20 return" "$ok" 20
+ok="$(race 20 "select public.ingest_shopify_order('wh-race-order-{i}', 'orders/paid', 'ev-race', '$ORDER_BODY')")"
+check "the same order under 20 different delivery ids: all 20 return" "$ok" 20
+check "  the order is mirrored once" \
+  "$(q -c "select count(*) from public.orders where shopify_order_id = 9000000000000002001")" 1
+check "  it has one line" \
+  "$(q -c "select count(*) from public.order_items i join public.orders o on o.id = i.order_id where o.shopify_order_id = 9000000000000002001")" 1
+check "  the member was linked by email and earned once: 90" "$(balance "$C6")" 90
+check "  the first delivery is logged as processed" \
+  "$(q -c "select status from public.shopify_webhook_events where id = 'wh-race-order'")" processed
 
 # 7 ---------------------------------------------------------------------------
-q -c "select public.record_payment_intent('$O6', 'pi_race_6', 900)" >/dev/null
-ok="$(race 20 "select public.handle_payment_succeeded('evt_race_paid_6', 'payment_intent.succeeded', '{}'::jsonb, 'pi_race_6', 900)")"
-check "20 deliveries of one payment confirmation: all 20 return" "$ok" 20
-check "  the order is paid" "$(q -c "select status from public.orders where id = '$O6'")" paid
-check "  stock moved once (3 units)" \
-  "$(q -c "select $STOCK_BEFORE - on_hand from public.inventory_levels where product_id = '$PRODUCT'")" 3
-check "  points awarded once: 90" "$(balance "$C6")" 90
-check "  the event is logged once, as processed" \
-  "$(q -c "select count(*) || ':' || min(status) from public.stripe_events where id = 'evt_race_paid_6'")" "1:processed"
+q -c "update public.rewards set shopify_collection_id = 4000000000001 where id = '$REWARD'" >/dev/null
+q -c "insert into public.loyalty_transactions (customer_id, kind, points, reason, created_by)
+      values ('$C6', 'adjust', 210, 'race test: top up to 300', '$OWNER')" >/dev/null
+ok="$(race 30 "select public.reserve_reward_for_pos('$C6', '$REWARD', 'race-reserve-{i}', 111, 300)")"
+check "30 reward codes requested at once against 300 points: exactly 1 issued" "$ok" 1
+check "  one code exists" \
+  "$(q -c "select count(*) from public.redemptions where customer_id = '$C6' and discount_code is not null")" 1
+check "  balance is 0" "$(balance "$C6")" 0
 
 # 8 ---------------------------------------------------------------------------
-ITEM6="$(q -c "select id from public.order_items where order_id = '$O6'")"
-ok="$(race 10 "select public.request_refund('$O6', '$OWNER', 'race-refund-6-{i}', '[{\"order_item_id\": \"$ITEM6\", \"quantity\": 2}]'::jsonb, 'customer_request')")"
-check "10 simultaneous refund requests for 2 of 3 units: exactly 1 succeeds" "$ok" 1
-check "  money requested does not exceed what was paid" \
-  "$(q -c "select coalesce(sum(amount_cents), 0) <= 900 from public.refunds where order_id = '$O6' and status <> 'failed'")" t
+REFUND_BODY='{"id": 9200000000000002001, "order_id": 9000000000000002001, "refund_line_items": [{"line_item_id": 9100000000000002001, "quantity": 1, "subtotal_set": {"shop_money": {"amount": "3.00", "currency_code": "USD"}}}]}'
+q -c "select public.release_redemption(id) from public.redemptions where customer_id = '$C6'" >/dev/null
+ok="$(race 20 "select public.ingest_shopify_refund('wh-race-refund-{i}', 'refunds/create', 'ev-race-refund', '$REFUND_BODY')")"
+check "one refund under 20 delivery ids at once: all 20 return" "$ok" 20
+check "  the refund is mirrored once" \
+  "$(q -c "select count(*) from public.refunds where shopify_refund_id = 9200000000000002001")" 1
+check "  30 of the order's 90 points are taken back once: 300 - 30 = 270" "$(balance "$C6")" 270
 
 # Global invariants -------------------------------------------------------------
-check "every stock level equals its movement sum" \
-  "$(q -c "select count(*) from public.inventory_levels l
-           left join (select product_id, sum(delta) total from public.inventory_movements group by 1) m
-             on m.product_id = l.product_id
-           where l.on_hand <> coalesce(m.total, 0)")" 0
-
 check "every balance equals its ledger sum and none is negative" \
   "$(q -c "select count(*) from public.loyalty_accounts a
            left join (select customer_id, sum(points) total from public.loyalty_transactions group by 1) t

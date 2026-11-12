@@ -33,7 +33,17 @@ export function readPublicEnv(source: EnvSource): PublicEnvResult {
   };
 }
 
-const SECRET_PREFIXES = ['sk_live_', 'sk_test_', 'rk_live_', 'rk_test_', 'whsec_', 'sb_secret_'];
+const SECRET_PREFIXES = [
+  'shpss_', // Shopify app client secret
+  'shpat_', // Shopify Admin API access token
+  'shpca_',
+  'sk_live_',
+  'sk_test_',
+  'rk_live_',
+  'rk_test_',
+  'whsec_',
+  'sb_secret_',
+];
 
 function jwtRole(value: string): string | null {
   const parts = value.split('.');

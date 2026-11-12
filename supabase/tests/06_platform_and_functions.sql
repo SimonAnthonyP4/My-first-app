@@ -3,7 +3,7 @@
 begin;
 set local search_path = public, extensions;
 
-select plan(40);
+select plan(42);
 
 select tests.create_employee('owner',    'owner');
 select tests.create_employee('manager',  'manager');
@@ -45,7 +45,7 @@ select is(
 
 select tests.authenticate_as('owner');
 select lives_ok(
-  $$ update public.app_settings set refund_approval_threshold_cents = 5000 $$,
+  $$ update public.app_settings set reward_hold_minutes = 30 $$,
   'an owner can change settings'
 );
 select throws_ok(
@@ -70,8 +70,8 @@ select throws_ok(
 select is(
   (select count(*) from public.audit_log
    where entity = 'app_settings' and actor_id = tests.id('owner') and actor_role = 'owner'
-     and before ->> 'refund_approval_threshold_cents' = '2500'
-     and after  ->> 'refund_approval_threshold_cents' = '5000'),
+     and before ->> 'reward_hold_minutes' = '15'
+     and after  ->> 'reward_hold_minutes' = '30'),
   1::bigint, 'the settings change is audited'
 );
 select throws_ok(
@@ -100,23 +100,35 @@ select throws_ok(
   '42501', null, 'not even an owner can write audit entries'
 );
 
--- stripe_events -------------------------------------------------------------------
+-- shopify_webhook_events -----------------------------------------------------------
 select throws_ok(
-  $$ select * from public.stripe_events $$,
-  '42501', null, 'not even an owner can read raw webhook events from a client'
+  $$ insert into public.shopify_webhook_events (id, topic) values ('wh-forged', 'orders/paid') $$,
+  '42501', null, 'not even an owner can write to the webhook log from a client'
 );
 select tests.clear_authentication();
 
 select tests.authenticate_as_service_role();
 select lives_ok(
-  $$ insert into public.stripe_events (id, type, payload)
-     values ('evt_test_1', 'payment_intent.succeeded', '{}'::jsonb) $$,
-  'the server can record a webhook event'
+  $$ insert into public.shopify_webhook_events (id, topic, resource_id)
+     values ('wh-test-1', 'orders/paid', 9200000000000000001) $$,
+  'the server can record a webhook delivery'
 );
 select throws_ok(
-  $$ insert into public.stripe_events (id, type, payload)
-     values ('evt_test_1', 'payment_intent.succeeded', '{}'::jsonb) $$,
-  '23505', null, 'the same webhook event id cannot be recorded twice'
+  $$ insert into public.shopify_webhook_events (id, topic) values ('wh-test-1', 'orders/paid') $$,
+  '23505', null, 'the same delivery id cannot be recorded twice'
+);
+select tests.clear_authentication();
+
+select tests.authenticate_as('manager');
+select is_empty(
+  $$ select 1 from public.shopify_webhook_events $$,
+  'managers cannot read the webhook log'
+);
+select tests.clear_authentication();
+select tests.authenticate_as('owner');
+select is(
+  (select count(*) from public.shopify_webhook_events), 1::bigint,
+  'owners can read the webhook log to see what needed attention'
 );
 select tests.clear_authentication();
 

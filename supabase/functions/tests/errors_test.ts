@@ -49,10 +49,13 @@ Deno.test('errors: anything that is not an AppError becomes a generic 500', asyn
 });
 
 Deno.test('errors: an AppError is returned as written', async () => {
-  const response = responseFromError(new AppError(409, 'already_paid', 'Already paid.'), () => {});
+  const response = responseFromError(
+    new AppError(409, 'not_available', 'Not available.'),
+    () => {},
+  );
   assert.equal(response.status, 409);
   assert.deepEqual(await response.json(), {
-    error: { code: 'already_paid', message: 'Already paid.' },
+    error: { code: 'not_available', message: 'Not available.' },
   });
 });
 

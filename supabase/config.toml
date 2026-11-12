@@ -55,20 +55,18 @@ secure_password_change = true
 enabled = true
 uri = "pg-functions://postgres/public/custom_access_token_hook"
 
-# Edge Functions. The gateway checks the caller's JWT for every function
-# except the Stripe webhook, which Stripe calls without one: it is
-# authenticated by its signature instead (see _shared/webhook.ts).
-[functions.create-payment-intent]
-verify_jwt = true
+# Edge Functions. None of them is called with a Supabase JWT, so the gateway
+# check is off and each function authenticates its caller itself:
+#   shopify-webhook   Shopify's HMAC signature over the request body
+#   pos-*             the Shopify ID token of the person signed in to POS
+[functions.shopify-webhook]
+verify_jwt = false
 
-[functions.cancel-order]
-verify_jwt = true
+[functions.pos-member]
+verify_jwt = false
 
-[functions.process-refund]
-verify_jwt = true
+[functions.pos-reserve-reward]
+verify_jwt = false
 
-[functions.terminal-connection-token]
-verify_jwt = true
-
-[functions.stripe-webhook]
+[functions.pos-release-reward]
 verify_jwt = false

@@ -1,55 +1,58 @@
 // What a handler needs from the outside world. Handlers receive these as
 // arguments, so tests can run them with in-memory fakes and no network.
 import type { Logger } from './http.ts';
-import type { StripeClient, StripeMode } from './stripe.ts';
+import type { ShopifyAdmin } from './shopify_admin.ts';
+import type { IdTokenConfig } from './shopify_id_token.ts';
+
+export interface MemberRow {
+  readonly customer_id: string;
+  readonly full_name: string;
+  readonly email: string | null;
+  readonly points_balance: number;
+  /** A string, because Shopify ids can exceed what a JavaScript number holds exactly. */
+  readonly shopify_customer_id: string | null;
+}
+
+export interface RewardRow {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly points_cost: number;
+  readonly grants_category: string;
+  readonly quantity: number;
+  readonly shopify_collection_id: string | null;
+  readonly is_live: boolean;
+}
+
+export interface RedemptionRow {
+  readonly id: string;
+  readonly customer_id: string;
+  readonly reward_id: string;
+  readonly status: string;
+  readonly points_cost: number;
+  readonly discount_code: string | null;
+  readonly shopify_discount_id: string | null;
+  readonly expires_at: string | null;
+}
 
 export interface Db {
   /** Calls a database function. Throws DbError carrying the SQLSTATE on failure. */
   rpc<T>(fn: string, args: Record<string, unknown>): Promise<T>;
-  getActiveEmployee(userId: string): Promise<{ id: string; role: string } | null>;
-  /** PaymentIntent ids of an order's payments that are not finished. */
-  listOpenPaymentIntents(orderId: string): Promise<string[]>;
-  /** The PaymentIntent a refund will be issued against. */
-  getRefundPaymentIntent(refundId: string): Promise<string | null>;
-}
-
-export interface Auth {
-  /** The user id for a valid access token, or null. Verified with the Auth server. */
-  getUserId(accessToken: string): Promise<string | null>;
+  getRedemption(redemptionId: string): Promise<RedemptionRow | null>;
+  getPointsPerDollar(): Promise<number>;
 }
 
 export interface Deps {
   readonly db: Db;
-  readonly auth: Auth;
-  readonly stripe: StripeClient;
-  readonly stripeMode: StripeMode;
+  readonly shopify: ShopifyAdmin;
+  readonly idToken: IdTokenConfig;
   readonly log: Logger;
   /** Current time in whole seconds since the epoch. */
   readonly now: () => number;
 }
 
-export interface WebhookDeps extends Deps {
+export interface WebhookDeps extends Pick<Deps, 'db' | 'log'> {
+  /** The app's client secret: Shopify signs webhooks with it. */
   readonly webhookSecret: string;
-}
-
-// Rows returned by the database functions (only the columns handlers use).
-export interface OrderRow {
-  readonly id: string;
-  readonly order_number: number;
-  readonly status: string;
-  readonly subtotal_cents: number;
-  readonly discount_cents: number;
-  readonly reward_cents: number;
-  readonly total_cents: number;
-  readonly points_reserved: number;
-  readonly customer_id: string | null;
-}
-
-export interface RefundRow {
-  readonly id: string;
-  readonly order_id: string;
-  readonly status: string;
-  readonly amount_cents: number;
-  readonly provider_refund_id: string | null;
-  readonly points_reversed: number;
+  readonly shopDomain: string;
 }
