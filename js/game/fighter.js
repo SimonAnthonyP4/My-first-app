@@ -50,6 +50,7 @@
 
     reset(x, facing) {
       this.boneBreakUsed = false; // BONE BREAKER: once per round
+      this.madT = 0; this.evadeCd = 0; this.evadeFx = 0; this.boostT = 0;
       this.x = x; this.y = 0;
       this.vx = 0; this.vy = 0;
       this.pushVx = 0;
@@ -116,6 +117,8 @@
 
     update(input, opp, canAct, bounds) {
       this.stateTime++;
+      if (this.madT > 0) { this.madT--; input = RF.mirrorInput(input); }   // MADNESS: left and right swapped (game/urbanik.js)
+      if (this.evadeCd > 0) this.evadeCd--;
       if (this.hulkT > 0 && --this.hulkT === 0 && this.scene) this.scene.effects.spawnText('...CALM.', this.x, this.body.height + 16, '#80c080');
       if (this.alterT > 0 && --this.alterT === 0 && this.scene) this.scene.effects.spawnText('SUPPLY RAN OUT.', this.x, this.body.height + 16, '#a0a0a0');
       this.trackBlockPress(input);
@@ -812,6 +815,15 @@
     // Returns true if the hit was blocked.
     receiveHit(attacker, move) {
       const dir = sign(this.x - attacker.x) || attacker.facing;
+      // FORESIGHT (Urbanik): sometimes the hit simply is not there. He is already a step to the side.
+      const ev = this.def.autoEvade;
+      if (ev && !this.evadeCd && this.scene && this.scene.phase === 'fight' && !move.unblockable && !move.grab && !attacker.superActive && !['hitstun', 'knockdown', 'ko', 'finished', 'thrown', 'finishing'].includes(this.state) && Math.random() < ev.chance) {
+        this.evadeCd = ev.cooldown; this.evadeFx = 18; this.evadeFrom = this.x;
+        this.x = Math.max(this.scene.stageDef.bounds.left + 20, Math.min(this.scene.stageDef.bounds.right - 20, this.x - dir * -1 * 34 * (Math.abs(this.x - attacker.x) < 40 ? 1 : 0.5)));
+        this.scene.effects.spawnText('FORESEEN.', this.x, this.body.height + 14, '#40e8d0'); RF.audio.sfx('whoosh');
+        this.scene.hitstop = 0;
+        return true;   // (counted as blocked: nothing lands, nothing flinches)
+      }
       const blocked = this.isBlockingAgainst(attacker, move);
       const wasStunned = this.state === 'hitstun';
       // Hit during the start-up of your own attack or grab: COUNTER!
@@ -835,7 +847,8 @@
       if (attacker && attacker.hulkT > 0) dmg *= attacker.def.hulk.damage; // MIKEY SMASH
       if (attacker && attacker.def.crescendo && !blocked) dmg *= 1 + Math.min(attacker.def.crescendo.max, this.combo * attacker.def.crescendo.step); // Wuttke: each hit of a combo louder
       if (blocked) {
-        dmg *= this.def.noChip ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip
+        dmg *= this.def.noChip || this.def.psychicBlock ? 0 : RF.CONFIG.CHIP_DAMAGE; // Chris's bodyguard takes the chip; Urbanik's barrier takes all of it
+        if (this.def.psychicBlock) this.gainMeter(6);
         if (this.def.blockHeal) this.health = Math.min(this.maxHealth, this.health + this.def.blockHeal); // Ruano's GRACE
         this.shieldHit = 12;
         this.stun = Math.max(1, Math.round(move.blockstun * (this.def.blockstunScale || 1))); // Simon's checks recover fast

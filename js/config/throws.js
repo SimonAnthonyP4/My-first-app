@@ -24,6 +24,14 @@ RF.THROWS = {
     damagePerHit: 3,
     finisherDamage: 5,
   },
+  mindOverMatter: {
+    name: 'Mind Over Matter',
+    description: 'Lifts the opponent without touching them, shakes them in the air and throws them across the room. Arms still folded.',
+    kind: 'levitate',
+    ticks: 4,
+    damagePerTick: 2.5,
+    finisherDamage: 8,
+  },
   outOfTheater: {
     name: 'Out of the Theater',
     description: 'Takes their ticket, walks them down the aisle at full speed and throws them out the exit door. THIS SHOWING IS OVER.',

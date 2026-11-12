@@ -1161,6 +1161,7 @@
       RF.drawHazardFx(this, ctx, floorY);
       this.drawProjectiles(ctx, floorY);
       if (RF.drawItems) RF.drawItems(this, ctx, floorY);
+      if (RF.drawMind) RF.drawMind(this, ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);

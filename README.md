@@ -1012,7 +1012,7 @@ the best rizz on the roster.
   marquee, made-up movie posters, SCREEN 7's doors, loud carpet. **Hazard: HOT BUTTER!** the popcorn
   machine on the left wall.
 
-Character select is 10 x 3 (30 slots, 28 fighters).
+Character select is 10 x 3 (30 slots, 29 fighters).
 
 ## Story mode: the 3D camera, fights and the bonus chapter
 
@@ -1039,6 +1039,26 @@ Tired Angel, and Nicholas vs Omega Lopez.
 
 **Bonus chapter: MOVIE NIGHT** (`js/config/story-7.js`, `side: true`). Erick, Javan and the
 President at Regal Kendall Village, with two fights. Always open from the story menu.
+
+## Mr. Urbanik
+
+The psychology teacher (mentalist, **104% health**, from Room 207). Drawn from a friend's picture:
+blue work shirt, khakis, arms folded. His arms never move: everything he does is done with his mind
+(`noArms: true` in his sprite; his code is `js/game/urbanik.js`).
+
+- **Insane range.** Light (MIND PUSH) reaches about 110 pixels and heavy (MIND CRUSH) about 190, on
+  a 364-pixel stage. **Special: MIND BREAK** reaches the WHOLE stage and cannot miss (only be blocked).
+- **MADNESS.** A clean MIND BREAK scrambles the target's mind for 4 seconds: left and right swap
+  (a super makes it 7). Stars and question marks circle their head.
+- **Telepathic block.** He never raises a guard. A psychic barrier takes the hit: no chip damage, and
+  every block feeds his meter.
+- **FORESIGHT.** About one hit in five simply does not land: he is already a step to the side
+  ("FORESEEN."). It has a 4 second cooldown, and never works on throws, supers or when he is already
+  in hitstun. Tune it with `autoEvade: { chance, cooldown }` in his entry.
+- **Command specials:** Mind Spike (a bolt that crosses the screen) and Foresight (a counter: I SAW THAT.).
+- **Throw: Mind Over Matter** (lifts, shakes and throws without touching). **Finisher: Session
+  Over** ("TELL ME ABOUT YOUR MOTHER."). **Super: MIND OVER MATTER.**
+- Any fighter can use `psychicBlock`, `autoEvade`, `noArms` or `rivalTaunts` the same way.
 
 ## Unlocks and item drops
 

@@ -85,6 +85,9 @@
     // ---- Ms. Brady ----
     writeUp: Object.assign({ name: 'Write-Up', kind: 'projectile', startup: 9, recovery: 16, speed: 6, size: 14, height: 0.6, art: 'detentionSlip', sound: 'paper', hitText: 'WRITTEN UP!', colors: ['#ffffff', '#ff9ac8', '#d0507a'] }, hit(9)),
     zeroTolerance: Object.assign({ name: 'Zero Tolerance', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'NOT IN MY SCHOOL.' }, hit(13, { launch: 5 })),
+    // ---- Urbanik ----
+    mindSpike: Object.assign({ name: 'Mind Spike', kind: 'projectile', startup: 9, recovery: 14, speed: 15, size: 14, height: 0.7, art: 'psyBolt', sound: 'zap', hitText: 'GOT YOU.', colors: ['#ffffff', '#40e8d0', '#b070ff'] }, hit(9)),
+    foresight: Object.assign({ name: 'Foresight', kind: 'counter', startup: 2, window: 30, recovery: 14, color: '#40e8d0', callout: 'I SAW THAT.' }, hit(13, { launch: 5 })),
     // ---- Erick ----
     flashlightRush: Object.assign({ name: 'Seats Are This Way', kind: 'rush', startup: 6, speed: 9, duration: 15, reach: 16, recovery: 14, color: '#ffe27a', callout: 'RIGHT THIS WAY!', anim: 'heavy' }, hit(11, { pushback: 8 })),
     wRizz: Object.assign({ name: 'W Rizz', kind: 'counter', startup: 2, window: 28, recovery: 16, color: '#ff7ac8', callout: 'W RIZZ.' }, hit(14, { launch: 5 })),
@@ -128,6 +131,7 @@
     fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
     brady: { commands: { qcf: 'writeUp', qcb: 'zeroTolerance' }, taunt: 'TUCK IN THAT SHIRT.', voicePitch: 0.85 },
     bandy: { commands: { qcf: 'kickflip', qcb: 'stageDive' }, taunt: 'TURN IT UP!', voicePitch: 1.05 },
+    urbanik: { commands: { qcf: 'mindSpike', qcb: 'foresight' }, taunt: 'AND HOW DOES THAT MAKE YOU FEEL?', voicePitch: 0.8 },
     erick: { commands: { qcf: 'flashlightRush', qcb: 'wRizz' }, taunt: 'W. THAT IS A W.', voicePitch: 1.05 },
     javan: { commands: { qcf: 'spiral', qcb: 'tushPush' }, taunt: 'GO BIRDS.', voicePitch: 1.0 },
     trump: { commands: { qcf: 'rally', qcb: 'theWall' }, taunt: 'TREMENDOUS.', voicePitch: 0.7 },

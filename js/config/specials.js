@@ -260,6 +260,16 @@ RF.SPECIALS = {
     art: 'firedSlip', sound: 'paper', hitText: 'FIRED!',
     colors: ['#ffffff', '#ff6060', '#b01020'],
   },
+  mindBreak: {
+    name: 'Mind Break',
+    description: 'Looks at you. That is the whole attack. It reaches the entire stage, cannot be dodged, and a clean hit scrambles your mind: left and right swap for four seconds.',
+    kind: 'mindbreak',
+    startup: 22,
+    recovery: 26,
+    damage: 13,
+    hitstun: 30, blockstun: 16, pushback: 5, hitstop: 10,
+    callout: 'LOOK AT ME.',
+  },
   popcornBarrage: {
     name: 'Popcorn Barrage',
     description: 'Flicks the whole bucket and sends a buttery cloud of kernels across the screen. Large. Extra butter.',

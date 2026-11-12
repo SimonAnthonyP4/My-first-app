@@ -251,6 +251,7 @@
       // An arm thrown back behind the body ('back', 'flail') only shows as a fist poking out past
       // the head on a detailed drawing: it reads as a loose limb. Those keep their own drawn arms.
       if (k >= 3 && s.backArm !== true && ['back', 'flail'].includes(p.armName || p.arm)) p = Object.assign({}, p, { arm: null, armName: null });
+      if (s.noArms) p = Object.assign({}, p, { arm: null, armName: null, backArm: null });   // (Urbanik: his arms stay folded)
       const W = (this.cols + (MARGIN_X + EXTRA_W) * k) * U, H = (this.rows + this.topPad + (MARGIN_TOP + EXTRA_H) * k) * U;
       const [canvas, ctx] = makeCanvas(W, H);
       const ox = MARGIN_X * k * U, oy = (MARGIN_TOP * k + this.topPad) * U;
