@@ -830,6 +830,7 @@
       let dmg = move.damage * (1 - this.stats.damageReduction) * (RF.CONFIG.MOD_TRIPLE ? 3 : 1);
       if (this.counterHit) dmg *= RF.CONFIG.COUNTER_DAMAGE;
       if (attacker && attacker.raging) dmg *= RF.CONFIG.RAGE_DAMAGE;
+      if (attacker && attacker.boostT > 0) dmg *= 1.5;   // FIRED UP (game/items.js)
       if (attacker && attacker.alterT > 0) dmg *= attacker.def.alterEgo.damage; // MR. SUPPLIER hits harder
       if (attacker && attacker.hulkT > 0) dmg *= attacker.def.hulk.damage; // MIKEY SMASH
       if (attacker && attacker.def.crescendo && !blocked) dmg *= 1 + Math.min(attacker.def.crescendo.max, this.combo * attacker.def.crescendo.step); // Wuttke: each hit of a combo louder

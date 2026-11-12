@@ -310,6 +310,7 @@
   class StoryMenuScene {
     constructor(game) {
       setMusic('silence'); if (RF.storyScore) RF.storyScore.set('bell');
+      if (RF.unlocks) RF.unlocks.check();
       this.game = game; this.t = 0;
       const prog = RF.storyProgress.get(), chs = RF.STORY.chapters;
       this.prog = prog;

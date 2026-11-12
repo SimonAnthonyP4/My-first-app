@@ -23,7 +23,7 @@
   RF.arcadeFight = function (run) {
     const r = run.ladder[run.index];
     const c = run.costume || 0;
-    return { p1: run.p1, p2: r.def, costumes: [c, r.def.id === run.p1.id ? (c + 1) % RF.COSTUMES.length : 0], cpu: true, stage: r.stage, cpuLevel: r.level, boss: r.boss ? BOSS_HEALTH : 0, arcade: run };
+    return { p1: run.p1, p2: r.def, costumes: [c, r.def.id === run.p1.id ? RF.nextCostume(c) : 0], cpu: true, stage: r.stage, cpuLevel: r.level, boss: r.boss ? BOSS_HEALTH : 0, arcade: run };
   };
 
   // The tower: opponents stacked bottom (first) to top (boss); you climb it.
@@ -153,7 +153,7 @@
     const level = run.streak < 3 ? 'easy' : run.streak < 7 ? 'normal' : 'hard';
     const stage = RF.STAGES[Math.floor(Math.random() * RF.STAGES.length)].id;
     const c = run.costume || 0;
-    game.setScene(new RF.VersusScene(game, { p1: run.p1, p2: def, costumes: [c, def.id === run.p1.id ? (c + 1) % RF.COSTUMES.length : 0], cpu: true, stage,
+    game.setScene(new RF.VersusScene(game, { p1: run.p1, p2: def, costumes: [c, def.id === run.p1.id ? RF.nextCostume(c) : 0], cpu: true, stage,
       cpuLevel: level, survival: run, roundsToWin: 1, noEntrance: run.streak > 0 }));
   };
 

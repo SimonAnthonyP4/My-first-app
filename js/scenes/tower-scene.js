@@ -27,7 +27,7 @@
 
   // ---- the RIFT costume (the reward) ----
   function unlockRift() {
-    if (RF.COSTUMES.some((c) => c.name === 'RIFT')) return;
+    if (RF.COSTUMES.some((c) => c.name === 'RIFT')) return;   // (it lives in render/sprites.js now, locked until the tower is cleared)
     RF.COSTUMES.push({ name: 'RIFT', map: (h) => {
       if (!h || h[0] !== '#') return h;
       const n = parseInt(h.slice(1), 16), l = (((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.55 + (n & 255) * 0.15) / 255;

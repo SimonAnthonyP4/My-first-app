@@ -18,7 +18,7 @@
     },
     {
       id: 'CPU_LEVEL', label: 'CPU DIFFICULTY',
-      options: [['easy', 'EASY'], ['normal', 'NORMAL'], ['hard', 'HARD']],
+      options: [['easy', 'EASY'], ['normal', 'NORMAL'], ['hard', 'HARD'], ['nightmare', 'NIGHTMARE', 'nightmare']],   // (third item: needs that unlock)
     },
     {
       id: 'MUSIC_VOLUME', label: 'MUSIC',
@@ -57,6 +57,7 @@
     { id: 'MOD_TURBO', label: 'TURBO', hint: 'THE WHOLE FIGHT RUNS 50% FASTER', options: [[false, 'OFF'], [true, 'ON']] },
     { id: 'MOD_TRIPLE', label: 'TRIPLE DAMAGE', hint: 'EVERY HIT DOES 3X DAMAGE. FIGHTS ARE SHORT.', options: [[false, 'OFF'], [true, 'ON']] },
     { id: 'MOD_PROTEIN', label: 'PROTEIN MODE', hint: 'HALF THE DAMAGE YOU DEAL HEALS YOU', options: [[false, 'OFF'], [true, 'ON']] },
+    { id: 'MOD_ITEMS', label: 'ITEM DROPS', hint: 'PIZZA, SODA AND ENERGY DRINKS DROP ONTO THE STAGE. WALK INTO THEM.', options: [[false, 'OFF'], [true, 'ON']] },
     { id: 'MOD_RANDOM', label: 'RANDOM FIGHTERS', hint: 'BOTH PLAYERS GET A RANDOM FIGHTER EVERY ROUND', options: [[false, 'OFF'], [true, 'ON']] },
   ];
 
@@ -74,14 +75,16 @@
     try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) { data = null; }
     if (!data) return;
     for (const s of RF.SETTINGS) {
-      if (s.options.some(([v]) => v === data[s.id])) RF.CONFIG[s.id] = data[s.id];
+      if (s.options.some(([v, , lock]) => v === data[s.id] && (!lock || !RF.unlocks || RF.unlocks.has(lock)))) RF.CONFIG[s.id] = data[s.id];
     }
   }
 
   function cycle(s, dir) {
     const i = s.options.findIndex(([v]) => v === RF.CONFIG[s.id]);
     const n = s.options.length;
-    RF.CONFIG[s.id] = s.options[((i < 0 ? 0 : i) + dir + n) % n][0];
+    let j = (i < 0 ? 0 : i);
+    for (let k = 0; k < n; k++) { j = (j + dir + n) % n; const lock = s.options[j][2]; if (!lock || !RF.unlocks || RF.unlocks.has(lock)) break; }   // skip anything still locked
+    RF.CONFIG[s.id] = s.options[j][0];
     save();
     if (RF.audio) RF.audio.applyVolumes();
   }

@@ -64,7 +64,7 @@
     // P2's costume, bumped along if both players picked the same fighter AND costume.
     costumesFor() {
       const [a, b] = this.costume, p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
-      return [a, p1 && p2 && p1.id === p2.id && a === b ? (b + 1) % RF.COSTUMES.length : b];
+      return [a, p1 && p2 && p1.id === p2.id && a === b ? RF.nextCostume(b) : b];
     }
 
     update() {
@@ -115,7 +115,7 @@
       if (pressed('right')) c = (c % COLS === COLS - 1) ? c - COLS + 1 : c + 1;
       if (pressed('up')) c = (c - COLS + rows * COLS) % (rows * COLS);
       if (pressed('down')) c = (c + COLS) % (rows * COLS);
-      if (pressed('heavy')) { this.costume[p] = (this.costume[p] + 1) % RF.COSTUMES.length; RF.audio.sfx('move'); }
+      if (pressed('heavy')) { this.costume[p] = RF.nextCostume(this.costume[p]); RF.audio.sfx('move'); }
       const moved = Math.min(c, n - 1) !== this.cursor[p];
       this.cursor[p] = Math.min(c, n - 1);
       if (moved) RF.audio.sfx('move');

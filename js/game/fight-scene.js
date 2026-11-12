@@ -95,6 +95,7 @@
       if (run && run.health != null) { this.fighters[0].health = run.health; this.fighters[0].meter = run.meter || 0; } // survival: health carries over
       this.timer = RF.CONFIG.ROUND_TIME && !this.training && !this.tag ? RF.CONFIG.ROUND_TIME * RF.CONFIG.FPS : Infinity;
       this.comboDmg = 0; this.lastCombo = null; this.quietFrames = 0;
+      if (RF.itemsReset) RF.itemsReset(this);
       this.hitstop = 0;
       this.shake = 0;
       this.flash = 0;
@@ -182,6 +183,7 @@
       }
       if (this.hitstop > 0) { this.hitstop--; return; }
       if (this.opts.story && RF.storyTick) RF.storyTick(this);
+      if (RF.itemsTick) RF.itemsTick(this);
 
       switch (this.phase) {
         case 'entrance': {
@@ -715,7 +717,7 @@
       RF.audio.sfx('hit');
       this.comboText = { side: att.side, hits: this.brutal, t: 70 };
       if (this.brutal >= BRUTAL_HITS) {
-        if (this.isHuman(att)) RF.records.unlock('brutality');
+        if (this.isHuman(att)) { RF.records.unlock('brutality'); RF.records.count('brutalities'); }
         this.finisher = { kind: RF.FINISHERS.brutality, att, vic: def, t: 0 };
         att.vx = def.vx = att.pushVx = def.pushVx = 0;
         att.move = null; att.state = null; att.setState('finishing');
@@ -1158,6 +1160,7 @@
       if (ent && ent.kind.draw && !ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
       RF.drawHazardFx(this, ctx, floorY);
       this.drawProjectiles(ctx, floorY);
+      if (RF.drawItems) RF.drawItems(this, ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);

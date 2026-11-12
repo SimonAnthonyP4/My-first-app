@@ -54,10 +54,23 @@ RF.altCostume = function (def) {
       if (EYES.test(k)) return '#e8f8ff';
       const l = lum(h); return hex(14 + l * 50, 14 + l * 52, 22 + l * 80);
     } },
-    { name: 'GOLDEN', map: (h, k) => { // a solid gold statue
+    { name: 'GOLDEN', lock: 'gold', map: (h, k) => { // a solid gold statue
       if (EYES.test(k)) return '#3a1a00';
       const l = Math.min(1, lum(h) * 1.4);
       return l < 0.5 ? hex(60 + l * 2 * 160, 30 + l * 2 * 120, l * 2 * 10) : hex(220 + (l - 0.5) * 70, 150 + (l - 0.5) * 200, 10 + (l - 0.5) * 300);
+    } },
+    { name: 'BLOOD', lock: 'blood', map: (h, k) => { // everything in reds, eyes white
+      if (EYES.test(k)) return '#ffffff';
+      const l = lum(h); return hex(40 + l * 215, 4 + l * 40, 6 + l * 34);
+    } },
+    { name: 'NOIR', lock: 'noir', map: (h, k) => { // an old film: greys with a warm tint
+      if (EYES.test(k)) return '#ffffff';
+      const l = lum(h); return hex(22 + l * 220, 20 + l * 212, 16 + l * 190);
+    } },
+    { name: 'RIFT', lock: 'rift', map: (h) => { // the rift tower's reward: purple and pink
+      if (!h || h[0] !== '#') return h;
+      const [r, g, b] = rgb(h), l = (r * 0.3 + g * 0.55 + b * 0.15) / 255;
+      return hex(30 + l * 190, 10 + l * 120, 60 + l * 200);
     } },
   ];
   RF.costume = function (def, n) {

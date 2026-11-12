@@ -1040,6 +1040,27 @@ Tired Angel, and Nicholas vs Omega Lopez.
 **Bonus chapter: MOVIE NIGHT** (`js/config/story-7.js`, `side: true`). Erick, Javan and the
 President at Regal Kendall Village, with two fights. Always open from the story menu.
 
+## Unlocks and item drops
+
+**UNLOCKS** (title menu) lists what you can earn. Nothing is stored as a flag: each reward is worked
+out from what you have actually done, so progress from before it existed counts (`js/core/unlocks.js`).
+A trophy pops up the first time something becomes available.
+
+| Reward | How |
+| --- | --- |
+| GOLDEN costume | an S rank in any story chapter |
+| BLOOD costume | 5 brutalities |
+| NOIR costume | finish the bonus chapter MOVIE NIGHT |
+| RIFT costume | clear the Rift Tower |
+| NIGHTMARE CPU level | finish the story (Settings, CPU difficulty) |
+
+Locked costumes are skipped when you cycle with HEAVY on character select. Add one with `lock: 'id'`
+on a costume in `js/render/sprites.js` and a `test()` in `RF.UNLOCKS`.
+
+**ITEM DROPS** (Party Mods, off by default): every 10 to 15 seconds something drops onto the stage
+and waits about 11 seconds. Walk into it: PIZZA heals a quarter of your health, SODA fills 40 meter,
+ENERGY DRINK ("FIRED UP") gives 1.5x damage for 8 seconds. Not in training, tag, or story fights.
+
 ## Menus
 
 **The look:** black steel and blood red. The logo bleeds, chains hang in the corners, red lightning

@@ -13,6 +13,7 @@
       this.game = game;
       this.t = 0;
       this.shake = 0;
+      RF.unlocks.check();   // a trophy for anything newly earned
       this.menu = new RF.ListMenu([
         { label: 'STORY', desc: 'THE LAST BELL - A CINEMATIC CAMPAIGN', onSelect: () => this.go(new RF.StoryMenuScene(game)) },
         { label: 'FIGHT NOW', desc: 'TWO PLAYERS, ONE KEYBOARD', onSelect: () => this.go(new RF.SelectScene(game)) },
@@ -25,6 +26,7 @@
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, survival: true })) },
         { label: 'TRAINING', desc: 'PRACTICE COMBOS AND TRIALS', onSelect: () => this.go(new RF.SelectScene(game, { cpu: true, training: true })) },
         { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY AND MORE', onSelect: () => this.go(new RF.ModsScene(game)) },
+        { label: 'UNLOCKS', desc: 'COSTUMES AND MODES YOU HAVE EARNED', onSelect: () => this.go(new RF.UnlocksScene(game)) },
         { label: 'RECORDS', desc: 'YOUR STATS AND ACHIEVEMENTS', onSelect: () => this.go(new RF.RecordsScene(game)) },
         { label: 'HOW TO PLAY', desc: 'CONTROLS, COMBOS AND SPECIALS', onSelect: () => this.go(new RF.InfoScene(game, 'howto')) },
         { label: 'SETTINGS', desc: 'DIFFICULTY, SOUND, CONTROLLER', onSelect: () => this.go(new RF.SettingsScene(game)) },
