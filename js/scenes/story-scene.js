@@ -659,6 +659,7 @@
           const o = v[3] || {};
           if (o.costume && def.sprite.palette) def = RF.costume(def, o.costume);
           if (o.rift) def = RF.riftDef(def);
+          if (o.emperor) def = RF.emperorDef(def); if (o.crown) def = RF.crownDef(def); if (o.forgotten) def = RF.forgottenDef(def);   // the Headmaster's side (game/headmaster.js)
           if (o.name) def = Object.assign({}, def, { name: o.name });
           this.actors[k[0] === '$' ? id : k] = { def, sprite: RF.createSprite(def), x: v[1], y: o.y || 0, z: o.z || 0, scale: o.scale || 1, facing: v[2] || 1, anim: o.anim || 'idle', rift: !!o.rift, ghost: !!o.ghost, seed: Math.random() * 100, stage: o.bg ? new RF.StageRenderer(RF.getStage(o.bg)) : null };
         }
@@ -1075,7 +1076,7 @@
 
     drawChooser(ctx) {
       ctx.fillStyle = 'rgba(10,0,20,0.88)'; ctx.fillRect(0, 0, W, H);
-      T(ctx, 'WHO STEPS THROUGH THE RIFT?', W / 2, 32, { scale: 2, align: 'center', color: PURPLE, outline: '#000' });
+      T(ctx, (this.cur && this.cur.prompt) || 'WHO STEPS THROUGH THE RIFT?', W / 2, 32, { scale: 2, align: 'center', color: PURPLE, outline: '#000' });
       const n = this.picks.length, per = 7, start = Math.max(0, Math.min(n - per, this.pick - 3));
       for (let j = 0; j < per && start + j < n; j++) {
         const i = start + j, def = RF.getCharacter(this.picks[i]), x = 40 + j * 50, y = 62, sel = i === this.pick;

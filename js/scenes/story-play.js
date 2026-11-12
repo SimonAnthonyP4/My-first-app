@@ -11,7 +11,7 @@
 //     The pick is saved as vars[id] = set; later scenes read it with { if: (v) => ..., then, else }.
 //  BRANCHING           { if: (vars, state) => bool, then: [...], else: [...] }   { set: [key, value] }
 //                      a walk / dash target of [key, gap] closes in on that actor; { depth: [key, z, frames] } walks in 3D
-//  MEMORY              { recall: { bg, cast, shot | cam3d, say: [key, 'LINE'] | text: 'CAPTION', frames } }
+//  MEMORY              { recall: { bg, cast, shot | cam3d, say: [key, 'LINE'] | text: 'CAPTION', frames, live, grade } }
 //                      a flash of an earlier moment, in sepia, then straight back to the scene as it was
 //  ACTING              { emote: [key, '!' | '?' | '...' | 'heart' | 'anger' | 'sweat' | 'tear' | 'note' | 'idea'] }
 //                      { tremble: [key, frames] }   { card: [key, 'TAGLINE'] } (freeze-frame intro card)
@@ -111,7 +111,7 @@
       const r = s.recall;
       this.rc = { t: 0, len: r.frames || 80, text: r.text || (r.say && r.say[1]) || '', who: null,
         save: { actors: this.actors, bgDef: this.bgDef, stage: this.stage, shot: this.shot, cam: Object.assign({}, this.cam), tintCol: this.tintCol, flashback: this.flashback, weather: this.weather, grade: this.grade, riftFx: this.riftFx, insert: this.insert, rays: this.rays, spotKey: this.spotKey } };
-      this.actors = {}; this.riftFx = null; this.insert = null; this.tintCol = null; this.weather = null; this.grade = null; this.rays = false; this.spotKey = null; this.flashback = true;
+      this.actors = {}; this.riftFx = null; this.insert = null; this.tintCol = null; this.weather = null; this.grade = null; this.rays = false; this.spotKey = null; this.flashback = !r.live; if (r.grade) this.grade = r.grade;   // live: not a memory, a cut to somewhere else (he is watching)
       if (r.bg) this.instant({ bg: r.bg });
       if (r.cast) this.instant({ cast: r.cast });
       if (r.cam3d) this.instant({ cam3d: r.cam3d }); else this.setShot(r.shot || 'wide');

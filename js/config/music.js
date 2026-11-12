@@ -298,6 +298,16 @@
     } },
   });
 
+  // ---- THE THRONE BETWEEN: "Headmaster" - a slow crawl on a tritone, with a bell-like lead.
+  const TH_1 = 'E2 - - - - - - - E2* E2* A#2 - - - A2 -';
+  const TH_2 = 'E2 - - - - - - - E2* E2* F2 - - - E2* E2*';
+  const TH_3 = 'C3 - - - - - A#2 - - - - - A2 - G#2 -';
+  RF.MUSIC.throne = metal(88, [TH_1, TH_2, TH_1, TH_3], [
+    ...rest(4),
+    'E5 - - - - - - - A#5 - - - - - - -', 'A5 - - - - - - - G5 - - - F5 - - -',
+    'E5 - - - - - - - A#5 - - - - - A5 -', 'E5 - - - - - - - - - - - . . . .',
+  ], [crash(DOOM), DOOM, DOOM, 'k+h . . . k k h . s . . . s s T t']);
+
   // DOWNTUNED: every riff, bass line and solo is dropped a fourth (E becomes a low B) and each
   // song is pulled back a little, so the whole soundtrack sits deeper and hits harder.
   // (Set DOWNTUNE to 0 and DRAG to 1 for the original tuning and tempos.)

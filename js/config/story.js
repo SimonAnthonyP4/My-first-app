@@ -1,28 +1,36 @@
-// STORY MODE: "THE LAST BELL" - the screenplay, part 1 of 6 (chapters 0-3).
-// 24 chapters across three generations of one school, with quick-time events, dialogue
-// choices that are remembered, and three endings. Parts 2-6: story-2.js ... story-6.js.
+// STORY MODE: "THE LAST BELL" - the screenplay, part 1 (chapters 0-3).
+// 29 chapters across three generations of one school, with quick-time events, fights in the
+// middle of scenes, dialogue choices that are remembered, and three endings.
+//   story.js ... story-6.js   the first version of the story
+//   story-7.js                a bonus chapter (MOVIE NIGHT)
+//   story-8.js, story-9.js    THE HEADMASTER: the throne, the Forgotten, the bell rung backward, the
+//                             war. They add chapters, rewrite others, and set the final chapter order
+//                             (so the "CHAPTER n" numbers written in these files are renumbered there).
 //
 // How a scene is written (full step lists at the top of the engine files):
 //   js/scenes/story-scene.js  staging, shots, words, sound         { cast } { shot } { say } { amb }
 //   js/scenes/story-3d.js     the 3D camera                        { cam3d: [who, 'flyin'] }
 //   js/scenes/story-score.js  the soundtrack (20 themes)           { score: 'theme' }
 //   js/scenes/story-play.js   quick-time events, choices, acting   { qte } { choice } { if } { emote } { place }
+//   js/scenes/story-fights.js, story-war.js   fights inside a scene, deaths, crowns   { brawl } { die } { crownify }
 //
 // What the player decides (saved, and read back later with when(key, value)):
-//   table      ch 1   Nicholas, about the corner table:    'same' | 'somebody'
-//   nick       ch 2   Nicholas, after the other universe:  'defiant' | 'shaken'
-//   brady      ch 3   Ms. Brady, on Sirven retiring:       'heart' | 'duty'
-//   joke       ch 5   Bandy's comeback:                    'logic' | 'who' | 'silent'
-//   simon      ch 6   Simon, to Mikey:                     'home' | 'handoff'
-//   jauregui   ch 15  Jauregui, to his old student:        'said' | 'silent'
-//   anthony    ch 17  Anthony, at the lonely table:        'ask' | 'bar'
-//   goodbye    ch 18  Ms. Brady, to Sirven:                'honor' | 'order'
-//   heroAnswer ch 20  your hero, to Omega Lopez:           'ours' | 'you'
-//   ending     ch 20  who holds the door:                  'lopez' | 'sirven' | 'hero'
-//   hero              who you sent through the rift ('$hero' in the script; '$friend' and
-//                     '$principal' are Nicholas / Ms. Brady, or Anthony / Sirven if one is the hero)
+//   table      THE DAY BEFORE     Nicholas, about the corner table:    'same' | 'somebody'
+//   nick       BRO BATCH          Nicholas, after the other universe:  'defiant' | 'shaken'
+//   brady      LOCKDOWN           Ms. Brady, on Sirven retiring:       'heart' | 'duty'
+//   joke       STREET LEVEL       Bandy's comeback:                    'logic' | 'who' | 'silent'
+//   simon      GAME DAY           Simon, to Mikey:                     'home' | 'handoff'
+//   gabriel    THE COLLECTION     Gabriel, to the Headmaster:          'call' | 'quiet'
+//   jauregui   SHOW YOUR WORK     Jauregui, to his old student:        'said' | 'silent'
+//   anthony    INSIDE THE CROWN   Anthony, at the lonely table:        'ask' | 'bar'
+//   goodbye    THE LAST ONE OUT   Ms. Brady, to Sirven:                'honor' | 'order'
+//   seat       ROLL CALL          Nicholas, to his crowned friend:     'hit' | 'ask'
+//   heroAnswer THE LAST BELL      your hero, to the Headmaster:        'ours' | 'you'
+//   ending     THE LAST BELL      who holds the door:                  'lopez' | 'sirven' | 'hero'
+//   hero                          who you sent to knock the crown off ('$hero' in the script; '$friend'
+//                                 and '$principal' are Nicholas / Ms. Brady, or Anthony / Sirven if one is the hero)
 RF.STORY = {
-  // who can step through the rift in the finale
+  // who can go in the finale (story-9.js puts the ones who are still alive first)
   heroes: ['nicholas', 'anthony', 'brady', 'sirven', 'bandy', 'simon', 'mikey', 'fernando', 'gabriel', 'wuttke', 'alejandro', 'tyler', 'jauregui', 'chris', 'tamayo', 'ruano', 'dabalsa', 'astuto', 'escobedo', 'weissenberg', 'holbrook', 'landa'],
   chapters: [],
   when: (key, val) => (vars) => vars[key] === val,                  // a choice was made a certain way

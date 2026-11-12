@@ -698,42 +698,64 @@ The mode lives in `js/game/tag-team.js`; the fight itself is the normal FightSce
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A generational, cinematic campaign you **play**: **24 chapters** across
-three generations of the school, 400+ spoken lines per playthrough, **20 quick-time moments**,
-**10 choices the story remembers**, 4 fights and **3 endings**.
+Main menu -> **STORY**. A generational, cinematic campaign you **play**: **29 chapters** across
+three generations of the school, about 690 spoken lines per playthrough, **30 quick-time
+moments**, **12 choices the story remembers**, **18 fights** (most of them in the middle of a
+scene), **5 deaths** and **3 endings**.
 
 **The story.** The school bell was cast by the first graduating class in 1961, and every class
 since has signed the inside of it. On their last day it rings once - the last bell - and they
-walk out the doors. Lopez Tuero's first class did that twelve years ago and never came back.
-In every universe he has checked, it ends the same way. So at midnight he tears the school
-open across every universe: a bell that never stops, so nobody ever has to say goodbye.
+walk out the doors. Lopez Tuero's first class did that twelve years ago and, as far as he knows,
+never came back. So at midnight he rings the bell and steps between the universes.
 
-| # | Chapter | When | What happens | You play |
-|---|---|---|---|---|
-| 0 | Midnight | now | cold open, the clock hits 12, then the opening titles: every lead gets a freeze-frame card | - |
-| 1 | The Day Before | 12 hours earlier | one last normal lunch at the corner table; Lopez watching | choice |
-| 2 | Bro Batch | now | how Nicholas and Anthony met; Rift Chris; the universe where Chris bought Bro Batch | slip, jab, cross, uppercut; choice |
-| 3 | Lockdown | now | Brady and Sirven on the radio; Sirven's secret last year | STOP.; choice |
-| 4 | 1994 | 31 years ago | young Mr. Sirven's first day; Principal Ortega and the bell; a freshman named Brady | - |
-| 5 | Street Level | now | Bandy and Fernando vs his evil twin; "this school kept me" | board swing, flick it; timed choice |
-| 6 | Game Day | now | Simon and Mikey; the scholarship | duck, tackle, flying knee; choice |
-| 7 | The Throne | now | Rift Tamayo is sitting in the principal's chair | pull rank; **King Sirven vs Rift Tamayo** |
-| 8 | The Faculty Meeting | now | LOPEZ. TUERO. | - |
-| 9 | The Student Teacher | 12 years ago | young Lopez, the proof, the kids nobody else would tutor; "show your work" | - |
-| 10 | Every Universe | 12 years ago / now | his first class leaves and never comes back | - |
-| 11 | The Bell Tower | now | the signatures inside the bell; a class is fading; Ruano vs his fallen self | forgive him |
-| 12 | Three Anchors | now | Wuttke's chord, Holbrook's map, Tyler's swing | the swing |
-| 13 | The Climb | now | a free climb up the crag, 120 metres, no rope | reach, pull up; **Alejandro vs Rift Lady Landa** |
-| 14 | Ms. Brady's First Day | 8 years ago | thirty-two detentions; the walkie-talkie is a chain | - |
-| 15 | Show Your Work | now | "I was proud of you." "Then why did you never say it?" | jump; **Jauregui vs Lopez (1/3)**; timed choice |
-| 16 | Doomsday | now | the heroes go in and lose four of their own | dodge; reach him |
-| 17 | Folded | elsewhere | Anthony wakes in a universe that doesn't know him, and sits down with a stranger | choice |
-| 18 | The Last One Out | night | rain; Sirven volunteers to hold the rift | choice |
-| 19 | The Night Before | 2 AM | the roof, a phone call home, a song, Jauregui's letter, locking up one last time | - |
-| 20 | The Last Bell | now | you choose who goes in (each of the 17 has their own line); someone has to hold the door | choice; **you vs OMEGA LOPEZ**; the handshake; **the ending** |
-| 21 | Graduation | 3 months later | a different graduation for each ending | caps up |
-| 22 | Twenty Years Later | 20 years later | everyone comes back; a new kid is alone at the corner table | - |
-| 23 | The Next Bell | 20 years later | the walkie-talkie changes hands; credits; a different scene after the credits for each ending | - |
+The school thinks the bell is broken. It is not. In the room between universes there is no
+clock: one morning for the school is four hundred years for him. By the time anyone looks up he
+is **THE HEADMASTER** - crowned, on a throne, with an army called **the Forgotten** (every student
+he "kept", for so long that he no longer remembers their faces, so they no longer have any) and
+three lieutenants: **the Proctor**, **the Bell Ringer** and **the Eraser**. He does not kidnap
+people. He offers each of them the thing they are most afraid to lose, and they walk. And when he
+keeps someone, **the school forgets them** - the name, the face, the chair - which is why nobody
+knows there is a war on.
+
+The way back is the bell itself. Rung backward, it takes you to the day a thing began: *you may
+look, you may listen, you may not stay.* And rung backward for everyone at once, it calls every
+class that ever was.
+
+| # | Chapter | What happens | You play |
+|---|---|---|---|
+| 0 | Midnight | cold open; the bell; an empty chair in a room between universes; the opening titles | - |
+| 1 | The Day Before | one last normal lunch at the corner table | choice |
+| 2 | Bro Batch | how Nicholas and Anthony met; Rift Chris | slip, jab, cross, uppercut; fight; choice |
+| 3 | Lockdown | Brady and Sirven on the radio; Sirven's secret last year | STOP.; fight; choice |
+| 4 | 1994 | young Mr. Sirven's first day; Principal Ortega and the bell; a freshman named Brady | - |
+| 5 | Street Level | Bandy and Fernando; "this school kept me" | board swing, flick it; fight; timed choice |
+| 6 | Game Day | Simon and Mikey; the scholarship | duck, tackle, flying knee; fight; choice |
+| 7 | **The Headmaster** | the throne, the Forgotten, the three. He has been listening to all of them. **Chris walks** - and the next day there are eight chairs at the table and nobody can say why it feels wrong | a "say no" that cannot be won |
+| 8 | The King's Chair | Rift Tamayo is sitting in the principal's chair | pull rank; **King Sirven vs Rift Tamayo** |
+| 9 | The Faculty Meeting | LOPEZ. TUERO. They decide it is one man in one gym. Ms. Brady counts thirty names and twenty-nine students | - |
+| 10 | The Student Teacher | young Lopez, the proof, the four kids nobody else would tutor | - |
+| 11 | Every Universe | his first class leaves; he says it from the throne now | - |
+| 12 | The Bell Tower | the signatures inside the bell; the rope is wound the wrong way | forgive him; fight |
+| 13 | Three Anchors | Wuttke's chord, Holbrook's map, Tyler's swing | the swing |
+| 14 | **The Collection** | Gabriel on a snack run buys nine of everything for a table of eight. The Eraser. An offer: a room that is never quiet | **Gabriel vs the Eraser**; choice |
+| 15 | The Climb | a free climb up the crag, no rope | reach, pull up; **Alejandro vs Rift Lady Landa** |
+| 16 | Ms. Brady's First Day | thirty-two detentions; the walkie-talkie is a chain | - |
+| 17 | Show Your Work | "I was proud of you." "Then why did you never say it?" | jump; **Jauregui vs Lopez (1/3)**; timed choice |
+| 18 | **Doomsday** | seven go in to talk to one sad man. It is not a gym, and it is not one man. Anthony takes the crown so that Nicholas never eats alone in any universe - and Nicholas forgets him mid-sentence. **Fernando holds the door** | **a fight you cannot win: survive**; reach him; hold the door |
+| 19 | Inside the Crown | what the crown shows the people who wear it | choice |
+| 20 | The Last One Out | Nicholas does not know who wrote the labels. Mr. Urbanik works out that people have been cut out of them. Sirven volunteers | choice |
+| 21 | **Rung Backward** | three tolls. **1994**: Ms. Brady meets herself, and the Proctor comes for the girl. **September 2016**: his first class came back to thank him - he had driven four hours to surprise *them* - and the card they left has been in Jauregui's desk for twelve years. **Three years ago**: the corner table, and a boy with no face | **Ms. Brady vs the Proctor**; say his name; stay |
+| 22 | The Night Before | the crag, a phone call home, a song, the letter, locking up one last time | - |
+| 23 | **All Rise** | he brings the throne to them: twenty against four hundred and twelve. **Dabalsa holds the stairs.** "This is your principal speaking. All classes. All years." - and every class that ever was walks out of the light | **tag: Simon + Bandy vs the Forgotten**; **survive the Bell Ringer** |
+| 24 | **Roll Call** | the Forgotten are not fought, they are called by name. **Lady Landa. Chris. Mr. Wuttke.** Gabriel claps on the wrong beat. "Is this seat taken?" - asked the other way round | **Alejandro vs the Eraser**; **tag: Sirven + Brady vs the Bell Ringer + the Proctor**; **Mikey vs ? ? ?**; **Nicholas vs Crowned Anthony**; say his name (x3); choice; the handshake |
+| 25 | The Last Bell | he takes their names one at a time. One teacher walks through it holding a card. Who his three lieutenants were. A crown that will not come off; someone has to hold the door | remember him; choose who goes (15, each with their own line); **you vs THE HEADMASTER**; **the ending** |
+| 26 | Graduation | five names are read before any other; a different graduation for each ending | caps up |
+| 27 | Twenty Years Later | everyone comes back; a new kid is alone at the corner table | - |
+| 28 | The Next Bell | the walkie-talkie changes hands; credits; a scene after the credits for each ending | - |
+
+A save from the older 24-chapter story is moved to the same chapter in the new order the first
+time the game loads (by chapter name), but the middle of the story is new: NEW STORY is the way
+to see it.
 
 **Quick-time events** (`js/scenes/story-play.js`). The action scenes are played, with the
 controller's own symbols on screen (and the keyboard key under them):
@@ -745,16 +767,17 @@ controller's own symbols on screen (and the keyboard key under them):
 A miss never fails the scene - it changes it (Anthony throws the protein bar that finishes the
 job; Tyler takes a mulligan; Mikey bounces off his own clone). Every prompt counts toward the
 chapter's **STYLE RANK** (S / A / B / C), shown when the chapter ends and saved on the chapter
-list, and good play before a fight starts it with **MOMENTUM** (super meter). One moment in
-chapter 16 cannot be won, and does not count. Story menu -> **ACTION PROMPTS: OFF** plays those
+list, and good play before a fight starts it with **MOMENTUM** (super meter). A few moments
+(saying no to the Headmaster, reaching Anthony, staying in the past) cannot be won, and do not count. Story menu -> **ACTION PROMPTS: OFF** plays those
 moments for you.
 
-**Choices.** Ten moments stop and ask what a character says. They are saved, and come back
-later - a line in chapter 1 is answered in chapter 22; what Ms. Brady says in chapter 3 is
-what King Sirven quotes back in chapter 18; whether Jauregui manages to say it in chapter 15
-changes the letter he writes in chapter 19. Some are timed; saying nothing is an answer.
+**Choices.** Twelve moments stop and ask what a character says. They are saved, and come back
+later - a line in THE DAY BEFORE is answered twenty years on; what Ms. Brady says in LOCKDOWN is
+what King Sirven quotes back in THE LAST ONE OUT; whether Jauregui manages to say it in SHOW YOUR
+WORK changes his letter, and what he says when he hands over the card; what Gabriel answers the
+Headmaster is the first thing he says when he gets his name back. Some are timed; saying nothing is an answer.
 
-**Three endings**, from the last choice in chapter 20 (someone has to hold the door):
+**Three endings**, from the last choice in THE LAST BELL (someone has to hold the door):
 
 - **THE TEACHER** - Lopez holds it. The letter reaches him twenty years later.
 - **THE LAST ONE OUT** - King Sirven stays. His crown is all they find; Lopez serves his
@@ -762,7 +785,7 @@ changes the letter he writes in chapter 19. Some are timed; saying nothing is an
 - **THE EMPTY SEAT** - you hold it yourself, so nobody is lost. Unlocked once you have finished
   the story; the graduation will not start one short.
 
-Chapters 21-23, the credits scene and the story menu's ENDINGS counter follow the ending.
+The three chapters after it, the credits scene and the story menu's ENDINGS counter follow the ending.
 
 **The 3D camera** (`js/scenes/story-3d.js`): scenes are shot in real perspective - a textured
 floor laid out to the horizon, the stage standing as an animated wall in space (drawn in
@@ -1060,6 +1083,52 @@ blue work shirt, khakis, arms folded. His arms never move: everything he does is
   Over** ("TELL ME ABOUT YOUR MOTHER."). **Super: MIND OVER MATTER.**
 - Any fighter can use `psychicBlock`, `autoEvade`, `noArms` or `rivalTaunts` the same way.
 
+## Story mode: the Headmaster, the war and the bell rung backward
+
+**Who he is now** (`js/game/headmaster.js`). Nobody was redrawn: the file builds new looks out of
+the fighters that exist.
+
+- `RF.emperorDef(def)` - **THE HEADMASTER**: Lopez Tuero's own drawing with a tall iron crown, a
+  red cape, a black coat and ash skin. Used in the story (`{ emperor: true }` in a cast) and as
+  the final boss (`look: 'emperor'` on a fight).
+- `RF.crownDef(def)` - anyone he has collected: a small crown, and their colours drained
+  (`{ crown: true }`, or the step `{ crownify: key }` to do it in front of the camera).
+- `RF.forgottenDef(def)` - one of **the Forgotten**: grey, with a smear where the face was.
+- `RF.costume(def, 'alt1' | 'alt2' | 'alt3')` - "somebody else": the same drawing in different
+  clothes, with skin and hair left alone. Alumni, his 2016 class and the Forgotten once they get
+  their faces back are made this way.
+- Three new fighters, drawn by hand, in `RF.EXTRAS` (found by `RF.getCharacter`, not on the select
+  screen): **the Proctor** (a clock for a face; throws its hands), **the Bell Ringer** (carries the
+  bell on its shoulders; super armour) and **the Eraser** (chalk dust; it does not hurt you, it
+  removes you).
+
+**The throne** (`js/stages/throne.js`): the room between universes - a throne built out of
+classroom furniture, rows of faceless watchers, windows onto other schools, a cracked bell
+swinging overhead, and its own slow, heavy theme. Its hazard is THE LAST BELL.
+
+**New story steps** (`js/scenes/story-war.js`):
+
+| Step | What it does |
+|---|---|
+| `{ die: key }` | they fall and do not get up; light rises off them |
+| `{ crownify: key }` / `{ restore: key }` | the crown comes down / breaks (`restore` also takes `costume` and `name`, for someone we have only ever seen without a face) |
+| `{ restoreAll: true }` | every one of the Forgotten in the scene gets a face back |
+| `{ brawl: { ..., look: 'emperor' / 'crown' / 'forgotten' / 'plain' } }` | who you fight |
+| `{ brawl: { ..., partner, vsPartner } }` | a tag fight in the middle of a scene |
+| `{ brawl: { ..., survive: 22 } }` | he cannot be hurt: last 22 seconds. Win or lose, the scene carries on, and `st.survived` says which |
+| `{ recall: { ..., live: true } }` | not a memory but a cut to somewhere else (he is watching from the throne) |
+| inserts `army`, `portals`, `card2016`, `memorial` | the horde under the floating throne; every class arriving; the card; the five names |
+
+The 3D camera now looks **up** at anyone raised off the floor (a cast with `y`) or much taller
+than a person, so the throne and the lieutenants stay in frame.
+
+**How the new chapters are written.** `js/config/story-8.js` and `story-9.js` add six chapters
+and rewrite three, but they also *edit* the older files in place with a few helpers
+(`RF.STORY.kit`): `after(steps, 'A LINE THAT STARTS LIKE THIS', [...])`, `before`, `swap`, `cut`
+and `reword` find a line anywhere in a chapter (inside choices and endings too) and work from
+there. The last thing story-9.js does is sort the chapters into `ORDER` and renumber every
+"CHAPTER n" title card - to move a chapter, move its name in that list.
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.
@@ -1200,6 +1269,7 @@ on the stage select screen automatically.
 | Music Room | Practice Room B | quiet piano |
 | The Crag | Thin Air | ambient, almost still |
 | Regal Kendall Village | Now Showing | lobby jazz |
+| The Throne Between | The Chair | the slowest, lowest song in the game: 88 bpm doom |
 
 The chill themes are marked `clean: true` and use the quiet band: instruments `keys`, `pad`, `sub`,
 `bell`, and the soft drum kit (`b` kick, `p` rim, `x` hat, `m` shaker). `drumVolume` turns a song's

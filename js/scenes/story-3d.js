@@ -95,6 +95,8 @@
   P.draw3D = function (ctx, sh, fy) {
     const keys = Array.isArray(sh.a) ? sh.a : [sh.a], subs = keys.map((k) => this.actors[k]).filter(Boolean);
     if (subs.length) { sh.ax = subs.reduce((s, a) => s + a.x, 0) / subs.length; sh.az = subs.reduce((s, a) => s + (a.z || 0), 0) / subs.length; }
+    // someone raised off the floor (on a throne), or much taller than a person: look up at them
+    const ay = subs.length ? subs.reduce((s, a) => s + (a.y || 0) + Math.max(0, a.def.body.height * (a.scale || 1) - 86) * 0.6, 0) / subs.length : 0;
     if (sh.ax == null) return; // (if the subject has gone - folded away, shattered - the camera stays where they were)
     const u0 = Math.min(1, (this.t - sh.t0) / (sh.frames || 1)), u = u0 * u0 * (3 - 2 * u0), L = (p) => (p ? p[0] + (p[1] - p[0]) * u : 0);
     const ax = sh.ax, az = sh.az;
@@ -102,7 +104,7 @@
     const yaw = (sh.yaw0 || 0) + L(sh.yaw) + Math.sin(this.t / 53) * 0.012 * hh;
     let dist = Math.max(40, L(sh.dist)), F = sh.f ? L(sh.f) : 260; const roll = sh.roll ? L(sh.roll) : 0;
     let cy = Math.cos(yaw), sn = Math.sin(yaw);
-    const C = { x: ax + L(sh.shift) + sn * dist, y: Math.max(4, L(sh.height) + Math.sin(this.t / 37) * 1.2 * hh), z: az - cy * dist };
+    const C = { x: ax + L(sh.shift) + sn * dist, y: Math.max(4, L(sh.height) + ay * 0.45 + Math.sin(this.t / 37) * 1.2 * hh), z: az - cy * dist };
     // the set is a room: the camera stays inside its walls, and keeps looking at its subject
     const out = this.bgDef && OUTDOOR.has(this.bgDef.id), WZ = 84, XL = out ? -620 : -330, XR = W - XL, ZF = out ? -760 : -460;
     const cx2 = Math.max(XL + 26, Math.min(XR - 26, C.x)), cz2 = Math.max(ZF + 26, Math.min(WZ - 18, C.z));
@@ -113,7 +115,7 @@
       if (d2 < dist) F *= Math.max(0.42, d2 / dist);   // pressed against a wall: a wider lens keeps the subject the same size
       dist = d2;
     }
-    const lift = (C.y - (sh.aim == null ? 44 : sh.aim)) * F / dist;
+    const lift = (C.y - (sh.aim == null ? 44 : sh.aim) - ay) * F / dist;
     const kx = this.shake ? (Math.random() - 0.5) * this.shake : 0, ky = this.shake ? (Math.random() - 0.5) * this.shake * 0.5 : 0;
     const proj = (x, y, z) => {
       const dx = x - C.x, dz = z - C.z, rz = -dx * sn + dz * cy;
