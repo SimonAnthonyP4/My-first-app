@@ -10,6 +10,11 @@
 #   4. 20 deliveries of a payment event for one order: points are awarded once.
 #   5. Two partial refunds of one order, each delivered 10 times at once:
 #      each is reversed once and together they take back exactly what was earned.
+#   6. 20 retries of one checkout (same idempotency key): one order exists.
+#   7. 20 deliveries of one payment confirmation through the webhook handler:
+#      the order is completed once (stock, points, reward).
+#   8. 10 refund requests at once for the same 3 units: only as many succeed
+#      as there are units, and the money requested never exceeds what was paid.
 #
 # Usage: scripts/db-concurrency-test.sh <database>   (PG* variables as usual)
 set -euo pipefail
@@ -50,6 +55,7 @@ C2='00000000-0000-4000-f000-0000000000c2'
 C3='00000000-0000-4000-f000-0000000000c3'
 C4='00000000-0000-4000-f000-0000000000c4'
 C5='00000000-0000-4000-f000-0000000000c5'
+C6='00000000-0000-4000-f000-0000000000c6'
 O4='00000000-0000-4000-f000-0000000000a4'
 O5='00000000-0000-4000-f000-0000000000a5'
 P5='00000000-0000-4000-f000-0000000000b5'
@@ -61,12 +67,12 @@ insert into auth.users (id, email) values
   ('$OWNER', 'race-owner@test.brobatch'),
   ('$C1', 'race-1@test.brobatch'), ('$C2', 'race-2@test.brobatch'),
   ('$C3', 'race-3@test.brobatch'), ('$C4', 'race-4@test.brobatch'),
-  ('$C5', 'race-5@test.brobatch');
+  ('$C5', 'race-5@test.brobatch'), ('$C6', 'race-6@test.brobatch');
 insert into public.employees (id, full_name, role) values ('$OWNER', 'Race Owner', 'owner');
 insert into public.customers (id, full_name, email) values
   ('$C1', 'Race One', 'race-1@test.brobatch'), ('$C2', 'Race Two', 'race-2@test.brobatch'),
   ('$C3', 'Race Three', 'race-3@test.brobatch'), ('$C4', 'Race Four', 'race-4@test.brobatch'),
-  ('$C5', 'Race Five', 'race-5@test.brobatch');
+  ('$C5', 'Race Five', 'race-5@test.brobatch'), ('$C6', 'Race Six', 'race-6@test.brobatch');
 
 -- One statement per customer: the ledger refuses two rows for one customer at once.
 insert into public.loyalty_transactions (customer_id, kind, points, reason, created_by)
@@ -136,7 +142,43 @@ check "  together they take back exactly the 90 earned" \
   "$(q -c "select sum(points_reversed) from public.refunds where order_id = '$O5'")" 90
 check "  balance is 0" "$(balance "$C5")" 0
 
-# Global invariant --------------------------------------------------------------
+# 6 ---------------------------------------------------------------------------
+PRODUCT="$(q -c "select id from public.products where is_active and price_cents = 300 order by sku limit 1")"
+CART="[{\"product_id\": \"$PRODUCT\", \"quantity\": 3}]"
+STOCK_BEFORE="$(q -c "select on_hand from public.inventory_levels where product_id = '$PRODUCT'")"
+
+ok="$(race 20 "select public.create_order('$OWNER', 'race-checkout-same-key', '$CART'::jsonb, '$C6')")"
+check "20 retries of one checkout (same key): all 20 return" "$ok" 20
+check "  one order exists" \
+  "$(q -c "select count(*) from public.orders where idempotency_key = 'race-checkout-same-key'")" 1
+O6="$(q -c "select id from public.orders where idempotency_key = 'race-checkout-same-key'")"
+check "  it has one line" "$(q -c "select count(*) from public.order_items where order_id = '$O6'")" 1
+
+# 7 ---------------------------------------------------------------------------
+q -c "select public.record_payment_intent('$O6', 'pi_race_6', 900)" >/dev/null
+ok="$(race 20 "select public.handle_payment_succeeded('evt_race_paid_6', 'payment_intent.succeeded', '{}'::jsonb, 'pi_race_6', 900)")"
+check "20 deliveries of one payment confirmation: all 20 return" "$ok" 20
+check "  the order is paid" "$(q -c "select status from public.orders where id = '$O6'")" paid
+check "  stock moved once (3 units)" \
+  "$(q -c "select $STOCK_BEFORE - on_hand from public.inventory_levels where product_id = '$PRODUCT'")" 3
+check "  points awarded once: 90" "$(balance "$C6")" 90
+check "  the event is logged once, as processed" \
+  "$(q -c "select count(*) || ':' || min(status) from public.stripe_events where id = 'evt_race_paid_6'")" "1:processed"
+
+# 8 ---------------------------------------------------------------------------
+ITEM6="$(q -c "select id from public.order_items where order_id = '$O6'")"
+ok="$(race 10 "select public.request_refund('$O6', '$OWNER', 'race-refund-6-{i}', '[{\"order_item_id\": \"$ITEM6\", \"quantity\": 2}]'::jsonb, 'customer_request')")"
+check "10 simultaneous refund requests for 2 of 3 units: exactly 1 succeeds" "$ok" 1
+check "  money requested does not exceed what was paid" \
+  "$(q -c "select coalesce(sum(amount_cents), 0) <= 900 from public.refunds where order_id = '$O6' and status <> 'failed'")" t
+
+# Global invariants -------------------------------------------------------------
+check "every stock level equals its movement sum" \
+  "$(q -c "select count(*) from public.inventory_levels l
+           left join (select product_id, sum(delta) total from public.inventory_movements group by 1) m
+             on m.product_id = l.product_id
+           where l.on_hand <> coalesce(m.total, 0)")" 0
+
 check "every balance equals its ledger sum and none is negative" \
   "$(q -c "select count(*) from public.loyalty_accounts a
            left join (select customer_id, sum(points) total from public.loyalty_transactions group by 1) t

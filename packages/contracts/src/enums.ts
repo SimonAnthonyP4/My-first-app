@@ -85,7 +85,7 @@ export const STRIPE_EVENT_STATUSES = ['received', 'processed', 'failed', 'ignore
 export type StripeEventStatus = (typeof STRIPE_EVENT_STATUSES)[number];
 
 /**
- * Custom SQLSTATE codes raised by the loyalty functions and triggers. The
+ * Custom SQLSTATE codes raised by the database functions and triggers. The
  * server maps these to user-facing messages; anything else is unexpected.
  */
 export const DB_ERROR = {
@@ -101,5 +101,11 @@ export const DB_ERROR = {
   REDEMPTION_FINAL: 'BB005',
   /** The order, refund, redemption or customer does not exist. */
   NOT_FOUND: 'BB006',
+  /** The amount due is above zero but below the minimum card charge. */
+  BELOW_MINIMUM_CHARGE: 'BB007',
+  /** A manager or owner must approve (discount over the cashier limit, large refund). */
+  APPROVAL_REQUIRED: 'BB008',
+  /** A reward does not match any item in the cart. */
+  REWARD_NOT_APPLICABLE: 'BB009',
 } as const;
 export type DbErrorCode = (typeof DB_ERROR)[keyof typeof DB_ERROR];

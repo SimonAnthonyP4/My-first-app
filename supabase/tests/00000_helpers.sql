@@ -213,13 +213,16 @@ declare
 begin
   insert into public.orders (
     id, customer_id, employee_id, status, subtotal_cents, discount_cents, reward_cents,
-    total_cents, idempotency_key, paid_at
+    total_cents, idempotency_key, paid_at, cancelled_at, discount_reason, discount_by
   )
   values (
     v_id, tests.id(p_customer), tests.id('cashier'), p_status,
     p_total_cents + p_discount_cents + p_reward_cents, p_discount_cents, p_reward_cents,
     p_total_cents, 'test-order-' || p_name,
-    case when p_status in ('paid', 'partially_refunded', 'refunded') then now() end
+    case when p_status in ('paid', 'partially_refunded', 'refunded') then now() end,
+    case when p_status = 'cancelled' then now() end,
+    case when p_discount_cents > 0 then 'test discount' end,
+    case when p_discount_cents > 0 then tests.id('cashier') end
   );
   insert into tests.fixtures (name, id) values (p_name, v_id);
   return v_id;
@@ -290,6 +293,142 @@ security definer
 set search_path = ''
 as $$
   select r.id from public.rewards r where r.name = p_name
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Checkout helpers (M3)
+-- ---------------------------------------------------------------------------
+
+-- A catalog product registered as a fixture.
+create or replace function tests.create_product(
+  p_name text,
+  p_category text,
+  p_price_cents bigint,
+  p_bar_count integer default 1,
+  p_is_active boolean default true
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  insert into public.products (id, sku, name, flavor, category, bar_count, price_cents, is_active)
+  values (
+    v_id, 'T-' || upper(replace(p_name, '_', '-')), initcap(replace(p_name, '_', ' ')),
+    'Test Flavor', p_category, p_bar_count, p_price_cents, p_is_active
+  );
+  insert into tests.fixtures (name, id) values (p_name, v_id);
+  return v_id;
+end;
+$$;
+
+-- Cart JSON from pairs: tests.items('bar_a', '3', 'six', '1').
+create or replace function tests.items(variadic p_pairs text[])
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_agg(
+           jsonb_build_object('product_id', tests.id(p_pairs[i]), 'quantity', p_pairs[i + 1]::integer)
+           order by i
+         )
+  from generate_series(1, array_length(p_pairs, 1), 2) as i
+$$;
+
+-- Rewards JSON from pairs: tests.rewards('Free protein bar', 'bar_a').
+create or replace function tests.rewards(variadic p_pairs text[])
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_agg(
+           jsonb_build_object('reward_id', tests.reward(p_pairs[i]), 'product_id', tests.id(p_pairs[i + 1]))
+           order by i
+         )
+  from generate_series(1, array_length(p_pairs, 1), 2) as i
+$$;
+
+-- Refund lines JSON from pairs of (order item id, quantity).
+create or replace function tests.refund_lines(p_order uuid, p_product text, p_quantity integer, p_restock boolean default true)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_array(jsonb_build_object(
+    'order_item_id', i.id, 'quantity', p_quantity, 'restock', p_restock
+  ))
+  from public.order_items i
+  where i.order_id = p_order and i.product_id = tests.id(p_product)
+$$;
+
+-- Creates an order through create_order and registers it as a fixture.
+create or replace function tests.checkout(
+  p_name text,
+  p_employee text,
+  p_customer text,
+  p_items jsonb,
+  p_rewards jsonb default '[]'::jsonb,
+  p_discount_cents bigint default 0,
+  p_discount_reason text default null
+)
+returns public.orders
+language plpgsql
+as $$
+declare
+  v_order public.orders;
+begin
+  v_order := public.create_order(
+    tests.id(p_employee), 'test-checkout-' || p_name, p_items, tests.id(p_customer),
+    p_rewards, p_discount_cents, p_discount_reason
+  );
+  insert into tests.fixtures (name, id) values (p_name, v_order.id) on conflict (name) do nothing;
+  return v_order;
+end;
+$$;
+
+-- Records a PaymentIntent for an order fixture and delivers the success webhook.
+-- Returns the webhook handler's outcome.
+create or replace function tests.pay(p_order text)
+returns text
+language plpgsql
+as $$
+declare
+  v_order public.orders;
+begin
+  select * into strict v_order from public.orders where id = tests.id(p_order);
+  perform public.record_payment_intent(v_order.id, 'pi_test_' || p_order, v_order.total_cents);
+  return public.handle_payment_succeeded(
+    'evt_test_paid_' || p_order, 'payment_intent.succeeded', '{}'::jsonb,
+    'pi_test_' || p_order, v_order.total_cents, 'ch_test_' || p_order, 'visa', '4242', 'simulated'
+  );
+end;
+$$;
+
+-- Stock on hand for a product fixture.
+create or replace function tests.stock(p_product text)
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select l.on_hand from public.inventory_levels l where l.product_id = tests.id(p_product)
+$$;
+
+-- Gives a customer fixture an opening points balance through the ledger.
+create or replace function tests.grant_points(p_customer text, p_points bigint)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.loyalty_transactions (customer_id, kind, points, reason, created_by)
+  values (tests.id(p_customer), 'adjust', p_points, 'test: opening balance', tests.id('owner'));
+end;
 $$;
 
 set search_path = public, extensions;

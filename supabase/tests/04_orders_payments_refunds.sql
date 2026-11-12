@@ -191,7 +191,8 @@ select lives_ok(
   'the service role can create orders'
 );
 select lives_ok(
-  $$ update public.orders set status = 'cancelled' where idempotency_key = 'test-service-order' $$,
+  $$ update public.orders set status = 'cancelled', cancelled_at = now()
+     where idempotency_key = 'test-service-order' $$,
   'the service role can update orders'
 );
 select tests.clear_authentication();
