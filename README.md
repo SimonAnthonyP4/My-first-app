@@ -1159,6 +1159,16 @@ and `reword` find a line anywhere in a chapter (inside choices and endings too) 
 there. The last thing story-9.js does is sort the chapters into `ORDER` and renumber every
 "CHAPTER n" title card - to move a chapter, move its name in that list.
 
+## Chris Loor
+
+Amateur boxer from Ecuador who works at the pizza place (**130% health**, boxer). Drawn from a
+friend's picture (mirrored to face right; the glasses are painted on because the face is tiny at
+this size). **High guard:** the drawing's own gloves are up by his chin, so idle and block keep the
+guard, and blocking tucks the chin behind the gloves (`poses.block` in his entry has no `arm`, so
+no arm is swapped in). 10% damage reduction. Light = JAB, heavy = CROSS, special **PIZZA DELIVERY**
+(a spinning pizza projectile, `js/game/loor.js`), throw = lift slam, finisher = pile driver,
+brutality EXTRA TOPPINGS. The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.
