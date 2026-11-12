@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import type { Db, Deps, WebhookDeps } from './deps.ts';
 import { DbError } from './errors.ts';
-import { type Logger, respond, responseFromError } from './http.ts';
+import { type Logger, respond, respondWithCors, responseFromError } from './http.ts';
 import { createShopifyAdmin } from './shopify_admin.ts';
 
 function requireEnv(name: string): string {
@@ -94,7 +94,7 @@ function deps(): Deps {
 export function serve(handler: (req: Request, deps: Deps) => Promise<Response>): void {
   Deno.serve((req) => {
     try {
-      return respond(handler, req, deps());
+      return respondWithCors(handler, req, deps());
     } catch (error) {
       // Only reached when configuration is missing or invalid.
       return responseFromError(error, log);

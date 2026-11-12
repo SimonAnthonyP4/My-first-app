@@ -4,7 +4,13 @@ import assert from 'node:assert/strict';
 // server maps. They must cover the same codes.
 import { DB_ERROR } from '../../../packages/contracts/src/enums.ts';
 import { AppError, appErrorFromDb, DbError, KNOWN_DB_ERROR_CODES } from '../_shared/errors.ts';
-import { bearerToken, errorResponse, responseFromError } from '../_shared/http.ts';
+import {
+  bearerToken,
+  errorResponse,
+  json,
+  respondWithCors,
+  responseFromError,
+} from '../_shared/http.ts';
 
 Deno.test('errors: every custom database code in the contracts is mapped to a response', () => {
   for (const [name, code] of Object.entries(DB_ERROR)) {
@@ -75,3 +81,40 @@ Deno.test('http: bearer tokens are parsed strictly', () => {
   assert.equal(bearerToken(request('Bearer a b')), null);
   assert.equal(bearerToken(request()), null);
 });
+
+Deno.test('cors: the preflight is answered without running the handler', async () => {
+  let ran = false;
+  const response = await respondWithCors(
+    () => {
+      ran = true;
+      return Promise.resolve(json(200, {}));
+    },
+    new Request('http://localhost/', { method: 'OPTIONS' }),
+    { log: () => {} },
+  );
+  assert.equal(response.status, 204);
+  assert.equal(ran, false);
+  assert.equal(response.headers.get('access-control-allow-origin'), '*');
+  assert.equal(response.headers.get('access-control-allow-headers'), 'authorization, content-type');
+});
+
+Deno.test(
+  'cors: successes and errors both carry the headers, and never allow credentials',
+  async () => {
+    const ok = await respondWithCors(
+      () => Promise.resolve(json(200, { fine: true })),
+      new Request('http://localhost/', { method: 'POST' }),
+      { log: () => {} },
+    );
+    const failed = await respondWithCors(
+      () => Promise.reject(new AppError(401, 'unauthenticated', 'no')),
+      new Request('http://localhost/', { method: 'POST' }),
+      { log: () => {} },
+    );
+    for (const response of [ok, failed]) {
+      assert.equal(response.headers.get('access-control-allow-origin'), '*');
+      assert.equal(response.headers.get('access-control-allow-credentials'), null);
+    }
+    assert.equal(failed.status, 401);
+  },
+);

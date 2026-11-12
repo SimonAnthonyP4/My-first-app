@@ -86,3 +86,29 @@ export async function respond<D extends { readonly log: Logger }>(
     return responseFromError(error, deps.log);
   }
 }
+
+// The POS extension runs inside Shopify POS and calls these functions from
+// another origin. Any origin may call: access is decided by the Shopify ID
+// token in the Authorization header, never by cookies.
+const CORS_HEADERS: Readonly<Record<string, string>> = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-allow-headers': 'authorization, content-type',
+  'access-control-max-age': '86400',
+};
+
+/** Like respond(), plus CORS headers and an answer to the browser's preflight. */
+export async function respondWithCors<D extends { readonly log: Logger }>(
+  handler: (req: Request, deps: D) => Promise<Response>,
+  req: Request,
+  deps: D,
+): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  const response = await respond(handler, req, deps);
+  for (const [name, value] of Object.entries(CORS_HEADERS)) {
+    response.headers.set(name, value);
+  }
+  return response;
+}

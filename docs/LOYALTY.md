@@ -8,9 +8,10 @@ both.
 
 1. **Earning.** `points = floor(cents paid × points per dollar ÷ 100)`. The launch rate is 10
    points per $1, so $9.00 earns 90 points. Partial points round down.
-2. **What counts as paid.** The order total: goods minus discounts minus the value of redeemed
-   rewards. There is no sales tax. A free item earns nothing.
-3. **When.** Only after the payment is confirmed by the payment provider. Never on the app's say-so.
+2. **What counts as paid.** The goods, minus discounts, minus the value of redeemed rewards.
+   Tax, tips and shipping earn nothing. A free item earns nothing.
+3. **When.** Only when Shopify's signed `orders/paid` webhook arrives. Never on the till's or an
+   app's say-so.
 4. **Spending.** Redeeming a reward debits its cost immediately and reserves the reward. If the
    sale does not complete, the reservation is released and the points come back.
 5. **Spent is spent.** Once a reward has been handed over (fulfilled), its points are never
@@ -183,13 +184,26 @@ It works because every operation on a customer's points first locks that custome
 account row, so they queue. Operations that start from an order (award, refund) lock the order
 first and the account second, always in that sequence, so they cannot deadlock.
 
+## At the Shopify till
+
+The five functions above are driven by Shopify, through the functions described in `SHOPIFY.md`:
+
+| Event                                    | Function called                                |
+| ---------------------------------------- | ---------------------------------------------- |
+| Shopify reports an order paid            | `award_points_for_order`                       |
+| Shopify reports a refund                 | `reverse_points_for_refund`                    |
+| The cashier applies a reward             | `redeem_points`, and a discount code is issued |
+| Shopify reports the code was used        | `fulfill_redemption`                           |
+| The cashier removes the reward           | `release_redemption`                           |
+| The reward is not used within 15 minutes | `release_redemption` (as expired)              |
+
+Their Shopify-specific behaviour (linking members, discount codes, late and out-of-order
+webhooks) is tested in `supabase/tests/08_shopify_orders.sql` and `09_shopify_rewards.sql`.
+
 ## Not decided yet
 
-- **Reservation timeout.** How long an unfulfilled reservation holds points before it expires.
-  The mechanism exists (`release_redemption(..., expired => true)`); the schedule comes with
-  checkout in M3.
-- **Customer-initiated redemption.** Whether customers reserve rewards in the Rewards app ahead of
-  time, or only at the till. Both use `redeem_points`; the flow is designed in M3 and M7.
-- **Manual adjustments.** The ledger supports them (`adjust`, with a reason and the employee's
-  id), but there is no admin screen or function for them yet.
+- **Customer-initiated redemption.** Today a reward is applied by the cashier in the till. Letting
+  members reserve one in the Rewards app ahead of time would use the same functions.
+- **Manual adjustments.** The ledger supports them (`adjust`, with a reason and the dashboard
+  user's id), but there is no admin screen or function for them yet.
 - **Points expiry.** None. The ledger has an `expire` kind reserved for it.

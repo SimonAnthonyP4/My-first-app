@@ -44,7 +44,7 @@ db-test: ## Database tests, using whichever of the two setups is available
 	  exit 2; \
 	fi
 
-test-functions: ## Edge Function unit tests (Deno; Stripe, database and auth faked)
+test-functions: ## Edge Function unit tests (Deno; Shopify and the database faked)
 	pnpm check:functions
 	pnpm test:functions
 

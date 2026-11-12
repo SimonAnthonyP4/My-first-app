@@ -2,7 +2,7 @@
 //
 // Only NEXT_PUBLIC_* variables reach the browser. They may hold the Supabase
 // URL and the anon (publishable) key, and nothing else. Secrets (service-role
-// key, Stripe secret key, webhook secret) are read on the server only.
+// key, Shopify client secret) are read on the server only.
 import { z } from 'zod';
 
 type EnvSource = Readonly<Record<string, string | undefined>>;

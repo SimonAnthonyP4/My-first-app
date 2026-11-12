@@ -69,8 +69,8 @@ pg_prove -d "$DB" --ext .sql "$ROOT/supabase/tests"
 echo "==> Running concurrency test"
 "$ROOT/scripts/db-concurrency-test.sh" "$DB"
 
-# The Edge Function handlers, run against this real database with only Stripe
-# and the auth server faked. Needs Deno (installed by `pnpm install`).
+# The Edge Function handlers, run against this real database with only
+# Shopify faked. Needs Deno (installed by `pnpm install`).
 if [[ -f "$ROOT/supabase/functions/tests/integration_test.ts" ]] && (cd "$ROOT" && pnpm exec deno --version >/dev/null 2>&1); then
   echo "==> Running Edge Function integration test"
   (cd "$ROOT" && BROBATCH_TEST_DB="$DB" NO_COLOR=1 pnpm -s exec deno test \

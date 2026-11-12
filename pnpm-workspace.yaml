@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'apps/admin'
+  - 'apps/shopify'
 
 # pnpm blocks dependency install scripts unless they are listed here.
 onlyBuiltDependencies:

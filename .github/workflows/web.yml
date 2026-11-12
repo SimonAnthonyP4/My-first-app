@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'apps/admin/**'
+      - 'apps/shopify/**'
       - 'packages/**'
       - 'package.json'
       - 'pnpm-lock.yaml'

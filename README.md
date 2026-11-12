@@ -1,39 +1,39 @@
 # Bro Batch
 
-Point-of-sale and customer loyalty platform for Bro Batch protein bars: an employee POS app and a
-customer Rewards app for iPhone, a web admin dashboard, and one shared Supabase backend.
+Customer loyalty platform for Bro Batch protein bars, built around Shopify POS: a rewards tile
+inside the till, a customer Rewards app for iPhone, a web admin dashboard, and one Supabase
+backend that keeps the points.
 
 ## Status
 
-| Milestone | Scope                                            | State                             |
-| --------- | ------------------------------------------------ | --------------------------------- |
-| M0        | Repository, tooling, CI, shared contracts        | Done                              |
-| M1        | Database schema, row-level security, tests       | Done                              |
-| M2        | Loyalty engine (earn, reverse, redeem functions) | Done                              |
-| M3        | Payments backend (checkout, webhooks, refunds)   | Built, not yet run against Stripe |
-| M4        | Admin dashboard                                  | Not started                       |
-| M5        | POS iOS app (without card payments)              | Not started                       |
-| M6        | Tap to Pay on iPhone                             | Not started                       |
-| M7        | Rewards iOS app                                  | Not started                       |
-| M8        | Push notifications                               | Not started                       |
-| M9        | Hardening and launch preparation                 | Not started                       |
+| Milestone | Scope                                        | State                                   |
+| --------- | -------------------------------------------- | --------------------------------------- |
+| M0        | Repository, tooling, CI, shared contracts    | Done                                    |
+| M1        | Loyalty database, row-level security         | Done                                    |
+| M2        | Loyalty engine (earn, reverse, redeem)       | Done                                    |
+| S1        | Shopify backend (webhooks, rewards as codes) | Built, tested with Shopify faked        |
+| S2        | Rewards tile for Shopify POS                 | Written, never run                      |
+| S3        | Connect a Shopify development store          | Not started: needs the owner's accounts |
+| S4        | Admin dashboard                              | Not started                             |
+| S5        | Rewards iPhone app                           | Not started                             |
+| S6        | Push notifications                           | Not started                             |
+| S7        | Hardening and go-live                        | Not started                             |
 
-Nothing is deployed. No Supabase project, Stripe account, Apple entitlement or APNs key has been
-configured; see `docs/RUNBOOK.md` for what each needs.
+Nothing is deployed and nothing has been connected to Shopify: no Shopify store, Supabase project
+or Apple account has been set up for this project. `docs/RUNBOOK.md` lists what each needs.
 
 ## Repository layout
 
 ```
-apps/admin/          Next.js admin dashboard (placeholder page until M4)
-apps/pos-ios/        POS iPhone app (M5, not built)
-apps/rewards-ios/    Rewards iPhone app (M7, not built)
+apps/shopify/        Shopify app config and the POS rewards tile (UI extension)
+apps/admin/          Next.js admin dashboard (placeholder page until S4)
+apps/rewards-ios/    Rewards iPhone app (S5, not built)
 packages/contracts/  Shared TypeScript: money, points formula, enums, validation schemas
 supabase/migrations/ Database schema, triggers, functions, row-level security
-supabase/functions/  Edge Functions: checkout, Stripe webhook, refunds (Deno)
+supabase/functions/  Edge Functions: Shopify webhook and the POS tile's endpoints (Deno)
 supabase/tests/      pgTAP tests for the database
-supabase/seed.sql    Sandbox catalog for development (placeholder products)
 scripts/             Database test runner, concurrency test, contract drift check
-docs/                Plan, architecture, database reference, runbook
+docs/                Plan, architecture, Shopify integration, loyalty rules, runbook
 ```
 
 ## Getting started
@@ -50,17 +50,16 @@ make help     # all tasks
 
 ## Documentation
 
-- `docs/PLAN.md` — full architecture, schema design and milestone plan.
+- `docs/PLAN.md` — the direction, where each requirement lives, milestones, what is needed next.
 - `docs/ARCHITECTURE.md` — what exists today and how the pieces fit.
-- `docs/DATABASE.md` — tables, invariants, who can read and write what, how to test.
+- `docs/SHOPIFY.md` — webhooks, rewards as discount codes, endpoints, what is still unverified.
 - `docs/LOYALTY.md` — how points are earned, spent and taken back, with worked examples.
-- `docs/PAYMENTS.md` — checkout, webhooks, refunds, endpoints, and what is still unverified.
-- `docs/RUNBOOK.md` — local setup, creating the hosted project, first owner account, secrets.
+- `docs/DATABASE.md` — tables, invariants, who can read and write what, how to test.
+- `docs/RUNBOOK.md` — local setup, connecting Shopify, first owner account, secrets.
 
 ## Ground rules
 
 - Money is integer cents everywhere. No floating-point dollars.
-- Clients never write orders, payments, refunds or loyalty points. The server does, after a
-  verified payment.
-- No secret keys in the iOS apps, in browser JavaScript, or in git.
-- No card numbers are stored anywhere. Card data stays inside Stripe.
+- Points move only on a signed message from Shopify. The till and the apps cannot award them.
+- No secret keys in the POS tile, the iOS app, browser JavaScript, or git.
+- No card or payment data is stored here. Shopify takes and records payments.

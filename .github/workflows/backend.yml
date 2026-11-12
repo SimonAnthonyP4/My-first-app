@@ -55,8 +55,8 @@ jobs:
         run: scripts/db-test.sh
 
   functions:
-    # Edge Function handlers with Stripe, the database and the auth server
-    # faked: request validation, Stripe calls, webhook signatures, error mapping.
+    # Edge Function handlers with Shopify and the database faked: request
+    # validation, Shopify calls, webhook signatures, ID tokens, error mapping.
     name: Edge Function tests (Deno)
     runs-on: ubuntu-24.04
     timeout-minutes: 10

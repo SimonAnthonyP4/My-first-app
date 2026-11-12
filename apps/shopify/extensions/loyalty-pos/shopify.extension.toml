@@ -1,0 +1,21 @@
+# Bro Batch Rewards inside Shopify POS: a tile on the home screen that opens
+# the rewards screen (scan a member, see points, apply a reward).
+#
+# `uid` is assigned by Shopify CLI the first time the extension is deployed
+# (`shopify app deploy`); it is left out until then.
+
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+name = "Bro Batch Rewards"
+handle = "bro-batch-rewards-pos"
+description = "Scan a member's QR code, see their points and apply their rewards at checkout."
+
+[[extensions.targeting]]
+target = "pos.home.tile.render"
+module = "./src/Tile.jsx"
+
+[[extensions.targeting]]
+target = "pos.home.modal.render"
+module = "./src/Modal.jsx"
