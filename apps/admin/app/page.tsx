@@ -18,7 +18,7 @@ const MILESTONES: readonly { id: string; label: string; state: MilestoneState; n
   { id: 'M0', label: 'Foundations', state: 'done', note: 'Complete' },
   { id: 'M1', label: 'Database schema and security', state: 'done', note: 'Complete' },
   { id: 'M2', label: 'Loyalty engine', state: 'done', note: 'Complete' },
-  { id: 'M3', label: 'Payments', state: 'partial', note: 'Built, not yet run against Stripe' },
+  { id: 'M3', label: 'Payments', state: 'partial', note: 'Built, awaiting Stripe' },
   { id: 'M4', label: 'Admin dashboard', state: 'todo', note: 'Not started' },
 ];
 
