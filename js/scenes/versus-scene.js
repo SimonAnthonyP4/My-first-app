@@ -75,6 +75,7 @@
       });
       const stage = RF.getStage(this.opts.stage);
       T(ctx, 'STAGE: ' + stage.name, W / 2, 12, { align: 'center', color: '#c8a888', outline: '#000' });
+      if (!this.banter && RF.tip && this.t > 30) { if (this.tipN == null) this.tipN = Math.floor(Math.random() * RF.TIPS.length); RF.font.wrap('TIP: ' + RF.tip(this.tipN), 40).forEach((l, i) => T(ctx, l, W / 2, 24 + i * 9, { align: 'center', color: '#8a7a78', outline: '#000' })); }
     }
   }
 

@@ -40,7 +40,7 @@
   const game = {
     kb: new RF.Keyboard(),
     scene: null,
-    setScene(scene) { this.scene = scene; },
+    setScene(scene) { this.scene = scene; this.wipe = 12; },   // every change of screen opens like blinds (drawn in loop)
     manualStep: false, // automated tests set this and call game.step() themselves
     toast: null,
     step() {
@@ -98,6 +98,11 @@
       acc -= STEP;
     }
     safely(() => withInterpolation(game.manualStep ? 0 : acc / STEP, () => game.scene.render(ctx)));
+    if (game.wipe > 0 && !game.manualStep) { // the blinds: eight slats that open over a fifth of a second
+      const k = game.wipe / 12, n = 8, sw = WIDTH / n;
+      ctx.fillStyle = '#000'; for (let i = 0; i < n; i++) ctx.fillRect(Math.floor(i * sw), 0, Math.ceil(sw * k), HEIGHT);
+      game.wipe--;
+    }
     if (RF.online) safely(() => RF.online.drawOverlay(ctx));
     if (game.achievement) { // ACHIEVEMENT UNLOCKED pop-up (top centre)
       const a = game.achievement, tIn = Math.min(1, (240 - a.t) / 12), tOut = Math.min(1, a.t / 12), y = Math.round(-30 + 34 * Math.min(tIn, tOut));

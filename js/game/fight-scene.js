@@ -278,6 +278,7 @@
           break;
       }
 
+      if (this.koSlow > 0 && this.koSlow-- % 3) return;   // K.O.: the world moves one frame in three for a moment
       this.simulate();
     }
 
@@ -1109,6 +1110,7 @@
         if (!this.finisher.kind.banner) RF.announcer.say('FATALITY!');
       } else if (reason === 'ko') {
         RF.audio.sfx('ko');
+        this.koSlow = 42; this.flash = Math.max(this.flash, 6); this.shake = Math.max(this.shake, 10);   // the last hit lands in slow motion
         const outA = this.tag ? RF.tagTeamOut(this, 0) : a.isKO, outB = this.tag ? RF.tagTeamOut(this, 1) : b.isKO; // tag team: the whole team is down
         RF.announcer.say(outA && outB ? 'DOUBLE K O' : 'K O!');
         if (outA && outB) this.banner = 'DOUBLE K.O.';
@@ -1210,7 +1212,7 @@
         ctx.fillRect(0, y, W, h);
       };
       if (this.phase === 'intro' || this.phase === 'roundOver') band(70, 64);
-      else if (this.phase === 'matchOver') band(60, 120);
+      else if (this.phase === 'matchOver') { band(40, 156); band(40, 156); }
       const big = (text, y = 80, scale = 4) => T(ctx, text, W / 2, y, { scale, align: 'center', color: BIG, outline: '#200000' });
       if (this.phase === 'intro') {
         if (this.phaseTime < 65) big('ROUND ' + this.round);
@@ -1227,10 +1229,11 @@
         }
       } else if (this.phase === 'matchOver') {
         const w = this.wins[0] > this.wins[1] ? 0 : 1;
-        if (this.tag) big(this.tag.leads[w].def.name + ' & ' + this.tag.partners[w].def.name + ' WIN', 74, 2);
-        else big(this.fighters[w].def.name + ' WINS', 70, 3);
-        T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 104, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
-        if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 128, this.frame, { spacing: 14 });
+        if (this.tag) big(this.tag.leads[w].def.name + ' & ' + this.tag.partners[w].def.name + ' WIN', 50, 2);
+        else big(this.fighters[w].def.name + ' WINS', 46, 3);
+        T(ctx, (w === 1 && this.opts.cpu ? 'THE CPU' : 'PLAYER ' + (w + 1)) + ' TAKES THE MATCH', W / 2, 76, { scale: 1, align: 'center', color: '#ffd030', outline: '#000' });
+        if (RF.drawMatchStats) RF.drawMatchStats(ctx, this, 92);          // damage, hits, best combo, XP (game/polish.js)
+        if (this.phaseTime > 60) this.endMenu.draw(ctx, W / 2, 146, this.frame, { spacing: 13 });
       }
     }
 

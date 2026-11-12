@@ -1060,6 +1060,19 @@ blue work shirt, khakis, arms folded. His arms never move: everything he does is
   Over** ("TELL ME ABOUT YOUR MOTHER."). **Super: MIND OVER MATTER.**
 - Any fighter can use `psychicBlock`, `autoEvade`, `noArms` or `rivalTaunts` the same way.
 
+## The small things
+
+- **PRESS ANY BUTTON** in front of the title, once per visit.
+- **The title menu is grouped:** STORY, FIGHT, CHALLENGES, EXTRAS, SETTINGS. Three of them open a
+  group; BACK or ESC closes it, and the menu remembers where you were when you come back.
+- **A featured fighter** on the title, with their quote, changing every few seconds; a **tip** along
+  the bottom, and another on the VS screen (`RF.TIPS` in `js/game/polish.js`).
+- **Rank and XP** (`RF.profile`): FRESHMAN up to LEGEND OF TERRAMANIA. XP is added up from your
+  records, story progress, tower floors and unlocks, so it is never out of step with them.
+- **Results card** after every match: damage, hits, best combo, perfect blocks, XP earned, RANK UP.
+- **The last hit of a K.O. lands in slow motion.**
+- **Every change of screen opens like blinds** (a fifth of a second).
+
 ## Unlocks and item drops
 
 **UNLOCKS** (title menu) lists what you can earn. Nothing is stored as a flag: each reward is worked

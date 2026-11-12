@@ -1057,6 +1057,10 @@ RF.CHARACTERS = [
       crouchDrop: 24,
       sleeveColor: 'shirt',
       sleeveShade: -0.05,
+      sleeveLength: 0.3,         // short sleeves: the rest of the arm is bare
+      handColor: 'skin',
+      armThickness: 1.75,        // and it is as heavy as the arms in the drawing
+      legThickness: 1.5,
       hideWhenPosed: ['prop1', 'prop2', 'prop3', 'prop5', 'prop6', 'prop7', 'prop8', 'prop9', 'propa', 'propb', 'propc', 'proph', 'propi', 'propj', 'propl', 'propm', 'propn', 'propo', 'propp', 'propq'],
       weapon: { kind: 'book', w: 14, h: 18, color: '#6c201c', trim: '#eb9128' },
       poses: {
@@ -1368,6 +1372,7 @@ RF.CHARACTERS = [
       crouchDrop: 14,
       sleeveColor: 'shirt',
       sleeveShade: -0.05,
+      armThickness: 1.3,
       hideWhenPosed: ['prop0', 'prop1', 'prop2', 'prop3', 'prop4', 'prop5', 'prop6', 'prop8', 'prop9', 'propa', 'propb', 'propc', 'propd', 'prope', 'propf'],
       weapon: { kind: 'globe', r: 6 },   // the globe goes into the attacking hand
       poses: {
