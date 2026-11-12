@@ -119,7 +119,7 @@
       if (this.t % 270 === 0 && RF.CHARACTERS.length > 1) { this.swapT = 12; this.pick = (this.pick + 1 + Math.floor(Math.random() * (RF.CHARACTERS.length - 1))) % RF.CHARACTERS.length; }
       if (this.t % 420 === 0) this.tipN++;
       if (this.splash) { // PRESS ANY BUTTON
-        if (this.t > 34 && (RF.menuPressed(kb, 'confirm') || [...kb.down].some((c) => !/^(Meta|Alt|Control|Shift)/.test(c)) && this.t > 40)) {
+        if (this.t > 34 && (RF.menuPressed(kb, 'confirm') || (RF.touch && RF.touch.takeTap()) || [...kb.down].some((c) => !/^(Meta|Alt|Control|Shift)/.test(c)) && this.t > 40)) {
           this.splash = false; RF.booted = true; this.shake = 8; this.slide = 14; this.flashT = 10; RF.audio.sfx('select'); RF.audio.sfx('heavy');
         }
         return;
@@ -184,7 +184,7 @@
 
       if (this.splash) { // ---- PRESS ANY BUTTON
         if (t > 34 && Math.floor(t / 24) % 2 === 0) T(ctx, 'PRESS ANY BUTTON', W / 2, 150, { scale: 2, align: 'center', color: '#ffffff', outline: '#200000' });
-        T(ctx, RF.CHARACTERS.length + ' FIGHTERS   ' + RF.STAGES.length + ' STAGES   A 24-CHAPTER STORY', W / 2, 184, { align: 'center', color: '#a89490', outline: '#000' });
+        T(ctx, RF.CHARACTERS.length + ' FIGHTERS   ' + RF.STAGES.length + ' STAGES   A ' + RF.STORY.chapters.filter((c) => !c.side).length + '-CHAPTER STORY', W / 2, 184, { align: 'center', color: '#a89490', outline: '#000' });
         ctx.restore(); RF.drawGrit(ctx, t);
         return;
       }
@@ -196,6 +196,7 @@
       ctx.fillStyle = '#c01010'; ctx.fillRect(sx - 30, top, MENU_W + 38, 2);
       for (const by of [top + 4, top + n * ITEM_GAP + 9]) { ctx.fillStyle = '#5a5a60'; ctx.fillRect(sx - 14, by, 3, 3); ctx.fillStyle = '#b0b0b8'; ctx.fillRect(sx - 14, by, 1, 1); } // rivets
       T(ctx, this.group || 'MAIN MENU', sx + 2, top - 9, { color: this.group ? '#ffd030' : '#8a7a78', outline: '#000' });
+      this.menu.area = { x0: sx - 30, x1: sx + MENU_W + 8, y0: ITEM_Y - 3, step: ITEM_GAP };   // (for taps)
       items.forEach((item, i) => {
         const sel = i === this.menu.index, y = ITEM_Y + i * ITEM_GAP, x = sx + (sel ? 16 + Math.round(Math.sin(t / 5)) : 4);
         if (sel) {

@@ -24,9 +24,26 @@
       this.index = 0;
     }
 
+    // A tap (or mouse click) on a row picks it. Rows are found from `this.area`, set by draw() or by
+    // a scene that draws its own list: { x0, x1, y0, step, first, count }.
+    tapped() {
+      const tap = RF.touch && RF.touch.takeTap(), a = this.area;
+      if (!tap || !a) return -1;
+      const row = Math.floor((tap.y - a.y0) / a.step), i = (a.first || 0) + row;
+      return row >= 0 && i < (a.first || 0) + (a.count == null ? this.items.length : a.count) && i < this.items.length && tap.x >= a.x0 && tap.x <= a.x1 ? i : -1;
+    }
+
     update(kb) {
       const n = this.items.length;
       const before = this.index;
+      const hit = this.tapped();
+      if (hit >= 0) {                                                  // tap = pick it and use it
+        this.index = hit;
+        const it = this.items[hit];
+        if (it.setting) { RF.settings.cycle(it.setting, 1); RF.audio.sfx('move'); }
+        else if (it.onSelect) { RF.audio.sfx('select'); it.onSelect(); }
+        return;
+      }
       if (RF.menuPressed(kb, 'up')) this.index = (this.index - 1 + n) % n;
       if (RF.menuPressed(kb, 'down')) this.index = (this.index + 1) % n;
       if (this.index !== before) RF.audio.sfx('move');
@@ -44,6 +61,7 @@
 
     draw(ctx, x, y, t, opts = {}) {
       const spacing = opts.spacing || 14;
+      this.area = { x0: x - 135, x1: x + 135, y0: y - Math.floor((spacing - 7) / 2) - 1, step: spacing };
       this.items.forEach((item, i) => {
         const sel = i === this.index;
         const color = sel ? '#ffffff' : '#8a7a78';

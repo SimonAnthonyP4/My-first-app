@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
   <title>Terramania</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -13,6 +17,7 @@
     <span><b>P2</b> ←/→ move · ↑ jump · ↓ crouch · Num1 (or ,) light · Num2 (or .) heavy · Num3 (or /) block · Num4 (or L) throw · Num0 (or ') dash · Num6 (or ;) EX · Num5 (or K) taunt</span>
     <span><b>PS5 controller</b> □ light · △ heavy · ○/L1 block · ✕ throw · R1 dash · L2 EX · R2 super / combo breaker · L2+R2 last stand (low health) · Create or touchpad taunt · Options pause</span>
     <span>Menus: W/S or ↑/↓ + Enter · Esc pause/back · M mute · ` hitboxes</span>
+    <span><b>Phone / tablet</b> on-screen stick + buttons appear automatically (Settings → Touch Controls) · tap menu rows and the story to advance</span>
   </div>
 
   <!-- Plain scripts (no modules) so the game runs straight from the file system. Order matters. -->
@@ -107,6 +112,7 @@
 <script src="js/scenes/unlocks-scene.js"></script>
 
   <script src="js/net/online.js"></script>
+  <script src="js/core/touch.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

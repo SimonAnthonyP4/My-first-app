@@ -355,6 +355,7 @@
       T(ctx, 'STORY MODE', W / 2, 10, { align: 'center', color: '#c080ff', outline: '#000' });
       T(ctx, 'THE LAST BELL', W / 2, 20, { scale: 3, align: 'center', color: PURPLE, outline: '#14001e' });
       const items = this.menu.items, y0 = 56, per = 13, start = Math.max(0, Math.min(items.length - per, this.menu.index - 6));
+      this.menu.area = { x0: 20, x1: 258, y0: y0 - 2, step: 11, first: start, count: per };   // (for taps)
       items.forEach((it, i) => {
         if (i < start || i >= start + per) return;
         const sel = i === this.menu.index, y = y0 + (i - start) * 11;
@@ -770,7 +771,9 @@
       }
       for (const [k, a] of Object.entries(this.actors)) if (a.foldT > 60) delete this.actors[k];
       if (!s) return;
-      const ok = !(this.lock > 0) && RF.menuPressed(kb, 'confirm'), auto = this.game.manualStep;
+      // a tap on the picture reads on, like CONFIRM (only where CONFIRM would: not in the middle of a choice or a quick-time moment)
+      const tap = RF.touch && RF.touch.takeTap(), tapOK = tap && (s.say || s.narrate || s.title || s.credits || s.card || s.rank || s.recall);
+      const ok = !(this.lock > 0) && (RF.menuPressed(kb, 'confirm') || !!tapOK), auto = this.game.manualStep;
       if (s.say || s.narrate || s.title) {
         const before = this.typed | 0;
         this.typed += 0.75;

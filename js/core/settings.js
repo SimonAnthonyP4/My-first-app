@@ -44,6 +44,10 @@
       id: 'RUMBLE', label: 'CONTROLLER RUMBLE',
       options: [[true, 'ON'], [false, 'OFF']],
     },
+    // touch controls (shown on their own page: Settings -> TOUCH CONTROLS)
+    { id: 'TOUCH_MODE', label: 'TOUCH CONTROLS', touch: true, options: [['auto', 'AUTO'], ['on', 'ALWAYS ON'], ['off', 'OFF']] },
+    { id: 'TOUCH_SIZE', label: 'BUTTON SIZE', touch: true, options: [[0.85, 'SMALL'], [1, 'MEDIUM'], [1.2, 'LARGE']] },
+    { id: 'TOUCH_SWAP', label: 'STICK SIDE', touch: true, options: [[false, 'LEFT'], [true, 'RIGHT']] },
     {
       id: 'SHOW_HITBOXES', label: 'SHOW HITBOXES',
       options: [[false, 'OFF'], [true, 'ON']],
@@ -87,6 +91,7 @@
     RF.CONFIG[s.id] = s.options[j][0];
     save();
     if (RF.audio) RF.audio.applyVolumes();
+    if (RF.touch) RF.touch.refresh();
   }
 
   function valueLabel(s) {
@@ -98,6 +103,7 @@
     Object.assign(RF.CONFIG, defaults);
     save();
     if (RF.audio) RF.audio.applyVolumes();
+    if (RF.touch) RF.touch.refresh();
   }
 
   RF.settings = { load, save, cycle, valueLabel, reset };

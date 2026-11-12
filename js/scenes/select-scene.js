@@ -68,6 +68,17 @@
       return [a, p1 && p2 && p1.id === p2.id && a === b ? RF.nextCostume(b) : b];
     }
 
+    // Touch: tap a portrait in the roster to move your cursor there; tap the same one again to pick it.
+    tapSelect() {
+      const tap = RF.touch && RF.touch.takeTap();
+      const p = this.cpu && this.ready[0] ? 1 : 0;                      // VS CPU: you pick yours, then theirs
+      if (!tap || tap.y < GRID_Y - 5 || this.ready[p]) return;
+      const col = Math.floor((tap.x - GRID_X) / (SLOT + GAP)), row = Math.floor((tap.y - GRID_Y) / (SLOT + GAP)), i = row * COLS + col;
+      if (col < 0 || col >= COLS || row < 0 || i >= this.slots.length) return;
+      if (this.cursor[p] === i) RF.touch.pulse(RF.CONTROLS.p1.light[0]);
+      else { this.cursor[p] = i; RF.audio.sfx('move'); }
+    }
+
     update() {
       const kb = this.game.kb;
       this.t++;
@@ -82,6 +93,7 @@
       }
       if (this.cpu) this.updateCpuMode(kb);
       else for (let p = 0; p < 2; p++) this.updateCursor(p, (act) => kb.justPressed(...this.inputs[p][act]));
+      this.tapSelect();
       if (this.ready[0] && this.ready[1]) {
         if (++this.readyTime > 45) this.startFight();
       } else {

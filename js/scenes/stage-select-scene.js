@@ -32,6 +32,8 @@
       }
       const n = this.options.length;
       const before = this.index;
+      const tap = RF.touch && RF.touch.takeTap();                      // tap the sides to flip through, the picture to fight
+      if (tap && tap.y > 22 && tap.y < 205) { if (tap.x < RF.CONFIG.WIDTH * 0.3) this.index = (this.index - 1 + n) % n; else if (tap.x > RF.CONFIG.WIDTH * 0.7) this.index = (this.index + 1) % n; else RF.touch.pulse(RF.CONTROLS.p1.light[0]); }
       if (RF.menuPressed(kb, 'left') || RF.menuPressed(kb, 'up')) this.index = (this.index - 1 + n) % n;
       if (RF.menuPressed(kb, 'right') || RF.menuPressed(kb, 'down')) this.index = (this.index + 1) % n;
       if (before !== this.index) RF.audio.sfx('move');

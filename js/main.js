@@ -8,6 +8,11 @@
   ctx.imageSmoothingEnabled = false;
 
   function resize() {
+    if (RF.touch && RF.touch.active) { // phones and tablets: fill the screen; the controller sits around / over the picture
+      const f = RF.touch.fit(WIDTH, HEIGHT);
+      canvas.style.width = f.w + 'px'; canvas.style.height = f.h + 'px';
+      return;
+    }
     const help = document.getElementById('help');
     const availH = window.innerHeight - (help ? help.offsetHeight : 0);
     let scale = Math.min((window.innerWidth - 32) / WIDTH, availH / HEIGHT); // 32 = side gutters
@@ -116,6 +121,7 @@
       RF.font.drawText(ctx, game.toast.text, WIDTH - 6, HEIGHT - 12, { align: 'right', color: '#ffd030', outline: '#000' });
     }
     safely(() => RF.audio.update());
+    if (RF.touch) safely(() => RF.touch.tick());
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);

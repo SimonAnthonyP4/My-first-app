@@ -26,6 +26,10 @@
 
     tick() { this.frame++; }
 
+    // Virtual keys (the on-screen touch controller): the same bookkeeping a real key gets.
+    press(code) { if (!this.down.has(code)) this.pressedAt.set(code, this.frame); this.down.add(code); }
+    release(code) { this.down.delete(code); }
+
     // ---- Game controllers (PS5 DualSense, PS4, Xbox, ...) via the Gamepad API ----
     // Each connected controller's buttons become virtual "keys" named
     // Pad1Square, Pad1Cross, Pad1Up, ... (Pad2... for the second controller), which

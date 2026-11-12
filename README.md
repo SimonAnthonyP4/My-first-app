@@ -83,6 +83,36 @@ select, the fight, rematches - is shared. Pick ONLINE again (or close the tab) t
   the host's match settings are copied to the guest, so both games stay identical; a checksum each
   second shows OUT OF SYNC if they ever drift.
 
+### Phones and tablets (touch controls)
+
+Open the game on a phone or tablet and an on-screen controller appears by itself (best sideways;
+portrait works too, with the controls under the picture):
+
+- **Left: a stick.** Eight ways, like an arcade joystick - roll your thumb from down to forward
+  for a quarter-circle. Up jumps, down crouches.
+- **Right: the fighting buttons**, with the same symbols and colours as the story's quick-time
+  prompts: **LIGHT** (pink square), **HEAVY** (green triangle), **BLOCK** (red circle), **THROW**
+  (blue cross), plus **DASH**, **EX**, **SUPER** (light + heavy together) and **TAUNT**.
+  Every button is multi-touch, and you can slide a thumb from one button to the next.
+  Last Stand is hold EX, then tap SUPER.
+- **Top corner: sound, fullscreen (where the browser allows it) and pause.** Hold PAUSE in the
+  story to skip a scene.
+- **Menus are tapped.** Tap a row to use it, tap a roster portrait to point at it and again to
+  pick it, tap the sides of the stage preview to flip through stages and the middle to fight, tap
+  the story to read on. In menus the controller quiets down: LIGHT becomes OK, BLOCK becomes BACK.
+- **Settings -> TOUCH CONTROLS:** AUTO (shown on touch screens, hidden when you use a keyboard
+  or controller, back on the next touch) / ALWAYS ON / OFF; button size; which side the stick is on.
+
+One phone is one player: it drives player 1 (VS CPU, the story, Arcade, Survival, the Rift Tower,
+Training and Online all work). Two people on one phone is not a thing - use a keyboard or controller
+for player 2.
+
+How it works: `js/core/touch.js` makes the buttons press the same virtual keys the keyboard does
+(`kb.press` / `kb.release` in `input.js`), so nothing else in the game knows. Its CSS is injected
+by the script, `main.js` asks it to size the canvas, and menus read taps through
+`RF.touch.takeTap()` (`ListMenu` finds rows from `menu.area`; scenes that draw their own list set it).
+Words that name keys ("PRESS ENTER", "HOLD ESC") are rewritten to what is on the buttons.
+
 ### PS5 (and other) controllers
 
 Plug a PS5 DualSense in by USB or pair it over Bluetooth **before** opening the game, then
@@ -297,7 +327,7 @@ each special's numbers are in `js/config/specials.js`.
 index.html                 entry point (script load order lives here)
 css/style.css
 js/
-  core/                    namespace, helpers, pixel font, keyboard input, saved settings, audio synth
+  core/                    namespace, helpers, pixel font, keyboard input, touch controls, saved settings, audio synth
   config/
     game.js                global rules: health, round time, gravity, chip damage…
     controls.js            key bindings

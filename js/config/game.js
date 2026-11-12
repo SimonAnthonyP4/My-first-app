@@ -73,6 +73,9 @@ RF.CONFIG = {
   SFX_VOLUME: 0.8,        // 0..1
   CPU_LEVEL: 'normal',
   RUMBLE: true,
+  TOUCH_MODE: 'auto',      // on-screen controller: 'auto' | 'on' | 'off'  (js/core/touch.js)
+  TOUCH_SIZE: 1,           // 0.85 | 1 | 1.2
+  TOUCH_SWAP: false,       // left-handed: stick on the right
   ANNOUNCER: true,
   DYNAMIC_CAMERA: true,
   // Party mods (title menu -> PARTY MODS). Not saved: they reset when the page reloads.

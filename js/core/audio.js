@@ -533,4 +533,6 @@
   RF.audio = audio;
   window.addEventListener('keydown', () => audio.unlock());
   window.addEventListener('pointerdown', () => audio.unlock());
+  window.addEventListener('touchend', () => audio.unlock());   // (iOS only starts sound when a finger lifts)
+  window.addEventListener('click', () => audio.unlock());
 })();
