@@ -94,8 +94,11 @@ these into chat, an issue or a file.
 
 ### 4. Deploy
 
-GitHub → Actions → **Deploy** → Run workflow, choosing one step each time, in this order. (The
-button only appears once the workflow file is on the default branch.)
+GitHub → Actions → **Deploy** → Run workflow, choosing one step each time, in this order.
+
+GitHub only offers **Run workflow** for workflows on the default branch (`main`), and refuses to
+start them any other way. Until the branch this work is on has been merged into `main`, the Deploy
+workflow cannot be started.
 
 | Step          | Does                                                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------------ |
