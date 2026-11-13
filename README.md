@@ -1265,6 +1265,30 @@ have their own subtitle colours and a low tone under every line. A stage can set
 its painted floor begins) so that what is on its back wall stands on the 3D floor. On a slow
 device the glow is dropped and a big army is drawn as every other soldier, automatically.
 
+
+## Story mode: sets in real 3D
+
+`js/scenes/story-gl.js`, with [three.js](https://threejs.org) r128 (`js/vendor/three.min.js`, MIT
+licence, `js/vendor/THREE-LICENSE.txt`). Three places are real rooms: **the throne hall**, **the
+Keeper's post** and **the Judge's bench**. The floor, the steps, the throne built out of desks, the
+security desk, the door, the marble columns and the turning gold ring are solid geometry with
+lights and fog; the stage painting is the far wall (still animated); and every actor - and every
+one of the army of 412 - is a billboard standing in the room at their own depth, hidden by
+whatever is in front of them. The camera really tilts: it can look down the hall from the ceiling
+or up at the bench from the floor.
+
+Nothing in the screenplay changed for this: every `{ cam3d }` shot on one of those stages is drawn
+in 3D, from the same camera numbers as before (`StoryScene.cam3` in `story-3d.js`), including the
+chapters that were already set in the throne room. Everywhere else, and in every flat shot
+(close-ups, wides, inserts), the game draws as it always has.
+
+- three.js is fetched the first time the story menu is opened; the rest of the game never loads it.
+- No WebGL, or the file has not arrived yet: the painted sets are used, exactly as before.
+- **STORY menu -> 3D SETS: ON / OFF** switches them by hand. On a slow device they switch
+  themselves off.
+- To build another: `RF.storyGL.sets.<stageId> = (kit) => ({ update(t) })`. `kit` has `box`, `cyl`,
+  `flat`, `wall`, `light` and the materials; the room (floor size, the painted wall) is made for you.
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.

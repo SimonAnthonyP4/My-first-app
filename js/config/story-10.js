@@ -142,7 +142,7 @@
       { stamp: ['KEPT', '#b070ff'] }, { wait: 110 },
       // ---- and the one who allowed it ----
       { dissolve: 50 }, { clear: true }, { tint: null }, { grade: null }, { bg: 'post' }, { amb: ['hum', 'clock'] }, { score: 'keeper' }, { aspect: 'ultra' }, { bloom: 0.3 },
-      { cast: { riley: ['riley', 150, 1, { z: 40 }] } }, { aura: ['riley', 'cosmic'] },
+      { cast: { riley: ['riley', 150, 1, { z: 12 }] } }, { aura: ['riley', 'cosmic'] },
       { cam3d: ['riley', 'float'] },
       { insert: 'monitors', kept: 9, text: 'NINE SCHOOLS, QUIET. NOTHING IN THE HALLS AFTER THE BELL.' }, { wait: 190 },
       { cam3d: ['riley', 'face'] },
@@ -465,7 +465,7 @@
       // ---- there is a procedure for everything ----
       { shot: 'wide' }, { act: ['riley', 'dazed'] }, { score: null }, { amb: null }, { aspect: 'ultra' }, { wait: 50 },
       { narrate: 'A KEEPER HAD NEVER FALLEN ON DUTY. THERE WAS A PROCEDURE FOR IT ANYWAY. THERE IS A PROCEDURE FOR EVERYTHING.' },
-      { column: [192, 160, 44] }, { bloom: 0.14 }, { sfx: 'gong' }, { wait: 50 },
+      { column: [192, 160, 44] }, { bloom: 0.08 }, { sfx: 'gong' }, { wait: 50 },
       { cast: { judge: ['judge', 192, 1, { y: 36, z: 44 }] } }, { appear: 'judge' }, { aura: ['judge', 'white'] }, { score: 'court' },
       { cam3d: ['judge', 'judge'] }, { wait: 130 },
       { card: ['judge', 'HAS NEVER ISSUED A SECOND SENTENCE.'], color: '#ffe9a0' },
@@ -563,7 +563,7 @@
     title: 'THE VERDICT', sub: 'THE WHOLE SCHOOL TAKES THE STAND',
     intro: [
       { music: 'silence' }, { amb: ['room'] }, { insert: 'gavel', text: 'ALL RISE.', sub: 'THE UNIVERSE CALLED TERRAMANIA V. THE DOOR' }, { sfx: 'clang' }, { wait: 170 },
-      { bg: 'tribunal' }, { aspect: 'ultra' }, { score: 'court' }, { bloom: 0.14 },
+      { bg: 'tribunal' }, { aspect: 'ultra' }, { score: 'court' }, { bloom: 0.08 },
       { cast: {
         judge: ['judge', 192, 1, { y: 60, z: 70 }], riley: ['riley', 80, 1, { z: 30 }],
         '$hero': SEAT, astuto: ['astuto', 250, -1, { z: 20 }], lopez: ['lopez', 322, -1, { z: -36 }], olu: ['olu', 356, -1, { z: 46 }],
@@ -638,10 +638,10 @@
       { say: ['trump', 'YOUR HONOR, I KNOW DOORS. TREMENDOUS DOORS. YOU NEVER SEAL A GOOD DOOR. VERY BAD DEAL. EVERYBODY SAYS SO.'] },
       { say: ['judge', 'THAT WITNESS WAS NOT CALLED.'] },
       { say: ['trump', 'I CALLED MYSELF. MANY PEOPLE ARE SAYING IT WAS THE BEST TESTIMONY.'] },
-      { cam3d: ['judge', 'push'] },
+      { remove: 'javan' }, { remove: 'erick' }, { remove: 'trump' }, { cam3d: ['judge', 'push'] },
       { say: ['judge', '...IT IS STRICKEN. THE REST MAY STAND.'] },
       // ---- two who were kept ----
-      { whip: true }, { remove: 'javan' }, { remove: 'erick' }, { remove: 'trump' }, { remove: 'tamayo' }, { score: 'sad' },
+      { whip: true }, { remove: 'tamayo' }, { score: 'sad' },
       { cast: { bruiser: ['bruiser', 440, -1], viper: ['viper', 470, -1, { z: 18 }] } }, { cam3d: ['judge', 'court'] }, { walk: ['viper', 204, 50, 'async'] }, { walk: ['bruiser', STAND, 50] },
       { narrate: 'THE NEXT TWO WITNESSES WERE NOT FROM TERRAMANIA. NOT THIS ONE.' },
       { cam3d: ['bruiser', 'hero'] },
@@ -803,7 +803,7 @@
   // ALL RISE: four hundred doors open in one field. Someone notices.
   afterWhere(ch('ALL RISE').intro, (x) => x.insert === 'portals', [
     { wait: 320 },
-    { recall: { live: true, bg: 'post', cast: { riley: ['riley', 150, 1, { z: 40 }] }, cam3d: ['riley', 'snap'], say: ['riley', 'FOUR HUNDRED DOORS. IN ONE FIELD. ...THAT IS A CODE RED.'] } },
+    { recall: { live: true, bg: 'post', cast: { riley: ['riley', 150, 1, { z: 12 }] }, cam3d: ['riley', 'snap'], say: ['riley', 'FOUR HUNDRED DOORS. IN ONE FIELD. ...THAT IS A CODE RED.'] } },
   ], 'the portals');
   { const s = ch('ALL RISE').intro, i = s.findIndex((x) => x.recall && x.recall.bg === 'post'); if (i >= 0 && s[i + 1] && s[i + 1].wait === 320) s.splice(i + 1, 1); }   // (the long look at the portals now comes before the cut)
 
@@ -881,7 +881,7 @@
   ];
   const POST_KEEPER = [   // the desk, twenty years on. Something knocks from the side nothing has ever come from.
     { clear: true }, { rays: false }, { grade: null }, { spot: null }, { bg: 'post' }, { tint: null }, { music: 'silence' }, { amb: ['hum', 'clock'] }, { aspect: 'ultra' }, { bloom: 0.3 },
-    { cast: { riley: ['riley', 150, 1, { z: 40 }], olu: ['olu', 232, -1, { z: 40 }] } }, { aura: ['riley', 'cosmic'] }, { aura: ['olu', 'gold'] },
+    { cast: { riley: ['riley', 150, 1, { z: 12 }], olu: ['olu', 236, -1, { z: 12 }] } }, { aura: ['riley', 'cosmic'] }, { aura: ['olu', 'gold'] },
     { fade: ['in', 40] },
     { narrate: 'THE DESK. BETWEEN EVERY UNIVERSE. TWENTY YEARS ON.' },
     { cam3d: [['riley', 'olu'], 'two'] }, { score: 'keeper' },

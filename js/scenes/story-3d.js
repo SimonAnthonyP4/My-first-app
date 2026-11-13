@@ -108,7 +108,41 @@
     return k;
   }
 
+  // Where the camera is for this shot, this frame (the same numbers drive the drawn sets below and
+  // the real 3D ones in story-gl.js): its position C, the point it looks at, and its lens.
+  P.cam3 = function (sh) {
+    const keys = Array.isArray(sh.a) ? sh.a : [sh.a], subs = keys.map((k) => this.actors[k]).filter(Boolean);
+    if (subs.length) { sh.ax = subs.reduce((s, a) => s + a.x, 0) / subs.length; sh.az = subs.reduce((s, a) => s + (a.z || 0), 0) / subs.length; }
+    if (sh.ax == null) return null;
+    const ay = subs.length ? subs.reduce((s, a) => s + (a.y || 0) + ((a.def.sprite && a.def.sprite.hover) || 0) * 0.6 + Math.max(0, a.def.body.height * (a.scale || 1) - 86) * 0.6, 0) / subs.length : 0;
+    const u0 = Math.min(1, (this.t - sh.t0) / (sh.frames || 1)), u = u0 * u0 * (3 - 2 * u0);
+    const L = (p) => {
+      if (!p) return 0;
+      const n = p.length - 1;
+      if (n < 1) return p[0];
+      if (n === 1) return p[0] + (p[1] - p[0]) * u;
+      const f = Math.min(n - 1e-6, u * n), i = Math.floor(f), t = f - i, a = p[Math.max(0, i - 1)], b = p[i], c = p[i + 1], d = p[Math.min(n, i + 2)];
+      return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (3 * b - a - 3 * c + d) * t * t * t);
+    };
+    const hh = this.handheld || 0, tight = Math.max(0, (this.barH == null ? 30 : this.barH) - 30);
+    const yaw = (sh.yaw0 || 0) + L(sh.yaw) + Math.sin(this.t / 53) * 0.012 * hh;
+    let dist = Math.max(40, L(sh.dist)), F = (sh.f ? L(sh.f) : 260) * (1 - tight / 80), cy = Math.cos(yaw), sn = Math.sin(yaw);
+    const tx = sh.ax + L(sh.shift), tz = sh.az;   // the point on the floor the lens is aimed over
+    const C = { x: tx + sn * dist, y: Math.max(4, L(sh.height) + ay * 0.45 + Math.sin(this.t / 37) * 1.2 * hh), z: tz - cy * dist };
+    const out = this.bgDef && OUTDOOR.has(this.bgDef.id), WZ = 84, XL = out ? -620 : -330, XR = W - XL, ZF = out ? -760 : -460;
+    const cx2 = Math.max(XL + 26, Math.min(XR - 26, C.x)), cz2 = Math.max(ZF + 26, Math.min(WZ - 18, C.z));
+    if (cx2 !== C.x || cz2 !== C.z) {
+      C.x = cx2; C.z = cz2;
+      const d2 = Math.max(30, Math.hypot(C.x - tx, tz - C.z));
+      sn = (C.x - tx) / d2; cy = (tz - C.z) / d2;
+      if (d2 < dist) F *= Math.max(0.42, d2 / dist);
+      dist = d2;
+    }
+    return { keys, subs, C, tx, tz, ty: (sh.aim == null ? 44 : sh.aim) + tight * 0.5 + ay, F, dist, cy, sn, roll: sh.roll ? L(sh.roll) : 0, over: this.actors[sh.over] };
+  };
+
   P.draw3D = function (ctx, sh, fy) {
+    if (RF.storyGL && RF.storyGL.draw(this, ctx, sh, fy)) return;   // a set built in real 3D (story-gl.js), where there is one and the device can
     const keys = Array.isArray(sh.a) ? sh.a : [sh.a], subs = keys.map((k) => this.actors[k]).filter(Boolean);
     if (subs.length) { sh.ax = subs.reduce((s, a) => s + a.x, 0) / subs.length; sh.az = subs.reduce((s, a) => s + (a.z || 0), 0) / subs.length; }
     // someone raised off the floor (on a throne), or much taller than a person: look up at them

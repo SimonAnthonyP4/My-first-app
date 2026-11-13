@@ -180,13 +180,20 @@
     if (s.say && !(s.say[2] && s.say[2].radio)) { const a = this.actor(s.say[0]), def = a ? a.def : RF.getCharacter(this.resolve(s.say[0])); if (def && K.SUB[def.id]) godTone(def.id); }
   };
 
-  // A slow device: if frames have been taking too long for a second and a half, the glow goes and a
-  // big army is drawn as every other soldier (for the rest of the session; nothing else changes).
+  // A slow device: if frames have been taking too long for a second and a half, the real 3D sets give
+  // way to the painted ones; if that is not enough, the glow goes and a big army is drawn as every
+  // other soldier (for the rest of the session; nothing else changes).
   const render0 = P.render;
   P.render = function (ctx) {
     const t0 = performance.now(); render0.call(this, ctx);
     const ms = performance.now() - t0; K.ms = (K.ms == null ? ms : K.ms) * 0.95 + ms * 0.05;
-    if (K.ms > 15) { if (!K.lowFx && (K.slow = (K.slow || 0) + 1) > 90) K.lowFx = true; } else K.slow = 0;
+    if (K.ms > 15) {
+      if (!K.lowFx && (K.slow = (K.slow || 0) + 1) > 90) {
+        const G = RF.storyGL;
+        if (G && G.on && G.used) { G.on = false; G.used = false; K.slow = 0; K.ms = null; }   // (first: back to the painted sets, and see if that is enough)
+        else K.lowFx = true;
+      }
+    } else K.slow = 0;
   };
 
   // ---------------------------------------------------------------- a shot of its own: reaction panels
@@ -229,7 +236,10 @@
       if (a.aura && AURA[a.aura]) {
         const [c0, c1, ring, mote] = AURA[a.aura], r = (a.aura === 'white' ? 70 : 54) * kk;
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 + 0.2 * Math.sin(t / 13);
-        const g = ctx.createRadialGradient(p.x, p.y, 3 * kk, p.x, p.y, r); g.addColorStop(0, c1); g.addColorStop(0.34, c1); g.addColorStop(0.62, c0); g.addColorStop(1, c1);   // (clear in the middle: whoever is in it stays readable)
+        const g = ctx.createRadialGradient(p.x, p.y, 3 * kk, p.x, p.y, r);
+        if (a.aura === 'white') { g.addColorStop(0, c1); g.addColorStop(0.4, c1); g.addColorStop(0.66, c0); g.addColorStop(1, c1); }   // (a rim of light: the one inside it is white already)
+        else { g.addColorStop(0, c0); g.addColorStop(1, c1); }
+        ctx.globalAlpha *= a.aura === 'white' ? 0.7 : 0.62;
         ctx.fillStyle = g; ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
         if (a.aura === 'white') { ctx.globalAlpha = 0.14 + 0.05 * Math.sin(t / 9); for (let i = 0; i < 7; i++) { const an = i * 0.9 + t / 160; ctx.beginPath(); ctx.moveTo(p.x, p.y - 10 * kk); ctx.lineTo(p.x + Math.cos(an) * 190, p.y + Math.sin(an) * 190); ctx.lineTo(p.x + Math.cos(an + 0.11) * 190, p.y + Math.sin(an + 0.11) * 190); ctx.fill(); } }
         ctx.restore();
