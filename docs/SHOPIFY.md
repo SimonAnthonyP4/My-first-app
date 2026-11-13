@@ -3,10 +3,11 @@
 How Bro Batch works with Shopify POS: what Shopify sends us, what we ask of Shopify, and what the
 rewards tile in the till does.
 
-**Status: built and tested with Shopify faked.** No Shopify store or app exists for this project
-yet, so nothing here has exchanged a single request with Shopify. The design follows Shopify's
-published documentation (API version 2026-10), and everything on our side of the boundary is
-tested. What remains is listed under "Not yet verified".
+**Status: built and tested with Shopify faked.** No Shopify app exists for this project yet, so
+nothing here has exchanged a single request with Shopify. The design follows Shopify's published
+documentation (API version 2026-10), the POS tile builds with Shopify CLI and passes Shopify's own
+type definitions, and everything on our side of the boundary is tested. What remains is listed
+under "Not yet verified".
 
 ## Who owns what
 
@@ -131,6 +132,12 @@ tile: applies the code to the cart; cashier takes payment
   └─ nothing happens → hold lapses after 15 minutes (+5 minutes' grace), points returned
 ```
 
+**Opening the tile again.** The rewards screen starts from nothing each time it is opened. So
+`pos-member` also reports any reward the member is holding (reserved, with a live code, not past
+its time limit), and the screen shows it with the option to remove it. Without this a cashier who
+applied a reward and closed the screen could not take it back off; the points would stay debited
+until the hold lapsed.
+
 The code Shopify receives:
 
 | Property | Value                                                                  |
@@ -161,11 +168,11 @@ The token identifies the Shopify account signed in to the POS app on the device,
 member who entered a PIN. Shopify only issues it to accounts that have been given access to the
 app.
 
-| Function             | Body                                                        | Returns                              |
-| -------------------- | ----------------------------------------------------------- | ------------------------------------ |
-| `pos-member`         | `membership_code` or `shopify_customer_id`                  | Member name and points, live rewards |
-| `pos-reserve-reward` | `customer_id`, `reward_id`, `idempotency_key`, `variant_id` | The discount code and new balance    |
-| `pos-release-reward` | `redemption_id`                                             | New balance                          |
+| Function             | Body                                                        | Returns                                                  |
+| -------------------- | ----------------------------------------------------------- | -------------------------------------------------------- |
+| `pos-member`         | `membership_code` or `shopify_customer_id`                  | Member name and points, live rewards, rewards being held |
+| `pos-reserve-reward` | `customer_id`, `reward_id`, `idempotency_key`, `variant_id` | The discount code and new balance                        |
+| `pos-release-reward` | `redemption_id`                                             | New balance                                              |
 
 The first time a member is scanned, `pos-member` finds their Shopify customer by email, or creates
 one, and records the link. The response never includes the member's email or phone.
@@ -226,35 +233,51 @@ own store's token endpoint and is never logged or put in an error.
 
 ## How it is tested
 
-| Layer              | Tests                                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Database functions | 169 pgTAP tests in `08_shopify_orders.sql` and `09_shopify_rewards.sql`                                                                                    |
-| Races              | One order webhook 20 times at once; 30 simultaneous reward requests against 300 points; one refund 20 times at once                                        |
-| Edge Functions     | 91 Deno tests with the database and Shopify faked                                                                                                          |
-| Signatures         | Webhook HMAC against a known answer computed with `openssl`; ID tokens forged, expired, for another app, for another store                                 |
-| End to end         | Real handlers against the real database: scan, link, reward, signed order webhook, replay, forged webhook, refund, out-of-order refund, release (16 steps) |
-| POS tile           | 18 tests of its display logic and API client. The screens themselves are not tested.                                                                       |
+| Layer              | Tests                                                                                                                                                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database functions | 182 pgTAP tests in `08_shopify_orders.sql`, `09_shopify_rewards.sql` and `10_pos_held_rewards.sql`                                                                                                                                                                                                             |
+| Races              | One order webhook 20 times at once; 30 simultaneous reward requests against 300 points; one refund 20 times at once                                                                                                                                                                                            |
+| Edge Functions     | 92 Deno tests with the database and Shopify faked                                                                                                                                                                                                                                                              |
+| Signatures         | Webhook HMAC against a known answer computed with `openssl`; ID tokens forged, expired, for another app, for another store                                                                                                                                                                                     |
+| End to end         | Real handlers against the real database: scan, link, reward, reopening the screen, signed order webhook, replay, forged webhook, refund, out-of-order refund, release (17 steps)                                                                                                                               |
+| POS tile           | Built by Shopify CLI in CI. Its calls to Shopify POS are type-checked against Shopify's definitions for each screen. 43 tests: 18 of its display logic and API client, 25 that run the two screens in Shopify's extension tester (scan, attach to cart, apply, pick an item, retry, refusals, remove, reopen). |
+| Deploy             | 17 tests of the preflight and the post-deploy verification, against a stand-in backend and Shopify                                                                                                                                                                                                             |
 
 The suites were checked against 52 deliberately introduced Shopify-path defects (signature check
 skipped, ID token not verified, discount open to any customer, points awarded on tax, and so on).
-51 were caught by a test; the other changed no behaviour in the scenario it was tried in.
+51 were caught by a test; the other changed no behaviour in the scenario it was tried in. A further
+23 defects were introduced into the rewards screen (member not attached to the cart, wrong item
+sent, points not returned when the cart refuses the code, and so on); all 23 were caught.
+
+Writing the screen tests found two faults in the screen, both fixed: a warning that the member
+could not be attached to the cart was cleared before the cashier could read it, and a reward
+applied before the screen was closed could not be removed after reopening it.
 
 ## Not yet verified
 
-All of these need a Shopify development store, which the owner must create:
+All of these need the app installed on a Shopify dev store:
 
 1. **Any real request to or from Shopify.** The five Admin API calls, the token exchange, and the
    webhook deliveries have only met fakes built from the documentation.
-2. **The POS tile on a device.** `Tile.jsx` and `Modal.jsx` have never been built by Shopify CLI
-   or opened in Shopify POS. Component names and Cart, Scanner and Session calls follow the
-   2026-10 reference but are untested.
+2. **The POS tile on a device.** It builds, type-checks against Shopify's definitions and passes
+   its tests in Shopify's extension tester, but it has never been opened in Shopify POS. The
+   tester is a mock: it does not draw the screens, run the camera, or behave like a real cart.
+   How the screens look, and that a scan reaches the screen the way the tests assume, are unseen.
 3. **Discount code behaviour in POS.** That a customer-specific, variant-specific, fixed-amount
-   code applies as expected when added by the tile, and whether two codes can sit on one cart.
+   code applies as expected when added by the tile; whether two codes can sit on one cart; and
+   whether removing the reward takes the code off the cart (`removeCartDiscount` is documented as
+   removing the cart-level discount; if a code is not one, the cashier removes it by hand, as the
+   screen says).
 4. **Cross-origin requests from the tile** to Supabase Edge Functions (CORS headers are in place).
 5. **Refund payload details** for POS refunds: that goods value appears in `refund_line_items` the
    way the documented sample shows.
-6. **The scheduled expiry** on Supabase (`pg_cron`).
-7. **Tap to Pay** is Shopify's feature and is not something this project implements or can test
+6. **The scheduled expiry** on Supabase. The migrations enable `pg_cron` and schedule the job;
+   this is exercised on the Supabase image in CI, not on a hosted project.
+7. **The Deploy workflow.** Its Shopify CLI and Supabase CLI commands have never run against a
+   real app or project. In particular, the tile is deployed without a `uid` in
+   `shopify.extension.toml`; that Shopify CLI keeps it the same extension on later deploys is
+   assumed, not seen.
+8. **Tap to Pay** is Shopify's feature and is not something this project implements or can test
    before the store is on Shopify Payments.
 
 `docs/RUNBOOK.md`, "Connect Shopify", has the steps for the first real run.

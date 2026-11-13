@@ -129,6 +129,7 @@ the database only through the Edge Functions.
 | `ingest_shopify_refund`     | Webhook `refunds/create`: mirror, update order, reverse points.           |
 | `pos_lookup_member`         | The member behind a scanned code, a Shopify customer id, or an id.        |
 | `pos_rewards`               | The rewards the till can offer.                                           |
+| `pos_held_rewards`          | The rewards a member has applied but not yet paid for.                    |
 | `link_shopify_customer`     | Records which Shopify customer a member is. Once.                         |
 | `reserve_reward_for_pos`    | Debits points and issues the single-use discount code.                    |
 | `attach_reward_discount`    | Records the Shopify discount created for a redemption.                    |

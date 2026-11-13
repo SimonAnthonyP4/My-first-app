@@ -9,7 +9,7 @@ direction are in `PLAN.md`.
    (not built)            Shopify POS  ── Shopify's app ──┐
   ┌──────────────┐      ┌─────────────────────────────┐   │   ┌──────────────────┐
   │ Rewards app  │      │ Bro Batch Rewards tile      │   │   │ Admin (Next.js)  │
-  │ (SwiftUI)    │      │ written, never run          │   │   │ placeholder page │
+  │ (SwiftUI)    │      │ tested, never on a device   │   │   │ placeholder page │
   └──────┬───────┘      └───────────────┬─────────────┘   │   └────────┬─────────┘
          │                              │ ID token        │ signed     │
          │                              ▼                 ▼ webhooks   │
@@ -29,8 +29,9 @@ direction are in `PLAN.md`.
 ```
 
 Built and tested: the database, the loyalty engine, the Shopify ingestion and reward functions,
-and the Edge Functions. Written but never run: the POS tile. Not built: the dashboard screens and
-the Rewards iPhone app.
+the Edge Functions, and the POS tile (built by Shopify CLI and tested in Shopify's extension
+tester, but never opened on a device). Not built: the dashboard screens and the Rewards iPhone
+app.
 
 **Nothing has been connected to Shopify.** Every test stands in for Shopify with a fake built from
 its documentation. `SHOPIFY.md` lists what that leaves unverified.
@@ -64,7 +65,8 @@ worked examples: `LOYALTY.md`.
   JavaScript number holds exactly.
 - `reserve_reward_for_pos` debits points and issues a discount code; `expire_stale_redemptions`
   returns the points of holds that lapsed.
-- `pos_lookup_member`, `pos_rewards`, `link_shopify_customer` serve the POS tile.
+- `pos_lookup_member`, `pos_rewards`, `pos_held_rewards`, `link_shopify_customer` serve the POS
+  tile.
 
 ### Edge Functions (`supabase/functions`)
 
@@ -112,14 +114,16 @@ convenience for choosing screens only.
 
 ## Testing strategy
 
-| Suite                   | What it proves                                                                                                  | Where                                              |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| pgTAP (474 tests)       | Structure, constraints, RLS, privileges, triggers, the 20 loyalty examples, Shopify orders, refunds and rewards | `supabase/tests`                                   |
-| Concurrency (29 checks) | Eight races on real connections: points and orders are never duplicated or lost                                 | `scripts/db-concurrency-test.sh`                   |
-| Contract drift check    | TypeScript enums, error codes and the points formula match the database                                         | `scripts/check-contract-drift.mjs`                 |
-| Deno (91 tests)         | Edge Function handlers, webhook signatures, ID tokens, the Shopify client, error mapping                        | `supabase/functions/tests`                         |
-| Integration (16 steps)  | The real handlers against the real database, scan through refund                                                | `supabase/functions/tests/integration_test.ts`     |
-| Vitest (137 tests)      | Money math, points formula, QR format, validation, env guard, POS tile logic                                    | `packages/contracts`, `apps/admin`, `apps/shopify` |
+| Suite                   | What it proves                                                                                                           | Where                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| pgTAP (487 tests)       | Structure, constraints, RLS, privileges, triggers, the 20 loyalty examples, Shopify orders, refunds and rewards          | `supabase/tests`                                   |
+| Concurrency (29 checks) | Eight races on real connections: points and orders are never duplicated or lost                                          | `scripts/db-concurrency-test.sh`                   |
+| Contract drift check    | TypeScript enums, error codes and the points formula match the database                                                  | `scripts/check-contract-drift.mjs`                 |
+| Deno (92 tests)         | Edge Function handlers, webhook signatures, ID tokens, the Shopify client, error mapping                                 | `supabase/functions/tests`                         |
+| Integration (17 steps)  | The real handlers against the real database, scan through refund                                                         | `supabase/functions/tests/integration_test.ts`     |
+| Vitest (162 tests)      | Money math, points formula, QR format, validation, env guard, POS tile logic and its two screens                         | `packages/contracts`, `apps/admin`, `apps/shopify` |
+| Shopify CLI build       | The POS tile bundles; its calls to Shopify POS match Shopify's type definitions (`tsc`)                                  | `apps/shopify`                                     |
+| Deploy scripts (17)     | The preflight refuses a half-configured deploy; the post-deploy verification catches a wrong secret, store or permission | `scripts/deploy.test.mjs`                          |
 
 CI runs the database suite twice: on plain PostgreSQL with a shim for Supabase's roles (fast, and
 what runs locally without Docker), and on the real Supabase Postgres image.

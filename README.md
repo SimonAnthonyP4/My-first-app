@@ -6,21 +6,22 @@ backend that keeps the points.
 
 ## Status
 
-| Milestone | Scope                                        | State                                   |
-| --------- | -------------------------------------------- | --------------------------------------- |
-| M0        | Repository, tooling, CI, shared contracts    | Done                                    |
-| M1        | Loyalty database, row-level security         | Done                                    |
-| M2        | Loyalty engine (earn, reverse, redeem)       | Done                                    |
-| S1        | Shopify backend (webhooks, rewards as codes) | Built, tested with Shopify faked        |
-| S2        | Rewards tile for Shopify POS                 | Written, never run                      |
-| S3        | Connect a Shopify development store          | Not started: needs the owner's accounts |
-| S4        | Admin dashboard                              | Not started                             |
-| S5        | Rewards iPhone app                           | Not started                             |
-| S6        | Push notifications                           | Not started                             |
-| S7        | Hardening and go-live                        | Not started                             |
+| Milestone | Scope                                        | State                                                |
+| --------- | -------------------------------------------- | ---------------------------------------------------- |
+| M0        | Repository, tooling, CI, shared contracts    | Done                                                 |
+| M1        | Loyalty database, row-level security         | Done                                                 |
+| M2        | Loyalty engine (earn, reverse, redeem)       | Done                                                 |
+| S1        | Shopify backend (webhooks, rewards as codes) | Built, tested with Shopify faked                     |
+| S2        | Rewards tile for Shopify POS                 | Builds and is tested; never run on a device          |
+| S3        | Connect a Shopify dev store                  | Deploy path written; waiting on accounts and secrets |
+| S4        | Admin dashboard                              | Not started                                          |
+| S5        | Rewards iPhone app                           | Not started                                          |
+| S6        | Push notifications                           | Not started                                          |
+| S7        | Hardening and go-live                        | Not started                                          |
 
-Nothing is deployed and nothing has been connected to Shopify: no Shopify store, Supabase project
-or Apple account has been set up for this project. `docs/RUNBOOK.md` lists what each needs.
+Nothing is deployed and nothing has been connected to Shopify. The owner has a Shopify account and
+Shopify POS; the project still needs a Supabase project, a Shopify app and four deploy secrets.
+`docs/RUNBOOK.md`, "Connect Shopify", has the steps.
 
 ## Repository layout
 
@@ -32,7 +33,7 @@ packages/contracts/  Shared TypeScript: money, points formula, enums, validation
 supabase/migrations/ Database schema, triggers, functions, row-level security
 supabase/functions/  Edge Functions: Shopify webhook and the POS tile's endpoints (Deno)
 supabase/tests/      pgTAP tests for the database
-scripts/             Database test runner, concurrency test, contract drift check
+scripts/             Database test runner, concurrency test, contract drift check, deploy checks
 docs/                Plan, architecture, Shopify integration, loyalty rules, runbook
 ```
 

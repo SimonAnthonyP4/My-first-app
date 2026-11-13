@@ -19,7 +19,12 @@ const MILESTONES: readonly { id: string; label: string; state: MilestoneState; n
   { id: 'M1', label: 'Loyalty database', state: 'done', note: 'Complete' },
   { id: 'M2', label: 'Loyalty engine', state: 'done', note: 'Complete' },
   { id: 'S1', label: 'Shopify backend', state: 'partial', note: 'Built, awaiting Shopify' },
-  { id: 'S2', label: 'Rewards tile in the till', state: 'partial', note: 'Written, not run' },
+  {
+    id: 'S2',
+    label: 'Rewards tile in the till',
+    state: 'partial',
+    note: 'Tested, not on a device',
+  },
   { id: 'S4', label: 'Admin dashboard', state: 'todo', note: 'Not started' },
 ];
 

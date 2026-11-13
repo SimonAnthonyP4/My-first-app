@@ -6,6 +6,7 @@ on:
       - 'apps/admin/**'
       - 'apps/shopify/**'
       - 'packages/**'
+      - 'scripts/deploy*'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'

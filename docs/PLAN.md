@@ -1,8 +1,9 @@
 # Bro Batch — Plan
 
-Status: **the loyalty backend is built and tested. Nothing has been connected to a real Shopify
-store yet, because none exists for this project.** Connecting one is the next step and needs
-accounts only the owner can create (see "What is needed from the owner").
+Status: **the loyalty backend and the rewards tile are built and tested. Nothing has been connected
+to a real Shopify store yet.** The owner has a Shopify account and Shopify POS. Connecting them is
+the next step and needs a few things only the owner can create (see "What is needed from the
+owner").
 
 ## The direction
 
@@ -79,18 +80,18 @@ Details: `docs/SHOPIFY.md`. Loyalty rules: `docs/LOYALTY.md`.
 
 ## Milestones
 
-| #   | Milestone                               | State                                               |
-| --- | --------------------------------------- | --------------------------------------------------- |
-| M0  | Repository, tooling, CI                 | Done                                                |
-| M1  | Loyalty database and security           | Done                                                |
-| M2  | Loyalty engine                          | Done                                                |
-| S1  | Shopify backend                         | Built and tested with Shopify faked                 |
-| S2  | Rewards tile for Shopify POS            | Written; never built or run (needs a Shopify store) |
-| S3  | Connect a Shopify development store     | Not started: needs the owner's accounts             |
-| S4  | Admin dashboard                         | Not started                                         |
-| S5  | Bro Batch Rewards iPhone app            | Not started                                         |
-| S6  | Push notifications                      | Not started                                         |
-| S7  | Hardening and go-live on the real store | Not started                                         |
+| #   | Milestone                               | State                                                               |
+| --- | --------------------------------------- | ------------------------------------------------------------------- |
+| M0  | Repository, tooling, CI                 | Done                                                                |
+| M1  | Loyalty database and security           | Done                                                                |
+| M2  | Loyalty engine                          | Done                                                                |
+| S1  | Shopify backend                         | Built and tested with Shopify faked                                 |
+| S2  | Rewards tile for Shopify POS            | Builds with Shopify CLI and is tested; never run on a device        |
+| S3  | Connect a Shopify dev store             | Deploy path written and tested with stand-ins; waiting on the owner |
+| S4  | Admin dashboard                         | Not started                                                         |
+| S5  | Bro Batch Rewards iPhone app            | Not started                                                         |
+| S6  | Push notifications                      | Not started                                                         |
+| S7  | Hardening and go-live on the real store | Not started                                                         |
 
 ### S1 — Shopify backend (built)
 
@@ -98,18 +99,26 @@ Details: `docs/SHOPIFY.md`. Loyalty rules: `docs/LOYALTY.md`.
 - Orders and refunds mirrored; members linked to Shopify customers; points awarded and reversed.
 - Reward codes: reserve, fulfil when used, expire when not, recover when used late.
 - Three endpoints for the POS tile, authenticated by Shopify's ID token.
-- **Done when:** met for everything that can be tested without Shopify. 474 database tests, 29
-  concurrency checks, 91 function tests and a 16-step end-to-end run pass.
+- A reward a member is already holding is reported to the tile, so it can still be removed after
+  the rewards screen was closed.
+- **Done when:** met for everything that can be tested without Shopify. 487 database tests, 29
+  concurrency checks, 92 function tests and a 17-step end-to-end run pass.
 
-### S2 — Rewards tile for Shopify POS (written, unverified)
+### S2 — Rewards tile for Shopify POS (built and tested off-device)
 
 - Tile on the POS home screen; scan member; show points and rewards; apply and remove a reward.
-- **Done when:** it runs on an iPhone in a development store. Until then the screens are
-  unverified; only their logic and API client are tested.
+- Verified without a device: Shopify CLI builds it; every call it makes to Shopify POS is checked
+  against Shopify's type definitions; 25 tests run its two screens in Shopify's extension tester.
+- **Done when:** it runs on an iPhone in a dev store. How it looks, the camera scanner and how
+  Shopify POS treats the discount code are unverified until then.
 
-### S3 — Connect a Shopify development store (next; needs the owner)
+### S3 — Connect a Shopify dev store (next; needs the owner)
 
-- Create the Shopify app and a development store; create the Supabase project; deploy.
+- Built: a manual Deploy workflow on GitHub (no terminal needed) with a preflight that refuses a
+  half-configured deploy, and a verification step that checks the live backend and the store can
+  talk to each other. It has never run against a real project.
+- The owner creates a Supabase project, a Shopify app and a dev store, and adds four secrets on
+  GitHub (`docs/RUNBOOK.md`, "Connect Shopify"). Then deploy.
 - Run a test-mode sale with a reward, and a refund, on a real device.
 - Fix whatever the first real run turns up in S1 and S2.
 - **Done when:** a sale in Shopify POS gives a member points, a reward takes an item off the
@@ -141,14 +150,16 @@ Details: `docs/SHOPIFY.md`. Loyalty rules: `docs/LOYALTY.md`.
 
 ## What is needed from the owner
 
-| Needed                                  | For | Notes                                                                            |
-| --------------------------------------- | --- | -------------------------------------------------------------------------------- |
-| A Shopify account and development store | S3  | Created in the Shopify Dev Dashboard, so the app and store share an organization |
-| Shopify POS installed on an iPhone      | S3  | To run the tile                                                                  |
-| A Supabase project                      | S3  | Staging first                                                                    |
-| A Shopify plan with Shopify Payments    | S7  | Tap to Pay on iPhone needs a US-dollar store on Shopify Payments                 |
-| Apple Developer Program membership      | S5  | For the Rewards app only. The till no longer needs it.                           |
-| APNs key                                | S6  |                                                                                  |
+| Needed                               | For | Notes                                                                                          |
+| ------------------------------------ | --- | ---------------------------------------------------------------------------------------------- |
+| A Shopify account                    | S3  | **Have.** The real store must appear under Stores in the Shopify Dev Dashboard                 |
+| Shopify POS installed on an iPhone   | S3  | **Have.**                                                                                      |
+| A Shopify app and a dev store        | S3  | Created in the Dev Dashboard, about ten minutes; a dev store keeps tests out of the real store |
+| A Supabase project                   | S3  | Free tier is enough to start                                                                   |
+| Four deploy secrets on GitHub        | S3  | Named in the runbook. Never shared in chat.                                                    |
+| A Shopify plan with Shopify Payments | S7  | Tap to Pay on iPhone needs a US-dollar store on Shopify Payments                               |
+| Apple Developer Program membership   | S5  | For the Rewards app only. The till no longer needs it.                                         |
+| APNs key                             | S6  |                                                                                                |
 
 Check Shopify's current pricing for the plan and for POS Pro before S7; which POS features need
 POS Pro has not been confirmed for this project.
@@ -172,6 +183,6 @@ POS Pro has not been confirmed for this project.
 1. **Membership code:** static per member (built), or a rotating code that cannot be screenshotted?
 2. **Customer sign-in:** email and password only, or also Sign in with Apple?
 3. **More than one reward per sale:** whether Shopify POS accepts two discount codes on one cart
-   is not verified. Until S3, assume one reward per sale.
+   is not verified. The tile applies one reward per sale.
 4. **Which products each reward covers:** the owner chooses a Shopify collection per reward.
 5. **Data retention** for closed member accounts.
