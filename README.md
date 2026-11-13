@@ -617,7 +617,9 @@ the crag that the rock listens to him. Taunts: "SEND IT!",
   slowly, and press UP to kick off it - up to 3 times in one jump (`wallJump`). WALL JUMP!
 - **Light: Chalk Jab.** **Heavy: Carabiner Swing** - a rope whipped out with a steel carabiner
   on the end (long reach).
-- **Block: Rope Guard.** A spinning coil of rope. ON BELAY.
+- **Block: Rock Shield.** As he raises it he **stomps**: the floor cracks, dust rings out, the
+  screen shakes, and a slab of stacked boulders punches up out of the ground in front of him. Every
+  hit chips it and cracks it a little more (ROCK SOLID.). `blockStart: 'stomp'` in `js/game/blocks.js`.
 - **Special: Landslide.** (perfect block / EX / super) Shadows on the floor show where the rocks
   will land, then seven fall on the opponent, the last one a boulder. About 34 damage if all of
   it connects. Walk out of the shadows or jump over the rocks and it does nothing.
@@ -1089,7 +1091,12 @@ the best rizz on the roster.
   stage. EXTRA BUTTER!
 - **W RIZZ:** every finished taunt gives him bonus meter (and a little health) on top of the normal
   amount, and the taunts are all lines. Set the amount with `rizz` in his entry.
-- **Command specials:** Seats Are This Way (a flashlight rush) and W Rizz (a counter).
+- **Popcorn Hadouken** (DOWN, FORWARD + LIGHT, a quarter circle like the real thing): he cups his
+  hands, then throws a big ball of buttery fire with kernels popping round it and an ember tail
+  (`popHadouken` in `js/config/commands.js`, art in `js/game/erick.js`). Slow, big and hard to jump
+  at the wrong time: 13 damage and a knockdown. **Command specials:** the same motion with HEAVY is
+  Seats Are This Way (a flashlight rush); DOWN, BACK + LIGHT is W Rizz (a counter).
+- **Block: Velvet Rope.** Two brass stanchions and a red rope between them, with a FULL sign. SOLD OUT!
 - **Throw: Out of the Theater.** Takes their ticket and runs them out the exit. THIS SHOWING IS OVER!
 - **Finisher: Now Showing.** They become a movie poster on a light box... and get torn in half.
   NO REFUNDS. **Brutality:** NO REFUNDS. **Super:** NOW SHOWING.
@@ -1195,11 +1202,32 @@ there. The last thing story-9.js does is sort the chapters into `ORDER` and renu
 
 Amateur boxer from Ecuador who works at the pizza place (**130% health**, boxer). Drawn from a
 friend's picture (mirrored to face right; the glasses are painted on because the face is tiny at
-this size). **High guard:** the drawing's own gloves are up by his chin, so idle and block keep the
-guard, and blocking tucks the chin behind the gloves (`poses.block` in his entry has no `arm`, so
-no arm is swapped in). 10% damage reduction. Light = JAB, heavy = CROSS, special **PIZZA DELIVERY**
-(a spinning pizza projectile, `js/game/loor.js`), throw = lift slam, finisher = pile driver,
-brutality EXTRA TOPPINGS. The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
+this size). 10% damage reduction, fast hands.
+
+- **Block: the boxer's high guard** (`js/game/blocks.js`). Two red gloves come up in front of his
+  face and he bounces on his toes behind them; a hit shakes them and sparks (GLOVES UP.). Crouching
+  drops the guard to his body.
+- **A different punch for every attack** (`js/game/loor.js`): light = jab, heavy = hook, launcher =
+  uppercut, crouching light = body shot, crouching heavy = low sweeping hook, jump light = jab, jump
+  heavy = overhand down from above. Each one draws its glove, an afterimage trail and a spark where
+  it lands.
+- **Command specials:** DOWN, FORWARD + LIGHT **Jab Flurry** (six fast jabs, stepping in on every
+  one, the sixth launches), + HEAVY **Haymaker Rush** (a charging right hand); DOWN, BACK + LIGHT
+  **Bob & Weave** (slips an attack and counters), + HEAVY **Gazelle Punch** (a leaping uppercut,
+  invulnerable on the way up).
+- Special **PIZZA DELIVERY** (a spinning pizza projectile), throw = lift slam, finisher = pile driver,
+  brutality EXTRA TOPPINGS. About 59% against the hard computer.
+The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
+
+### Every fighter has their own block
+
+Nine fighters had none, or had one that did not read on screen. They have one now
+(`js/game/blocks.js`): **Loor** the high guard, **Alejandro** the stomp and rock shield, **Olu** the
+shell with a ringing gold arc (SHELL UP.), **Bandy** the skateboard deck on its edge (NICE TRY.),
+**Ms. Brady** a clipboard marked DENIED. in red pen, **Javan** the blocking sled (DEFENSE!),
+**Trump** a podium with the seal and two rattling microphones (WRONG.), **Urbanik** a Rorschach
+inkblot that never holds still (INTERESTING.), **Erick** the velvet rope (SOLD OUT!). Riley and the
+Judge keep their orb.
 
 
 ## The Headmaster's three, playable (and Loor, the right way round)

@@ -90,6 +90,7 @@
     foresight: Object.assign({ name: 'Foresight', kind: 'counter', startup: 2, window: 30, recovery: 14, color: '#40e8d0', callout: 'I SAW THAT.' }, hit(13, { launch: 5 })),
     // ---- Erick ----
     flashlightRush: Object.assign({ name: 'Seats Are This Way', kind: 'rush', startup: 6, speed: 9, duration: 15, reach: 16, recovery: 14, color: '#ffe27a', callout: 'RIGHT THIS WAY!', anim: 'heavy' }, hit(11, { pushback: 8 })),
+    popHadouken: Object.assign({ name: 'Popcorn Hadouken', kind: 'projectile', startup: 14, recovery: 25, speed: 4.4, size: 34, height: 0.5, art: 'popHadouken', sound: 'boom', hitText: 'EXTRA BUTTER!', color: '#ffe27a', colors: ['#ffffff', '#ffe27a', '#e8701c'] }, hit(13, { hitstun: 30, blockstun: 16, pushback: 8, hitstop: 11, launch: 3.5, launchVx: 2 })),
     wRizz: Object.assign({ name: 'W Rizz', kind: 'counter', startup: 2, window: 28, recovery: 16, color: '#ff7ac8', callout: 'W RIZZ.' }, hit(14, { launch: 5 })),
     // ---- Javan ----
     spiral: Object.assign({ name: 'Perfect Spiral', kind: 'projectile', startup: 9, recovery: 16, speed: 7, size: 12, height: 0.62, art: 'football', sound: 'whoosh', hitText: 'FIRST DOWN!', colors: ['#ffffff', '#c06030', '#7a3418'] }, hit(9)),
@@ -132,7 +133,7 @@
     brady: { commands: { qcf: 'writeUp', qcb: 'zeroTolerance' }, taunt: 'TUCK IN THAT SHIRT.', voicePitch: 0.85 },
     bandy: { commands: { qcf: 'kickflip', qcb: 'stageDive' }, taunt: 'TURN IT UP!', voicePitch: 1.05 },
     urbanik: { commands: { qcf: 'mindSpike', qcb: 'foresight' }, taunt: 'AND HOW DOES THAT MAKE YOU FEEL?', voicePitch: 0.8 },
-    erick: { commands: { qcf: 'flashlightRush', qcb: 'wRizz' }, taunt: 'W. THAT IS A W.', voicePitch: 1.05 },
+    erick: { commands: { qcf: 'popHadouken', qcb: 'wRizz' }, commandsHeavy: { qcf: 'flashlightRush' }, taunt: 'W. THAT IS A W.', voicePitch: 1.05 },
     javan: { commands: { qcf: 'spiral', qcb: 'tushPush' }, taunt: 'GO BIRDS.', voicePitch: 1.0 },
     trump: { commands: { qcf: 'rally', qcb: 'theWall' }, taunt: 'TREMENDOUS.', voicePitch: 0.7 },
     tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },

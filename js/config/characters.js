@@ -5477,15 +5477,14 @@ RF.CHARACTERS = [
       damageReduction: 0.1,        // a high guard soaks up the rest
       attackSpeed: 1.15,
     },
-    moves: {
-      // JAB: quick and straight.
-      light: { damage: 5, pushback: 4, hitbox: { x: 12, y: 54, w: 34, h: 14 } },
-      // CROSS: the big one.
-      heavy: {
-        startup: 9, active: 5, recovery: 16, fxSound: 'whoosh',
-        damage: 13, hitstun: 26, blockstun: 14, pushback: 7, knockback: 10, hitstop: 10,
-        hitbox: { x: 10, y: 48, w: 44, h: 20 },
-      },
+    moves: {   // a boxer: a different punch for every attack (the effects are in game/loor.js)
+      light: { fx: 'boxJab', fxSound: 'whoosh', startup: 4, active: 3, recovery: 8, damage: 4, pushback: 3, hitbox: { x: 12, y: 52, w: 40, h: 14 } },                                         // the jab
+      heavy: { fx: 'boxHook', fxSound: 'whoosh', startup: 10, active: 5, recovery: 17, damage: 13, hitstun: 26, blockstun: 14, pushback: 7, knockback: 11, hitstop: 10, hitbox: { x: 8, y: 46, w: 50, h: 24 } },   // the hook
+      airLight: { fx: 'boxJab', fxSound: 'whoosh', startup: 4, active: 6, recovery: 6, damage: 4, hitbox: { x: 6, y: 14, w: 36, h: 26 } },
+      airHeavy: { fx: 'boxOverhand', fxSound: 'whoosh', startup: 8, active: 7, recovery: 11, damage: 11, knockback: 8, hitstop: 8, hitbox: { x: 4, y: -6, w: 44, h: 48 } },                  // the overhand, from above
+      launcher: { fx: 'boxUppercut', fxSound: 'whoosh', startup: 8, active: 5, recovery: 20, damage: 9, hitbox: { x: 6, y: 30, w: 38, h: 70 } },
+      lowLight: { fx: 'boxBody', fxSound: 'whoosh', startup: 4, active: 3, recovery: 8, damage: 3, hitbox: { x: 10, y: 28, w: 44, h: 22 } },                                           // the body shot
+      lowHeavy: { fx: 'boxSweep', fxSound: 'whoosh', startup: 10, active: 5, recovery: 20, damage: 10, hitbox: { x: 6, y: 0, w: 62, h: 14 } },                                          // the low hook
     },
     body: { scale: 1.0, bulk: 1.15, width: 34, height: 88, crouchHeight: 0.7 },
     idleFrames: 2,

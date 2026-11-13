@@ -167,7 +167,7 @@
         const anti = slots.find(([, c]) => c.kind === 'rising');
         if (anti && !opp.grounded && dist < 80) { this.tap('cmd' + anti[0]); return; }
         // rock summons are for range (and not while on cooldown); rushes and anti-airs are for close
-        const usable = slots.filter(([, c]) => !(c.make && ((me.rockCd || {})[c.make] || 0) > (me.scene ? me.scene.frame : 0)) && !(c.make && dist < 55));
+        const usable = slots.filter(([, c]) => !(c.make && ((me.rockCd || {})[c.make] || 0) > (me.scene ? me.scene.frame : 0)) && !(c.make && dist < 55) && !(c.kind === 'flurry' && dist > 70));
         const pool = (usable.length ? usable : slots).filter(([, c]) => !(c.make && c.make === 'wall' && dist < 90));
         const pick = (pool.length ? pool : slots)[Math.floor(Math.random() * (pool.length ? pool : slots).length)];
         if (pick && (pick[1].kind !== 'rising' || dist < 60)) { this.tap('cmd' + pick[0]); return; }

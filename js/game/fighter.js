@@ -103,8 +103,10 @@
 
     setState(state) {
       if (this.state === state) return;
+      const prev = this.state;
       this.state = state;
       this.stateTime = 0;
+      if (state === 'block' && prev !== 'blockstun' && this.def.blockStart && RF.BLOCK_START && RF.BLOCK_START[this.def.blockStart]) RF.BLOCK_START[this.def.blockStart](this);   // (Alejandro stomps as he raises it)
       // Only these states can be done low; everything else stands you up.
       if (!['crouch', 'block', 'blockstun', 'attack'].includes(state)) this.crouching = false;
       if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; this.wallBounced = false; }

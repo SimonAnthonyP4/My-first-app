@@ -1,4 +1,4 @@
-// ERICK (Regal Kendall Village): the popcorn barrage art, his finisher NOW SHOWING, and the
+// ERICK (Regal Kendall Village): the popcorn barrage art and his POPCORN HADOUKEN (DOWN, FORWARD + LIGHT, like the real thing), his finisher NOW SHOWING, and the
 // small hooks his W RIZZ needs. (His stage is stages/regal.js.)
 (function () {
   const T = (...a) => RF.font.drawText(...a);
@@ -12,6 +12,29 @@
       ctx.fillStyle = k % 2 ? '#fff4c8' : '#ffe27a'; ctx.fillRect(px - 1, py - 1, 3, 3);
       ctx.fillStyle = '#f0b030'; ctx.fillRect(px, py + 1, 1, 1);
     }
+  };
+
+  // POPCORN HADOUKEN: a big ball of buttery fire with kernels popping around it, and a flaming tail
+  RF.PROJECTILE_ART.popHadouken = function (ctx, x, y, t, dir) {
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1.3, 1.3); x = 0; y = 0;      // (bigger than it looks: it is a Hadouken)
+    for (let i = 7; i >= 1; i--) {                                                        // the tail: embers and butter, fading
+      const px = x - dir * i * 6, py = y + Math.sin(t / 2.5 + i * 1.7) * (2 + i * 0.5), k = 1 - i / 8;
+      ctx.globalAlpha = k * 0.85; ctx.fillStyle = i % 2 ? '#ff9a30' : '#ffe27a'; ctx.fillRect(px - 3 * k, py - 3 * k, 7 * k, 6 * k);
+      ctx.fillStyle = '#fff4c8'; ctx.fillRect(px - 1, py - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    const wob = Math.sin(t / 3) * 1.2;
+    ctx.fillStyle = '#6a2a08'; ctx.beginPath(); ctx.ellipse(x, y, 13 + wob, 11 - wob * 0.5, 0, 0, 7); ctx.fill();      // outline
+    ctx.fillStyle = '#e8701c'; ctx.beginPath(); ctx.ellipse(x, y, 11.5 + wob, 9.5 - wob * 0.5, 0, 0, 7); ctx.fill();   // flame
+    ctx.fillStyle = '#ffb030'; ctx.beginPath(); ctx.ellipse(x + dir, y, 9, 7.5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.ellipse(x + dir * 2, y, 6.5, 5.5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x + dir * 3, y, 3.5, 3, 0, 0, 7); ctx.fill();               // the hot core
+    for (let k = 0; k < 6; k++) {                                                         // kernels, popping round it
+      const a = t * 0.3 + k * 1.05, r = 12 + Math.sin(t / 4 + k * 2) * 3, px = Math.round(x + Math.cos(a) * r), py = Math.round(y + Math.sin(a) * r * 0.85), puff = (t + k * 5) % 14 < 7;
+      ctx.fillStyle = '#3a2a10'; ctx.fillRect(px - 3, py - 3, 7, 6); ctx.fillStyle = puff ? '#ffffff' : '#fff4c8'; ctx.fillRect(px - 2, py - 2, 5, 4);
+      ctx.fillStyle = '#f0b030'; ctx.fillRect(px + 1, py + 1, 2, 1); if (puff) { ctx.fillStyle = '#fff4c8'; ctx.fillRect(px - 1, py - 4, 3, 1); }
+    }
+    ctx.restore();
   };
 
   // NOW SHOWING: the opponent becomes a movie poster... and is torn in half. NO REFUNDS.

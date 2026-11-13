@@ -1300,7 +1300,7 @@
       this.fighters.forEach((f, i) => {
         const d = f.def, x = i === 0 ? 8 : W / 2 + 4, w = W / 2 - 12;
         RF.drawPanel(ctx, x, 26, w, 178, i === 0 ? '#c03020' : '#3060c0');
-        const C = d.commands || {}, CH = d.commandsHeavy, cmd = (k) => ((RF.COMMANDS[C[k]] || {}).name || '-') + (CH ? ' / ' + ((RF.COMMANDS[CH[k]] || {}).name || '-') : '');
+        const C = d.commands || {}, CH = d.commandsHeavy, cmd = (k) => ((RF.COMMANDS[C[k]] || {}).name || '-') + (CH && CH[k] ? ' / ' + ((RF.COMMANDS[CH[k]] || {}).name || '-') : '');
         const rows = [
           ['', d.name, '#ffd030'],
           ['LIGHT / HEAVY', 'COMBO: LIGHT, LIGHT, HEAVY', '#e0d8d0'],
