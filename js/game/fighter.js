@@ -146,7 +146,7 @@
             if (input.pressed('light')) { input.consume('light'); this.startAttack('light'); break; }
             if (input.pressed('heavy')) { input.consume('heavy'); this.startAttack(input.held('up') ? 'launcher' : 'heavy'); break; }
           }
-          if (this.stateTime >= (this.dashDir === this.facing ? 16 : 18)) { this.vx = 0; this.setState('idle'); }
+          if (this.stateTime >= (this.dashDir === this.facing ? (this.def.dashTime || 16) : 18)) { this.vx = 0; this.setState('idle'); }
           break;
         case 'jump':
           this.crouching = false;

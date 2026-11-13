@@ -1169,6 +1169,25 @@ no arm is swapped in). 10% damage reduction. Light = JAB, heavy = CROSS, special
 (a spinning pizza projectile, `js/game/loor.js`), throw = lift slam, finisher = pile driver,
 brutality EXTRA TOPPINGS. The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
 
+## Olu
+
+From O Block, Chicago, and a divine being who can stand in the room between universes and look
+Lopez Tuero in the eye. Gunslinger, **125% health**, 8% damage reduction. Drawn from a friend's
+picture (mirrored to face right). `js/game/olu.js`.
+
+- **Never still:** a four-frame bounce on the balls of his feet in neutral, and a gold **halo**
+  above his head (`RF.drawDivine`, called after `drawMind` in the fight scene).
+- **Fastest dash in the game:** `dashBoost: 2.3` and a new per-fighter `dashTime: 11` (frames the
+  dash lasts; default 16), with a trail of gold and violet afterimages.
+- **Guns:** light = PISTOL, heavy = BOTH BARRELS. Both are long-reach hitboxes drawn with a muzzle flash
+  and a tracer (`MOVE_FX.gunshot`); he holds a pistol (`sprite.weapon`) whenever his arm is out. Special
+  **DIVINE BARRAGE** is a fast star-bullet projectile. Finisher **FINAL JUDGMENT**: a pillar of light
+  and the verdict read from above.
+- **Philly shell block:** the lead arm folded across the belly, rear glove at the chin, chin tucked
+  behind the shoulder and weight leaned back. It uses a new renderer arm, `shell`, that any fighter can use
+  in `poses.block`.
+- The character select grid is now 16 x 2 (32 slots).
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.
