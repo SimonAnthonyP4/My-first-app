@@ -5,17 +5,22 @@
   "description": "Bro Batch Rewards: Shopify app configuration and POS UI extension",
   "type": "module",
   "scripts": {
+    "build": "shopify app build --no-input --path .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint ."
   },
   "dependencies": {
     "@shopify/ui-extensions": "2026.10.0",
-    "preact": "^11.2.0"
+    "preact": "^10.29.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@shopify/cli": "5.0.1",
+    "@shopify/ui-extensions-tester": "2026.10.0",
+    "@testing-library/preact": "^3.2.6",
     "eslint": "^9.39.0",
+    "jsdom": "^31.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2",
     "vitest": "^5.1.0"

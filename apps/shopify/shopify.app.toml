@@ -1,16 +1,24 @@
 # Shopify app configuration for Bro Batch Rewards.
 #
-# NOT YET CONNECTED TO A SHOPIFY APP. The three placeholders below are filled
+# NOT YET CONNECTED TO A SHOPIFY APP. The two placeholders below are filled
 # in once the app exists in the Shopify Dev Dashboard and the Supabase project
-# exists. See docs/RUNBOOK.md, "Connect Shopify".
+# exists. See docs/RUNBOOK.md, "Connect Shopify". The deploy refuses to run
+# while a placeholder remains (scripts/deploy-preflight.mjs).
 #
 # Nothing in this file is secret: the client ID is public. The client secret
 # is never stored in the repository; it is set as an Edge Function secret.
 
 name = "Bro Batch Rewards"
 client_id = "REPLACE_WITH_SHOPIFY_CLIENT_ID"
-application_url = "https://REPLACE_WITH_PROJECT_REF.supabase.co/functions/v1"
+# The app has no screens in Shopify admin (its only screen is the POS tile),
+# so this is Shopify's stock page for apps without one.
+application_url = "https://shopify.dev/apps/default-app-home"
 embedded = false
+
+[auth]
+# Required by Shopify CLI. Not used: the backend gets its API access with the
+# client credentials grant, which has no redirect.
+redirect_urls = ["https://shopify.dev/apps/default-app-home/api/auth"]
 
 [access_scopes]
 # read_orders:      receive orders/paid and refunds/create webhooks

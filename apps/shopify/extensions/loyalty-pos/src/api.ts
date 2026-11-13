@@ -26,6 +26,8 @@ export interface MemberResponse {
   member: Member;
   points_per_dollar: number;
   rewards: Reward[];
+  /** Rewards the member has applied but not yet paid for, newest first. */
+  held_rewards?: ReservedReward[];
 }
 
 export interface ReservedReward {
@@ -50,7 +52,9 @@ export interface ApiOptions {
 const OFFLINE = 'Could not reach Bro Batch Rewards. Check the connection and try again.';
 
 export function createApi(options: ApiOptions) {
-  const doFetch = options.fetch ?? fetch;
+  // Looked up on each call, not captured once, so the caller sees whichever
+  // `fetch` is current.
+  const doFetch: typeof fetch = (input, init) => (options.fetch ?? fetch)(input, init);
   const base = options.baseUrl.replace(/\/+$/, '');
 
   async function post<T>(path: string, body: unknown): Promise<ApiResult<T>> {

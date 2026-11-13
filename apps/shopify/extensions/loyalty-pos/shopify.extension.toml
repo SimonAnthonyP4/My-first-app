@@ -14,8 +14,8 @@ description = "Scan a member's QR code, see their points and apply their rewards
 
 [[extensions.targeting]]
 target = "pos.home.tile.render"
-module = "./src/Tile.jsx"
+module = "./src/Tile.tsx"
 
 [[extensions.targeting]]
 target = "pos.home.modal.render"
-module = "./src/Modal.jsx"
+module = "./src/Modal.tsx"

@@ -3,6 +3,8 @@ node_modules
 .next
 dist
 coverage
+.shopify
+apps/shopify/extensions/*/manifest.json
 supabase/.branches
 supabase/.temp
 # SQL and Swift are formatted by hand / their own tools.

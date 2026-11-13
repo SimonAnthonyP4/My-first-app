@@ -6,16 +6,24 @@
 //      and returns a single-use discount code, which is applied to the cart.
 //   4. If the reward is removed before payment, the points are returned.
 //
+// The screen starts from nothing each time it is opened, so a reward applied
+// earlier is not remembered here: the backend says whether the member is
+// holding one, and the screen shows it with the option to remove it.
+//
 // This file only shows what the backend says. It never works out points,
 // prices or eligibility itself.
 //
-// NOT YET RUN ON A DEVICE: written against Shopify's POS UI extension
-// reference (API version 2026-10). See docs/SHOPIFY.md, "Not yet verified".
+// NOT YET RUN ON A DEVICE. It builds with Shopify CLI, is type-checked
+// against Shopify's types for this target (API version 2026-10), and its
+// behaviour is tested with Shopify's extension tester (tests/Modal.test.ts).
+// See docs/SHOPIFY.md, "Not yet verified".
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 import { createApi } from './api.ts';
+import type { Member, MemberResponse, ReservedReward, Reward } from './api.ts';
 import { BACKEND_URL, isBackendConfigured } from './config.ts';
+import type { CartLine } from './logic.ts';
 import {
   eligibleLines,
   formatPoints,
@@ -35,24 +43,27 @@ const api = createApi({
   getToken: () => shopify.session.getSessionToken(),
 });
 
+type Step = 'scan' | 'loading' | 'member' | 'choose_item' | 'applied';
+
 function RewardsScreen() {
-  // 'scan' | 'loading' | 'member' | 'choose_item' | 'applied'
-  const [step, setStep] = useState('loading');
+  const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState('');
-  const [member, setMember] = useState(null);
-  const [rewards, setRewards] = useState([]);
-  const [chosenReward, setChosenReward] = useState(null);
-  const [applied, setApplied] = useState(null);
+  const [member, setMember] = useState<Member | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [chosenReward, setChosenReward] = useState<Reward | null>(null);
+  const [applied, setApplied] = useState<ReservedReward | null>(null);
   const [busy, setBusy] = useState(false);
   const lastScan = useRef('');
   // One key per "apply" attempt, kept across a retry of the same attempt.
   const attemptKey = useRef('');
 
-  function showMember(data) {
+  function showMember(data: MemberResponse, warning = '') {
+    const held = data.held_rewards?.[0] ?? null;
     setMember(data.member);
     setRewards(data.rewards);
-    setError('');
-    setStep('member');
+    setError(warning);
+    setApplied(held);
+    setStep(held ? 'applied' : 'member');
   }
 
   // On open: if the cart already has a customer, look them up; otherwise scan.
@@ -105,7 +116,13 @@ function RewardsScreen() {
         // Attach the member to the sale so Shopify records who bought it.
         await shopify.cart.setCustomer({ id: Number(result.data.member.shopify_customer_id) });
       } catch {
-        setError('Found the member, but could not add them to the cart. Add them by hand.');
+        // Without the customer on the cart the sale earns no points, so the
+        // cashier must be told.
+        showMember(
+          result.data,
+          'Found the member, but could not add them to the cart. Add them as the customer by hand, or this sale will not earn points.',
+        );
+        return;
       }
       showMember(result.data);
       shopify.toast.show(`${result.data.member.full_name} added`);
@@ -116,8 +133,8 @@ function RewardsScreen() {
     };
   }, [step]);
 
-  async function applyReward(reward, line) {
-    if (busy) {
+  async function applyReward(reward: Reward, line: CartLine) {
+    if (busy || !member || typeof line.variantId !== 'number') {
       return;
     }
     setBusy(true);
@@ -147,9 +164,14 @@ function RewardsScreen() {
       await shopify.cart.addCartCodeDiscount(reserved.discount_code);
     } catch {
       // The cart refused the code, so the reward is not on the sale: give
-      // the points back straight away.
-      await api.releaseReward(reserved.id);
-      setError('The reward could not be added to this cart. No points were used.');
+      // the points back straight away. If even that fails, the hold still
+      // runs out on its own and the points return then.
+      const released = await api.releaseReward(reserved.id);
+      setError(
+        released.ok
+          ? 'The reward could not be added to this cart. No points were used.'
+          : `The reward could not be added to this cart. The points will be returned by ${holdUntil(reserved.expires_at) || 'the end of the hold'}.`,
+      );
       setBusy(false);
       return;
     }
@@ -163,15 +185,16 @@ function RewardsScreen() {
     shopify.toast.show(`${reserved.reward_name} applied`);
   }
 
-  function chooseReward(reward) {
+  function chooseReward(reward: Reward) {
     const lines = eligibleLines(shopify.cart.current.value?.lineItems);
     if (lines.length === 0) {
       setError('Add the free item to the cart first, then apply the reward.');
       return;
     }
     setError('');
-    if (lines.length === 1) {
-      applyReward(reward, lines[0]);
+    const [onlyLine] = lines;
+    if (lines.length === 1 && onlyLine) {
+      applyReward(reward, onlyLine);
       return;
     }
     setChosenReward(reward);
@@ -179,7 +202,7 @@ function RewardsScreen() {
   }
 
   async function removeReward() {
-    if (busy || !applied) {
+    if (busy || !applied || !member) {
       return;
     }
     setBusy(true);
@@ -193,7 +216,9 @@ function RewardsScreen() {
     try {
       await shopify.cart.removeCartDiscount();
     } catch {
-      setError('The points were returned. Remove the discount from the cart by hand.');
+      setError(
+        'The points were returned. If the discount is still on the cart, remove it by hand.',
+      );
     }
     if (typeof result.data.points_balance === 'number') {
       setMember({ ...member, points_balance: result.data.points_balance });
@@ -230,7 +255,7 @@ function RewardsScreen() {
             </s-section>
           ) : null}
 
-          {step === 'member' ? (
+          {step === 'member' && member ? (
             <s-section heading="Rewards">
               <s-stack gap="small-200">
                 {rewards.map((reward) => (

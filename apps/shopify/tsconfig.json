@@ -4,6 +4,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
@@ -13,6 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "//": "Only the .ts logic is type-checked here. The .jsx screens are built and checked by Shopify CLI.",
-  "include": ["extensions/**/*.ts", "*.ts", "*.mjs"]
+  "//": "The .tsx screens are type-checked too, against Shopify's types for each POS target (shopify.d.ts).",
+  "include": ["extensions/**/*.ts", "extensions/**/*.tsx", "*.ts"],
+  "exclude": ["**/dist", "node_modules"]
 }
