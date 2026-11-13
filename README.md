@@ -1219,6 +1219,26 @@ this size). 10% damage reduction, fast hands.
   brutality EXTRA TOPPINGS. About 59% against the hard computer.
 The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
 
+## Escudero
+
+The photographer (**118% health**, `js/game/escudero.js`), from a friend's picture (mirrored so he
+faces his opponent). He stands for the LGBTQ community, he is sassy, and everything he throws is a
+rainbow; the grey stripes on his polo are painted as a pride stripe.
+
+- **Attacks:** every punch, kick and sweep leaves a six-colour ribbon behind it with a camera flash
+  where it lands (jab, a wide arc, an arch for the launcher, a low jab, a dive from the air, a sweep
+  along the floor).
+- **Block: Rainbow Shield.** A rainbow arch over him that sparkles, and flares when hit (SLAY. / NOT
+  TODAY, HUN. / HOW RUDE. / BORING.).
+- **Special: Full Spectrum** (perfect block / EX / super). SAY CHEESE, a flash gathers at the lens,
+  then a rainbow beam across the stage. Visible startup, so it can be jumped or walked out of.
+- **Command specials:** DOWN, FORWARD + LIGHT **Rainbow Ribbon** (a rolling rainbow), + HEAVY
+  **Shutter Burst** (four camera flashes at different heights); DOWN, BACK + LIGHT **Hold That Pose**
+  (a counter), + HEAVY **Sashay Away** (a catwalk to behind you).
+- **Throw: Photo Op.** **Finisher: Photo Finish.** They become a Polaroid with a rainbow strip, and
+  the photo is torn in half. **Brutality:** DEVELOPED.
+- About 50% against the hard computer.
+
 ### Every fighter has their own block
 
 Nine fighters had none, or had one that did not read on screen. They have one now
