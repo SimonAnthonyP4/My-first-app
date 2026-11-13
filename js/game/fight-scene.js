@@ -191,8 +191,8 @@
           const f = this.fighters[i];
           if (t === 0) { if (i === 1) this.settle(this.fighters[0]); f.hidden = false; f.state = null; f.setState('idle'); f.x = f.homeX; }
           (RF.INTROS[f.def.intro] || RF.INTROS.walk).update(f, t, this);
-          const rq = f.def.rivalQuote && f.def.rivalQuote[this.opponentOf(f).def.id];
-          if (t === RF.ENTRANCE_ARRIVE && (rq || f.def.quote)) this.effects.spawnText(rq || f.def.quote, f.homeX, f.body.height + 12, '#e8dcc0');
+          if (RF.entranceTick) RF.entranceTick(this, f, t);   // the flourish and the line (game/entrances.js)
+          else { const rq = f.def.rivalQuote && f.def.rivalQuote[this.opponentOf(f).def.id]; if (t === RF.ENTRANCE_ARRIVE && (rq || f.def.quote)) this.effects.spawnText(rq || f.def.quote, f.homeX, f.body.height + 12, '#e8dcc0'); }
           if (this.phaseTime >= 2 * D || (this.phaseTime > 10 && RF.menuPressed(kb, 'confirm'))) {
             this.fighters.forEach((g) => this.settle(g));
             this.setPhase('intro');
@@ -470,6 +470,7 @@
         else if (this.finisher) { tz = 1.22; tx = (this.finisher.att.x + this.finisher.vic.x) / 2; }
         else if (this.transition) { tz = 1.3; tx = this.transition.def.x; }
         else if (this.phase === 'roundOver' && this.phaseTime < 60) tz = Math.max(tz, 1.15);
+        if (this.phase === 'entrance' && RF.entranceCam) { const ec = RF.entranceCam(this); if (ec) { tz = ec.z; tx = ec.x; } }   // push in on whoever is making their entrance
         tz = Math.max(1, Math.min(1.4, tz));
       }
       const c = this.cam || (this.cam = { x: W / 2, z: 1 });
@@ -1153,6 +1154,7 @@
       const fin = this.finisher;
       if (fin && fin.kind.drawBack) fin.kind.drawBack(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
       const ent = this.phase === 'entrance' && this.entranceInfo();
+      if (ent && RF.drawEntranceBack) RF.drawEntranceBack(this, ctx, floorY, ent);
       if (ent && ent.kind.draw && ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
       RF.drawHazard(this, ctx, floorY);
       for (const f of order) {
@@ -1161,6 +1163,7 @@
       }
       if (fin && fin.kind.drawFx) fin.kind.drawFx(fin.att, fin.vic, ctx, floorY, fin.t, this.frame);
       if (ent && ent.kind.draw && !ent.kind.back) ent.kind.draw(ent.f, ctx, floorY, ent.t, this.frame);
+      if (ent && RF.drawEntranceFront) RF.drawEntranceFront(this, ctx, floorY, ent);
       RF.drawHazardFx(this, ctx, floorY);
       this.drawProjectiles(ctx, floorY);
       if (RF.drawItems) RF.drawItems(this, ctx, floorY);

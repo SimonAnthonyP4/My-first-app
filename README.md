@@ -1238,6 +1238,34 @@ rainbow; the grey stripes on his polo are painted as a pride stripe.
   the photo is torn in half. **Brutality:** DEVELOPED.
 - About 50% against the hard computer.
 
+## The versus screen and the entrances
+
+**Versus** (`js/scenes/versus-scene.js`). The stage you picked looms behind, dark and slowly pushing
+in. The two sides slam in as slanted red and blue panels with speed lines; the fighters are thrown in
+as black silhouettes, flash white and light up with a rim of their colour; VS lands in the middle
+with a shockwave and a shake; a bolt runs down the split; name plates slide in under each fighter.
+It leaves through a pair of shutters closing along the split, and the fight opens on a flash.
+
+**Entrances** (`js/game/entrances.js`, on top of `js/game/intros.js`). Before round 1 each fighter
+gets 2.5 seconds, letterboxed, with the camera pushed in on them, in three beats:
+
+1. **The arrival.** Everyone had one; the eleven who only walked in have their own now. Javan sprints
+   out of green tunnel smoke, Trump gets a red carpet and flashbulbs, Urbanik appears where rings of
+   thought close, Loor does a ring walk under a spotlight, Olu steps through a door of light, Riley's
+   orb comes down first with him inside it, Escudero arrives in three camera flashes (a step closer in
+   each), David is drawn by a pencil from the feet up, the Proctor steps out of a clock that runs to
+   midnight, the Bell Ringer drops like the bell, and the Eraser is un-erased.
+2. **The flourish.** All 37 show what they do, built from their own abilities: the floor cracks and
+   trays jump for Bruiser, lightning comes to Weissenberg's hands, a hex shield boots up for Escobedo,
+   serpents wind round Landa, the curtains part for Dabalsa, money rains for Chris, wings open for
+   Ruano, the amps come on for Bandy, rock spikes answer Alejandro, a rainbow crosses the room for
+   Escudero, paint and pencil lines burst for David, and so on (`FX` in the file, one per fighter).
+3. **The line.** Their name on a slanted plate, their signature move in the corner, and a line typed
+   out underneath (`E` in the file). A rival still gets their rival line instead.
+
+LIGHT / ENTER skips an entrance, as before. To change a fighter's line, sound, shake or pose, edit
+their row in `E`; to change the effect, edit their function in `FX`.
+
 ## David P.
 
 The artist and drawer (**114% health**, `js/game/david.js`), from a friend's picture (mirrored so he
