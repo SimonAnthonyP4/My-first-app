@@ -1289,6 +1289,21 @@ chapters that were already set in the throne room. Everywhere else, and in every
 - To build another: `RF.storyGL.sets.<stageId> = (kit) => ({ update(t) })`. `kit` has `box`, `cyl`,
   `flat`, `wall`, `light` and the materials; the room (floor size, the painted wall) is made for you.
 
+
+## Story mode: video clips
+
+Five silent clips, four seconds each (`assets/video/*.webm` with `.mp4` as a fallback, about 1 MB
+in all): the school at midnight as the rift opens (MIDNIGHT), the throne hall and its faceless army
+(THE HEADMASTER), the Keeper's desk and the door (THE WAITING ROOM), the Judge arriving and a
+sealed universe frozen mid-moment (CODE RED). They were made with an AI video model from
+descriptions of places and effects only - no real person is in any of them.
+
+`{ clip: 'school' }` plays one full-frame under the letterbox bars and waits for it to end;
+CONFIRM or a tap skips it, and the last frame stays under the next lines. If the browser cannot
+play it, or it has not loaded within four seconds, the step skips itself. The game's own score keeps
+playing. The story menu has **VIDEO CLIPS: ON / OFF**. The code is `js/scenes/story-clip.js`, which
+also says where each clip plays.
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.

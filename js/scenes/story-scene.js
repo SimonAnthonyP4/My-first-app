@@ -49,7 +49,7 @@
     finish(ending) { const p = this.get(); p.done = true; if (ending) p.endings[ending] = true; this.save(p); },
     setVar(k, v) { const p = this.get(); p.vars[k] = v; this.save(p); },
     rank(title, r) { const p = this.get(); if (rankOf(r) > rankOf(p.ranks[title])) { p.ranks[title] = r; this.save(p); } },
-    reset() { const p = this.get(); this.save({ reached: 0, done: false, vars: {}, endings: p.endings, ranks: {}, cine: p.cine, flat: p.flat }); }, // endings found stay found
+    reset() { const p = this.get(); this.save({ reached: 0, done: false, vars: {}, endings: p.endings, ranks: {}, cine: p.cine, flat: p.flat, noclip: p.noclip }); }, // endings found stay found
     save(p) { mem.data = p; try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* no storage */ } },
   };
   const run = { tally: { perfect: 0, good: 0, miss: 0 } }; // quick-time results for the chapter being played
@@ -330,6 +330,11 @@
       const cine = { label: '', desc: 'OFF = QUICK-TIME MOMENTS PLAY THEMSELVES', onSelect: () => { const p = RF.storyProgress.get(); p.cine = !p.cine; RF.storyProgress.save(p); cine.label = 'ACTION PROMPTS: ' + (p.cine ? 'OFF' : 'ON'); RF.audio.sfx('select'); } };
       cine.label = 'ACTION PROMPTS: ' + (prog.cine ? 'OFF' : 'ON');
       items.push(cine);
+      if (RF.storyKit.clipsOn) {   // the pre-rendered clips (story-clip.js)
+        const vid = { label: '', desc: 'OFF = NO VIDEO CLIPS (IF THEY RUN SLOWLY OR YOU WANT TO SAVE DATA)', onSelect: () => { const p = RF.storyProgress.get(); p.noclip = !p.noclip; RF.storyProgress.save(p); vid.label = 'VIDEO CLIPS: ' + (p.noclip ? 'OFF' : 'ON'); RF.audio.sfx('select'); } };
+        vid.label = 'VIDEO CLIPS: ' + (prog.noclip ? 'OFF' : 'ON');
+        items.push(vid);
+      }
       if (RF.storyGL) {   // the sets built in real 3D (story-gl.js): a way to go back to the painted ones
         const sets = { label: '', desc: 'OFF = PAINTED SETS (IF A SCENE LOOKS WRONG OR RUNS SLOWLY)', onSelect: () => { const p = RF.storyProgress.get(); p.flat = !p.flat; RF.storyProgress.save(p); RF.storyGL.on = !p.flat; sets.label = '3D SETS: ' + (p.flat ? 'OFF' : 'ON'); RF.audio.sfx('select'); } };
         RF.storyGL.on = !prog.flat; sets.label = '3D SETS: ' + (prog.flat ? 'OFF' : 'ON');
