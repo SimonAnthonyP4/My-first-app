@@ -2,7 +2,8 @@
 //
 // The POS extension scanned a membership QR code (or the cart already has a
 // Shopify customer). Returns who the member is, their points, and the
-// rewards the till can offer. The first time a member is seen, they are
+// rewards the till can offer, and any reward they are already holding (so a
+// reopened rewards screen can still remove it). The first time a member is seen, they are
 // matched to their Shopify customer by email, or one is created, so the
 // cashier can attach them to the cart and later orders earn points.
 import { z } from 'zod';
@@ -11,7 +12,7 @@ import { requirePosCaller } from '../auth.ts';
 import type { Deps } from '../deps.ts';
 import { AppError } from '../errors.ts';
 import { json, readJson, requirePost } from '../http.ts';
-import { findMember, listLiveRewards, memberForPos } from '../members.ts';
+import { findMember, listHeldRewards, listLiveRewards, memberForPos } from '../members.ts';
 import { parseBody, shopifyIdSchema } from '../validate.ts';
 
 const bodySchema = z
@@ -70,9 +71,10 @@ export async function handlePosMember(req: Request, deps: Deps): Promise<Respons
     member = { ...member, shopify_customer_id: shopifyCustomerId };
   }
 
-  const [rewards, pointsPerDollar] = await Promise.all([
+  const [rewards, pointsPerDollar, held] = await Promise.all([
     listLiveRewards(deps.db),
     deps.db.getPointsPerDollar(),
+    listHeldRewards(deps.db, member.customer_id),
   ]);
 
   return json(200, {
@@ -88,6 +90,15 @@ export async function handlePosMember(req: Request, deps: Deps): Promise<Respons
       affordable: member.points_balance >= reward.points_cost,
       // A reward with no Shopify collection has not been set up for the till.
       available_at_pos: reward.shopify_collection_id !== null,
+    })),
+    // Same shape as the reward returned by pos-reserve-reward.
+    held_rewards: held.map((reward) => ({
+      id: reward.id,
+      discount_code: reward.discount_code,
+      expires_at: reward.expires_at,
+      points_cost: reward.points_cost,
+      discount_cents: reward.discount_cents,
+      reward_name: reward.reward_name,
     })),
   });
 }

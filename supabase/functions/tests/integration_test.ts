@@ -233,6 +233,7 @@ Deno.test({
         );
         const six = result.rewards.find((r: { name: string }) => r.name === 'Free six-pack');
         assert.deepEqual([six.affordable, six.available_at_pos], [false, false]);
+        assert.deepEqual(result.held_rewards, [], 'she is holding no reward yet');
         assert.equal(
           await scalar(`select shopify_customer_id from public.customers where id = '${MIA}'`),
           MIA_SHOPIFY,
@@ -323,6 +324,24 @@ Deno.test({
         assert.equal(await balance(), '300');
       },
     );
+
+    await t.step('opening the rewards screen again shows the reward being held', async () => {
+      const response = await respond(
+        handlePosMember,
+        await posRequest({ shopify_customer_id: MIA_SHOPIFY }),
+        deps,
+      );
+      assert.equal(response.status, 200);
+      const result = await body(response);
+      assert.equal(result.held_rewards.length, 1);
+      const held = result.held_rewards[0];
+      assert.deepEqual(
+        [held.id, held.discount_code, held.points_cost, held.discount_cents, held.reward_name],
+        [redemptionId, code, 300, 300, 'Free protein bar'],
+      );
+      assert.ok(Date.parse(held.expires_at) > Date.now(), 'the hold has not run out');
+      assert.equal(result.member.points_balance, 300);
+    });
 
     await t.step('a reward cannot be applied to a product outside its collection', async () => {
       shopify.variant = { title: 'Variety Six-Pack', priceCents: 1600, inCollection: false };

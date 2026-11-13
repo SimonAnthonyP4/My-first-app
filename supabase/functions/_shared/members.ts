@@ -1,5 +1,5 @@
 // Member and reward lookups shared by the POS handlers.
-import type { Db, MemberRow, RewardRow } from './deps.ts';
+import type { Db, HeldRewardRow, MemberRow, RewardRow } from './deps.ts';
 
 function first<T>(rows: T[] | T | null): T | null {
   if (Array.isArray(rows)) {
@@ -27,6 +27,11 @@ export async function listLiveRewards(db: Db): Promise<RewardRow[]> {
 
 export async function getReward(db: Db, rewardId: string): Promise<RewardRow | null> {
   return first(await db.rpc<RewardRow[]>('pos_rewards', { p_reward_id: rewardId }));
+}
+
+/** Rewards the member has applied but not yet paid for, newest first. */
+export async function listHeldRewards(db: Db, customerId: string): Promise<HeldRewardRow[]> {
+  return (await db.rpc<HeldRewardRow[]>('pos_held_rewards', { p_customer_id: customerId })) ?? [];
 }
 
 /** What the till is shown about a member. Never includes contact details. */

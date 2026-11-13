@@ -533,11 +533,12 @@ select is_empty(
      where n.nspname = 'public'
        and p.proname in ('ingest_shopify_order', 'ingest_shopify_refund', 'pos_lookup_member',
                          'pos_rewards', 'link_shopify_customer', 'reserve_reward_for_pos',
-                         'attach_reward_discount', 'expire_stale_redemptions')
+                         'attach_reward_discount', 'expire_stale_redemptions',
+                         'pos_held_rewards')
        and (has_function_privilege('authenticated', p.oid, 'execute')
             or has_function_privilege('anon', p.oid, 'execute')
             or not has_function_privilege('service_role', p.oid, 'execute')) $$,
-  'all eight Shopify functions are executable by the service role only'
+  'all nine Shopify functions are executable by the service role only'
 );
 
 select * from finish();

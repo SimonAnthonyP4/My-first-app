@@ -37,6 +37,7 @@ function memberContext(found = member()): TestContext {
       reward({ id: 'r2', name: 'Free three-pack', points_cost: 750, shopify_collection_id: null }),
       reward({ id: 'r3', name: 'Free six-pack', points_cost: 1400 }),
     ])
+    .on('pos_held_rewards', () => [])
     .on('link_shopify_customer', () => ({}));
   return ctx;
 }
@@ -71,6 +72,8 @@ Deno.test(
         ['Free six-pack', false, true],
       ],
     );
+    assert.deepEqual(result.held_rewards, [], 'no reward is on hold');
+    assert.deepEqual(ctx.db.called('pos_held_rewards')[0]!.args, { p_customer_id: CUSTOMER_ID });
     assert.deepEqual(ctx.db.called('pos_lookup_member')[0]!.args, {
       p_membership_code: MEMBERSHIP_CODE,
       p_shopify_customer_id: null,
@@ -143,6 +146,38 @@ Deno.test('member: can be found by the Shopify customer already on the cart', as
     p_shopify_customer_id: '6000000000000',
     p_customer_id: null,
   });
+});
+
+Deno.test('member: a reward the member is already holding is returned', async () => {
+  const ctx = memberContext();
+  ctx.db.on('pos_held_rewards', () => [
+    {
+      id: 'held-1',
+      discount_code: 'BB-ABCD-EFGH-JKLM',
+      expires_at: '2026-11-13T15:45:00+00:00',
+      points_cost: 300,
+      discount_cents: 350,
+      reward_name: 'Free protein bar',
+      // A column the till has no use for must not leak through.
+      shopify_discount_id: 'gid://shopify/DiscountCodeNode/1',
+    },
+  ]);
+  const response = await respond(
+    handlePosMember,
+    await posRequest({ shopify_customer_id: 6000000000000 }),
+    ctx.deps,
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual((await body(response)).held_rewards, [
+    {
+      id: 'held-1',
+      discount_code: 'BB-ABCD-EFGH-JKLM',
+      expires_at: '2026-11-13T15:45:00+00:00',
+      points_cost: 300,
+      discount_cents: 350,
+      reward_name: 'Free protein bar',
+    },
+  ]);
 });
 
 Deno.test(

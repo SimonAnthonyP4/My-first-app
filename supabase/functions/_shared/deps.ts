@@ -24,6 +24,16 @@ export interface RewardRow {
   readonly is_live: boolean;
 }
 
+/** A reward a member is holding: reserved, with a live discount code. */
+export interface HeldRewardRow {
+  readonly id: string;
+  readonly discount_code: string;
+  readonly expires_at: string;
+  readonly points_cost: number;
+  readonly discount_cents: number;
+  readonly reward_name: string;
+}
+
 export interface RedemptionRow {
   readonly id: string;
   readonly customer_id: string;
