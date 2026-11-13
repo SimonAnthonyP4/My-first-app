@@ -10,7 +10,8 @@
 // The camera's position comes from StoryScene.cam3 (story-3d.js), the same numbers as before.
 // If WebGL is not available (or three.js has not arrived yet), the drawn sets are used instead.
 //
-// three.js is loaded the first time story mode is opened; the rest of the game never needs it.
+// three.js is fetched in the background by the page (an `async` script tag, so the game does not wait
+// for it); if the page has no such tag, it is fetched the first time story mode is opened.
 // To add a set: GL.sets.<stageId> = (kit) => ({ update(t) }), using the helpers in `kit`.
 (function () {
   const K = RF.storyKit, W = 384, H = 224, BW = 160, BH = 184, FOOT = 20;   // (an actor is baked into a BW x BH picture, feet FOOT above its bottom edge)
@@ -19,6 +20,7 @@
 
   GL.load = function () {
     if (window.THREE || GL.loading || GL.ok === false) return;
+    if (document.querySelector('script[src*="three.min.js"]')) return;   // (the page is already fetching it)
     GL.loading = true;
     try {
       const s = document.createElement('script'); s.src = 'js/vendor/three.min.js';

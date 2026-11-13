@@ -1282,7 +1282,7 @@ in 3D, from the same camera numbers as before (`StoryScene.cam3` in `story-3d.js
 chapters that were already set in the throne room. Everywhere else, and in every flat shot
 (close-ups, wides, inserts), the game draws as it always has.
 
-- three.js is fetched the first time the story menu is opened; the rest of the game never loads it.
+- three.js is fetched in the background (an `async` script tag): the game starts without waiting for it.
 - No WebGL, or the file has not arrived yet: the painted sets are used, exactly as before.
 - **STORY menu -> 3D SETS: ON / OFF** switches them by hand. On a slow device they switch
   themselves off.
