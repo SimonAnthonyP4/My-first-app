@@ -1195,17 +1195,18 @@ brutality EXTRA TOPPINGS. The fighter is `loor` (the older rich-kid fighter `chr
 
 ## The Headmaster's three, playable (and Loor, the right way round)
 
-The **Proctor**, the **Bell Ringer** and the **Eraser** are on the character select now
+The **Proctor**, the **Bell Ringer** and the **Eraser** are on the character select
 (`js/game/lieutenants.js`; the select screen holds 36 and the roster is 35). They are drawn in
-profile, facing their opponent, and have no arms drawn, so every attack is an effect:
+profile, facing their opponent, and have no arms drawn, so every attack is an effect. Each has all
+seven attacks looking and behaving differently, a block of its own, and a different way to fight:
 
-| | Gimmick | Light / heavy | Special |
-|---|---|---|---|
-| **The Proctor** | floats; his dash is *Time Skip*, a blink | a clock hand swept round / a full midnight sweep | *Time's Up*: a clock hand, thrown |
-| **The Bell Ringer** | slowest and heaviest; armour on his heavies | every hit is a ring of sound / a big toll | *Toll the Bell*: a ring that rolls along the floor (also Seismic Slam as a move) |
-| **The Eraser** | fastest; his dash is a blink: rubbed out here, drawn in there | a swipe of chalk / a long wipe with a felt block | *Wipe Out*: a cloud of chalk |
+| | Feel | Attacks | Block | Special |
+|---|---|---|---|---|
+| **The Proctor** | TIME. Floats; dash is *Time Skip*, a blink | clock-hand jabs; a full midnight sweep whose heavy *rewinds* you toward him; a hand dropped from the air; a clock that spins up under you; the minute hand dragged along the floor | a clock face (it stops dead on a hit: TICK.) | *Time's Up*: a thrown clock hand |
+| **The Bell Ringer** | WEIGHT. Slowest, armour on his heavies | every hit is a ring of sound; the air heavy is a ground pound; the launcher rings upward; the low heavy is a quake along the floor | he pulls the bell down over him: a gold dome (DONG!) | *Toll the Bell*: a ring that rolls across the floor |
+| **The Eraser** | SPEED. Dash is a blink: rubbed out here, drawn in there | strokes of chalk with the felt block at the end, in a different direction for each move | a wall of scribble that crosses itself out (ERASED.) | *Wipe Out*: a cloud of chalk |
 
-Against the hard computer they win about 44% (Proctor), 57% (Ringer) and 51% (Eraser).
+Against the hard computer they win about 56% (Proctor), 56% (Ringer) and 57% (Eraser).
 Chris Loor's picture was reversed when I converted it, so he looked away from his opponent: he
 was rebuilt from the right way round (shirt and glasses included).
 
