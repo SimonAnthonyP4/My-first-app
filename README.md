@@ -1239,6 +1239,30 @@ rainbow; the grey stripes on his polo are painted as a pride stripe.
   the photo is torn in half. **Brutality:** DEVELOPED.
 - About 50% against the hard computer.
 
+## David P.
+
+The artist and drawer (**114% health**, `js/game/david.js`), from a friend's picture (mirrored so he
+faces his opponent; the face is repainted by hand because it is tiny at this size). He is the
+**shortest fighter on the roster** (body 76 against 88 for most, so the hardest to hit high) and quick,
+and every move is something he draws that then hits you.
+
+- **Attacks:** light = a pencil jab (a graphite line with the pencil on the end), heavy = a brush
+  swipe (a wide arc of paint with drops flying off), jump light = a doodle scribbled in the air, jump
+  heavy = an ink drop that falls and splats, launcher = the sketchbook swung up with its pages tearing
+  loose, crouching light = a charcoal smudge, crouching heavy = a paint roller dragged along the floor
+  leaving a stripe.
+- **Block: Sketch Shield.** A shield drawn in pencil, line by line, with shading hatched in; a hit
+  crosses it out in red (NOPE. / REDRAW THAT. / OFF THE PAGE. / SMUDGED.).
+- **Special: Living Sketch.** He draws a wolf in the air, line by line, and it climbs off the page and
+  charges across the stage (a hand-drawn "boiling" outline, graphite dust behind it).
+- **Command specials:** DOWN, FORWARD + LIGHT **Paint Splatter** (three blobs, a different colour each),
+  + HEAVY **Smudge Dash**; DOWN, BACK + LIGHT **Quick Sketch** (a counter), + HEAVY **Rub Out** (erases
+  himself and redraws behind you).
+- **Throw: Still Life.** **Finisher: Rejected** (sketched on a page, pulled off the pad, crumpled and
+  tossed). **Brutality:** FINAL DRAFT.
+- About 51% against the hard computer.
+- The select screen now holds 38 (19 x 2) for the 37 fighters.
+
 ### Every fighter has their own block
 
 Nine fighters had none, or had one that did not read on screen. They have one now
