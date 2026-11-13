@@ -109,7 +109,7 @@
     ],
     lowHeavy: [
       F({ crouch: true, arm: 'back' }),
-      F({ crouch: true, legs: 'sweep', head: [-2, 0], arm: 'back' }),
+      F({ crouch: true, arm: 'low', head: [3, 2], torso: [2, 1] }),   // (no conjured leg: the low swipe is the arm, the body drops)
       F({ crouch: true }),
     ],
   };
@@ -459,7 +459,7 @@
       // ones already show both arms, and a second back arm reads as a third limb.
       if (s.backArm != null ? s.backArm : this.k < 3) drawArm(p.backArm, true, p.armOff || [0, 0]);
       const armName = p.armName || p.arm;
-      const armBehind = armName === 'back' || armName === 'flail'; // a cocked-back arm sits behind the body
+      const armBehind = armName === 'back' || armName === 'flail' || (s.armBehind && armName && armName !== 'shell' && armName !== 'block'); // a cocked-back arm sits behind the body (and, for the photo-drawn fighters, a reaching arm grows out from under the shirt)
       if (armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
       this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;

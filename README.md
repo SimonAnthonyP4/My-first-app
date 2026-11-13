@@ -1208,6 +1208,11 @@ in it. `js/game/riley.js`.
   verdict beam, and throws the gavel (**FINAL VERDICT**). He is not on the select screen; the Keeper brings him.
 - The roster is now 32, which fills the 16 x 2 select grid.
 
+**Arms and legs (all fighters).** The arm that comes out for a punch now has a rounded shoulder joint and a
+real thickness. For the photo-drawn fighters (`sprite.armBehind: true`: Erick, Loor, Olu, Riley) it grows out
+from under the shirt, and the painted arm it replaces is removed completely. The default crouching heavy no
+longer conjures a sweeping leg: the low swipe is the arm and the body drops.
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.
