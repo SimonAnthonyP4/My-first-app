@@ -339,16 +339,22 @@
     commandPressed(input) {
       const cmds = this.def.commands;
       if (!cmds) return null;
-      for (const slot of ['qcf', 'qcb']) if (input.pressed('cmd' + slot)) { input.consume('cmd' + slot); return slot; } // the CPU
+      this.cmdHeavy = false;
+      for (const slot of ['qcf', 'qcb']) {   // the CPU
+        if (input.pressed('cmd' + slot)) { input.consume('cmd' + slot); return slot; }
+        if (input.pressed('cmd' + slot + 'H')) { input.consume('cmd' + slot + 'H'); this.cmdHeavy = true; return slot; }
+      }
       const btn = input.pressed('light') || input.pressed('heavy');
       if (!btn) return null;
       const slot = this.motionDone(6) ? 'qcf' : this.motionDone(4) ? 'qcb' : null;
-      if (slot) { input.consume('light'); input.consume('heavy'); }
+      if (slot) { this.cmdHeavy = !input.pressed('light') && input.pressed('heavy'); input.consume('light'); input.consume('heavy'); }
       return slot;
     }
 
     startCommand(slot) {
-      const cfg = RF.COMMANDS[this.def.commands[slot]];
+      // (a fighter with commandsHeavy has two moves on each motion: LIGHT does one, HEAVY the other)
+      const cfg = RF.COMMANDS[(this.cmdHeavy && this.def.commandsHeavy && this.def.commandsHeavy[slot]) || this.def.commands[slot]];
+      this.cmdHeavy = false;
       if (!cfg) return;
       this.motion.length = 0;
       this.startSpecial(cfg);

@@ -609,7 +609,8 @@ heavy plows through a hit. Taunts: "HUT! HUT! HIKE!", "I EAT LINEBACKERS FOR BRE
 ## Alejandro
 
 Rock climber and thrill seeker (daredevil, **100% health**, from the Climbing Wall). Fast, a
-double jump, 5-hit strings and a strong air game; chalk puffs off his hands. Taunts: "SEND IT!",
+double jump, 5-hit strings and a strong air game; chalk puffs off his hands. He has spent so long on
+the crag that the rock listens to him. Taunts: "SEND IT!",
 "THAT WAS A V2. EASY.", "FEAR IS JUST A CHECKPOINT."
 
 - **Wall jumps:** in the air against the edge of the stage, hold toward the wall to slide down it
@@ -617,9 +618,17 @@ double jump, 5-hit strings and a strong air game; chalk puffs off his hands. Tau
 - **Light: Chalk Jab.** **Heavy: Carabiner Swing** - a rope whipped out with a steel carabiner
   on the end (long reach).
 - **Block: Rope Guard.** A spinning coil of rope. ON BELAY.
-- **Special: Belay Yank.** Throws a rope with a hook across the screen; if it catches them it
-  reels them right in front of him (GOT YOU!) for a follow-up.
-- **Command specials:** Dyno (a leaping lunge punch) and Free Solo (a soaring uppercut).
+- **Special: Landslide.** (perfect block / EX / super) Shadows on the floor show where the rocks
+  will land, then seven fall on the opponent, the last one a boulder. About 34 damage if all of
+  it connects. Walk out of the shadows or jump over the rocks and it does nothing.
+- **He controls the rock** (`js/game/rocks.js`). **Rock Spike** (DOWN, FORWARD + LIGHT): cracks run
+  along the floor to where you are standing and a spike of stone erupts there; it launches you for a
+  follow-up. Step away during the crack, or jump it. 1 second cooldown. **Rock Wall**
+  (DOWN, BACK + LIGHT): a slab of stone shoots out of the ground and rolls toward them; it hits, then
+  stays up as a barrier that stops walking, eats projectiles, and breaks to a hard hit or after a
+  couple of seconds. One at a time, 2.5 second cooldown.
+- **Command specials:** the same two motions with HEAVY: **Dyno** (a leaping lunge punch) and
+  **Free Solo** (a soaring uppercut). (Any fighter can have two moves on a motion: `commandsHeavy`.)
 - **Throw: Belay Drop.** Clips them to the rope, hauls them up toward the ceiling - ROCK! - and
   lets go.
 - **Fatality: Summit.** A cliff rises behind them; he hauls them all the way up, plants a flag

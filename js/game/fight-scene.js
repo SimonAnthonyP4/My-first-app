@@ -293,6 +293,7 @@
       b.update(this.inputs[1], a, canAct(b), bounds);
       this.separate(a, b, bounds);
       this.updateProjectiles(bounds);
+      if (RF.rocksUpdate) RF.rocksUpdate(this);   // Alejandro's spikes and walls (game/rocks.js)
 
       RF.checkHazards(this); // also ticks the hazard's effect
       if (this.phase === 'fight' || (this.phase === 'finish' && !this.finisher)) {
@@ -1166,6 +1167,7 @@
       if (RF.drawMind) RF.drawMind(this, ctx, floorY);
       if (RF.drawDivine) RF.drawDivine(this, ctx, floorY);
       if (RF.drawKeeper) RF.drawKeeper(this, ctx, floorY);
+      if (RF.drawRocks) RF.drawRocks(this, ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);
@@ -1298,12 +1300,12 @@
       this.fighters.forEach((f, i) => {
         const d = f.def, x = i === 0 ? 8 : W / 2 + 4, w = W / 2 - 12;
         RF.drawPanel(ctx, x, 26, w, 178, i === 0 ? '#c03020' : '#3060c0');
-        const C = d.commands || {}, cmd = (k) => (RF.COMMANDS[C[k]] || {}).name || '-';
+        const C = d.commands || {}, CH = d.commandsHeavy, cmd = (k) => ((RF.COMMANDS[C[k]] || {}).name || '-') + (CH ? ' / ' + ((RF.COMMANDS[CH[k]] || {}).name || '-') : '');
         const rows = [
           ['', d.name, '#ffd030'],
           ['LIGHT / HEAVY', 'COMBO: LIGHT, LIGHT, HEAVY', '#e0d8d0'],
-          ['DOWN, FWD + ATK', cmd('qcf'), '#60e0ff'],
-          ['DOWN, BACK + ATK', cmd('qcb'), '#60e0ff'],
+          [CH ? 'DOWN, FWD + LT / HV' : 'DOWN, FWD + ATK', cmd('qcf'), '#60e0ff'],
+          [CH ? 'DOWN, BACK + LT / HV' : 'DOWN, BACK + ATK', cmd('qcb'), '#60e0ff'],
           ['UP + HEAVY', 'LAUNCHER (HOLD UP)', '#ff9a40'],
           ['PERFECT BLOCK', f.baseSpecial.name, '#ffd030'],
           ['THROW (1 BAR IN COMBO)', 'EX ' + f.baseSpecial.name, '#60c0ff'],

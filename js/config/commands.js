@@ -124,7 +124,7 @@
     tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
     nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
     mikey: { commands: { qcf: 'blitz', qcb: 'hulkLeap' }, taunt: 'HUT! HUT! HIKE!', voicePitch: 0.6 },
-    alejandro: { commands: { qcf: 'dyno', qcb: 'freeSolo' }, taunt: 'SEND IT!', voicePitch: 1.1 },
+    alejandro: { commands: { qcf: 'rockSpike', qcb: 'rockWall' }, commandsHeavy: { qcf: 'dyno', qcb: 'freeSolo' }, taunt: 'SEND IT!', voicePitch: 1.1 },
     lopez: { commands: { qcf: 'taylorSeries', qcb: 'multiverseSwap' }, taunt: 'SHOW YOUR WORK.', voicePitch: 0.7 },
     wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
     gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },

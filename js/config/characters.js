@@ -3565,10 +3565,10 @@ RF.CHARACTERS = [
     archetype: 'daredevil',
     health: 100,
     origin: 'The Climbing Wall',
-    bio: 'Rock climber. Thrill seeker. Never stops.',
+    bio: 'Rock climber. Thrill seeker. Never stops. Spent so long on the crag that the rock started listening: it rises where he points and falls where he looks.',
     quote: 'SEND IT!',
     winQuote: 'TOPPED OUT. NEXT ROUTE.',
-    special: 'belayYank',
+    special: 'landslide',
     throw: 'belayDrop',
     finisher: 'summit',
     intro: 'rappelIn',            // entrance before round 1 (game/intros.js)
@@ -3587,6 +3587,9 @@ RF.CHARACTERS = [
       'FEAR IS JUST A CHECKPOINT.',
       'THE VIEW IS BETTER UP HERE.',
       'CLIMBING!',
+      'THE ROCK LISTENS.',
+      'WATCH YOUR FEET.',
+      'EVERYTHING IS A HOLD IF YOU ASK NICELY.',
     ],
     // DYNAMIC: fast, a double jump, and WALL JUMPS - against the edge of the stage, hold
     // toward it to slide, press UP to kick off (up to 3 times in one jump).
@@ -3597,8 +3600,8 @@ RF.CHARACTERS = [
     stats: {
       walkSpeed: 3.2,
       jumpPower: 11.5,
-      damage: 1.0,
-      damageReduction: 0,
+      damage: 1.1,
+      damageReduction: 0.04,
       attackSpeed: 1.3,
     },
     aura: 'chalkAura',

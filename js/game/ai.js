@@ -163,9 +163,13 @@
       // 4b. Command specials (anti-airs when they jump, rushes / teleports / projectiles otherwise).
       if (me.def.commands && dist < 170 && Math.random() < L.aggression * 0.4) {
         const slots = ['qcf', 'qcb'].map((sl) => [sl, RF.COMMANDS[me.def.commands[sl]]]).filter(([, c]) => c);
+        if (me.def.commandsHeavy) for (const sl of ['qcf', 'qcb']) { const c = RF.COMMANDS[me.def.commandsHeavy[sl]]; if (c) slots.push([sl + 'H', c]); }   // (the heavy version of each motion)
         const anti = slots.find(([, c]) => c.kind === 'rising');
         if (anti && !opp.grounded && dist < 80) { this.tap('cmd' + anti[0]); return; }
-        const pick = slots[Math.floor(Math.random() * slots.length)];
+        // rock summons are for range (and not while on cooldown); rushes and anti-airs are for close
+        const usable = slots.filter(([, c]) => !(c.make && ((me.rockCd || {})[c.make] || 0) > (me.scene ? me.scene.frame : 0)) && !(c.make && dist < 55));
+        const pool = (usable.length ? usable : slots).filter(([, c]) => !(c.make && c.make === 'wall' && dist < 90));
+        const pick = (pool.length ? pool : slots)[Math.floor(Math.random() * (pool.length ? pool : slots).length)];
         if (pick && (pick[1].kind !== 'rising' || dist < 60)) { this.tap('cmd' + pick[0]); return; }
       }
 
