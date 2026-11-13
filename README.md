@@ -1192,6 +1192,23 @@ no arm is swapped in). 10% damage reduction. Light = JAB, heavy = CROSS, special
 (a spinning pizza projectile, `js/game/loor.js`), throw = lift slam, finisher = pile driver,
 brutality EXTRA TOPPINGS. The fighter is `loor` (the older rich-kid fighter `chris` is someone else).
 
+
+## The Headmaster's three, playable (and Loor, the right way round)
+
+The **Proctor**, the **Bell Ringer** and the **Eraser** are on the character select now
+(`js/game/lieutenants.js`; the select screen holds 36 and the roster is 35). They are drawn in
+profile, facing their opponent, and have no arms drawn, so every attack is an effect:
+
+| | Gimmick | Light / heavy | Special |
+|---|---|---|---|
+| **The Proctor** | floats; his dash is *Time Skip*, a blink | a clock hand swept round / a full midnight sweep | *Time's Up*: a clock hand, thrown |
+| **The Bell Ringer** | slowest and heaviest; armour on his heavies | every hit is a ring of sound / a big toll | *Toll the Bell*: a ring that rolls along the floor (also Seismic Slam as a move) |
+| **The Eraser** | fastest; his dash is a blink: rubbed out here, drawn in there | a swipe of chalk / a long wipe with a felt block | *Wipe Out*: a cloud of chalk |
+
+Against the hard computer they win about 44% (Proctor), 57% (Ringer) and 51% (Eraser).
+Chris Loor's picture was reversed when I converted it, so he looked away from his opponent: he
+was rebuilt from the right way round (shirt and glasses included).
+
 ## Olu
 
 From O Block, Chicago, and a divine being who can stand in the room between universes and look

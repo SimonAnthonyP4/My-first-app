@@ -3,7 +3,7 @@
 (function () {
   const T = (...a) => RF.font.drawText(...a);
   const W = 384;
-  const SLOTS = 32, COLS = 16, SLOT = 21, GAP = 2; // the roster: 16 x 2, along the bottom
+  const SLOTS = 36, COLS = 18, SLOT = 19, GAP = 2; // the roster: 18 x 2, along the bottom
   const GRID_X = (W - (COLS * SLOT + (COLS - 1) * GAP)) / 2, GRID_Y = 176;
   const FEET = 138, SIDE = 130;                    // where the big fighters stand; how wide each side is
   const PCOL = ['#ff4a3a', '#4a8aff'];

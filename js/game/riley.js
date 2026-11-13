@@ -111,10 +111,11 @@
   // ---- drawn over the fighters: the orb block, the blink, the arrival of the Judge ----
   RF.drawKeeper = (scene, ctx, floorY) => {
     for (const f of scene.fighters) {
-      if (!(f.def.id === 'riley' || f.def.id === 'judge') || f.hidden) continue;
+      if (f.hidden || !(f.def.id === 'riley' || f.def.id === 'judge' || f.def.tpCols)) continue;
+      const TC = f.def.tpCols || [GOLD, VIOLET], isKeeper = f.def.id === 'riley' || f.def.id === 'judge';
       const t = scene.frame, hv = f.def.sprite.hover || 0, cy = floorY - f.y - f.body.height * 0.5 - hv;
       // THE ORB: a shell of light that flares when it takes a hit
-      if (f.state === 'block' || f.state === 'blockstun') {
+      if (isKeeper && (f.state === 'block' || f.state === 'blockstun')) {
         const k = f.shieldHit > 0 ? f.shieldHit / 12 : 0, r = f.body.height * 0.72 + Math.sin(t / 6) * 1.5;
         ctx.save(); ctx.globalAlpha = 0.3 + 0.45 * k;
         const g = ctx.createRadialGradient(f.x, cy, r * 0.45, f.x, cy, r); g.addColorStop(0, 'rgba(255,230,140,0.05)'); g.addColorStop(0.8, 'rgba(255,215,90,0.55)'); g.addColorStop(1, k > 0.4 ? 'rgba(255,255,255,0.95)' : 'rgba(154,106,255,0.8)');
@@ -130,11 +131,11 @@
         else {
           const a = 1 - q.t / 18;
           for (const [px, w] of [[q.from, 1], [q.to, 0.7]]) {
-            ctx.globalAlpha = a * w; ctx.strokeStyle = q.t % 4 < 2 ? GOLD : VIOLET; ctx.lineWidth = 2;
+            ctx.globalAlpha = a * w; ctx.strokeStyle = q.t % 4 < 2 ? TC[0] : TC[1]; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.ellipse(px, floorY - q.y - 30 - hv, 5 + q.t * 1.4, 26 + q.t * 0.8, 0, 0, 7); ctx.stroke();
             ctx.strokeStyle = WHITE; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(px, floorY - q.y - 30 - hv, 3 + q.t, 20, 0, 0, 7); ctx.stroke();
           }
-          ctx.globalAlpha = a * 0.5; f.sprite.draw(ctx, 'idle', 0, Math.round(q.from), floorY - q.y, f.facing, q.t % 2 ? GOLD : VIOLET);
+          ctx.globalAlpha = a * 0.5; f.sprite.draw(ctx, 'idle', 0, Math.round(q.from), floorY - q.y, f.facing, q.t % 2 ? TC[0] : TC[1]);
           ctx.globalAlpha = 1; ctx.lineWidth = 1;
         }
       }
@@ -150,7 +151,7 @@
         if (f.summonT === 99) RF.audio.sfx('boom');
       }
       // Riley glows a little, like the picture
-      if (f.def.id === 'riley') { ctx.globalAlpha = 0.18 + 0.08 * Math.sin(t / 15); const g = ctx.createRadialGradient(f.x, cy, 8, f.x, cy, 52); g.addColorStop(0, 'rgba(255,190,40,0.6)'); g.addColorStop(1, 'rgba(255,190,40,0)'); ctx.fillStyle = g; ctx.fillRect(f.x - 54, cy - 54, 108, 108); ctx.globalAlpha = 1; }
+      if (isKeeper && f.def.id === 'riley') { ctx.globalAlpha = 0.18 + 0.08 * Math.sin(t / 15); const g = ctx.createRadialGradient(f.x, cy, 8, f.x, cy, 52); g.addColorStop(0, 'rgba(255,190,40,0.6)'); g.addColorStop(1, 'rgba(255,190,40,0)'); ctx.fillStyle = g; ctx.fillRect(f.x - 54, cy - 54, 108, 108); ctx.globalAlpha = 1; }
     }
   };
 
