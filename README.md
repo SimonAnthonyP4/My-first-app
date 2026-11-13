@@ -1188,6 +1188,26 @@ picture (mirrored to face right). `js/game/olu.js`.
   in `poses.block`.
 - The character select grid is now 16 x 2 (32 slots).
 
+## Riley, the Keeper (and the Terramania Judge)
+
+The Keeper of Terramania: security, in the oldest sense - the cosmic being responsible for the
+universe's safety (**105% health**, `riley`). Drawn from a friend's picture; he is already floating
+in it. `js/game/riley.js`.
+
+- **Floats:** `sprite.hover` makes any fighter hover (the sprite is drawn higher, with a shadow on
+  the floor and a slow bob). He has no stride, tuck or kicks; his legs stay crossed.
+- **Ranged everything:** light = WARNING SHOT (a star-bolt), heavy = CEASE AND DESIST (a beam), special
+  **COSMIC ORB** (a slow, huge orb of light). Finisher **SEALED**: the loser is shrunk inside an orb.
+- **Dash = teleport:** `teleport: 130` on the fighter turns the dash into a blink (rings where he left
+  and where he arrived, a ghost fading, and a few frames of invulnerability). He can blink straight past you.
+- **Block = an orb:** a shell of light with gold rings that flares when it takes a hit.
+- **Extra life:** `reviveAs: 'judge'`. The first knockout of every round does not count: **THE TERRAMANIA
+  JUDGE** arrives in a column of light with a full bar and finishes the round (`Fighter.summonJudge`;
+  `applyDef` swaps who a fighter is). The next round, Riley is back. The Judge is drawn pixel by pixel
+  (white and gold robe, wings, halo wheel, a gavel the size of a person), fires a spear of light and a
+  verdict beam, and throws the gavel (**FINAL VERDICT**). He is not on the select screen; the Keeper brings him.
+- The roster is now 32, which fills the 16 x 2 select grid.
+
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.

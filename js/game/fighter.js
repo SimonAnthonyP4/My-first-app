@@ -24,8 +24,18 @@
   class Fighter {
     constructor(def, side, alt = false) {
       if (alt) def = RF.costume(def, alt === true ? 1 : alt); // alt = costume number
-      this.def = def;
       this.side = side; // 0 = player 1, 1 = player 2
+      this.applyDef(def);
+      this.motion = [];                // recent directions (numpad notation) for command inputs
+      this.scene = null; // set by FightScene
+      this.meter = 0;    // super meter (kept between rounds)
+      this.lastSuperAt = -Infinity;
+      this.reset(0, 1);
+    }
+
+    // Who this fighter is: their moves, special, throw and health. (The Keeper turns into the Judge mid-round.)
+    applyDef(def) {
+      this.def = def;
       this.stats = def.stats;
       this.body = def.body;
       this.sprite = RF.createSprite(def);
@@ -38,17 +48,14 @@
       this.special = RF.SPECIALS[def.special];
       this.baseSpecial = this.special; // the signature special (perfect block / EX / super)
       this.specialKind = RF.SPECIAL_KINDS[this.special.kind];
-      this.motion = [];                // recent directions (numpad notation) for command inputs
       if (def.powerPunch) this.moves.powerPunch = buildMove(def.powerPunch, def); // Nicholas's MAX GAINS punch
       this.throwCfg = RF.THROWS[def.throw];
       this.throwKind = this.throwCfg && RF.THROW_KINDS[this.throwCfg.kind];
-      this.scene = null; // set by FightScene
-      this.meter = 0;    // super meter (kept between rounds)
-      this.lastSuperAt = -Infinity;
-      this.reset(0, 1);
     }
 
     reset(x, facing) {
+      if (this.keeperDef) { this.applyDef(this.keeperDef); this.keeperDef = null; }   // a new round: the Keeper is back
+      this.judgeUsed = false; this.summonT = 0; this.tpFx = null;
       this.boneBreakUsed = false; // BONE BREAKER: once per round
       this.madT = 0; this.evadeCd = 0; this.evadeFx = 0; this.boostT = 0;
       this.x = x; this.y = 0;
@@ -117,6 +124,8 @@
 
     update(input, opp, canAct, bounds) {
       this.stateTime++;
+      this.bnd = bounds;
+      if (this.summonT > 0) { this.summonT--; this.vx = 0; this.vy = 0; this.y = 0; this.move = null; if (this.state !== 'idle') { this.state = null; this.setState('idle'); } return; }   // the Judge is arriving
       if (this.madT > 0) { this.madT--; input = RF.mirrorInput(input); }   // MADNESS: left and right swapped (game/urbanik.js)
       if (this.evadeCd > 0) this.evadeCd--;
       if (this.hulkT > 0 && --this.hulkT === 0 && this.scene) this.scene.effects.spawnText('...CALM.', this.x, this.body.height + 16, '#80c080');
@@ -405,6 +414,12 @@
       this.state = null;
       this.setState('dash');
       this.vx = dir * (dir === this.facing ? 7.5 : 6) * (this.def.dashBoost || 1);
+      if (this.def.teleport) { // THE KEEPER: no dash, a blink. Gone from here, there before the sound arrives.
+        const b = this.bnd || { left: 12, right: 372 }, far = this.def.teleport * (dir === this.facing ? 1 : 0.8);
+        this.tpFx = { from: this.x, to: Math.max(b.left + 14, Math.min(b.right - 14, this.x + dir * far)), y: this.y, t: 0 };
+        this.x = this.tpFx.to; this.vx = 0;
+        RF.audio.sfx('arcane'); return;
+      }
       RF.audio.sfx('whoosh');
       if (this.scene) this.scene.effects.spawn('dust', this.x - dir * 8, 1);
     }
@@ -774,14 +789,14 @@
     }
 
     getHurtbox() {
-      if (this.isKO || ['thrown', 'finishing', 'finished'].includes(this.state)) return null;
+      if (this.isKO || this.summonT > 0 || ['thrown', 'finishing', 'finished'].includes(this.state)) return null;
       // Too many hits in the air: they fall out of the combo (no infinite juggles).
       if (this.state === 'hitstun' && !this.grounded && this.juggle >= RF.CONFIG.JUGGLE_LIMIT) return null;
       if (this.state === 'knockdown' || this.state === 'wakeup') return null; // on the floor / getting up
       if (this.hidden) return null; // mid-teleport
       if (this.state === 'special' && this.special.invuln && this.stateTime < this.special.invuln) return null; // invincible start (anti-airs)
       // Backdash: briefly untouchable as you slip away.
-      if (this.state === 'dash' && this.dashDir !== this.facing && this.stateTime <= 6) return null;
+      if (this.state === 'dash' && (this.dashDir !== this.facing || this.def.teleport) && this.stateTime <= 6) return null;
       const crouchH = this.body.crouchHeight || RF.CONFIG.CROUCH_HEIGHT;
       const h = this.crouching && this.grounded ? this.body.height * crouchH : this.body.height;
       return { x: this.x - this.body.width / 2, y: this.y, w: this.body.width, h };
@@ -893,7 +908,25 @@
       return blocked;
     }
 
+    // THE KEEPER'S EXTRA LIFE: the first knockout of a round does not count. The Terramania Judge steps in
+    // and finishes the round (game/riley.js has the Judge and the effects).
+    summonJudge() {
+      const jd = this.scene && RF.getCharacter(this.def.reviveAs);
+      if (!jd) return false;
+      this.judgeUsed = true; this.keeperDef = this.def;
+      this.applyDef(jd);
+      this.health = this.maxHealth; this.state = null; this.stun = 0; this.combo = 0; this.juggle = 0; this.vx = 0; this.vy = 0; this.y = 0;
+      this.move = null; this.grabber = null; this.victim = null; this.hidden = false; this.superActive = false; this.exActive = false;
+      this.setState('idle'); this.summonT = 100; this.summonAt = this.x;
+      this.meter = Math.max(this.meter, RF.CONFIG.METER_BAR);
+      const sc = this.scene; sc.flash = 18; sc.shake = 20; RF.audio.sfx('gong'); RF.audio.sfx('arcane');
+      sc.effects.spawnText('THE KEEPER WILL NOT FALL.', this.x, this.body.height + 34, '#ffffff');
+      sc.effects.spawnText('THE JUDGE PRESIDES.', this.x, this.body.height + 22, '#ffd75a');
+      return true;
+    }
+
     knockOut(dir) {
+      if (this.def.reviveAs && !this.judgeUsed && this.summonJudge()) return;
       // The match-deciding blow leaves them dazed instead: FINISH THEM!
       if (this.scene && this.scene.secondWind && this.scene.secondWind(this)) return; // the rift tower's last boss gets back up once
       if (this.scene && this.scene.tryDaze(this)) return;
