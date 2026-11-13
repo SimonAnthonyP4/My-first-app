@@ -12,7 +12,7 @@
 // How a scene is written (full step lists at the top of the engine files):
 //   js/scenes/story-scene.js  staging, shots, words, sound         { cast } { shot } { say } { amb }
 //   js/scenes/story-3d.js     the 3D camera                        { cam3d: [who, 'flyin'] }
-//   js/scenes/story-score.js  the soundtrack (20 themes)           { score: 'theme' }
+//   js/scenes/story-score.js  the soundtrack (23 themes)           { score: 'theme' }
 //   js/scenes/story-play.js   quick-time events, choices, acting   { qte } { choice } { if } { emote } { place }
 //   js/scenes/story-fights.js, story-war.js   fights inside a scene, deaths, crowns   { brawl } { die } { crownify }
 //   js/scenes/story-cine.js   the army, stopped time, light, the frame   { crowd } { freeze } { aura } { aspect }

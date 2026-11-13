@@ -869,7 +869,7 @@ for one line and snaps back - the first lunch as Anthony is taken, 1994 as Sirve
 
 **Audio**: every line is **spoken** (each character with their own voice; rift variants deeper
 and slower), over ambient beds - the tolling bell, a rift drone, a heartbeat, a clock, rain,
-wind, crickets, a crowd - and an original **soundtrack of 20 themes** played live by a small
+wind, crickets, a crowd - and an original **soundtrack of 23 themes** played live by a small
 sequencer (`js/scenes/story-score.js`): the bell melody, the Bro Batch theme, King Sirven's
 march (and the same march played once, slowly, as a requiem), Lopez's circling melody (and its
 boss version), a graduation march, and cues for action, comedy, memory and grief.
