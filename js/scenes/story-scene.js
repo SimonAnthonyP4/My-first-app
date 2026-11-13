@@ -307,7 +307,7 @@
   function leaveStory() { amb.stop(); if (RF.storyScore) RF.storyScore.stop(); setMusic(null); voice.stop(); }
 
   // ---------------------------------------------------------------- story menu
-  const ENDINGS = [['lopez', 'THE TEACHER'], ['sirven', 'THE LAST ONE OUT'], ['hero', 'THE EMPTY SEAT']];
+  const ENDINGS = [['lopez', 'THE TEACHER'], ['sirven', 'THE LAST ONE OUT'], ['hero', 'THE EMPTY SEAT'], ['keeper', 'ALL CLEAR']];
   class StoryMenuScene {
     constructor(game) {
       setMusic('silence'); if (RF.storyScore) RF.storyScore.set('bell');
@@ -365,8 +365,8 @@
       });
       // endings found
       const found = ENDINGS.filter(([id]) => this.prog.endings[id]).length;
-      T(ctx, 'ENDINGS ' + found + '/3', W - 10, 148, { align: 'right', color: '#c080ff', outline: '#000' });
-      ENDINGS.forEach(([id, name], i) => T(ctx, this.prog.endings[id] ? name : '? ? ?', W - 10, 160 + i * 10, { align: 'right', color: this.prog.endings[id] ? '#ffd040' : '#5a4a6a', outline: '#000' }));
+      T(ctx, 'ENDINGS ' + found + '/' + ENDINGS.length, W - 10, 142, { align: 'right', color: '#c080ff', outline: '#000' });
+      ENDINGS.forEach(([id, name], i) => T(ctx, this.prog.endings[id] ? name : '? ? ?', W - 10, 154 + i * 10, { align: 'right', color: this.prog.endings[id] ? '#ffd040' : '#5a4a6a', outline: '#000' }));
       const d = items[this.menu.index].desc;
       if (d) T(ctx, d, W / 2, H - 14, { align: 'center', color: '#e0c0ff', outline: '#000' });
     }
@@ -637,10 +637,11 @@
     frameShot(cut) {
       const s = this.shot, c = this.cam, fy = this.floorY(), A = this.actors[s.a], B = this.actors[s.b];
       let x = W / 2, y = H / 2 + 12, z = 1;
-      const tall = (a) => a.def.body.height * (a.scale || 1), head = (a) => fy - a.y - tall(a) * 0.86;
-      if (s.type === 'medium' && A) { z = 2.2; x = A.x; y = fy - A.y - tall(A) * 0.66; }
+      const hov = (a) => (a.def.sprite && a.def.sprite.hover) || 0;   // (someone who floats: their head is that much higher)
+      const tall = (a) => a.def.body.height * (a.scale || 1), head = (a) => fy - a.y - hov(a) - tall(a) * 0.86;
+      if (s.type === 'medium' && A) { z = 2.2; x = A.x; y = fy - A.y - hov(A) - tall(A) * 0.66; }
       if (s.type === 'close' && A) { z = 4.2; x = A.x + A.facing * 2; y = head(A) + 5; }
-      if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - tall(A) * 0.72; }
+      if (s.type === 'low' && A) { z = 1.7; x = A.x; y = fy - A.y - hov(A) - tall(A) * 0.72; }
       if ((s.type === 'two') && A && B) { x = (A.x + B.x) / 2; z = Math.max(1, Math.min(2.2, 300 / (Math.abs(A.x - B.x) + 110))); y = fy - 46; }
       if (s.type === 'ots' && B) { z = 2.7; x = B.x + (A && A.x < B.x ? -12 : 12); y = head(B) + 14; }
       if (z > 1) z *= 1 + Math.min(0.09, Math.max(0, this.t - (s.t0 || 0)) * 0.00032); // a slow push-in: a held shot is never a still frame
@@ -830,16 +831,20 @@
         ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
         ctx.beginPath(); ctx.ellipse(a.x, fy + 1, 14, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
         let anim = a.anim, frame = 0;
+        const tt = a.frozen || this.t;   // (someone frozen in time holds the frame they were on)
         if (a.wlen) { anim = a.dashing ? 'jump' : 'walk'; frame = a.dashing ? 0.5 : (a.wt / 5) % 4; }
         else if (a.ylen) { anim = 'jump'; frame = 0.3; }
-        else if (anim === 'idle') frame = ((this.t + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
-        else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((this.t + a.seed) / 16) % 2;
-        else if (['special', 'heavy', 'light', 'uppercut', 'throw'].includes(anim)) frame = Math.min(1, (this.t - (a.at || 0)) / 8);
-        const bob = a.talk && anim === 'idle' && this.t % 16 < 8 ? 1 : 0, small = a.scale && a.scale !== 1;
+        else if (anim === 'idle') frame = ((tt + a.seed) / (a.def.idleRate || 12)) % (a.def.idleFrames || 2);
+        else if (anim === 'victory' || anim === 'taunt' || anim === 'dazed') frame = Math.floor((tt + a.seed) / 16) % 2;
+        else if (anim === 'walk') frame = ((tt - (a.at || 0)) / 5) % 4;
+        else if (['special', 'heavy', 'light', 'uppercut', 'throw'].includes(anim)) frame = Math.min(1, (tt - (a.at || 0)) / 8);
+        const bob = a.talk && anim === 'idle' && tt % 16 < 8 ? 1 : 0, small = a.scale && a.scale !== 1;
         if (small) { ctx.save(); ctx.translate(a.x, fy); ctx.scale(a.scale, a.scale); ctx.translate(-a.x, -fy); } // a younger, smaller version of someone
         if (a.dashing) for (let i = 1; i <= 3; i++) { ctx.globalAlpha = 0.25 / i; a.sprite.draw(ctx, anim, frame, a.x - a.facing * i * 10, fy - a.y, a.facing); }
         ctx.globalAlpha = a.foldT ? Math.max(0, 1 - a.foldT / 60) : a.appearT && a.appearT < 50 ? a.appearT / 50 : a.ghost ? 0.55 : 1;
+        RF.hoverShadow = !a.y;
         a.sprite.draw(ctx, anim, frame, a.x + (a.trembleT > 0 ? ((this.t >> 1) % 2 ? 1 : -1) : 0), fy - a.y - bob, a.facing, a.hitT > 4 ? '#ffffff' : a.ghost ? '#2a2038' : (a.foldT && this.t % 6 < 3) ? '#c080ff' : null);
+        RF.hoverShadow = true;
         ctx.globalAlpha = 1;
         if (small) ctx.restore();
         if (a.rift) RF.MOVE_FX.riftAura({ x: a.x, y: a.y, body: a.def.body, state: 'idle' }, ctx, fy, this.t);
@@ -854,7 +859,7 @@
       const hx = Math.sin(this.t / 47) * hh * 2, hy = Math.sin(this.t / 31) * hh * 1.5;
       // keep the stage edges out of frame
       const half = W / 2 / z, halfH = H / 2 / z;
-      const cx = Math.max(half, Math.min(W - half, cam.x)), cy = Math.max(halfH, Math.min(H - halfH + 12, cam.y)); // +12: the floor sits just above the bottom bar
+      const cx = opts.free ? cam.x : Math.max(half, Math.min(W - half, cam.x)), cy = Math.max(halfH, Math.min(H - halfH + 12, cam.y)); // +12: the floor sits just above the bottom bar (free: a narrow panel may look right at the edge of the set)
       ctx.translate(W / 2 + sx + hx, H / 2 + sy + hy);
       if (cam.rot) ctx.rotate(cam.rot);
       ctx.scale(z, z * (opts.low ? 1.18 : 1));
@@ -868,6 +873,7 @@
       } else { ctx.fillStyle = '#05000a'; ctx.fillRect(-W, -H, W * 3, H * 3); }
       if (this.tintCol) { ctx.fillStyle = this.tintCol; ctx.fillRect(-W, -H, W * 3, H * 3); }
       if (this.riftFx) { const r = this.riftFx, k = r.closing ? Math.max(0, 1 - r.closing / 2) : Math.min(1, r.t / 16); drawRift(ctx, r.x, fy - 50 * r.size, r.size * k, this.t); }
+      if (!opts.only && this.drawCrowd2D) this.drawCrowd2D(ctx, fy, z);   // the army, in rows behind them (story-cine.js)
       this.drawActors(ctx, fy, opts.only, opts.solo);
       for (const f of this.flies) { const art = RF.PROJECTILE_ART[f.art]; if (art) art(ctx, Math.round(f.x), Math.round(fy - f.y), f.t, f.dir, { w: 14, h: 10, cfg: {} }, fy); }
       for (const p of this.shards) { ctx.globalAlpha = Math.min(1, p.life / 30); ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(fy - p.y), 2, 2); }
@@ -886,6 +892,8 @@
       if (this.insert) {
         INSERTS[this.insert.name](ctx, this.insert.t, this.insert.o);
         if (this.shake) ctx.translate(0, 0);
+      } else if (this.drawShotExtra && this.drawShotExtra(ctx, sh, fy)) {
+        /* a shot of its own (story-cine.js: reaction panels) */
       } else if (sh.type === 'split' && this.actors[sh.a] && this.actors[sh.b]) {
         [sh.a, sh.b].forEach((k, i) => {
           const a = this.actors[k];
@@ -904,8 +912,8 @@
         R(ctx, '#000', 0, 0, W, H);
         ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, band); ctx.clip();
         if (this.stage) { if ('filter' in ctx) ctx.filter = 'blur(3px) brightness(0.5)'; ctx.drawImage(this.stage.bg, 0, 0, W, H); ctx.filter = 'none'; }
-        ctx.translate(W / 2 - a.facing * 8, H / 2 + a.def.body.height * 0.925 * s7); ctx.scale(s7, s7);
-        a.sprite.draw(ctx, 'idle', 0, 0, 0, a.facing);
+        ctx.translate(W / 2 - a.facing * 8, H / 2 + (a.def.body.height * 0.925 + ((a.def.sprite && a.def.sprite.hover) || 0)) * s7); ctx.scale(s7, s7);
+        RF.hoverShadow = false; a.sprite.draw(ctx, 'idle', 0, 0, 0, a.facing); RF.hoverShadow = true;
         ctx.restore();
         if (a.rift || a.def.id === 'lopez') { ctx.globalAlpha = 0.18 + Math.sin(this.t / 6) * 0.08; R(ctx, '#a050ff', 0, top, W, band); ctx.globalAlpha = 1; }
       } else {
@@ -950,7 +958,8 @@
       ctx.globalAlpha = 0.06; for (let i = 0; i < 70; i++) R(ctx, (i + this.t) % 2 ? '#ffffff' : '#000', (i * 7919 + this.t * 131) % W, (i * 3571 + this.t * 71) % H, 1, 1); ctx.globalAlpha = 1;
       if (this.flash) { ctx.fillStyle = `rgba(255,240,255,${this.flash * 0.08})`; ctx.fillRect(0, 0, W, H); }
       // letterbox
-      R(ctx, '#000', 0, 0, W, BAR); R(ctx, '#000', 0, H - BAR, W, BAR);
+      const bar = this.barH == null ? BAR : this.barH;   // (the frame can open up or close in: { aspect } in story-cine.js)
+      R(ctx, '#000', 0, 0, W, bar); R(ctx, '#000', 0, H - bar, W, bar);
       if (!(s && (s.choose || s.rank || s.narrate))) T(ctx, 'HOLD ESC: SKIP', W - 6, 4, { align: 'right', color: '#3a2a4a' });
       if (s && s.say) this.drawSubtitle(ctx, s);
       if (s && s.narrate) this.drawCaption(ctx, this.text.slice(0, this.typed | 0));
@@ -1055,12 +1064,13 @@
       const key = this.resolve(s.say[0]), a = this.actors[key], def = a ? a.def : RF.getCharacter(key);
       if (!def) return;
       const radio = s.say[2] && s.say[2].radio, rift = a && a.rift;
-      const col = rift ? '#c080ff' : radio ? '#ffd030' : '#ffb070';
+      const god = !radio && (RF.storyKit.SUB || {})[def.id];   // the ones above the school speak in their own colours
+      const col = rift ? '#c080ff' : radio ? '#ffd030' : god ? god[0] : '#ffb070';
       const name = def.name.toUpperCase() + (radio ? ' (RADIO)' : ''); // rift variants are already named RIFT ...
       const lines = RF.font.wrap(this.text.slice(0, this.typed | 0), 60).slice(0, 3);
       const y0 = H - BAR + 3;
       T(ctx, name, W / 2, y0 - (lines.length > 2 ? 9 : 0), { align: 'center', color: col, outline: '#000' });
-      lines.forEach((l, i) => T(ctx, l, W / 2, y0 + 9 + i * 9 - (lines.length > 2 ? 9 : 0), { align: 'center', color: '#ffffff', outline: '#000' }));
+      lines.forEach((l, i) => T(ctx, l, W / 2, y0 + 9 + i * 9 - (lines.length > 2 ? 9 : 0), { align: 'center', color: god ? god[1] : '#ffffff', outline: '#000' }));
       if (radio && this.t % 8 < 4) { ctx.globalAlpha = 0.1; R(ctx, '#a0e0ff', 0, BAR, W, H - BAR * 2); ctx.globalAlpha = 1; }
     }
 
@@ -1104,7 +1114,6 @@
       line('THE LAST BELL', { scale: 2, color: '#c080ff', gap: 40 });
       line('STARRING', { color: '#a050ff', gap: 20 });
       RF.CHARACTERS.forEach((d, i) => {
-        if (['bruiser', 'viper'].includes(d.id)) return;
         if (y > -80 && y < H + 100) RF.createSprite(d).draw(ctx, 'victory', Math.floor(this.t / 16) % 2, i % 2 ? W / 2 + 125 : W / 2 - 125, y + 46, i % 2 ? -1 : 1);
         line(d.name.toUpperCase(), { scale: 2, color: '#ffffff', gap: 18 });
         line(d.origin.toUpperCase(), { color: '#a890c8', gap: 56 });

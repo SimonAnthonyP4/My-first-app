@@ -1,11 +1,13 @@
 // STORY MODE: "THE LAST BELL" - the screenplay, part 1 (chapters 0-3).
-// 29 chapters across three generations of one school, with quick-time events, fights in the
-// middle of scenes, dialogue choices that are remembered, and three endings.
+// 34 chapters across three generations of one school, with quick-time events, fights in the
+// middle of scenes, dialogue choices that are remembered, and four endings.
 //   story.js ... story-6.js   the first version of the story
 //   story-7.js                a bonus chapter (MOVIE NIGHT)
 //   story-8.js, story-9.js    THE HEADMASTER: the throne, the Forgotten, the bell rung backward, the
-//                             war. They add chapters, rewrite others, and set the final chapter order
-//                             (so the "CHAPTER n" numbers written in these files are renumbered there).
+//                             war. They add chapters and rewrite others.
+//   story-10.js               THE KEEPER: who let him in, Olu, the trial, the fourth ending. It sets the
+//                             final chapter order (so the "CHAPTER n" numbers written in these files
+//                             are renumbered there).
 //
 // How a scene is written (full step lists at the top of the engine files):
 //   js/scenes/story-scene.js  staging, shots, words, sound         { cast } { shot } { say } { amb }
@@ -13,9 +15,11 @@
 //   js/scenes/story-score.js  the soundtrack (20 themes)           { score: 'theme' }
 //   js/scenes/story-play.js   quick-time events, choices, acting   { qte } { choice } { if } { emote } { place }
 //   js/scenes/story-fights.js, story-war.js   fights inside a scene, deaths, crowns   { brawl } { die } { crownify }
+//   js/scenes/story-cine.js   the army, stopped time, light, the frame   { crowd } { freeze } { aura } { aspect }
 //
 // What the player decides (saved, and read back later with when(key, value)):
 //   table      THE DAY BEFORE     Nicholas, about the corner table:    'same' | 'somebody'
+//   guard      THE DAY BEFORE     Nicholas, to the security guard:     'nod' | 'asked'
 //   nick       BRO BATCH          Nicholas, after the other universe:  'defiant' | 'shaken'
 //   brady      LOCKDOWN           Ms. Brady, on Sirven retiring:       'heart' | 'duty'
 //   joke       STREET LEVEL       Bandy's comeback:                    'logic' | 'who' | 'silent'
@@ -26,7 +30,8 @@
 //   goodbye    THE LAST ONE OUT   Ms. Brady, to Sirven:                'honor' | 'order'
 //   seat       ROLL CALL          Nicholas, to his crowned friend:     'hit' | 'ask'
 //   heroAnswer THE LAST BELL      your hero, to the Headmaster:        'ours' | 'you'
-//   ending     THE LAST BELL      who holds the door:                  'lopez' | 'sirven' | 'hero'
+//   closing    THE VERDICT        your hero, to the bench:             'chose' | 'back'
+//   ending     THE VERDICT        who holds the door:                  'lopez' | 'sirven' | 'hero' | 'keeper'
 //   hero                          who you sent to knock the crown off ('$hero' in the script; '$friend'
 //                                 and '$principal' are Nicholas / Ms. Brady, or Anthony / Sirven if one is the hero)
 RF.STORY = {
@@ -34,7 +39,7 @@ RF.STORY = {
   heroes: ['nicholas', 'anthony', 'brady', 'sirven', 'bandy', 'simon', 'mikey', 'fernando', 'gabriel', 'wuttke', 'alejandro', 'tyler', 'jauregui', 'chris', 'tamayo', 'ruano', 'dabalsa', 'astuto', 'escobedo', 'weissenberg', 'holbrook', 'landa'],
   chapters: [],
   when: (key, val) => (vars) => vars[key] === val,                  // a choice was made a certain way
-  ending: (e) => (vars) => (vars.ending || 'lopez') === e,          // which ending is being played
+  ending: (e) => (vars) => (vars.ending || 'lopez') === e,          // which ending is being played ('lopez' | 'sirven' | 'hero' | 'keeper')
   heroIs: (id) => (vars, state, scene) => scene.hero === id,        // who went through the rift
 };
 (function () {

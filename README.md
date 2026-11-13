@@ -728,10 +728,10 @@ The mode lives in `js/game/tag-team.js`; the fight itself is the normal FightSce
 
 ## Story Mode: THE LAST BELL
 
-Main menu -> **STORY**. A generational, cinematic campaign you **play**: **29 chapters** across
-three generations of the school, about 690 spoken lines per playthrough, **30 quick-time
-moments**, **12 choices the story remembers**, **18 fights** (most of them in the middle of a
-scene), **5 deaths** and **3 endings**.
+Main menu -> **STORY**. A generational, cinematic campaign you **play**: **34 chapters** across
+three generations of the school, about 900 spoken lines per playthrough, **34 quick-time
+moments**, **14 choices the story remembers**, **23 fights** (most of them in the middle of a
+scene), **5 deaths** and **4 endings**.
 
 **The story.** The school bell was cast by the first graduating class in 1961, and every class
 since has signed the inside of it. On their last day it rings once - the last bell - and they
@@ -747,6 +747,19 @@ people. He offers each of them the thing they are most afraid to lose, and they 
 keeps someone, **the school forgets them** - the name, the face, the chair - which is why nobody
 knows there is a war on.
 
+He did not build that room. He was let in. Between every universe there is a door, and in front
+of the door a desk, and someone has always been at the desk: **RILEY, THE KEEPER OF TERRAMANIA**
+(at the school he is the security guard nobody has ever asked the name of; look at his chair).
+His whole law is that nothing leaks, and a school that nobody ever leaves is the safest thing he
+ever heard. So the Headmaster is his tenant - and the war the school fights to get its people
+back is the loudest thing that has ever happened to his door. When the crown comes off, the
+Keeper comes down to seal the universe: one still moment, kept forever, with everyone in it.
+
+And **OLU**, the new kid from Chicago, who kept a door once too (O Block: one summer evening,
+kept so safe that nobody on it ever grew up) and walked off the post. He cannot lay a hand on the
+Keeper's tenant without getting the whole building locked - so he tells the school to win its
+own war. If the landlord ever comes down the stairs himself, that is different.
+
 The way back is the bell itself. Rung backward, it takes you to the day a thing began: *you may
 look, you may listen, you may not stay.* And rung backward for everyone at once, it calls every
 class that ever was.
@@ -754,9 +767,9 @@ class that ever was.
 | # | Chapter | What happens | You play |
 |---|---|---|---|
 | 0 | Midnight | cold open; the bell; an empty chair in a room between universes; the opening titles | - |
-| 1 | The Day Before | one last normal lunch at the corner table | choice |
+| 1 | The Day Before | one last normal lunch at the corner table. A new kid at the next table. A security guard by the door whose chair has no legs | two choices |
 | 2 | Bro Batch | how Nicholas and Anthony met; Rift Chris | slip, jab, cross, uppercut; fight; choice |
-| 3 | Lockdown | Brady and Sirven on the radio; Sirven's secret last year | STOP.; fight; choice |
+| 3 | Lockdown | Brady and Sirven on the radio (the front doors were locked before anyone asked); Sirven's secret last year | STOP.; fight; choice |
 | 4 | 1994 | young Mr. Sirven's first day; Principal Ortega and the bell; a freshman named Brady | - |
 | 5 | Street Level | Bandy and Fernando; "this school kept me" | board swing, flick it; fight; timed choice |
 | 6 | Game Day | Simon and Mikey; the scholarship | duck, tackle, flying knee; fight; choice |
@@ -765,27 +778,37 @@ class that ever was.
 | 9 | The Faculty Meeting | LOPEZ. TUERO. They decide it is one man in one gym. Ms. Brady counts thirty names and twenty-nine students | - |
 | 10 | The Student Teacher | young Lopez, the proof, the four kids nobody else would tutor | - |
 | 11 | Every Universe | his first class leaves; he says it from the throne now | - |
-| 12 | The Bell Tower | the signatures inside the bell; the rope is wound the wrong way | forgive him; fight |
-| 13 | Three Anchors | Wuttke's chord, Holbrook's map, Tyler's swing | the swing |
-| 14 | **The Collection** | Gabriel on a snack run buys nine of everything for a table of eight. The Eraser. An offer: a room that is never quiet | **Gabriel vs the Eraser**; choice |
-| 15 | The Climb | a free climb up the crag, no rope | reach, pull up; **Alejandro vs Rift Lady Landa** |
-| 16 | Ms. Brady's First Day | thirty-two detentions; the walkie-talkie is a chain | - |
-| 17 | Show Your Work | "I was proud of you." "Then why did you never say it?" | jump; **Jauregui vs Lopez (1/3)**; timed choice |
-| 18 | **Doomsday** | seven go in to talk to one sad man. It is not a gym, and it is not one man. Anthony takes the crown so that Nicholas never eats alone in any universe - and Nicholas forgets him mid-sentence. **Fernando holds the door** | **a fight you cannot win: survive**; reach him; hold the door |
-| 19 | Inside the Crown | what the crown shows the people who wear it | choice |
-| 20 | The Last One Out | Nicholas does not know who wrote the labels. Mr. Urbanik works out that people have been cut out of them. Sirven volunteers | choice |
-| 21 | **Rung Backward** | three tolls. **1994**: Ms. Brady meets herself, and the Proctor comes for the girl. **September 2016**: his first class came back to thank him - he had driven four hours to surprise *them* - and the card they left has been in Jauregui's desk for twelve years. **Three years ago**: the corner table, and a boy with no face | **Ms. Brady vs the Proctor**; say his name; stay |
-| 22 | The Night Before | the crag, a phone call home, a song, the letter, locking up one last time | - |
-| 23 | **All Rise** | he brings the throne to them: twenty against four hundred and twelve. **Dabalsa holds the stairs.** "This is your principal speaking. All classes. All years." - and every class that ever was walks out of the light | **tag: Simon + Bandy vs the Forgotten**; **survive the Bell Ringer** |
-| 24 | **Roll Call** | the Forgotten are not fought, they are called by name. **Lady Landa. Chris. Mr. Wuttke.** Gabriel claps on the wrong beat. "Is this seat taken?" - asked the other way round | **Alejandro vs the Eraser**; **tag: Sirven + Brady vs the Bell Ringer + the Proctor**; **Mikey vs ? ? ?**; **Nicholas vs Crowned Anthony**; say his name (x3); choice; the handshake |
-| 25 | The Last Bell | he takes their names one at a time. One teacher walks through it holding a card. Who his three lieutenants were. A crown that will not come off; someone has to hold the door | remember him; choose who goes (15, each with their own line); **you vs THE HEADMASTER**; **the ending** |
-| 26 | Graduation | five names are read before any other; a different graduation for each ending | caps up |
-| 27 | Twenty Years Later | everyone comes back; a new kid is alone at the corner table | - |
-| 28 | The Next Bell | the walkie-talkie changes hands; credits; a scene after the credits for each ending | - |
+| 12 | **The Waiting Room** | one second past midnight: a desk between every universe, and the one who has always sat at it. **Riley, the Keeper**, lets Lopez Tuero in on a visitor's pass with one rule: keep it quiet. Four hundred years; the first one he kept; the crown; nine other schools | talk fast; **tag: you play the Bell Ringer + the Eraser vs Bruiser + Viper** (you are not the heroes of this one) |
+| 13 | The Bell Tower | the signatures inside the bell; the rope is wound the wrong way | forgive him; fight |
+| 14 | Three Anchors | Wuttke's chord, Holbrook's map, Tyler's swing | the swing |
+| 15 | **The Collection** | Gabriel on a snack run buys nine of everything for a table of eight. The Eraser. An offer: a room that is never quiet | **Gabriel vs the Eraser**; choice |
+| 16 | The Climb | a free climb up the crag, no rope | reach, pull up; **Alejandro vs Rift Lady Landa** |
+| 17 | Ms. Brady's First Day | thirty-two detentions; the walkie-talkie is a chain | - |
+| 18 | Show Your Work | "I was proud of you." "Then why did you never say it?" | jump; **Jauregui vs Lopez (1/3)**; timed choice |
+| 19 | **Doomsday** | seven go in to talk to one sad man. It is not a gym, and it is not one man. Anthony takes the crown so that Nicholas never eats alone in any universe - and Nicholas forgets him mid-sentence. **Fernando holds the door** | **a fight you cannot win: survive**; reach him; hold the door |
+| 20 | Inside the Crown | what the crown shows the people who wear it | choice |
+| 21 | **The New Kid** | Loor's pizza place, the night after Doomsday. Two slices. The Forgotten come for the boy who is grieving, and the new kid from Chicago stops thinking about it: **Olu** | **tag: Chris Loor + Bandy vs the Forgotten**; don't hurt them |
+| 22 | The Last One Out | Nicholas does not know who wrote the labels. Mr. Urbanik works out that people have been cut out of them. Sirven volunteers | choice |
+| 23 | **Rung Backward** | three tolls. **1994**: Ms. Brady meets herself, and the Proctor comes for the girl. **September 2016**: his first class came back to thank him - he had driven four hours to surprise *them* - and the card they left has been in Jauregui's desk for twelve years. **Three years ago**: the corner table, and a boy with no face | **Ms. Brady vs the Proctor**; say his name; stay |
+| 24 | The Night Before | the crag, a phone call home, a song, the letter, locking up one last time | - |
+| 25 | **Incident Report** | the other night before: four hundred and twelve, counted, kneeling. Then time stops for everyone but the Headmaster, and the one thing that floats higher than his throne tells him to come down from the chair | a "do not kneel" that cannot be won |
+| 26 | **All Rise** | he brings the throne to them: twenty against four hundred and twelve. **Dabalsa holds the stairs.** "This is your principal speaking. All classes. All years." - and every class that ever was walks out of the light | **tag: Simon + Bandy vs the Forgotten**; **survive the Bell Ringer** |
+| 27 | **Roll Call** | the Forgotten are not fought, they are called by name. **Lady Landa. Chris. Mr. Wuttke.** Gabriel claps on the wrong beat. "Is this seat taken?" - asked the other way round | **Alejandro vs the Eraser**; **tag: Sirven + Brady vs the Bell Ringer + the Proctor**; **Mikey vs ? ? ?**; **Nicholas vs Crowned Anthony**; say his name (x3); choice; the handshake |
+| 28 | The Last Bell | he takes their names one at a time. One teacher walks through it holding a card. Who his three lieutenants were. A crown that will not come off. Then the embers stop in the air: "ATTENTION. THIS IS SECURITY." | remember him; choose who goes (15, each with their own line); **you vs THE HEADMASTER** |
+| 29 | **Code Red** | the ceiling stops falling. The Keeper seals the school one room at a time. The Headmaster, with no crown, stands in front of his students. Then something in the stopped room starts keeping time on its heels | **survive the Keeper as Mr. Lopez Tuero**; Philly shell; **Olu vs the Keeper** (until the Judge comes down) |
+| 30 | **The Verdict** | the universe on trial, with Dr. Astuto for the defence and the whole school on the stand (a toaster is admitted into evidence). Five are dead: answer him. Then the room between, in the same second they left it, and the door | choice; **you vs THE TERRAMANIA JUDGE**; **the ending (four of them)** |
+| 31 | Graduation | five names are read before any other; a different graduation for each ending | caps up |
+| 32 | Twenty Years Later | everyone comes back; a new kid is alone at the corner table | - |
+| 33 | The Next Bell | the walkie-talkie changes hands; credits; a scene after the credits for each ending | - |
 
-A save from the older 24-chapter story is moved to the same chapter in the new order the first
-time the game loads (by chapter name), but the middle of the story is new: NEW STORY is the way
-to see it.
+**The four endings** are chosen at the end of THE VERDICT (someone has to hold the door): the
+teacher, the principal, the one you sent - or the fourth, which is only offered if someone asked
+the security guard his name in chapter 1 (or you have finished the story once). After any of the
+other three, the Keeper's log says what he noticed.
+
+A save from an older version of the story (24 or 29 chapters) is moved to the same chapter in the
+new order the first time the game loads (by chapter name). The Keeper's chapters are new: they
+are open on the chapter list for anyone who had already passed them.
 
 **Quick-time events** (`js/scenes/story-play.js`). The action scenes are played, with the
 controller's own symbols on screen (and the keyboard key under them):
@@ -1212,6 +1235,35 @@ in it. `js/game/riley.js`.
 real thickness. For the photo-drawn fighters (`sprite.armBehind: true`: Erick, Loor, Olu, Riley) it grows out
 from under the shirt, and the painted arm it replaces is removed completely. The default crouching heavy no
 longer conjures a sweeping leg: the low swipe is the arm and the body drops.
+
+
+## Story mode: the Keeper, the trial and the cinema layer
+
+`js/config/story-10.js` (the five chapters above, the fourth ending and its epilogues),
+`js/scenes/story-cine.js` (what they needed from the engine) and `js/stages/keeper-stages.js`
+(four new places, which are also stages you can fight on: **The Keeper's Post**, **The Bench
+Above Everything**, **O Block** and **Loor's Pizza**).
+
+New steps for the screenplay:
+
+| Step | What it does |
+|---|---|
+| `{ aspect: 'ultra' \| 'scope' \| 'open' }` | the black bars close in (the ones above the school are speaking) or open up; the 3D lens widens to keep the shot |
+| `{ crowd: { n, x, z, aisle, look, facing } }` | **the army**: hundreds of people drawn in true depth by the 3D camera (412 of them in INCIDENT REPORT), and in rows behind the actors in flat shots. `crowdAct` (kneel, cheer, walk...), `crowdMove` (they march), `crowdLook` (their faces come back, or are taken, in a wave) |
+| `{ freeze: true, except: [...] }` / `{ thaw }` | time stops for everyone (or everyone but...): they hold the frame they were on, the embers hang, the colour drains |
+| `{ aura: [who, 'cosmic' \| 'gold' \| 'white' \| 'violet'] }` | the Keeper's rings, Olu's halo, the Judge's light, the Headmaster's dark |
+| `{ bloom }` `{ aberration }` `{ glitch }` | bright things spill light / the colours split / the picture tears |
+| `{ column }` `{ blink }` `{ seal }` | a pillar of light / someone is suddenly somewhere else / an orb closes round them |
+| `{ stamp: ['SEALED'] }` | a rubber stamp across the picture |
+| `{ panels: [a, b, c] }` | three faces at once, in slanted panels |
+| `{ cam3d: [who, 'oner' \| 'flyover' \| 'descend' \| 'worship' \| 'march' \| 'court' \| 'crash' ...] }` | camera moves that pass through several positions (any camera value can now be a list of any length) |
+| inserts `monitors` `log` `pass` `badge` `gavel` `sealmap` `door` | every universe on a wall of screens; the Keeper's incident log; a visitor's pass; a badge with a blank line; the gavel; the school closing room by room; the door between |
+| `{ brawl: { lookPlay, namePlay, until: 'judge', word } }` | play as the other side; a fight that stops the moment the Judge arrives |
+
+Three new themes in the soundtrack (`keeper`, `divine`, `court`), and the ones above the school
+have their own subtitle colours and a low tone under every line. A stage can set `horizon` (where
+its painted floor begins) so that what is on its back wall stands on the 3D floor. On a slow
+device the glow is dropped and a big army is drawn as every other soldier, automatically.
 
 ## The small things
 

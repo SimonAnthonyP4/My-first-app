@@ -8,6 +8,8 @@
 //   bounds             { left, right } x limits for fighters
 //   drawStatic(ctx, w, h)    paints everything that never moves (baked once)
 //   drawAnimated(ctx, t)     optional, paints moving bits every frame (t = frame count)
+//   horizon            optional: the y where the painted floor begins (story mode's 3D camera then
+//                      stands the back wall on its own floor instead of showing the painted one)
 RF.STAGES = [];
 
 RF.registerStage = (def) => {

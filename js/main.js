@@ -26,7 +26,7 @@
   // Say hello when a controller is plugged in / paired.
   window.addEventListener('gamepadconnected', (e) => {
     const n = [...navigator.getGamepads()].filter((p) => p && p.connected).length;
-    const ps = /dualsense|054c|playstation|wireless controller/i.test(e.gamepad.id);
+    const ps = /dualsense|054c|playstation|wireless controller/i.test((e.gamepad && e.gamepad.id) || '');
     game.toast = { text: 'P' + Math.min(n, 2) + ' ' + (ps ? 'PS5 ' : '') + 'CONTROLLER CONNECTED', t: 180 };
   });
   window.addEventListener('gamepaddisconnected', () => { game.toast = { text: 'CONTROLLER DISCONNECTED', t: 150 }; });

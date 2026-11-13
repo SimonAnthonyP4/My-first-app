@@ -483,4 +483,6 @@
       { score: null }, { fade: ['out', 60] },
     ],
   });
+  // the pieces the endings are built from (the fourth ending, in story-10.js, uses them too)
+  RF.STORY.parts = { SPEECHES, CAPS, ROLL, BRO, CROWD, SIRVEN, TEACHER, leave, GRAD_LOPEZ, GRAD_SIRVEN, GRAD_HERO };
 })();

@@ -118,7 +118,7 @@
       // ---------------------------------------------------------------- the second toll: 2016
       { whip: true }, { clear: true }, { bg: 'office' }, { flashback: true }, { amb: ['room', 'clock'] }, { score: 'memory' },
       { cast: { jauregui: ['jauregui', 40, 1, { z: 34 }], dani: kid('dani', 170, 1), marcus: kid('marcus', 206, 1, { z: -14 }), priya: kid('priya', 244, -1, { z: 14 }), tj: kid('tj', 280, -1, { z: -6 }) } },
-      { insert: 'card', text: 'THE SECOND TOLL. SEPTEMBER 2016.' }, { wait: 90 },
+      { insert: 'card', text: 'SECOND TOLL. SEPTEMBER 2016.' }, { wait: 90 },
       { cam3d: ['dani', 'flyin'] },
       { place: ['ROOM 314', 'A SATURDAY. THE DOOR WAS UNLOCKED.'] },
       { narrate: 'FOUR OF THEM HAD COME HOME FROM FOUR DIFFERENT COLLEGES. THEY HAD NOT TOLD HIM. IT WAS MEANT TO BE A SURPRISE.' },
@@ -164,7 +164,7 @@
       // ---------------------------------------------------------------- the third toll: the corner table
       { whip: true }, { clear: true }, { bg: 'cafeteria' }, { flashback: true }, { amb: ['crowd'] }, { score: 'seat' },
       { cast: { nicholas: ['nicholas', 52, 1, { z: 44 }], young: ['nicholas', 232, -1, { name: 'NICHOLAS, AGE 14', scale: 0.86 }], boy: ['anthony', -40, 1, { forgotten: true, scale: 0.86, name: '? ? ?' }] } },
-      { insert: 'card', text: 'THE THIRD TOLL. THREE YEARS AGO.' }, { wait: 90 },
+      { insert: 'card', text: 'THIRD TOLL. THREE YEARS AGO.' }, { wait: 90 },
       { cam3d: ['young', 'top'] }, { spot: 'young' },
       { place: ['THE CAFETERIA', 'THE FIRST DAY OF FRESHMAN YEAR'] },
       { narrate: 'THE CORNER TABLE. ONE TRAY. HE HAD FORGOTTEN HOW SMALL HE USED TO BE.' },
@@ -888,6 +888,8 @@
   C.length = 0; C.push(...sorted);
   // "CHAPTER 16" is written into each title card: number them again
   C.forEach((c, n) => { for (const part of [c.intro, c.outro]) for (const l of lists(part || [])) for (const s of l) if (s.title && /^CHAPTER \d+$/.test(s.title[0])) s.title = ['CHAPTER ' + n, s.title[1]]; });
+
+  Object.assign(K, { MEMORIAL, GONE, ORDER });   // (story-10.js adds to all three)
 
   // someone who was part-way through the old story: put them where they were, by chapter name
   // (run by story-war.js, once the save file can be read)

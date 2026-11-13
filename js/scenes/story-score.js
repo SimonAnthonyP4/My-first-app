@@ -1,4 +1,4 @@
-// THE COMPOSER: story mode's own soundtrack. Twenty original themes, written as chords and
+// THE COMPOSER: story mode's own soundtrack. Twenty-three original themes, written as chords and
 // melodies below and played live by a small sequencer (no audio files): a pad, an arpeggio, a
 // bass, a lead melody and drums per theme. Cue one from the script with { score: 'theme' };
 // cues cross-fade, and cueing the theme that is already playing does nothing.
@@ -232,6 +232,42 @@
       { bass: [0, _, 0, _, 0, _, 0, 0, 0, _, 0, _, 0, _, 7, 7], vol: 0.05, wave: 'sawtooth', lp: 480, len: 1 },
       { lead: LOPEZ, vol: 0.04, wave: 'sawtooth', lp: 1900, double: true },
       { drums: ['k . . k . . s . k . k . . . s .', 'k . . k . . s . k . k . s . s s'], vol: 0.12 },
+    ] },
+    // THE KEEPER - a night shift that has lasted since before the building: two notes, like a door chime, and a clock
+    keeper: { step: 17, bars: ['Dm', 'Dm', 'Bb', 'A', 'Dm', 'F', 'Gm', 'A'], parts: [
+      { pad: true, vol: 0.02, wave: 'sine', oct: -12 },
+      { bass: [0, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], vol: 0.05, len: 15, wave: 'sine' },
+      { lead: [
+        'A5 - - - F5 - - - . . . . . . . .', '. . . . . . . . A5 - - - D5 - - -',
+        'Bb5 - - - F5 - - - . . . . . . . .', '. . . . . . . . E5 - - - C#5 - - -',
+        'A5 - - - F5 - - - . . . . D5 - - -', 'C6 - - - A5 - - - . . . . F5 - - -',
+        'Bb5 - - - G5 - - - . . . . D5 - - -', 'E5 - - - - - - - C#5 - - - - - - -',
+      ], vol: 0.05, wave: 'sine', kind: 'pluck', oct: 0, double: true },
+      { drums: ['h . . . h . . . h . . . h . . .'], vol: 0.035 },
+    ] },
+    // OLU - church upstairs, the block downstairs: a choir line over a bounce that never stands still
+    divine: { step: 7, bars: ['Cm', 'Cm', 'Ab', 'Bb', 'Cm', 'Eb', 'Ab', 'G'], parts: [
+      { pad: true, vol: 0.014 },
+      { bass: [0, _, _, 0, _, _, 0, _, _, _, 0, _, _, 0, _, 7], vol: 0.07, len: 2, wave: 'sine' },
+      { lead: [
+        'G5 - - - - - Eb5 - - - - - C5 - - -', 'G5 - - - - - Bb5 - - - - - G5 - - -',
+        'Ab5 - - - - - Eb5 - - - - - C5 - - -', 'Bb5 - - - - - - - D5 - - - F5 - - -',
+        'C6 - - - - - G5 - - - - - Eb5 - - -', 'Bb5 - - - - - G5 - - - - - Eb5 - - -',
+        'Ab5 - - - - - C6 - - - - - Ab5 - - -', 'G5 - - - - - - - B4 - - - D5 - - -',
+      ], vol: 0.05, wave: 'sine', oct: 0, double: true },
+      { drums: ['k . h . s . h h k . h k s . h h', 'k . h h s . h . k k h . s h h h'], vol: 0.1 },
+    ] },
+    // THE BENCH - a procession: everyone stands until it has finished
+    court: { step: 12, bars: ['Am', 'E', 'F', 'C', 'Dm', 'Am', 'F', 'E'], parts: [
+      { pad: true, vol: 0.016, wave: 'sawtooth', lp: 900 },
+      { bass: [0, _, _, _, _, _, _, _, 7, _, _, _, _, _, _, _], vol: 0.06, len: 7 },
+      { lead: [
+        'A4 - - - - - A4 - C5 - - - E5 - - -', 'E5 - - - - - D5 - B4 - - - G#4 - - -',
+        'A4 - - - - - A4 - C5 - - - F5 - - -', 'E5 - - - - - - - G5 - - - E5 - - -',
+        'F5 - - - - - E5 - D5 - - - A4 - - -', 'C5 - - - - - B4 - A4 - - - E4 - - -',
+        'F4 - - - - - A4 - C5 - - - F5 - - -', 'E5 - - - - - - - - - - - . . . .',
+      ], vol: 0.06, wave: 'triangle', double: true },
+      { drums: ['t . . . . . . . t . . . t . t .', 't . . . . . . . t . . . . . . .'], vol: 0.12 },
     ] },
   };
 

@@ -223,6 +223,7 @@
   P.screenPos = function (a, up) {
     const v = this.view;
     if (!v || !a) return null;
+    up += (a.def && a.def.sprite && a.def.sprite.hover) || 0;   // (someone who floats)
     if (v.kind === '3d') { const p = v.proj(a.x, a.y + up, a.z || 0); return p && { x: p.x, y: p.y, k: p.k }; }
     const dx = (a.x - v.cx) * v.z, dy = (this.floorY() - a.y - up - v.cy) * v.zy, c = Math.cos(v.rot || 0), sn = Math.sin(v.rot || 0);
     return { x: v.tx + dx * c - dy * sn, y: v.ty + dx * sn + dy * c, k: v.z };

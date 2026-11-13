@@ -34,8 +34,8 @@ RF.CHARACTERS = [
     name: 'Bruiser',
     archetype: 'tank',
     placeholder: true,
-    origin: 'TBD',
-    bio: 'Placeholder tank for the prototype.',
+    origin: 'Universe 0417',
+    bio: 'The strongest student another Terramania High ever had. It was not enough. He kept standing anyway.',
     special: 'seismicSlam',   // see specials.js
     throw: 'liftSlam',        // see throws.js
     finisher: 'pileDriver',   // see game/finishers.js
@@ -73,8 +73,8 @@ RF.CHARACTERS = [
     name: 'Viper',
     archetype: 'light',
     placeholder: true,
-    origin: 'TBD',
-    bio: 'Placeholder light fighter for the prototype.',
+    origin: 'Universe 2203',
+    bio: 'Faster than a rumor. The last one standing at her own Terramania High, until the day there were two of them.',
     special: 'venomSpit',
     throw: 'snakeBite',
     finisher: 'venomMelt',

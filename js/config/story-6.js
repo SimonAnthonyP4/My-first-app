@@ -252,4 +252,5 @@
       { if: ending('hero'), then: POST_HERO, else: [{ if: ending('sirven'), then: POST_SIRVEN, else: POST_LOPEZ }] },
     ],
   });
+  Object.assign(RF.STORY.parts, { KING, Y_LOPEZ, Y_SIRVEN, Y_HERO, HANDOVER, ROOM_314, DISMISSED, LAST_LOPEZ, LAST_SIRVEN, LAST_HERO, POST_LOPEZ, POST_SIRVEN, POST_HERO });
 })();

@@ -6,7 +6,9 @@
 //   { restoreAll: true }    every one of the Forgotten in the scene gets their face back
 //   { brawl: { ..., look: 'crown' | 'emperor' | 'forgotten' | 'plain' | 'rift',     who you fight
 //              partner, vsPartner,                                                  a TAG fight (2 v 2)
-//              survive: seconds } }                                                 he cannot be hurt: last the clock
+//              survive: seconds, word: 'DENIED.',                                   he cannot be hurt: last the clock
+//              lookPlay: 'emperor' | ...,                                           who YOU are (to play the other side)
+//              until: 'judge' } }                                                   the fight stops the moment the Judge arrives
 //   inserts: 'army' (the horde, the throne above it), 'portals' (every class arriving),
 //            'card2016' (what was in the desk for twelve years), 'memorial' (the names)
 // Loaded after story-fights.js.
@@ -57,16 +59,17 @@
   P.startBrawl = function (f) {
     const hero = this.resolve(f.play) || RF.STORY.heroes[0];
     const dress = (id, look) => (LOOKS[look] || LOOKS.rift)(RF.getCharacter(this.resolve(id)));
-    const p1 = RF.getCharacter(hero), p2 = dress(f.vs, f.plain ? 'plain' : f.look);
+    const p1 = f.lookPlay ? (LOOKS[f.lookPlay] || LOOKS.plain)(RF.getCharacter(hero)) : RF.getCharacter(hero), p2 = dress(f.vs, f.plain ? 'plain' : f.look);
     if (f.name) p2.name = f.name;
+    if (f.namePlay) this._p1 = Object.assign({}, p1, { name: f.namePlay });
     this.paused = { score: RF.storyScore && RF.storyScore.current, amb: amb.last };
     const tally = K.run.tally || { perfect: 0, good: 0 };
     K.leaveStory();
     const tag = f.partner ? { p1b: RF.getCharacter(this.resolve(f.partner)), p2b: dress(f.vsPartner || f.vs, f.look2 || (f.plain ? 'plain' : f.look)), costumes: [0, 0] } : undefined;
     this.game.setScene(new RF.VersusScene(this.game, {
-      p1, p2, p2Alt: p1.id === p2.id && !p2.costume, stage: f.stage || (this.bgDef && this.bgDef.id) || 'court', cpu: true, cpuLevel: f.cpu || 'normal', boss: f.boss || 0,
+      p1: f.namePlay ? this._p1 : p1, p2, p2Alt: p1.id === p2.id && !p2.costume, stage: f.stage || (this.bgDef && this.bgDef.id) || 'court', cpu: true, cpuLevel: f.cpu || 'normal', boss: f.boss || 0,
       roundsToWin: f.rounds || 1, tag,
-      story: { index: this.index, mid: f.mid, hero: this.hero || hero, resume: this, survive: f.survive || 0, meter: Math.min(RF.CONFIG.SUPER_MAX, tally.perfect * 60 + tally.good * 25) },
+      story: { index: this.index, mid: f.mid, hero: this.hero || hero, resume: this, survive: f.survive || 0, word: f.word, until: f.until, meter: Math.min(RF.CONFIG.SUPER_MAX, tally.perfect * 60 + tally.good * 25) },
     }));
   };
   // the chapter's own fight can be dressed too ({ fight: { ..., look: 'emperor' } })
@@ -86,11 +89,16 @@
   RF.storyTick = function (scene) {
     tick(scene);
     const st = scene.opts.story;
+    // the Keeper falls, the Judge comes down for him, and that is where the scene picks up
+    if (st.until === 'judge' && st.resume && scene.fighters[1].judgeUsed) {
+      if ((scene.untilT = (scene.untilT || 0) + 1) > 112) { st.resume.state.judge = true; scene.game.setScene(st.resume); st.resume.afterBrawl(); }
+      return;
+    }
     if (!st.survive) return;
     const me = scene.fighters[0], foe = scene.fighters[1];
     if (scene.phase === 'fight') {
       if (!scene.surviveOn) { scene.surviveOn = true; scene.timer = st.survive * RF.CONFIG.FPS; scene.effects.spawnText('YOU CANNOT WIN. SURVIVE.', RF.CONFIG.WIDTH / 2, 150, '#ff4040'); }
-      if (foe.health < foe.maxHealth) { foe.health = foe.maxHealth; if (scene.frame % 40 === 0) scene.effects.spawnText('NOTHING.', foe.x, foe.body.height + 16, '#b070ff'); }
+      if (foe.health < foe.maxHealth) { foe.health = foe.maxHealth; if (scene.frame % 40 === 0) scene.effects.spawnText(st.word || 'NOTHING.', foe.x, foe.body.height + 16, st.word ? '#8fe6ff' : '#b070ff'); }
     } else if (scene.surviveOn && scene.phase !== 'intro' && scene.phase !== 'entrance') {   // time ran out, or you went down: either way the scene carries on
       if ((scene.surviveEnd = (scene.surviveEnd || 0) + 1) < 70) return;                     // (after a beat: let the last hit land)
       st.resume.state.survived = me.health > 0 && !me.isKO;

@@ -20,8 +20,10 @@
       const draw0 = sp.draw;
       sp.draw = function (ctx, anim, frame, x, y, facing, tint) {
         const lift = anim === 'ko' || anim === 'dazed' ? hv * 0.25 : hv, bob = Math.sin(performance.now() / 330) * 1.6;
-        ctx.save(); ctx.globalAlpha *= 0.34; ctx.fillStyle = '#000';          // the shadow stays on the floor
-        const sh = 1 - Math.min(0.4, lift / 60); ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y) + 1, 24 * sh, 4.5 * sh, 0, 0, 7); ctx.fill(); ctx.restore();
+        if (RF.hoverShadow !== false) {                                       // (a story scene that has lifted them higher draws the floor shadow itself)
+          ctx.save(); ctx.globalAlpha *= 0.34; ctx.fillStyle = '#000';          // the shadow stays on the floor
+          const sh = 1 - Math.min(0.4, lift / 60); ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y) + 1, 24 * sh, 4.5 * sh, 0, 0, 7); ctx.fill(); ctx.restore();
+        }
         return draw0.call(this, ctx, anim, frame, x, y - lift - bob, facing, tint);
       };
     }
