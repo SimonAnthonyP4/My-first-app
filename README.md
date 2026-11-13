@@ -1204,13 +1204,12 @@ Amateur boxer from Ecuador who works at the pizza place (**130% health**, boxer)
 friend's picture (mirrored to face right; the glasses are painted on because the face is tiny at
 this size). 10% damage reduction, fast hands.
 
-- **Block: the boxer's high guard** (`js/game/blocks.js`). Two red gloves come up in front of his
-  face and he bounces on his toes behind them; a hit shakes them and sparks (GLOVES UP.). Crouching
-  drops the guard to his body.
+- **Block: the boxer's high guard.** His gloves are painted onto his hands in the sprite (red gloves
+  with white cuffs, so the punching arm ends in a glove too); he keeps them up at his chin, tucks in
+  behind them to block, and a hit sparks off them (GLOVES UP.). Crouching drops the guard.
 - **A different punch for every attack** (`js/game/loor.js`): light = jab, heavy = hook, launcher =
   uppercut, crouching light = body shot, crouching heavy = low sweeping hook, jump light = jab, jump
-  heavy = overhand down from above. Each one draws its glove, an afterimage trail and a spark where
-  it lands.
+  heavy = overhand down from above. Each one has a speed trail and a spark where it lands.
 - **Command specials:** DOWN, FORWARD + LIGHT **Jab Flurry** (six fast jabs, stepping in on every
   one, the sixth launches), + HEAVY **Haymaker Rush** (a charging right hand); DOWN, BACK + LIGHT
   **Bob & Weave** (slips an attack and counters), + HEAVY **Gazelle Punch** (a leaping uppercut,
@@ -1266,7 +1265,7 @@ and every move is something he draws that then hits you.
 ### Every fighter has their own block
 
 Nine fighters had none, or had one that did not read on screen. They have one now
-(`js/game/blocks.js`): **Loor** the high guard, **Alejandro** the stomp and rock shield, **Olu** the
+(`js/game/blocks.js`): **Loor** the high guard (gloves on his hands), **Alejandro** the stomp and rock shield, **Olu** the
 shell with a ringing gold arc (SHELL UP.), **Bandy** the skateboard deck on its edge (NICE TRY.),
 **Ms. Brady** a clipboard marked DENIED. in red pen, **Javan** the blocking sled (DEFENSE!),
 **Trump** a podium with the seal and two rattling microphones (WRONG.), **Urbanik** a Rorschach

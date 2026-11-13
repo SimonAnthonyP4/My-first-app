@@ -1,6 +1,6 @@
 // BLOCKS: every fighter has one of their own. Pressing BLOCK raises it; a hit makes it flare (f.shieldHit) and
 // say something. This file is the ones that were missing:
-//   CHRIS LOOR     highGuard    the boxer's high guard: two red gloves up in front of his face, bouncing on his toes
+//   CHRIS LOOR     highGuard    the boxer's high guard (his gloves are painted onto his hands in his sprite; a hit sparks off them)
 //   ALEJANDRO      rockShield   he STOMPS (the ground cracks, dust, a shake) and a slab of rock punches up out of the floor
 //   OLU            shellUp      the Philly shell, with a gold ring that rings when it takes one
 //   BANDY          skateGuard   the deck, held up on its edge (stickers and all)
@@ -27,14 +27,14 @@
 
   const fx = {
     // ---- Chris Loor: gloves up ----
-    highGuard(f, ctx, floorY, t) {
+    highGuard(f, ctx, floorY, t) {         // (the gloves are painted onto his hands in his sprite: this is what a hit does to them)
       const g = guardBox(f, floorY); if (!g) return;
-      const rise = Math.min(1, f.stateTime / 4), bob = Math.sin(t / 5) * 1.3 * (g.k > 0 ? 0 : 1), shake = g.k > 0 ? (hash(t) - 0.5) * 4 * g.k : 0;
-      const y = g.top + 15 + bob + (1 - rise) * 10, x = f.facing * (f.body.width / 2 - 9) + shake;
-      ctx.save(); ctx.translate(f.x, 0); ctx.scale(f.facing, 1);
-      glove(ctx, x - 5, y + 8, g.k > 0.3); glove(ctx, x + 1, y - 2, g.k > 0.3);        // the back glove low, the lead glove at the chin
-      if (g.k > 0) { ctx.globalAlpha = g.k; R(ctx, '#ffffff', x + 9, y - 5, 2, 2); R(ctx, '#ffe27a', x + 12, y + 1, 3, 1); R(ctx, '#ffffff', x + 10, y + 6, 2, 2); ctx.globalAlpha = 1; }
-      ctx.restore();
+      if (g.k > 0) {
+        const x = f.x + f.facing * (f.body.width / 2 - 2), y = g.top + 17;
+        ctx.save(); ctx.globalAlpha = g.k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+        for (let r = 0; r < 5; r++) { const an = r * 1.26 + 0.3, d0 = 5, d1 = 7 + (1 - g.k) * 8; ctx.beginPath(); ctx.moveTo(x + f.facing * 7 + Math.cos(an) * d0 * f.facing, y + Math.sin(an) * d0); ctx.lineTo(x + f.facing * 7 + Math.cos(an) * d1 * f.facing, y + Math.sin(an) * d1); ctx.stroke(); }
+        ctx.restore(); ctx.lineWidth = 1;
+      }
       if (g.k > 0.4) T(ctx, 'GLOVES UP.', f.x, g.top - 22, '#ff5a4a');
     },
 

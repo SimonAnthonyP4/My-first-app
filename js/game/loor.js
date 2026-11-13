@@ -46,7 +46,6 @@
     const u = Math.min(1, w.age / (m.active + 2)), a = Math.max(0, 1 - w.age / w.life), at = (uu) => { const p = path(Math.max(0, uu), m, cx, cy); return [f.x + f.facing * p[0], floorY - f.y - p[1]]; };
     ctx.save();
     for (let i = 5; i >= 1; i--) { const [x, y] = at(u - i * 0.1); ctx.globalAlpha = a * (0.5 - i * 0.07); R(ctx, opt.trail || '#ffe0d0', x - 3 * f.facing, y - 1, 6, 2, 0); }       // speed streaks
-    for (let i = 2; i >= 0; i--) { const [x, y] = at(u - i * 0.13); ctx.globalAlpha = a * (1 - i * 0.35); gloveAt(ctx, x, y, f.facing, i === 0 && u > 0.7); }
     if (u > 0.75) { const [x, y] = at(1), k = (u - 0.75) * 4; ctx.globalAlpha = a; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; for (let r = 0; r < 4; r++) { const an = r * 1.57 + 0.4; ctx.beginPath(); ctx.moveTo(x + f.facing * 9 + Math.cos(an) * 4, y + Math.sin(an) * 4); ctx.lineTo(x + f.facing * 9 + Math.cos(an) * (7 + k * 6), y + Math.sin(an) * (7 + k * 6)); ctx.stroke(); } }
     ctx.restore(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
   };
@@ -83,7 +82,7 @@
     draw(f, ctx, floorY) {
       const d = f.specialData; if (!d.at) return; const [i, fr] = d.at, a = f.scene.frame - fr; if (a > 5) return;
       const y = floorY - f.y - f.body.height * (0.6 - 0.07 * (i % 3)), x = f.x + f.facing * (f.body.width / 2 + 14 + a * 3);
-      ctx.globalAlpha = 1 - a / 6; gloveAt(ctx, x, y, f.facing, true); for (let r = 1; r < 4; r++) R(ctx, '#ffe0d0', x - f.facing * (8 + r * 7), y - 1, 5, 2, 0); ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1 - a / 6; for (let r = 1; r < 4; r++) R(ctx, '#ffe0d0', x - f.facing * (8 + r * 7), y - 1, 5, 2, 0); ctx.globalAlpha = 1;
     },
   };
 
