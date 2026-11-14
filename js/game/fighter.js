@@ -109,9 +109,9 @@
       if (state === 'block' && prev !== 'blockstun' && this.def.blockStart && RF.BLOCK_START && RF.BLOCK_START[this.def.blockStart]) RF.BLOCK_START[this.def.blockStart](this);   // (Alejandro stomps as he raises it)
       // Only these states can be done low; everything else stands you up.
       if (!['crouch', 'block', 'blockstun', 'attack'].includes(state)) this.crouching = false;
-      if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; this.wallBounced = false; }
+      if (state !== 'hitstun') { this.juggle = 0; this.bounced = false; this.spiked = false; this.wallBounced = false; this.crazyHold = false; }
       if (state !== 'special') {
-        this.superActive = false; this.exActive = false;
+        this.superActive = false; this.exActive = false; this.crazyCommitted = false;
         if (this.baseSpecial && this.special !== this.baseSpecial) { this.special = this.baseSpecial; this.specialKind = RF.SPECIAL_KINDS[this.special.kind]; }
       }
       if (state !== 'jump' && state !== 'attack') this.airCombo = false;
@@ -576,6 +576,7 @@
       if (this.wantsLastStand(input)) return this.startLastStand();
       // EX pressed while LAST STAND is ready: wait a couple of frames for HEAVY (L2 + R2 together)
       if (this.lastStandReady() && input.pressed('ex', 2) && input instanceof RF.PlayerInput) return;
+      if (this.crazyReady && this.crazyReady() && (input.pressed('cmdCrazy') || (input.pressed('ex') && !(this.lastStandReady() && input.held('heavy'))))) { input.consume('cmdCrazy'); input.consume('ex'); return this.startCrazy(); }   // CRAZY SPECIALS (game/crazy.js)
       if (this.wantsSuper(input)) return this.startSuper();
       const cmd = this.commandPressed(input);
       if (cmd) return this.startCommand(cmd);
@@ -802,6 +803,7 @@
       if (this.state === 'hitstun' && !this.grounded && this.juggle >= RF.CONFIG.JUGGLE_LIMIT) return null;
       if (this.state === 'knockdown' || this.state === 'wakeup') return null; // on the floor / getting up
       if (this.hidden) return null; // mid-teleport
+      if (this.crazyCommitted && this.state === 'special') return null;   // a crazy special can only be stopped in its wind-up
       if (this.state === 'special' && this.special.invuln && this.stateTime < this.special.invuln) return null; // invincible start (anti-airs)
       // Backdash: briefly untouchable as you slip away.
       if (this.state === 'dash' && (this.dashDir !== this.facing || this.def.teleport) && this.stateTime <= 6) return null;
@@ -935,6 +937,7 @@
 
     knockOut(dir) {
       if (this.def.reviveAs && !this.judgeUsed && this.summonJudge()) return;
+      if (RF.crazyRevive && RF.crazyRevive(this)) return;   // Javan waves the flag and gets back up (game/crazy.js)
       // The match-deciding blow leaves them dazed instead: FINISH THEM!
       if (this.scene && this.scene.secondWind && this.scene.secondWind(this)) return; // the rift tower's last boss gets back up once
       if (this.scene && this.scene.tryDaze(this)) return;
@@ -964,7 +967,7 @@
         case 'crouch': return ['crouch', 0];
         case 'block':
         case 'blockstun': return [this.crouching ? 'crouchBlock' : 'block', 0];
-        case 'hitstun': { const r = this.stateTime / (this.stateTime + Math.max(1, this.stun)); return ['hit', this.grounded ? Math.max(0, (r - 0.45) / 0.55) : 0]; }
+        case 'hitstun': { if (this.crazyHold) return ['idle', 0]; const r = this.stateTime / (this.stateTime + Math.max(1, this.stun)); return ['hit', this.grounded ? Math.max(0, (r - 0.45) / 0.55) : 0]; }
         case 'throwReach': return ['throw', 0];
         case 'throwing': return this.throwKind.anim(this, this.stateTime);
         case 'thrown': return this.thrownPose || ['hit', 0];

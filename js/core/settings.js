@@ -33,6 +33,10 @@
       options: [[true, 'ON'], [false, 'OFF']],
     },
     {
+      id: 'CRAZY_SPECIALS', label: 'CRAZY SPECIALS',
+      options: [[true, 'ON'], [false, 'OFF']],
+    },
+    {
       id: 'BLOOD', label: 'BLOOD',
       options: [[true, 'ON'], [false, 'OFF']],
     },

@@ -294,6 +294,7 @@
       this.separate(a, b, bounds);
       this.updateProjectiles(bounds);
       if (RF.rocksUpdate) RF.rocksUpdate(this);   // Alejandro's spikes and walls (game/rocks.js)
+      if (RF.crazyTick) RF.crazyTick(this);       // crazy specials (game/crazy.js)
 
       RF.checkHazards(this); // also ticks the hazard's effect
       if (this.phase === 'fight' || (this.phase === 'finish' && !this.finisher)) {
@@ -1057,6 +1058,7 @@
             p.dead = true;
             const res = this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
             if (res === 'hit' && p.cfg.hitText) this.effects.spawnText(p.cfg.hitText, target.x, target.body.height + 30, '#ffffff');
+            if (res === 'hit' && p.cfg.crazyKO && RF.crazyOn(this)) { RF.crazyIce(this, target); RF.crazyKO(this, p.owner, target, p.cfg.koText || 'KNOCKED OUT.', '#a0e8ff'); }   // a frozen Bro Batch bar
           }
         }
       }
@@ -1171,6 +1173,7 @@
       if (RF.drawDivine) RF.drawDivine(this, ctx, floorY);
       if (RF.drawKeeper) RF.drawKeeper(this, ctx, floorY);
       if (RF.drawRocks) RF.drawRocks(this, ctx, floorY);
+      if (RF.drawCrazy) RF.drawCrazy(this, ctx, floorY);
       for (const f of this.fighters) {
         if (f.state === 'special' && f.specialKind.draw) f.specialKind.draw(f, ctx, floorY, this.frame);
         if (f.state === 'throwing' && f.victim && f.throwKind.draw) f.throwKind.draw(f, f.victim, ctx, floorY, this.frame);

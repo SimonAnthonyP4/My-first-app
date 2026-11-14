@@ -78,6 +78,7 @@ RF.CONFIG = {
   TOUCH_SWAP: false,       // left-handed: stick on the right
   ANNOUNCER: true,
   DYNAMIC_CAMERA: true,
+  CRAZY_SPECIALS: true,    // once-a-match instant-knockout moves for Javan, Nicholas, Anthony and Gabriel (game/crazy.js)
   // Party mods (title menu -> PARTY MODS). Not saved: they reset when the page reloads.
   MOD_BIGHEAD: false, MOD_LOWGRAV: false, MOD_TURBO: false, MOD_TRIPLE: false, MOD_PROTEIN: false, MOD_RANDOM: false, MOD_ITEMS: false,   // zoom in when the fighters are close; punch in on supers and finishers
   TRAINING_DUMMY: 'stand',

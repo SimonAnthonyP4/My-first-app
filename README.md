@@ -1238,6 +1238,29 @@ rainbow; the grey stripes on his polo are painted as a pride stripe.
   the photo is torn in half. **Brutality:** DEVELOPED.
 - About 50% against the hard computer.
 
+## Crazy specials
+
+Settings -> **CRAZY SPECIALS** (on by default; not used in Story, Training, Tag or the Rift Tower). Four
+fighters get a once-a-match move that wins the round outright. Press **EX** (L2 on a pad) when
+**CRAZY SPECIAL READY** shows over them (`js/game/crazy.js`).
+
+- **Javan: Quite Frankly.** When he is knocked out he waves the Israel flag, comes back at full
+  health (once a match), and the ability is back: Trump walks in, says "Quite... frankly.", and knocks
+  them out. (`afterRevive: true` in the file; delete it to have it from the start of the match.)
+- **Nicholas: Frozen Bro Batch.** After he has been knocked out once. He opens a freezer and throws a
+  frozen Bro Batch bar. A hit is an instant knockout (flash-frozen in ice); it can be blocked or jumped.
+- **Anthony: Abs Out.** After he has been knocked out once. He lifts his shirt on a perfect set of abs,
+  says "I hate my body", "I'm so fat", and mumbles. Anyone within 150 pixels is hypnotised and goes out
+  cold. Stand further away and "NO ONE WAS LOOKING."
+- **Gabriel: Hypno Dance.** After he has been knocked out once. A dance, with spirals in the eyes of
+  anyone within 200 pixels, who then fall asleep.
+
+It is never free: the first half second is a wind-up in which a hit stops it (and it is still spent).
+After that the move cannot be interrupted and the target is held in place. The Trump line is a stock
+voice read at his pace (`assets/audio/quite_frankly.mp3`), not his real voice; swap the file to change it.
+Against the hard computer: Javan goes from 56% to about 92%, Gabriel is about 71%, Nicholas 58%,
+Anthony 67%. They are meant to be a lot of fun, not fair.
+
 ## The versus screen and the entrances
 
 **Versus** (`js/scenes/versus-scene.js`). The stage you picked looms behind, dark and slowly pushing
