@@ -64,7 +64,7 @@
       this.area = { x0: x - 135, x1: x + 135, y0: y - Math.floor((spacing - 7) / 2) - 1, step: spacing };
       this.items.forEach((item, i) => {
         const sel = i === this.index;
-        const color = sel ? '#ffffff' : '#8a7a78';
+        const color = sel ? '#ffffff' : '#c0b0a8';
         const yy = y + i * spacing;
         if (sel) RF.drawSlash(ctx, x, yy, Math.max(120, RF.font.textWidth(item.label, opts.scale || 1) + 60), 7 * (opts.scale || 1) + 4, t);
         if (item.setting) {

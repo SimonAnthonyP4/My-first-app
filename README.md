@@ -1238,6 +1238,34 @@ rainbow; the grey stripes on his polo are painted as a pride stripe.
   the photo is torn in half. **Brutality:** DEVELOPED.
 - About 50% against the hard computer.
 
+## The main menu
+
+`js/scenes/title-scene.js`. A PRESS ANY BUTTON screen first (the logo burning, four fighters waiting in
+the dark at the edges), then the menu:
+
+- **The logo** is drawn once to its own canvas: bone white down to a bright blood red with a hard
+  dark edge, so every letter reads (the old one faded to black at the bottom, which turned the E into
+  an F). The blood only runs from the feet of the letters.
+- **Left:** one panel with where you are (MAIN MENU / FIGHT / ...), the rows, and what the chosen row
+  does in a fixed place under them. The red bar glides between rows, a new page slides its rows in one
+  after another, and the description fades in.
+- **Right:** the featured fighter standing on a plate with their name, what they are and their line.
+- **Bottom:** your rank, and a tip. Everything you read is drawn after the film grain and the
+  vignette, so it stays crisp right to the edges of the screen.
+
+The other menus (settings, extras) use brighter text for the rows that are not selected.
+
+## Two more stages
+
+`js/stages/art-stages.js` (21 stages now).
+
+- **The Photo Studio** (Escudero): a roll of white seamless paper, a softbox, an umbrella light,
+  polaroids on a string, a pride flag, STRIKE A POSE in neon. The lights pop every few seconds.
+  **Hazard: OVEREXPOSED!** the big strobe against the right wall. Music: "Strike a Pose".
+- **The Art Room** (David P.): afternoon light through tall windows, a half-finished mural, shelves
+  of paint, a plaster bust, easels, and a floor that has seen every colour. **Hazard: PAINTED!** the
+  shelf of open paint cans against the left wall. Music: "Wet Paint".
+
 ## Crazy specials
 
 Settings -> **CRAZY SPECIALS** (on by default; not used in Story, Training, Tag or the Rift Tower). Four
