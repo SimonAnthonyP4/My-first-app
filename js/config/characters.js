@@ -2549,7 +2549,7 @@ RF.CHARACTERS = [
         ],
         uppercut: [
           { crouch: true, arm: 'back' },
-          { arm: 'up', head: [2, -3], torso: [1, -3] },
+          { arm: 'up', head: [2, -1], torso: [1, -1] },
           { arm: 'up', head: [1, -1] },
         ],
       },

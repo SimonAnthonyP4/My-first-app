@@ -97,7 +97,7 @@
     ],
     uppercut: [
       F({ crouch: true, arm: 'back' }),
-      F({ arm: 'up', legs: 'chamber', head: [2, -4], torso: [1, -4] }),
+      F({ arm: 'up', head: [2, -1], torso: [1, -1] }),      // (no chambered knee, and the body no longer lifts clear of the hips: both made gaps: the raised leg floated free of the hip on the drawn fighters)
       F({ arm: 'up', head: [1, -1], torso: [0, -1] }),
     ],
     crouch: [F({ crouch: true })],

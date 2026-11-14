@@ -247,7 +247,7 @@
       scale: 1,
       limbScale: 4,
       crouchSquash: true,
-      shoulder: [36, 17],
+      shoulder: [31, 18],
       footCol: 22,
       crouchDrop: 10,
       armThickness: 1.8,
