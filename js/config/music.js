@@ -296,6 +296,22 @@
       bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'A5 - - - - - F5 - - - E5 - D5 - - -', 'D5 - - - - - - - F5 - - - G5 - - -', 'E5 - - - - - G5 - - - B5 - - - A5 -', 'E5 - - - - - - - - - - - . . . .'] },
       drums: { bars: [BRUSH, BRUSH, BRUSH, 'b . m . p . m . . . m b p . p p'] },
     } },
+    // ---- THE PHOTO STUDIO: "Strike a Pose" - four on the floor, a bass that bounces in octaves.
+    studio: { bpm: 118, clean: true, drumVolume: 0.7, tracks: {
+      sub: { instrument: 'sub', volume: 0.3, bars: ['A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 A1', 'F1 . F2 . F1 . F2 . F1 . F2 . F1 . F2 F1', 'C2 . C3 . C2 . C3 . C2 . C3 . C2 . C3 C2', 'G1 . G2 . G1 . G2 . G1 . G2 . G1 . B1 D2'] },
+      keys: { instrument: 'keys', volume: 0.16, pan: -0.3, bars: ['. . E4 . . . C4 E4 . . E4 . . C4 . E4', '. . F4 . . . C4 F4 . . F4 . . A3 . C4', '. . E4 . . . C4 G4 . . E4 . . C4 . E4', '. . D4 . . . B3 D4 . . G4 . . D4 . B3'] },
+      pad: { instrument: 'pad', volume: 0.07, bars: [hold('E4'), hold('F4'), hold('E4'), hold('D4')] },
+      bell: { instrument: 'bell', volume: 0.13, pan: 0.3, bars: [...rest(4), 'A5 - - - G5 - E5 - - - C5 - D5 - E5 -', 'F5 - - - - - A5 - - - G5 - F5 - - -', 'G5 - - - E5 - C5 - - - E5 - G5 - - -', 'D5 - - - - - B4 - D5 - - - . . . .'] },
+      drums: { bars: ['b . x . b+p . x . b . x . b+p . x x', 'b . x . b+p . x . b . x . b+p . x .', 'b . x . b+p . x . b . x . b+p . x x', 'b . x . b+p . x m b . x m b+p p x x'] },
+    } },
+    // ---- THE ART ROOM: "Wet Paint" - an afternoon with nothing due.
+    artroom: { bpm: 76, clean: true, drumVolume: 0.45, tracks: {
+      keys: { instrument: 'keys', volume: 0.2, bars: loop([arp('F3', 'A3', 'C4', 'E4', 'C4', 'A3', 'C4', 'E4'), arp('D3', 'F3', 'A3', 'C4', 'A3', 'F3', 'A3', 'C4'), arp('A#2', 'D3', 'F3', 'A3', 'F3', 'D3', 'F3', 'A3'), arp('C3', 'E3', 'G3', 'A#3', 'G3', 'E3', 'G3', 'A#3')], 2) },
+      pad: { instrument: 'pad', volume: 0.06, bars: [hold('A3'), hold('F3'), hold('D3'), hold('E3')] },
+      sub: { instrument: 'sub', volume: 0.26, bars: ['F1 - - - - - - - F1 - - - C2 - - -', 'D2 - - - - - - - D2 - - - A1 - - -', 'A#1 - - - - - - - A#1 - - - F1 - - -', 'C2 - - - - - - - C2 - - - G1 - E1 -'] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'A5 - - - - - G5 - F5 - - - - - C5 -', 'F5 - - - - - E5 - D5 - - - - - - -', 'D5 - - - F5 - - - A5 - - - G5 - - -', 'E5 - - - - - - - - - - - . . . .'] },
+      drums: { bars: [BRUSH, BRUSH, BRUSH, 'b . m . p . m . . b m b p . p .'] },
+    } },
   });
 
   // ---- THE THRONE BETWEEN: "Headmaster" - a slow crawl on a tritone, with a bell-like lead.
