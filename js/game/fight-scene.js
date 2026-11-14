@@ -1058,7 +1058,7 @@
             p.dead = true;
             const res = this.applyHit(p.owner, target, p.move, 'hit', p.x, p.y + p.h / 2);
             if (res === 'hit' && p.cfg.hitText) this.effects.spawnText(p.cfg.hitText, target.x, target.body.height + 30, '#ffffff');
-            if (res === 'hit' && p.cfg.crazyKO && RF.crazyOn(this)) { RF.crazyIce(this, target); RF.crazyKO(this, p.owner, target, p.cfg.koText || 'KNOCKED OUT.', '#a0e8ff'); }   // a frozen Bro Batch bar
+            if (res === 'hit' && p.cfg.crazyKO && RF.crazyOn(this)) RF.crazyShotHit(this, p, target);   // a crazy special's projectile (game/crazy.js)
           }
         }
       }
@@ -1321,8 +1321,9 @@
           ['FINISH THEM: THROW', (RF.FINISHERS[d.finisher] || {}).name || '-', '#ff6050'],
           ['FINISH THEM: HIT 5X', (d.brutality || {}).name || 'BRUTALITY', '#ff6050'],
         ];
+        if (d.crazy && RF.crazyOn && RF.crazyOn(this)) rows.splice(10, 0, ['EX WHEN READY (1X MATCH)', 'CRAZY: ' + (RF.SPECIALS[d.crazy.special] || {}).name, '#ff4fd8']);
         rows.forEach(([k, v, col], j) => {
-          const y = 32 + j * 14;
+          const y = 32 + j * (rows.length > 12 ? 13 : 14);
           if (k) T(ctx, k, x + 6, y, { color: '#a89888', outline: '#000' });
           T(ctx, String(v).toUpperCase(), x + 6, y + (k ? 7 : 0), { color: col, outline: '#000', scale: k ? 1 : 1 });
         });

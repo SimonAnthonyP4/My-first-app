@@ -1255,11 +1255,63 @@ fighters get a once-a-match move that wins the round outright. Press **EX** (L2 
 - **Gabriel: Hypno Dance.** After he has been knocked out once. A dance, with spirals in the eyes of
   anyone within 200 pixels, who then fall asleep.
 
-It is never free: the first half second is a wind-up in which a hit stops it (and it is still spent).
-After that the move cannot be interrupted and the target is held in place. The Trump line is a stock
-voice read at his pace (`assets/audio/quite_frankly.mp3`), not his real voice; swap the file to change it.
-Against the hard computer: Javan goes from 56% to about 92%, Gabriel is about 71%, Nicholas 58%,
-Anthony 67%. They are meant to be a lot of fun, not fair.
+### Everyone has one
+
+The other 33 fighters have one each (`js/game/crazy-all.js`). All unlock after that fighter has been
+knocked out once in the match. They come in four kinds, and each kind has its own way out:
+
+| Kind | How it catches you | How to avoid it |
+|---|---|---|
+| **LOOK** | anyone within range when the wind-up ends | stay out of range |
+| **DROP** | it locks on to where you stand, then lands there about 0.6 s later | walk away, or jump high |
+| **SHOT** | something crosses the stage | block it or jump it |
+| **GRAB** | a short dash that has to reach you | back away, or jump |
+
+| Fighter | Crazy special | Kind | What happens |
+|---|---|---|---|
+| Bruiser | Mystery Meat | DROP | today's special, poured from the ceiling |
+| Viper | A Thousand Cuts | LOOK | she vanishes, a dozen cuts appear, she is behind you |
+| Dr. Weissenberg | 1.21 Gigawatts | DROP | a storm cloud parks over your head |
+| Jauregui | Final Exam | LOOK | a desk, a test, three seconds, an F |
+| Dr. Astuto | We the People | SHOT | the Constitution, rolled up, along the floor |
+| El Escobedo | Orbital Strike | DROP | a red dot, then a beam from orbit |
+| Lady Landa | Python | LOOK | it winds round you until you stop moving |
+| Mr. Dabalsa | The Complete Works | DROP | all 37 plays in one hardback |
+| King Sirven | Called Your Mom | LOOK | she is on her way |
+| Holbrook | You Are Here | DROP | a map pin the size of a car |
+| Simon | One Knee | GRAB | the one he told you about |
+| Chris | Everyone Has a Price | LOOK | a cheque with a lot of zeros |
+| Ruano | Smite | DROP | the clouds part, for one person |
+| Tamayo | Filibuster Forever | LOOK | he does not stop talking |
+| Tyler | Cart Path Only | SHOT | his golf cart, from behind him |
+| Fernando | Secondhand Smoke | LOOK | one very long drag |
+| Wuttke | Fortissimo | LOOK | every instrument, at once |
+| Lopez Tuero | Q.E.D. | LOOK | a three-line proof that you equal zero |
+| Alejandro | Avalanche | DROP | the biggest boulder on the crag |
+| Mikey | The Whole Team | SHOT | the defensive line, from behind him |
+| Bandy | Amp to Eleven | SHOT | a wall of amps and one chord |
+| Ms. Brady | Dress Code Violation | LOOK | measured, written up, sent home |
+| Donald Trump | The Wall | DROP | a section of it, from above |
+| Erick | W Rizz | LOOK | a wink and a phone number |
+| Mr. Urbanik | Breakthrough | LOOK | "tell me about your mother" |
+| Chris Loor | Twelve Rounds | GRAB | all twelve, in a second and a half |
+| Olu | One in the Chamber | SHOT | one round, aimed where you can see it |
+| Riley | Escorted Out | LOOK | security lifts you out |
+| Escudero | Bad Angle | LOOK | one photo, the worst angle, posted |
+| David P. | Acme | DROP | he draws an anvil over your head |
+| The Proctor | Pencils Down | LOOK | your clock runs out |
+| The Bell Ringer | For Whom the Bell Tolls | GRAB | the bell goes over you, then rings |
+| The Eraser | Erased | LOOK | rubbed out, top to bottom |
+
+To change one, edit its row in `MOVES` in that file (name, range, timings, lines) and its two
+drawings (`draw` for the fighter's side, `vic` for what happens on the victim).
+
+None of them is free: for the first third of a second (about 20 frames; less for the grabs and the
+shots) a hit stops the move, and it is still spent. After that it cannot be interrupted, and a caught
+target is held in place. The pause menu's MOVE LIST shows each fighter's crazy special. The Trump
+line is a stock voice read at his pace (`assets/audio/quite_frankly.mp3`), not his real voice; swap
+the file to change it. With them on, the computer does not dodge the DROP kind, so those fighters
+win more against it (Dabalsa about 76%, Javan about 88%); a person can walk out of them.
 
 ## The versus screen and the entrances
 

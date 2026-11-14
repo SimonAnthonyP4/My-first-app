@@ -161,7 +161,7 @@
       }
 
       // 4a. A crazy special, when it is ready (it needs them close enough to be watching, or just a clear throw)
-      if (me.crazyReady && me.crazyReady() && Math.random() < 0.025 && dist < (me.def.id === 'nicholas' || me.def.id === 'javan' ? 260 : 130) && opp.grounded) { this.tap('cmdCrazy'); return; }
+      if (me.crazyReady && me.crazyReady() && Math.random() < 0.025 && dist < (me.def.crazy.aiRange || 130) && opp.grounded) { this.tap('cmdCrazy'); return; }
 
       // 4b. Command specials (anti-airs when they jump, rushes / teleports / projectiles otherwise).
       if (me.def.commands && dist < 170 && Math.random() < L.aggression * 0.4) {

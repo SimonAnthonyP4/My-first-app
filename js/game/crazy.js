@@ -17,10 +17,10 @@
   const SP = {}, sprite = (id) => SP[id] || (SP[id] = RF.createSprite(RF.getCharacter(id)));
 
   const CRAZY = {
-    javan: { special: 'quiteFrankly', revive: true, afterRevive: true },
-    nicholas: { special: 'frozenBrobatch', afterKO: true },
-    anthony: { special: 'absOut', afterKO: true },
-    gabriel: { special: 'hypnoDance', afterKO: true },
+    javan: { special: 'quiteFrankly', revive: true, afterRevive: true, aiRange: 260 },
+    nicholas: { special: 'frozenBrobatch', afterKO: true, aiRange: 260 },
+    anthony: { special: 'absOut', afterKO: true, aiRange: 120 },
+    gabriel: { special: 'hypnoDance', afterKO: true, aiRange: 170 },
   };
   for (const id in CRAZY) { const d = RF.getCharacter(id); if (d) d.crazy = CRAZY[id]; }
 
@@ -50,6 +50,7 @@
   const fx = (scene, o) => { (scene.crazyFx || (scene.crazyFx = [])).push(Object.assign({ t: 0, len: 90 }, o)); return o; };
   RF.crazyTick = (scene) => {
     if (scene.crazyFx) { for (const it of scene.crazyFx) it.t++; scene.crazyFx = scene.crazyFx.filter((it) => it.t < it.len); if (scene.phase !== 'fight' && scene.phase !== 'finish') scene.crazyFx = []; }
+    if (scene.phase !== 'fight') for (const f of scene.fighters) if (f.crazyHidden) { f.hidden = false; f.crazyHidden = false; }   // (nobody stays vanished after the round)
     if (scene.phase === 'fight' && scene.phaseTime === 50) for (const f of scene.fighters) if (f.crazyReady()) scene.effects.spawnText('CRAZY SPECIAL READY: EX', f.x, f.body.height + 30, '#ff4fd8');
   };
   // Javan comes back: wave the flag, full health, and the move is back
@@ -132,7 +133,7 @@
     // ---- ANTHONY: abs
     abs: {
       update(f, sc, t, d, opp) {
-        if (t === 4) f.crazyCommitted = true;
+        if (t === 18) f.crazyCommitted = true;
         if (t === 24) {
           const near = Math.abs(opp.x - f.x) < f.special.range && !opp.isKO;
           if (near) { d.hooked = true; RF.crazyHold(opp, 160); fx(sc, { kind: 'awe', vic: opp, len: 130 }); sc.effects.spawnText('...WOW.', opp.x, opp.body.height + 22, '#ff7ac8'); RF.audio.sfx('perfect'); }
@@ -160,7 +161,7 @@
     dance: {
       update(f, sc, t, d, opp) {
         if (t === 1) { sc.effects.spawnText('WATCH THIS.', f.x, f.body.height + 18, '#40e8ff'); RF.audio.sfx('arcane'); }
-        if (t === 6) f.crazyCommitted = true;
+        if (t === 22) f.crazyCommitted = true;
         f.vx = Math.sin(t / 4) * 1.1;
         if (t === 30) {
           const near = Math.abs(opp.x - f.x) < f.special.range && !opp.isKO;
@@ -211,7 +212,7 @@
     update(f, scene) {
       const s = f.special, t = f.stateTime, opp = scene.opponentOf(f), st = STY[s.style];
       st.update(f, scene, t, f.specialData, opp);
-      if (f.state === 'special' && t >= s.total) { f.vx = 0; f.setState('idle'); }
+      if (f.state === 'special' && t >= s.total) { f.vx = 0; if (f.crazyHidden) { f.hidden = false; f.crazyHidden = false; } f.setState('idle'); }
     },
     anim(f) { return STY[f.special.style].anim(f, f.stateTime); },
     draw(f, ctx, floorY, frame) { STY[f.special.style].draw(f, ctx, floorY, f.stateTime, f.specialData); },
@@ -235,6 +236,7 @@
     if (!scene.crazyFx) return;
     for (const it of scene.crazyFx) {
       const v = it.vic, x = v.x, hy = floorY - v.y - v.body.height * 0.84, t = it.t;
+      if (it.draw) { ctx.save(); try { it.draw(ctx, v, floorY, t, it); } finally { ctx.restore(); ctx.globalAlpha = 1; ctx.lineWidth = 1; } continue; }   // (the ones in crazy-all.js bring their own)
       if (it.kind === 'spiral') {
         const g = clamp(t / 14), fade = clamp((it.len - t) / 20);
         ctx.save(); ctx.globalAlpha = fade;
@@ -256,4 +258,10 @@
   function spiral(ctx, x, y, r, rot, off) { ctx.beginPath(); for (let i = 0; i <= 26; i++) { const a = rot + i * 0.55, rr = r * (i / 26); const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); }
   // a frozen bar hit: the victim is encased as they go down
   RF.crazyIce = (scene, vic) => fx(scene, { kind: 'ice', vic, len: 80 });
+  // a crazy projectile landed: its own effect on the victim (or the ice), and the knockout
+  RF.crazyShotHit = (scene, p, vic) => {
+    if (p.cfg.koFx) fx(scene, { vic, len: p.cfg.koFxLen || 60, draw: p.cfg.koFx, att: p.owner }); else RF.crazyIce(scene, vic);
+    RF.crazyKO(scene, p.owner, vic, p.cfg.koText || 'KNOCKED OUT.', p.cfg.koColor || '#a0e8ff');
+  };
+  RF.crazyKit = { fx, say, STY, S, sprite, R, T, lerp, clamp, hash, CRAZY };   // (game/crazy-all.js builds the other 33 on these)
 })();
