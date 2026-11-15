@@ -224,6 +224,10 @@
   const S_2 = 'F#2* F#2* F#2* F#2* F#2* F#2* F#2* F#2* D3* D3* D3* D3* D3* D3* D3* D3*';
   const S_3 = 'A2 - - - - - - - E3 - - - - - - -';
   const S_4 = 'F#2 - - - - - - - D3 - - - E3 - - -';
+  // ---- THE CALDERA: "Magma Chamber" - a phrygian gallop, the half-step grinding the whole way.
+  const CAL_1 = 'E2* E2* F2 - E2* E2* G2 - E2* E2* F2 - A#2 - A2 -';
+  const CAL_2 = 'E2* E2* F2 - E2* E2* G2 - F2 - - - G2 - - -';
+  const CAL_3 = 'C3 - - - C3* C3* D3 - - - D3* D3* F3 - E3 -';
   const metal = (bpm, gtr, lead, drums, extra) => Object.assign({ bpm, tracks: {
     guitar: { instrument: 'guitar', volume: 0.5, bars: gtr }, bass: { instrument: 'bass', volume: 0.32, bars: bassOf(gtr) },
     lead: { instrument: 'lead', volume: 0.36, bars: lead }, drums: { bars: drums } } }, extra);
@@ -312,6 +316,84 @@
       bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'A5 - - - - - G5 - F5 - - - - - C5 -', 'F5 - - - - - E5 - D5 - - - - - - -', 'D5 - - - F5 - - - A5 - - - G5 - - -', 'E5 - - - - - - - - - - - . . . .'] },
       drums: { bars: [BRUSH, BRUSH, BRUSH, 'b . m . p . m . . b m b p . p .'] },
     } },
+    // ---- SCIENCE LAB, ROOM 13: "Live Wire" - a nervous sixteenth-note arpeggio that never lets go.
+    lab13: { bpm: 126, clean: true, drumVolume: 0.55, tracks: {
+      keys: { instrument: 'keys', volume: 0.11, pan: -0.25, bars: ['E3 B3 E4 G4 B4 G4 E4 B3 E3 B3 E4 G4 B4 G4 E4 B3', 'C3 G3 C4 E4 G4 E4 C4 G3 C3 G3 C4 E4 G4 E4 C4 G3', 'G3 D4 G4 B4 D5 B4 G4 D4 G3 D4 G4 B4 D5 B4 G4 D4', 'D3 A3 D4 F#4 A4 F#4 D4 A3 D3 A3 D4 F#4 A4 F#4 D4 F#4'] },
+      sub: { instrument: 'sub', volume: 0.24, bars: ['E1 . E1 . E2 . E1 . E1 . E1 . E2 . E1 E1', 'C2 . C2 . C3 . C2 . C2 . C2 . C3 . C2 C2', 'G1 . G1 . G2 . G1 . G1 . G1 . G2 . G1 G1', 'D2 . D2 . D3 . D2 . D2 . D2 . D3 . F#2 A2'] },
+      pad: { instrument: 'pad', volume: 0.06, bars: [hold('G3'), hold('E3'), hold('D3'), hold('F#3')] },
+      bell: { instrument: 'bell', volume: 0.13, pan: 0.3, bars: [...rest(4), 'B5 - - - - - G5 - - - E5 - - - F#5 -', 'G5 - - - - - - - E5 - - - C5 - - -', 'D5 - - - G5 - - - B5 - - - A5 - - -', 'F#5 - - - - - - - A5 - - - . . . .'] },
+      drums: { bars: ['b . x x p . x x b b x x p . x x', 'b . x x p . x x b b x x p . x m', 'b . x x p . x x b b x x p . x x', 'b . x x p . x m b b x x p p x m'] },
+    } },
+    // ---- BIO LAB, ROOM 666: "Specimen Jar" - something creeping up the minor scale and stopping a half-step short.
+    biolab: { bpm: 78, clean: true, drumVolume: 0.4, tracks: {
+      keys: { instrument: 'keys', volume: 0.16, bars: ['. . A3 - . . C4 - . . E4 - . . D#4 -', '. . F3 - . . A3 - . . C4 - . . B3 -', '. . D3 - . . F3 - . . A3 - . . G#3 -', '. . E3 - . . G#3 - . . B3 - . . D4 -'] },
+      pad: { instrument: 'pad', volume: 0.08, bars: [hold('E3'), hold('C3'), hold('A2'), hold('B2')] },
+      sub: { instrument: 'sub', volume: 0.26, bars: [hold('A1'), hold('F1'), hold('D2'), hold('E1')] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'E5 - - - - - D#5 - E5 - - - - - C5 -', 'A4 - - - - - - - C5 - - - B4 - - -', 'A4 - - - - - F5 - - - - - E5 - - -', 'G#4 - - - - - - - B4 - - - . . . .'] },
+      drums: { bars: ['b . . . . . m . p . . . . . m .', 'b . . . . . m . p . . m . . m .'] },
+    } },
+    // ---- THE GLOBE: "The Groundlings' Galliard" - a lute, a pipe and a tabor in D dorian.
+    globe: { bpm: 112, clean: true, drumVolume: 0.5, tracks: {
+      keys: { instrument: 'keys', volume: 0.2, bars: loop([arp('D3', 'A3', 'D4', 'F4', 'A4', 'F4', 'D4', 'A3'), arp('C3', 'G3', 'C4', 'E4', 'G4', 'E4', 'C4', 'G3'), arp('D3', 'A3', 'D4', 'F4', 'A4', 'F4', 'D4', 'A3'), arp('A2', 'E3', 'A3', 'C#4', 'E4', 'C#4', 'A3', 'E3')], 2) },
+      pad: { instrument: 'pad', volume: 0.05, bars: [hold('F3'), hold('E3'), hold('F3'), hold('E3')] },
+      sub: { instrument: 'sub', volume: 0.24, bars: ['D2 - - - - - . . A2 - - - D2 - - -', 'C2 - - - - - . . G2 - - - C2 - - -', 'D2 - - - - - . . A2 - - - D2 - - -', 'A1 - - - - - . . E2 - - - A1 - C#2 -'] },
+      bell: { instrument: 'bell', volume: 0.13, bars: [...rest(4), 'A5 - - - G5 - F5 - E5 - - - D5 - - -', 'E5 - - - G5 - - - E5 - - - C5 - - -', 'F5 - - - E5 - D5 - F5 - - - A5 - - -', 'E5 - - - - - C#5 - E5 - - - . . . .'] },
+      drums: { bars: ['b . . m p . m . b . . m p . m m'] },
+    } },
+    // ---- THE TEMPLE RING: "Wai Kru" - five notes, a hammered string, hand drums.
+    templering: { bpm: 92, clean: true, drumVolume: 0.6, tracks: {
+      keys: { instrument: 'keys', volume: 0.13, pan: -0.3, bars: ['A3 E4 A3 E4 A3 E4 A3 E4 G3 D4 G3 D4 G3 D4 G3 D4', 'A3 E4 A3 E4 A3 E4 A3 E4 A3 E4 A3 E4 C4 E4 D4 E4', 'C4 G4 C4 G4 C4 G4 C4 G4 D4 A4 D4 A4 D4 A4 D4 A4', 'A3 E4 A3 E4 A3 E4 A3 E4 G3 D4 G3 D4 E3 B3 E3 B3'] },
+      pad: { instrument: 'pad', volume: 0.06, bars: [hold('E3'), hold('E3'), hold('G3'), hold('E3')] },
+      sub: { instrument: 'sub', volume: 0.26, bars: [hold('A1'), hold('A1'), two('C2', 'D2'), two('A1', 'E1')] },
+      bell: { instrument: 'bell', volume: 0.14, pan: 0.3, bars: [...rest(4), 'A4 - - C5 - - D5 - E5 - - - D5 - C5 -', 'A4 - - - - - G4 - A4 - - - - - - -', 'E5 - - G5 - - E5 - D5 - - - C5 - D5 -', 'E5 - - - - - - - A4 - - - . . . .'] },
+      drums: { bars: ['b . m m p . m . b b m . p . m m', 'b . m m p . m . b . m b p p m m'] },
+    } },
+    // ---- THE PENTHOUSE: "Top Floor" - sevenths, a walking bass, brushes. It sounds expensive.
+    penthouse: { bpm: 98, clean: true, drumVolume: 0.6, tracks: {
+      keys: { instrument: 'keys', volume: 0.17, bars: ['F3 . . A3 C4 E4 . . . . A3 . C4 E4 . .', 'E3 . . G3 B3 D4 . . . . G3 . B3 D4 . .', 'D3 . . F3 A3 C4 . . . . F3 . A3 C4 . .', 'G3 . . B3 D4 F4 . . . . B3 . D4 F4 . G4'] },
+      pad: { instrument: 'pad', volume: 0.06, bars: [hold('A3'), hold('G3'), hold('F3'), hold('F3')] },
+      sub: { instrument: 'sub', volume: 0.3, bars: ['F1 - - - . . F1 - C2 - - - . . C2 -', 'E1 - - - . . E1 - B1 - - - . . B1 -', 'D2 - - - . . D2 - A1 - - - . . A1 -', 'G1 - - - . . G1 - D2 - - - B1 - G1 -'] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'E5 - - - - - C5 - - - A4 - C5 - - -', 'D5 - - - - - B4 - - - G4 - - - - -', 'C5 - - - A4 - - - F5 - - - E5 - D5 -', 'D5 - - - - - - - B4 - - - . . . .'] },
+      drums: { bars: [BRUSH, BRUSH, BRUSH, 'b . m . p . m . . . m b p . p p'] },
+    } },
+    // ---- LA CATEDRAL: "Vidrieras" - four chords held like an organ, and a line sung over them. No drums.
+    catedral: { bpm: 64, clean: true, drumVolume: 0.3, tracks: {
+      pad: { instrument: 'pad', volume: 0.1, bars: [hold('D3'), hold('A#2'), hold('F3'), hold('A2')] },
+      pad2: { instrument: 'pad', volume: 0.08, bars: [hold('A3'), hold('F3'), hold('C4'), hold('E3')] },
+      pad3: { instrument: 'pad', volume: 0.06, bars: [hold('F3'), hold('D3'), hold('A3'), hold('C#3')] },
+      sub: { instrument: 'sub', volume: 0.24, bars: [hold('D2'), hold('A#1'), hold('F1'), hold('A1')] },
+      bell: { instrument: 'bell', volume: 0.14, bars: ['D5 - - - - - E5 - F5 - - - - - E5 -', 'D5 - - - - - - - F5 - - - - - - -', 'A5 - - - - - G5 - F5 - - - - - G5 -', 'E5 - - - - - - - C#5 - - - . . . .'] },
+      keys: { instrument: 'keys', volume: 0.1, pan: 0.3, bars: [...rest(4), arp('D4', 'F4', 'A4', 'D5', 'A4', 'F4', 'A4', 'D5'), arp('A#3', 'D4', 'F4', 'A#4', 'F4', 'D4', 'F4', 'A#4'), arp('F4', 'A4', 'C5', 'F5', 'C5', 'A4', 'C5', 'F5'), arp('A3', 'C#4', 'E4', 'A4', 'E4', 'C#4', 'E4', 'A4')] },
+    } },
+    // ---- THE OVAL OFFICE: "Executive Time" - a march. A very good march. People say the best.
+    oval: { bpm: 116, clean: true, drumVolume: 0.7, tracks: {
+      keys: { instrument: 'keys', volume: 0.2, bars: ['C4 - . C4 C4 - E4 - G4 - - - E4 - C4 -', 'F4 - . F4 F4 - A4 - G4 - - - - - . .', 'C4 - . C4 C4 - E4 - G4 - C5 - B4 - A4 -', 'G4 - - - D4 - G4 - C4 - - - . . . .'] },
+      pad: { instrument: 'pad', volume: 0.05, bars: [hold('E3'), hold('F3'), hold('E3'), hold('D3')] },
+      sub: { instrument: 'sub', volume: 0.3, bars: ['C2 - . . G1 - . . C2 - . . G1 - . .', 'F1 - . . C2 - . . G1 - . . D2 - . .', 'C2 - . . G1 - . . C2 - . . E2 - . .', 'G1 - . . G1 - . . C2 - . . G1 - B1 -'] },
+      bell: { instrument: 'bell', volume: 0.12, bars: [...rest(4), 'E5 - - - G5 - - - C6 - - - G5 - E5 -', 'F5 - - - A5 - - - G5 - - - - - - -', 'E5 - G5 - C6 - - - B5 - A5 - G5 - - -', 'D5 - - - G5 - - - C5 - - - . . . .'] },
+      drums: { bars: ['b . p p b . p . b . p p b p p p', 'b . p p b . p . b . p p b . p .', 'b . p p b . p . b . p p b p p p', 'b . p . b . p . b p p p b+p . p .'] },
+    } },
+    // ---- BETWEEN UNIVERSES: "As X Approaches Infinity" - a raised fourth that never comes down.
+    multiverse: { bpm: 108, clean: true, drumVolume: 0.5, tracks: {
+      keys: { instrument: 'keys', volume: 0.14, pan: -0.3, bars: ['C4 G4 B4 F#5 B4 G4 C4 G4 B4 F#5 B4 G4 C4 G4 B4 F#5', 'D4 A4 C5 F#5 C5 A4 D4 A4 C5 F#5 C5 A4 D4 A4 C5 F#5', 'B3 F#4 A4 D5 A4 F#4 B3 F#4 A4 D5 A4 F#4 B3 F#4 A4 D5', 'E4 B4 D5 G5 D5 B4 E4 B4 D5 G5 D5 B4 E4 B4 D5 G5'] },
+      pad: { instrument: 'pad', volume: 0.08, bars: [hold('E3'), hold('F#3'), hold('D3'), hold('G3')] },
+      sub: { instrument: 'sub', volume: 0.26, bars: ['C2 - - - - - - - C2 - - - G1 - - -', 'D2 - - - - - - - D2 - - - A1 - - -', 'B1 - - - - - - - B1 - - - F#1 - - -', 'E1 - - - - - - - E2 - - - B1 - - -'] },
+      bell: { instrument: 'bell', volume: 0.13, pan: 0.3, bars: [...rest(4), 'B5 - - - - - - - G5 - - - - - F#5 -', 'A5 - - - - - - - F#5 - - - - - - -', 'D5 - - - F#5 - - - A5 - - - - - B5 -', 'G5 - - - - - - - - - - - . . . .'] },
+      drums: { bars: ['b . x . . . x . b . x . p . x .', 'b . x . . . x . b . x b p . x m'] },
+    } },
+    // ---- ROOFTOP, MIDNIGHT: "Forty Floors Up" - a pulse in D minor with the rain on it.
+    storm: { bpm: 102, clean: true, drumVolume: 0.7, tracks: {
+      sub: { instrument: 'sub', volume: 0.3, bars: ['D2 . D2 . D2 . D2 . D2 . D2 . D2 . D3 .', 'A#1 . A#1 . A#1 . A#1 . A#1 . A#1 . A#1 . A#2 .', 'F1 . F1 . F1 . F1 . F1 . F1 . F1 . F2 .', 'C2 . C2 . C2 . C2 . C2 . C2 . C2 . E2 .'] },
+      keys: { instrument: 'keys', volume: 0.16, pan: -0.3, bars: ['. . F4 A4 . . D4 . . . F4 A4 . . D5 .', '. . D4 F4 . . A#3 . . . D4 F4 . . A#4 .', '. . C4 F4 . . A3 . . . C4 F4 . . A4 .', '. . C4 E4 . . G3 . . . C4 E4 . . G4 .'] },
+      pad: { instrument: 'pad', volume: 0.08, bars: [hold('A3'), hold('F3'), hold('A3'), hold('G3')] },
+      bell: { instrument: 'bell', volume: 0.13, pan: 0.3, bars: [...rest(4), 'A5 - - - - - F5 - - - D5 - - - E5 -', 'F5 - - - - - - - D5 - - - A#4 - - -', 'C5 - - - F5 - - - A5 - - - G5 - - -', 'E5 - - - - - - - G5 - - - . . . .'] },
+      drums: { bars: ['b . x . p . x . b . x b p . x .', 'b . x . p . x . b b x . p . x x'] },
+    } },
+    caldera: metal(150, [CAL_1, CAL_2, CAL_1, CAL_2, CAL_3, CAL_3, CAL_1, CAL_2], [
+      ...rest(4),
+      'E5 - - - F5 - - - E5 - - - D5 - B4 -', 'E5 - - - F5 - - - G5 - - - - - - -',
+      'B5 - - - A5 - G5 - F5 - - - E5 - D5 -', 'E5 - - - - - - - - - - - . . . .',
+    ], [crash(GALLOP), GALLOP, GALLOP, FILL_A, crash(GALLOP), GALLOP, crash(HALF), FILL_B]),
   });
 
   // ---- THE THRONE BETWEEN: "Headmaster" - a slow crawl on a tritone, with a bell-like lead.

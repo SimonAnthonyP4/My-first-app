@@ -463,6 +463,12 @@
       if (armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
       this.drawLegs(p, put, blk, drop, false);
       const posedArm = !!p.arm;
+      // A body that rises (an idle breath, a walk's bounce, an uppercut) must not come away from the legs: the
+      // bottom edge of the torso is drawn again in the rows it left behind, so there is never a see-through seam.
+      if (torsoOff[1] < 0) {
+        if (!this.hem) { const has = new Set(this.cells.torso.map((c) => c.c + ',' + c.r)); this.hem = this.cells.torso.filter((c) => !c.prop && c.r >= this.waistRow - 3 && !has.has(c.c + ',' + (c.r + 1))); }
+        for (const cell of this.hem) for (let d = Math.floor(torsoOff[1]) + 1; d <= 0; d++) put(cell.c, cell.r, cell.color, torsoOff[0], d);   // (floor: the in-between frames move by half pixels)
+      }
       for (const cell of this.cells.torso) {
         if (cell.prop && posedArm) { // the prop moves to the posed hand (or fills in, e.g. crossed arms)
           if (s.propFill) put(cell.c, cell.r, s.palette[s.propFill], torsoOff[0], torsoOff[1]);
@@ -477,7 +483,14 @@
           ctx.fillStyle = cell.color;
           ctx.fillRect(Math.round(ox + (pc + (cell.c - pc) * S) * U + headOff[0]), Math.round(oy + (pr + (cell.r - pr) * S) * U + headOff[1]), Math.ceil(U * S), Math.ceil(U * S));
         }
-      } else for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
+      } else {
+        // A head that lifts higher than the body (Anthony's jump) keeps its neck: the bottom row is drawn down to the collar.
+        if (headOff[1] < torsoOff[1]) {
+          if (!this.chin) { const has = new Set(this.cells.head.map((c) => c.c + ',' + c.r)); this.chin = this.cells.head.filter((c) => c.r >= s.neckRow - 2 && !has.has(c.c + ',' + (c.r + 1))); }
+          for (const cell of this.chin) for (let d = Math.floor(headOff[1]) + 1; d <= Math.ceil(torsoOff[1]); d++) put(cell.c, cell.r, cell.color, headOff[0], d);
+        }
+        for (const cell of this.cells.head) put(cell.c, cell.r, cell.color, headOff[0], headOff[1]);
+      }
       this.drawLegs(p, put, blk, drop, true); // a kicking leg goes in front of the body
       if (!armBehind) drawArm(p.arm, false, p.armOff || [0, 0]);
 
@@ -559,6 +572,8 @@
           // Hips sink onto the shoes; knees poke forward.
           for (const c of hip) put(c.c, c.r, c.color, 0, drop);
           for (const c of hip) put(c.c + 1, c.r, c.color, 0, drop);
+          // long legs (Sirven): the shins still showing under the sunken hips, so the shoes stay attached
+          for (const c of legs) if (c.r > wr + drop / U && c.r < this.rows - 1) { put(c.c, c.r, c.color); put(c.c + 1, c.r, c.color); }
           for (const c of legs) if (c.r === this.rows - 1) put(c.c + 1, c.r, c.color);
           break;
         }

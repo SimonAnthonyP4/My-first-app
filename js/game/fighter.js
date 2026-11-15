@@ -254,6 +254,7 @@
             this.scene.breakThrow(this.grabber, this);
           } else if (!this.grabber || this.grabber.state !== 'throwing') {
             this.grabber = null;
+            this.hidden = false;   // (a throw that draws its victim itself was cut short)
             this.setState('idle');
           }
           break;

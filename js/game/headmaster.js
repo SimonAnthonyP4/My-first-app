@@ -155,7 +155,7 @@
   }, o, { sprite });
 
   RF.EXTRAS.push(LT({
-    id: 'proctor', name: 'The Proctor', health: 128, bio: 'A clock where a face should be. It has been two minutes to midnight for twelve years.',
+    id: 'proctor', throw: 'popQuiz', name: 'The Proctor', health: 128, bio: 'A clock where a face should be. It has been two minutes to midnight for twelve years.',
     quote: 'PENCILS DOWN.', winQuote: 'TIME.', special: 'timesUp', finisher: 'venomMelt',
     tauntLines: ['PENCILS DOWN.', 'YOU MAY NOT LEAVE EARLY.', 'TWO MINUTES REMAIN. FOREVER.', 'EYES ON YOUR OWN LIFE.'],
     commands: { qcf: 'multiverseSwap', qcb: 'restCounter' },
@@ -355,7 +355,7 @@
       ],
     }));
   RF.EXTRAS.push(LT({
-    id: 'ringer', name: 'The Bell Ringer', health: 172, bio: 'It carries the bell on its shoulders. It has never once let it stop.',
+    id: 'ringer', throw: 'forWhomItTolls', name: 'The Bell Ringer', health: 172, bio: 'It carries the bell on its shoulders. It has never once let it stop.',
     quote: '...', winQuote: '...', special: 'seismicSlam', finisher: 'pileDriver', armor: true,
     tauntLines: ['...', 'DONG.'],
     commands: { qcf: 'blitz', qcb: 'hulkLeap' },
@@ -543,7 +543,7 @@
       ],
     }));
   RF.EXTRAS.push(LT({
-    id: 'eraser', name: 'The Eraser', health: 118, bio: 'It does not hurt people. It removes them. Nobody remembers who it has removed.',
+    id: 'eraser', throw: 'rubbedOut', name: 'The Eraser', health: 118, bio: 'It does not hurt people. It removes them. Nobody remembers who it has removed.',
     quote: 'SHHHH.', winQuote: 'WHO?', special: 'wipeOut', finisher: 'venomMelt',
     tauntLines: ['SHHHH.', 'WHO?', 'YOU WERE NEVER ON THE ROLL.', 'NO ONE WILL ASK WHERE YOU WENT.'],
     commands: { qcf: 'smokeScreen', qcb: 'slipCounter' },

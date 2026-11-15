@@ -149,7 +149,7 @@
     quickSketch: Object.assign({ name: 'Quick Sketch', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#f4f0e6', callout: 'I\'LL DRAW THAT.' }, hit(12, { launch: 4 })),
     rubOut: Object.assign({ name: 'Rub Out', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 14, color: '#f0b0c0', callout: 'RUBBED OUT.', sound: 'paper' }, hit(10)),
   });
-  RF.THROWS.stillLife = { name: 'Still Life', description: 'Poses them, lifts them for the better angle, and puts them down hard. Do not move, he is almost done.', kind: 'overhead', damage: 14 };
+  RF.THROWS.stillLife = { name: 'Still Life', description: 'Draws a frame around them, paints three big strokes straight across them, signs it, decides it is not his best work and throws it out.', kind: 'stillLife', strokeDamage: 2.5, finisherDamage: 9 };
 
   // ---------------------------------------------------------------- REJECTED: sketched, pulled off the pad, crumpled and binned
   const sheet = (ctx, x, bottom, vic, u, sketch) => {
@@ -250,7 +250,7 @@
       shoulder: [31, 18],
       footCol: 22,
       crouchDrop: 10,
-      armThickness: 1.8,
+      armThickness: 1.3,           // (he is small: a thinner arm, in proportion)
       sleeveLength: 0.3,
       sleeveColor: 'col7',
       sleeveShade: 0,

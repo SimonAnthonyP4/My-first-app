@@ -22,7 +22,7 @@
       RF.audio.playSong('menu');
       this.game = game;
       this.t = 0;
-      // Fill up to 8 slots; empty ones are "coming soon" until the full roster lands.
+      // The roster, and after it one "?" slot: pick it and the game picks somebody for you.
       this.slots = [];
       for (let i = 0; i < Math.max(SLOTS, RF.CHARACTERS.length); i++) this.slots.push(RF.CHARACTERS[i] || null);
       const idx = (def, fallback) => (def ? Math.max(0, this.slots.findIndex((d) => d && d.id === def.id)) : fallback);
@@ -136,7 +136,12 @@
         const need = this.tag ? 2 : 1;
         if (this.slots[this.cursor[p]] && this.picks[p].includes(this.cursor[p])) RF.audio.sfx('block'); // a team needs two different fighters
         else if (this.slots[this.cursor[p]]) { this.picks[p].push(this.cursor[p]); this.ready[p] = this.picks[p].length >= need; if (!this.tag) this.picks[p] = []; this.notice[p] = 0; this.flash[p] = 12; RF.audio.sfx('select'); }
-        else { this.notice[p] = 90; RF.audio.sfx('block'); }
+        else {   // the "?" slot: a random fighter, locked in
+          const pool = this.slots.map((d, i) => (d && !this.picks[p].includes(i) ? i : -1)).filter((i) => i >= 0);
+          this.cursor[p] = pool[Math.floor(Math.random() * pool.length)];
+          this.picks[p].push(this.cursor[p]); this.ready[p] = this.picks[p].length >= need; if (!this.tag) this.picks[p] = [];
+          this.notice[p] = 0; this.flash[p] = 16; RF.audio.sfx('select'); RF.audio.sfx('special');
+        }
       }
     }
 
@@ -168,7 +173,10 @@
       // ---- the two fighters: a giant shadow behind, the fighter in front, a name slashed across their feet
       for (let p = 0; p < sides; p++) {
         const def = this.slots[this.cursor[p]], x = p === 0 ? 62 : W - 62, dir = p === 0 ? 1 : -1;
-        if (!def) { T(ctx, '?', x, 60, { scale: 6, align: 'center', color: 'rgba(255,255,255,0.15)' }); continue; }
+        if (!def) {   // the random slot: the whole roster flickering past
+          const all = this.slots.filter(Boolean), rd = all[Math.floor(t / 4) % all.length], rs = this.sprite(rd), rk = Math.min(1.4, 118 / rd.body.height);
+          ctx.save(); ctx.translate(x, FEET); ctx.scale(rk, rk); rs.draw(ctx, 'idle', 0, 0, 0, dir, '#0a0406'); ctx.restore();
+          T(ctx, '?', x, 58, { scale: 6, align: 'center', color: t % 16 < 8 ? '#ffd030' : '#ff8a30', outline: '#000' }); continue; }
         const cos = this.costumesFor()[p], sp = this.sprite(def, cos), k = Math.min(1.4, 118 / def.body.height);
         const pop = this.flash[p] > 0 ? 1 + this.flash[p] * 0.012 : 1, frame = Math.floor(t / 18) % 2;
         ctx.save(); ctx.globalAlpha = 0.3; ctx.translate(x - dir * 14, FEET + 40); ctx.scale(k * 2.1, k * 2.1); sp.draw(ctx, 'idle', 0, 0, 0, dir, p === 0 ? '#2a0604' : (this.arcade ? '#2a1c04' : '#04102a')); ctx.restore();
@@ -218,7 +226,7 @@
           if (hov === undefined) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x, y, SLOT, SLOT); } // others dimmed
           ctx.restore();
           ctx.fillStyle = (ARCH[def.archetype] || [0, '#a08878'])[1]; ctx.fillRect(x, y - lift + SLOT - 2, SLOT, 2); // fighter-type stripe
-        } else T(ctx, '?', x + SLOT / 2, y + SLOT / 2 - 7, { scale: 2, align: 'center', color: '#3a1c16' });
+        } else T(ctx, '?', x + SLOT / 2, y + SLOT / 2 - 7, { scale: 2, align: 'center', color: hov === undefined ? '#c89a20' : '#ffd030' });
       });
       // cursors: corner brackets that breathe (P1 outside, P2 inside, so both show on one slot)
       for (let p = 0; p < sides; p++) {
@@ -269,7 +277,7 @@
       const c = this.ready[p] ? '#ffd030' : (p === 0 ? PCOL[0] : PCOL[1]);
       ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x, y, w, h); ctx.fillStyle = c; ctx.fillRect(p === 0 || solo ? x : x + w - 2, y, 2, h);
       const L = x + 6;
-      if (!def) { T(ctx, 'COMING SOON', L, y + 6, { color: '#6a4a40', outline: '#000' }); return; }
+      if (!def) { T(ctx, 'RANDOM', L, y + 2, { scale: 2, color: '#ffd030', outline: '#000' }); T(ctx, 'LET THE GAME DECIDE.', L, y + 22, { color: '#b8a8a0', outline: '#000' }); return; }
       const [arch, archCol] = ARCH[def.archetype] || [def.archetype.toUpperCase(), '#ffffff'];
       T(ctx, arch, L, y + 3, { color: archCol, outline: '#000' });
       if (RF.font.textWidth(arch) + RF.font.textWidth(def.origin) + 16 <= w) T(ctx, def.origin.toUpperCase(), x + w - 4, y + 3, { align: 'right', color: '#8a7a78', outline: '#000' });   // where from, when there is room

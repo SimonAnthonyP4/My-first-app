@@ -761,8 +761,9 @@ RF.CHARACTERS = [
       scale: 1,
       limbScale: 3,
       crouchSquash: true,
-      legend: { 'A': 'hair', 'B': 'hairDark', 'C': 'hair3', 'D': 'hairDark2', 'E': 'hair2', 'F': 'hairDark4', 'G': 'hair4', 'H': 'skin2', 'I': 'skin3', 'J': 'skin', 'K': 'eyes', 'L': 'skin4', 'M': 'hairDark3', 'N': 'robe', 'O': 'robe3', 'P': 'robe4', 'Q': 'robe2', 'R': 'jar0', 'S': 'jar7', 'T': 'handPropv', 'U': 'handPropp', 'V': 'jart', 'W': 'jar1', 'X': 'jara', 'Y': 'jarm', 'Z': 'jars', 'a': 'jarg', 'b': 'jarc', 'c': 'jaru', 'd': 'jar5', 'e': 'jard', 'f': 'jarh', 'g': 'jar6', 'h': 'handPropn', 'i': 'jari', 'j': 'jark', 'k': 'handPropf', 'l': 'jar2', 'm': 'jarr', 'n': 'jar4', 'o': 'jare', 'p': 'jarb', 'q': 'jarx', 'r': 'jar8', 's': 'jarw', 't': 'vialGreen', 'u': 'vialRed', 'v': 'skull3', 'w': 'skull', 'x': 'skull2', 'y': 'skullDark', 'z': 'pants', '0': 'pants3', '1': 'pants2', '2': 'pants4', '3': 'shoes', '4': 'shoes3', '5': 'shoes2', '6': 'shoes4' },
+      legend: { 'A': 'hair', 'B': 'hairDark', 'C': 'hair3', 'D': 'hairDark2', 'E': 'hair2', 'F': 'hairDark4', 'G': 'hair4', 'H': 'skin2', 'I': 'skin3', 'J': 'skin', 'K': 'eyes', 'L': 'skin4', 'M': 'hairDark3', 'N': 'robe', 'O': 'robe3', 'P': 'robe4', 'Q': 'robe2', 'R': 'jar0', 'S': 'jar7', 'T': 'handPropv', 'U': 'handPropp', 'V': 'jart', 'W': 'jar1', 'X': 'jara', 'Y': 'jarm', 'Z': 'jars', 'a': 'jarg', 'b': 'jarc', 'c': 'jaru', 'd': 'jar5', 'e': 'jard', 'f': 'jarh', 'g': 'jar6', 'h': 'handPropn', 'i': 'jari', 'j': 'jark', 'k': 'handPropf', 'l': 'jar2', 'm': 'jarr', 'n': 'jar4', 'o': 'jare', 'p': 'jarb', 'q': 'jarx', 'r': 'jar8', 's': 'jarw', 't': 'vialGreen', 'u': 'vialRed', 'v': 'skull3', 'w': 'skull', 'x': 'skull2', 'y': 'skullDark', 'z': 'pants', '0': 'pants3', '1': 'pants2', '2': 'pants4', '3': 'shoes', '4': 'shoes3', '5': 'shoes2', '6': 'shoes4', '7': 'jarlidF', '8': 'jarlidB', '9': 'jarlidA', '@': 'jarlidM' },
       palette: {
+        jarlidF: '#6f6256', jarlidB: '#1a1310', jarlidA: '#1d1613', jarlidM: '#322724',
         hair: '#1d1613', hairDark: '#1a1310', hair3: '#3f241b', hairDark2: '#281a15',
         hair2: '#2f1e18', hairDark4: '#6f6256', hair4: '#593120', skin2: '#b67542',
         skin3: '#815a34', skin: '#f0a26a', eyes: '#ff2010', skin4: '#bf9b76',
@@ -796,8 +797,8 @@ RF.CHARACTERS = [
         '.......ACCCGGEBHJJJJJJHGD...............',
         '......EDCCCGCBBJJJJJIJJGD...............',
         '......BCCCGCDCBHJJJJJJIDD...............',
-        '......ACCGCBECAHHJJJJJIED.....FBBBABB...',
-        '.....ECCGGDBECCJHHHJJJEEE.....MFFFFFFFF.',
+        '......ACCGCBECAHHJJJJJIED.....7888988...',
+        '.....ECCGGDBECCJHHHJJJEEE.....@77777777.',
         '.....NOOPONNQOOJJHHNNNQQQ.....RSTUUUSRR.',
         '.....OOOONNQQOPIJJHNNNQQ......VWXVVYYV..',
         '....NOOONNNQOOPQHJJNNNQO......aSUSSSSaX.',
@@ -869,7 +870,7 @@ RF.CHARACTERS = [
       eye: [19, 8],        // where her eyes glow (art pixels)
       sleeveColor: 'robe2',
       sleeveShade: 0.08,
-      hideWhenPosed: ['handPropf', 'handPropn', 'handPropp', 'handPropv', 'jar0', 'jar1', 'jar2', 'jar4', 'jar5', 'jar6', 'jar7', 'jar8', 'jara', 'jarb', 'jarc', 'jard', 'jare', 'jarg', 'jarh', 'jari', 'jark', 'jarm', 'jarr', 'jars', 'jart', 'jaru', 'jarw', 'jarx'],
+      hideWhenPosed: ['jarlidF', 'jarlidB', 'jarlidA', 'jarlidM', 'handPropf', 'handPropn', 'handPropp', 'handPropv', 'jar0', 'jar1', 'jar2', 'jar4', 'jar5', 'jar6', 'jar7', 'jar8', 'jara', 'jarb', 'jarc', 'jard', 'jare', 'jarg', 'jarh', 'jari', 'jark', 'jarm', 'jarr', 'jars', 'jart', 'jaru', 'jarw', 'jarx'],
       poses: {
         // Looming: head pushed forward, slow menacing sway.
         idle: [{ head: [1, 0] }, { head: [2, 1], torso: [1, 1] }],
@@ -4464,7 +4465,7 @@ RF.CHARACTERS = [
     quote: 'GO BIRDS.',
     winQuote: 'FLY, EAGLES, FLY.',
     special: 'callThePresident',
-    throw: 'touchdownSpike',
+    throw: 'flyEaglesFly',
     finisher: 'libertyBell',
     intro: 'walk',
     brutality: { name: 'TUSH PUSH', color: '#3ad070' },
@@ -4724,7 +4725,7 @@ RF.CHARACTERS = [
     quote: 'NOBODY FIGHTS BETTER THAN ME. NOBODY.',
     winQuote: 'YOU\'RE FIRED.',
     special: 'youreFired',
-    throw: 'hostileTakeover',
+    throw: 'theWall',
     finisher: 'impeachment',
     intro: 'walk',
     brutality: { name: 'LANDSLIDE', color: '#ff3030' },
@@ -5013,7 +5014,7 @@ RF.CHARACTERS = [
       sleeveColor: 'colg',        // the black bomber jacket
       sleeveShade: 0,
       armBehind: true,             // the reaching arm grows out from under the shirt
-      armThickness: 1.8,           // a real arm, not a stick
+      armThickness: 1.5,           // a real arm, not a stick
       handColor: 'colm',
       legColor: 'pantsk',         // grey cargos
       footColor: 'shoeso',
@@ -5446,7 +5447,7 @@ RF.CHARACTERS = [
     quote: 'GLOVES UP. EXTRA CHEESE.',
     winQuote: 'ORDER UP. YOU WERE THE SPECIAL.',
     special: 'pizzaDelivery',
-    throw: 'liftSlam',
+    throw: 'handTossed',
     finisher: 'pileDriver',
     intro: 'walk',
     brutality: { name: 'EXTRA TOPPINGS', color: '#ffb030' },
@@ -5497,7 +5498,7 @@ RF.CHARACTERS = [
       shoulder: [38, 22],
       footCol: 27,
       crouchDrop: 11,
-      armThickness: 1.9,
+      armThickness: 1.5,
       sleeveLength: 0.3,
       sleeveColor: 'cola',
       sleeveShade: 0,
@@ -5697,7 +5698,7 @@ RF.CHARACTERS = [
     quote: 'I WAS HERE BEFORE THE FIRST UNIVERSE. IT WAS LOUDER.',
     winQuote: 'IT WAS ALREADY WRITTEN. I WROTE IT.',
     special: 'divineBarrage',
-    throw: 'liftSlam',
+    throw: 'alreadyWritten',
     finisher: 'judgment',
     intro: 'walk',
     dashBoost: 2.3,                 // the fastest dash in the game: a blink across the screen
@@ -5759,7 +5760,7 @@ RF.CHARACTERS = [
       shoulder: [38, 19],
       footCol: 29,
       crouchDrop: 11,
-      armThickness: 1.9,
+      armThickness: 1.55,
       sleeveLength: 0.35,
       sleeveColor: 'col6',
       sleeveShade: 0,
@@ -5961,7 +5962,7 @@ RF.CHARACTERS = [
     quote: 'THIS UNIVERSE IS UNDER MY PROTECTION.',
     winQuote: 'ALL CLEAR. HAVE A SAFE DAY.',
     special: 'cosmicOrb',
-    throw: 'liftSlam',
+    throw: 'bagCheck',
     finisher: 'sealed',
     intro: 'walk',
     reviveAs: 'judge',              // EXTRA LIFE: the first knockout each round brings in the Terramania Judge (fighter.js, game/riley.js)
@@ -6017,7 +6018,7 @@ RF.CHARACTERS = [
       shoulder: [47, 21],
       footCol: 33,
       crouchDrop: 14,
-      armThickness: 2.1,
+      armThickness: 1.75,
       sleeveLength: 0.4,
       sleeveColor: 'colq',
       sleeveShade: 0,
@@ -6225,7 +6226,7 @@ RF.CHARACTERS = [
           { arm: 'forward', head: [2, 0], torso: [1, 0] },
           { arm: 'forward', head: [1, 0] },
         ],
-        uppercut: [{ crouch: true, arm: 'back' }, { arm: 'up', head: [2, -4], torso: [1, -4] }, { arm: 'up', head: [1, -1], torso: [0, -1] }],
+        uppercut: [{ crouch: true, arm: 'back' }, { arm: 'up', head: [2, -1], torso: [1, -1] }, { arm: 'up', head: [1, -1], torso: [0, -1] }],
         kick: [{ arm: 'forward', head: [1, 0] }, { arm: 'forward', head: [2, 0] }, { head: [1, 0] }],
         lowLight: [{ crouch: true, arm: 'back' }, { crouch: true, arm: 'forward', head: [2, 0] }, { crouch: true, arm: 'forwardShort' }],
         lowHeavy: [{ crouch: true, arm: 'back' }, { crouch: true, arm: 'forward', head: [2, 0] }, { crouch: true }],

@@ -159,7 +159,7 @@
   RF.EXTRAS.push({
     id: 'judge', name: 'The Terramania Judge', archetype: 'judge', health: 85, origin: 'The Bench Above Everything',
     bio: 'Appears only when the Keeper falls. Has never issued a second sentence.',
-    quote: 'ORDER IN THE UNIVERSE.', winQuote: 'COURT IS ADJOURNED.', special: 'finalVerdict', throw: 'liftSlam', finisher: 'sealed', intro: 'walk',
+    quote: 'ORDER IN THE UNIVERSE.', winQuote: 'COURT IS ADJOURNED.', special: 'finalVerdict', throw: 'contemptOfCourt', finisher: 'sealed', intro: 'walk',
     brutality: { name: 'CONTEMPT OF COURT', color: '#ffffff' },
     ending: ['THE JUDGE RULED. THAT WAS THE END OF IT.'],
     tauntLines: ['ORDER.', 'ORDER IN THE COURT.', 'I HAVE SEEN YOUR RECORD.', 'THE GAVEL IS ALREADY FALLING.'],

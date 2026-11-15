@@ -74,6 +74,11 @@
       this.round = 1;
       this.toastyShown = false;
       for (const f of this.fighters) f.meter = 0;
+      // HOME CROWD: a fighter on their own stage starts the match with a third of a bar (not when it is home to both)
+      if (RF.homeStage && !this.training && !this.tag && !this.opts.tag && !this.opts.training && !this.opts.story && !this.opts.tower && !this.opts.survival) {
+        const home = this.fighters.map((f) => RF.homeStage(f.def) === this.opts.stage);
+        if (home[0] !== home[1]) this.fighters[home[0] ? 0 : 1].meter = Math.round(RF.CONFIG.METER_BAR / 3);
+      }
       if (this.endMenu) this.endMenu.index = 0;
       this.startRound();
     }
@@ -764,6 +769,7 @@
       for (const f of [a, b]) {
         const away = Math.sign(f.x - this.opponentOf(f).x) || -f.facing;
         f.victim = f.grabber = null;
+        f.hidden = false;   // (some throws hide the victim and draw them themselves)
         f.combo = 0;
         f.state = null;
         f.stun = 12;

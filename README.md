@@ -54,7 +54,8 @@ random stage; the winner gets a CHAMPION screen with a trophy (`js/scenes/tourna
 
 ### Stages
 
-Eleven stages, each with a hazard against one wall (knock someone into it). The newer fighters'
+Every stage has a hazard against one wall (knock someone into it). There are 31 stages now (the ten
+newest are under "Ten more stages" further down). The newer fighters'
 home turf (`js/stages/home-stages.js`):
 
 | Stage | Home of | Hazard |
@@ -629,8 +630,10 @@ the crag that the rock listens to him. Taunts: "SEND IT!",
   (DOWN, BACK + LIGHT): a slab of stone shoots out of the ground and rolls toward them; it hits, then
   stays up as a barrier that stops walking, eats projectiles, and breaks to a hard hit or after a
   couple of seconds. One at a time, 2.5 second cooldown.
-- **Command specials:** the same two motions with HEAVY: **Dyno** (a leaping lunge punch) and
-  **Free Solo** (a soaring uppercut). (Any fighter can have two moves on a motion: `commandsHeavy`.)
+- **Command specials:** the same two motions with HEAVY: **Boulder Roll** (he rolls through them
+  inside a boulder; it was Dyno) and **Summit** (a column of rock carries him up into them; it was
+  Free Solo). (Any fighter can have two moves on a motion: `commandsHeavy`.)
+- **Every button is rock now** (`js/game/alejandro.js`, see "Ten more stages" below for the list).
 - **Throw: Belay Drop.** Clips them to the rope, hauls them up toward the ceiling - ROCK! - and
   lets go.
 - **Fatality: Summit.** A cliff rises behind them; he hauls them all the way up, plants a flag
@@ -1198,6 +1201,61 @@ and `reword` find a line anywhere in a chapter (inside choices and endings too) 
 there. The last thing story-9.js does is sort the chapters into `ORDER` and renumber every
 "CHAPTER n" title card - to move a chapter, move its name in that list.
 
+## Ten more stages, a throw for everyone, and Alejandro in rock
+
+**Ten new stages** (31 now), each with its own hazard and its own song.
+`js/stages/character-stages.js` (home stages) and `js/stages/spectacle-stages.js`:
+
+| Stage | Whose | What is in it | Hazard | Song |
+| --- | --- | --- | --- | --- |
+| Science Lab, Room 13 | Dr. Weissenberg | two Tesla coils arcing over the fight, a Jacob's ladder, scopes | the coil: SHOCKED! | Live Wire |
+| Bio Lab, Room 666 | Lady Landa | shelves of things in lit jars (one blinks), a snake in a tank, a skeleton | the flytrap: BITTEN! | Specimen Jar |
+| The Globe | Mr. Dabalsa | three candle-lit galleries, the pit, roses thrown at the stage | PURSUED BY A BEAR! | The Groundlings' Galliard |
+| The Temple Ring | Simon | a Muay Thai ring in a temple yard at sunset, lanterns, incense, petals | the gong: GONG! | Wai Kru |
+| The Penthouse | Chris | the city through glass walls, a ticker, gold on a table, his own portrait | the vault: CASHED OUT! | Top Floor |
+| La Catedral | Ruano | a rose window, coloured light on a marble floor, a censer swinging the nave | the organ: FORTISSIMO! | Vidrieras |
+| The Oval Office | Donald Trump | the desk, the button, the flags, the lawn at dusk, the news | SECRET SERVICE! | Executive Time |
+| Between Universes | Lopez Tuero | a glass floor over nothing, three doorways into other worlds, equations adrift | the singularity: DIVIDED BY ZERO! | As X Approaches Infinity |
+| Rooftop, Midnight | - | forty floors up in a thunderstorm: rain, neon in the puddles, lightning | the transformer: SHORT CIRCUIT! | Forty Floors Up |
+| The Caldera | - | inside the volcano: lava falls, a lake of fire, the cone going off | the vent: MELTED! | Magma Chamber |
+
+The drawing helpers they share (`glow`, `bolt`, `tiles`, ...) are on `RF.stageKit`.
+
+**Home turf** (`RF.HOME_STAGE` in `js/stages/registry.js`): the stage select opens on player one's
+home stage and marks both fighters' homes on the strip; the versus screen says whose house it is;
+a fighter on their own stage starts the match with a third of a bar (not if it is home to both, and
+not in story, training, tag or the tower); and in arcade mode every opponent is fought at theirs.
+On the stage select, UP and DOWN skip five stages. The `?` at the end of the roster picks a random
+fighter.
+
+**A throw for everyone** (`js/game/throws-unique.js`). Eleven fighters used to borrow somebody
+else's grab; each has their own now:
+
+| Fighter | Throw | What happens |
+| --- | --- | --- |
+| Chris Loor | Hand-Tossed | three to the body, then spun on his glove like pizza dough. ORDER UP! |
+| Olu | Already Written | never touches them: the light lifts them, he reads it out, the light puts them down |
+| Riley | Random Bag Check | wanded three times (BEEP!), then shown the exit from the universe |
+| Escudero | Photo Shoot | three poses, three flashes, a look at the pictures. HMM. NO. DELETE. (a rainbow) |
+| David P. | Still Life | framed, painted over in three strokes, signed, crumpled up and thrown out |
+| Javan | Fly Eagles Fly | E! A! G! L! E! S! one letter a hit, then he kicks the extra point with them |
+| Donald Trump | The Wall | built around them, three rows. AND YOU'RE PAYING FOR IT. Then it falls on them |
+| The Proctor | Pop Quiz | a desk, a test, a clock. PENCILS DOWN. Graded on the spot: F |
+| The Bell Ringer | Bell Jar | the great bell goes over them and is rung three times |
+| The Eraser | Rubbed Out | erased from the shoes up. WHO? Drawn back in, upside down, off the floor |
+| The Judge | Contempt of Court | ORDER! ORDER! ORDER! with the gavel, a verdict, and the big gavel |
+
+**Alejandro, all rock** (`js/game/alejandro.js`): Stone Fist (light), Crag Hammer (heavy: a boulder
+on the end of his rope, swung overhand), Stalagmite (UP + HEAVY: a pillar comes up under them),
+Scree Kick and Meteor Drop in the air, Pebble Skip and Fault Line (a crack runs out and teeth of
+rock snap up along it) when crouching, and Boulder Roll / Summit on the heavy command motions.
+About 56% against the hard CPU.
+
+**Limbs.** Punching arms on the photo-drawn fighters are slimmer (Escudero, David P., Erick, Loor,
+Olu, Riley); a body that lifts no longer shows a seam at the waist, and a head that lifts keeps
+its neck; Sirven's legs stay attached when he crouches; the lid of Lady Landa's jar no longer
+hangs in the air when she punches.
+
 ## Chris Loor
 
 Amateur boxer from Ecuador who works at the pizza place (**130% health**, boxer). Drawn from a
@@ -1257,7 +1315,7 @@ The other menus (settings, extras) use brighter text for the rows that are not s
 
 ## Two more stages
 
-`js/stages/art-stages.js` (21 stages now).
+`js/stages/art-stages.js`.
 
 - **The Photo Studio** (Escudero): a roll of white seamless paper, a softbox, an umbrella light,
   polaroids on a string, a pride flag, STRIKE A POSE in neon. The lights pop every few seconds.

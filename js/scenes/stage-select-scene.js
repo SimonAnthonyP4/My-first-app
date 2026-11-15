@@ -1,7 +1,8 @@
-// Stage select: live preview of the highlighted stage, plus a RANDOM option.
+// Stage select: live preview of the highlighted stage, plus a RANDOM option. It opens on player one's home
+// turf (RF.HOME_STAGE), marks both fighters' home stages on the strip, and UP / DOWN skips five at a time.
 (function () {
   const T = (...a) => RF.font.drawText(...a);
-  const PREVIEW_SCALE = 0.62;
+  const PREVIEW_SCALE = 0.58;
 
   class StageSelectScene {
     constructor(game, opts) {
@@ -10,7 +11,8 @@
       this.opts = opts; // fight options from character select (p1, p2, p2Alt, cpu...)
       this.t = 0;
       this.options = [...RF.STAGES.map((s) => s.id), 'random'];
-      const prev = this.options.indexOf(opts.stage);
+      this.homes = [RF.homeStage(opts.p1), RF.homeStage(opts.p2)];
+      const prev = this.options.indexOf(opts.stage || this.homes[0]);
       this.index = prev >= 0 ? prev : 0;
       this.renderers = {};
       this.chosen = null;
@@ -34,8 +36,10 @@
       const before = this.index;
       const tap = RF.touch && RF.touch.takeTap();                      // tap the sides to flip through, the picture to fight
       if (tap && tap.y > 22 && tap.y < 205) { if (tap.x < RF.CONFIG.WIDTH * 0.3) this.index = (this.index - 1 + n) % n; else if (tap.x > RF.CONFIG.WIDTH * 0.7) this.index = (this.index + 1) % n; else RF.touch.pulse(RF.CONTROLS.p1.light[0]); }
-      if (RF.menuPressed(kb, 'left') || RF.menuPressed(kb, 'up')) this.index = (this.index - 1 + n) % n;
-      if (RF.menuPressed(kb, 'right') || RF.menuPressed(kb, 'down')) this.index = (this.index + 1) % n;
+      if (RF.menuPressed(kb, 'left')) this.index = (this.index - 1 + n) % n;
+      if (RF.menuPressed(kb, 'right')) this.index = (this.index + 1) % n;
+      if (RF.menuPressed(kb, 'up')) this.index = (this.index - 5 + n) % n;
+      if (RF.menuPressed(kb, 'down')) this.index = (this.index + 5) % n;
       if (before !== this.index) RF.audio.sfx('move');
       if (RF.menuPressed(kb, 'back')) return this.game.setScene(new RF.SelectScene(this.game, this.opts));
       if (RF.menuPressed(kb, 'confirm')) {
@@ -81,12 +85,18 @@
         T(ctx, '<', W / 2 - w / 2 - 14 - bob, ny + 3, { color: '#ff5020', outline: '#000' });
         T(ctx, '>', W / 2 + w / 2 + 9 + bob, ny + 3, { color: '#ff5020', outline: '#000' });
       }
-      // Position dots
-      this.options.forEach((_, i) => {
-        ctx.fillStyle = i === this.index ? '#ffd030' : '#4a2a20';
-        ctx.fillRect(W / 2 - this.options.length * 5 + i * 10, ny + 20, 6, 3);
+      // Whose house this is
+      const who = [0, 1].filter((i) => this.homes[i] && this.homes[i] === id).map((i) => (i ? this.opts.p2 : this.opts.p1).name.toUpperCase());
+      if (who.length) T(ctx, 'HOME TURF: ' + [...new Set(who)].join(' + '), W / 2, ny + 18, { align: 'center', color: this.t % 40 < 30 ? '#ffd030' : '#c89a20', outline: '#000' });
+      // Position strip: one mark for every stage; the two home stages are marked in each player's colour
+      const n = this.options.length, gap = Math.min(10, Math.floor(340 / n)), x0 = Math.round(W / 2 - (n * gap) / 2);
+      this.options.forEach((sid, i) => {
+        const mine = sid === this.homes[0], theirs = sid === this.homes[1];
+        ctx.fillStyle = i === this.index ? '#ffd030' : mine ? '#ff6a30' : theirs ? '#40a0ff' : '#4a2a20';
+        ctx.fillRect(x0 + i * gap, ny + (i === this.index ? 28 : 29), gap - 3, i === this.index ? 5 : 3);
       });
-      T(ctx, 'LEFT/RIGHT TO CHOOSE - ENTER TO FIGHT - ESC TO GO BACK', W / 2, 212, { align: 'center', color: '#806860', outline: '#000' });
+      T(ctx, (this.index + 1) + ' / ' + n, W - 10, 14, { align: 'right', color: '#806860', outline: '#000' });
+      T(ctx, 'LEFT/RIGHT CHOOSE - UP/DOWN SKIP 5 - ENTER FIGHT - ESC BACK', W / 2, 212, { align: 'center', color: '#806860', outline: '#000' });
     }
   }
 

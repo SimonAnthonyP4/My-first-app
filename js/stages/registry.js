@@ -32,3 +32,14 @@ RF.StageRenderer = class {
     if (this.def.drawAnimated) this.def.drawAnimated(ctx, t);
   }
 };
+
+// HOME TURF: where each fighter is from. The stage select opens on player one's, the versus screen calls it
+// out, and in arcade mode every opponent is fought at theirs.
+RF.HOME_STAGE = {
+  bruiser: 'cafeteria', viper: 'nyc', weissenberg: 'lab13', landa: 'biolab', dabalsa: 'globe', sirven: 'office',
+  simon: 'templering', anthony: 'brobatch', nicholas: 'brobatch', chris: 'penthouse', ruano: 'catedral', tyler: 'golf',
+  fernando: 'parking', gabriel: 'miami', wuttke: 'musicroom', lopez: 'multiverse', alejandro: 'cliff', mikey: 'field',
+  javan: 'field', bandy: 'skatepark', brady: 'hallway', trump: 'oval', erick: 'regal', loor: 'pizzeria', olu: 'oblock',
+  riley: 'post', escudero: 'studio', david: 'artroom', judge: 'tribunal', proctor: 'throne', ringer: 'throne', eraser: 'throne',
+};
+RF.homeStage = (def) => { const id = def && RF.HOME_STAGE[def.id || def]; return id && RF.getStage(id) ? id : null; };

@@ -120,7 +120,7 @@
     holdThatPose: Object.assign({ name: 'Hold That Pose', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff7ac8', callout: 'HOLD THAT POSE.' }, hit(12, { launch: 4 })),
     sashayAway: Object.assign({ name: 'Sashay Away', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 14, color: '#ffb0e0', callout: 'SASHAY AWAY.', sound: 'arcane' }, hit(10)),
   });
-  RF.THROWS.photoOp = { name: 'Photo Op', description: 'Spins them into a pose, lifts them for the shot and slams the shutter. Chin down, darling.', kind: 'overhead', damage: 14 };
+  RF.THROWS.photoOp = { name: 'Photo Shoot', description: 'Spins them through three poses - WORK IT! CHIN UP! GIVE ME DRAMA! - with a flash for each, looks at the pictures, and deletes them with a rainbow.', kind: 'photoShoot', flashDamage: 2.5, finisherDamage: 9 };
 
   // ---------------------------------------------------------------- PHOTO FINISH: the victim becomes a Polaroid, and it is torn in half
   const polaroid = (ctx, x, bottom, vic, alpha) => {
@@ -221,12 +221,12 @@
       scale: 1,
       limbScale: 4,
       crouchSquash: true,
-      shoulder: [38, 19],
+      shoulder: [35, 20],
       footCol: 27,
       crouchDrop: 11,
-      armThickness: 1.9,
+      armThickness: 1.4,
       sleeveLength: 0.3,
-      sleeveColor: 'coll',
+      sleeveColor: 'cola',        // the black polo (it was a grey that read as a balloon on his arm)
       sleeveShade: 0,
       armBehind: true,
       handColor: 'colm',

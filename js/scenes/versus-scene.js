@@ -121,10 +121,12 @@
         lines.forEach((l, i) => T(ctx, l, x, y + 4 + i * 9, { align: 'center', color: '#1a0a08' }));
       });
       // the stage, on a plate at the top
-      const stage = RF.getStage(this.opts.stage), sU = ease((t - 10) / 12), sw = RF.font.textWidth(stage.name) + 60;
+      const stage = RF.getStage(this.opts.stage), sU = ease((t - 10) / 12);
+      const homeOf = RF.homeStage ? [...new Set([this.opts.p1, this.opts.p2].filter((d) => RF.homeStage(d) === this.opts.stage).map((d) => d.name.toUpperCase()))] : [];
+      const plate = (homeOf.length ? homeOf.join(' + ') + (homeOf.length > 1 ? ': HOME TURF   ' : "'S HOME TURF   ") : 'STAGE   ') + stage.name.toUpperCase(), sw = RF.font.textWidth(plate) + 24;
       ctx.fillStyle = 'rgba(0,0,0,0.78)'; ctx.fillRect(W / 2 - sw / 2, Math.round(-18 + sU * 22), sw, 14);
       ctx.fillStyle = '#e8b420'; ctx.fillRect(W / 2 - sw / 2, Math.round(-18 + sU * 22) + 13, sw, 1);
-      T(ctx, 'STAGE   ' + stage.name.toUpperCase(), W / 2, Math.round(-15 + sU * 22), { align: 'center', color: '#ffe0a0' });
+      T(ctx, plate, W / 2, Math.round(-15 + sU * 22), { align: 'center', color: homeOf.length && t % 30 < 22 ? '#ffd030' : '#ffe0a0' });
       if (!this.banter && RF.tip && t > 44) { if (this.tipN == null) this.tipN = Math.floor(Math.random() * RF.TIPS.length); RF.font.wrap('TIP: ' + RF.tip(this.tipN), 44).forEach((l, i) => T(ctx, l, W / 2, 24 + i * 9, { align: 'center', color: '#b8a8a0', outline: '#000' })); }
 
       // out: two black shutters close along the split, and the fight opens on a flash

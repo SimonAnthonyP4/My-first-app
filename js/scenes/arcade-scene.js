@@ -14,7 +14,7 @@
     const pool = RF.CHARACTERS.filter((c) => c.id !== p1.id && c.id !== bossId);
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const stages = RF.STAGES.map((s) => s.id).filter((s) => s !== 'office');
-    const ladder = pool.slice(0, RUNGS - 1).map((def, i) => ({ def, level: LEVELS[i], stage: stages[i % stages.length] }));
+    const ladder = pool.slice(0, RUNGS - 1).map((def, i) => ({ def, level: LEVELS[i], stage: (RF.homeStage(def) !== 'office' && RF.homeStage(def)) || stages[i % stages.length] }));   // (everyone is fought on their home turf, if they have one)
     ladder.push({ def: RF.getCharacter(bossId), level: 'hard', stage: 'office', boss: true });
     game.setScene(new TowerScene(game, { p1, costume, ladder, index: 0, continues: 0 }));
   };
