@@ -159,6 +159,9 @@
       // Split the drawing into parts.
       this.k = s.limbScale || 1;
       this.cells = { head: [], torso: [], legs: [] };
+      // A drawing with no neck row keeps its head as part of its body. Big Head Mode needs a head to grow, so there
+      // it is taken to be the top fifth of the figure (without this the giant head had no room and the sprite broke).
+      const neckRow = s.neckRow != null ? s.neckRow : (RF.CONFIG.MOD_BIGHEAD ? Math.round(s.grid.length * 0.19) : undefined);
       const hand = new Set((s.sideHand || []).map(([c, r]) => c + ',' + r));
       const hide = new Set(s.hideWhenPosed || []);
       const liftRe = s.liftLeg ? new RegExp(s.liftLeg) : null;
@@ -174,7 +177,7 @@
           const cell = { c, r, color, hand: hand.has(c + ',' + r), prop: hide.has(name), shoe: /^shoes/.test(name), lift: !!(liftRe && liftRe.test(name)) };
           this.minCol = Math.min(this.minCol, c);
           const isLeg = /^(pants|shoes)/.test(name);
-          if (r < s.neckRow && !cell.prop) this.cells.head.push(cell);
+          if (r < neckRow && !cell.prop) this.cells.head.push(cell);
           else if (r >= this.waistRow && isLeg) this.cells.legs.push(cell);
           else this.cells.torso.push(cell);
         });
@@ -211,9 +214,9 @@
       this.shoeColor = s.palette[s.footColor || 'shoes'];
 
       this.bigHead = !!RF.CONFIG.MOD_BIGHEAD;          // party mod: Big Head Mode
-      this.topPad = this.bigHead ? s.neckRow : 0;      // room above for the giant head
+      this.topPad = this.bigHead ? (neckRow || 0) : 0; // room above for the giant head
       const hc = this.cells.head.map((c) => c.c);
-      this.headPivot = [hc.length ? (Math.min(...hc) + Math.max(...hc)) / 2 : 0, s.neckRow];
+      this.headPivot = [hc.length ? (Math.min(...hc) + Math.max(...hc)) / 2 : 0, neckRow || 0];
       // Frames are baked on first use, with in-between frames blended between every
       // pair of poses so animations flow instead of snapping (see frameList / tween).
       this.recipes = {};
