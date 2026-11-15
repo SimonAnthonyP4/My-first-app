@@ -70,19 +70,62 @@ home turf (`js/stages/home-stages.js`):
 
 ### Online play
 
-Title menu -> **ONLINE**. One player presses **HOST A MATCH** and gets a 4-letter code; the other
-types it and presses **JOIN**. The host is P1 (left), the guest P2 (right); each of you plays with
-your own keyboard (either key set) or controller. Everything after that - character select, stage
-select, the fight, rematches - is shared. Pick ONLINE again (or close the tab) to leave.
+Title menu -> FIGHT -> **ONLINE**. Type a name (four letters). One player presses **HOST A ROOM** and
+gets a 4-letter code; everyone else types it and presses **JOIN**. Up to eight people. Everyone lands
+in the same **lobby**; the host picks the mode and the rules and presses START.
 
-- Works in the **published game page on claude.ai**: both players signed in, and your friend needs
+| Mode | Who plays |
+| --- | --- |
+| **Versus** | The first two in the room. Everyone else watches, live. Rematch as often as you like; the lobby keeps the score. |
+| **Winner Stays** | The whole room. The winner keeps the seat, the loser goes to the back of the line; whoever joined while a fight was on is ahead of the loser. |
+| **Tag Team** | Two fighters each. |
+| **Co-op vs CPU** | Two of you are ONE tag team against the computer: one picks the lead, the other the partner, and whoever's fighter is in the ring is the one playing (TAUNT tags your friend in). The CPU goes from normal to hard to nightmare as you keep winning. |
+
+Rules: **Standard** (the host's settings), or **Chaos** (a different party rule every match: low
+gravity, turbo, glass jaws...).
+
+- You play with your own keyboard (either set of keys), controller, or the touch stick and buttons.
+  Number keys **1-6** send a quick word (GG, NICE!, LOL, OOF, REMATCH?, LET'S GO!).
+- **Hold ESC for two seconds** to leave. ESC on its own pauses a fight for both players.
+- People can **join while a fight is on**: they are in at the next lobby.
+- If a player **leaves or stops answering for eight seconds**, the other side wins by forfeit. If the
+  host leaves, the session ends for everyone.
+- Works in the **published game page on claude.ai**: everyone signed in, and your friends need
   access to the artifact (invite them from the Share menu, or be in the same organization). People
-  opening a public link can't join rooms.
-- How it works (`js/net/online.js`): lockstep netcode over the artifact's live room. Both computers
-  run the same game; each sends only its button presses for each frame, a few frames ahead (the input
-  delay adapts to the connection, ~0.1-0.25 s). Randomness during a frame comes from a shared seed and
-  the host's match settings are copied to the guest, so both games stay identical; a checksum each
-  second shows OUT OF SYNC if they ever drift.
+  opening a public link can't join rooms. Winner Stays on one phone is not a thing: a phone is one
+  player.
+
+How it works (`js/net/online.js`):
+
+- **Lockstep.** Every computer runs the same game. Each sends only its own button presses, a few
+  frames ahead (the delay adapts to the connection, about 0.07 to 0.27 s), with its last two seconds
+  repeated in every update, so a lost update or a short break in the connection loses nothing. A
+  frame is played once the buttons of whoever is seated for it are known, and never faster than one
+  frame a tick: the game runs at its real speed however quick the connection is (it only fast-forwards
+  to catch up after falling behind). Everything is sent as room presence, so nobody needs edit rights
+  on the artifact.
+- **Short breaks are normal.** The room's connection is refreshed now and then. A watcher whose
+  connection drops for up to two seconds just carries on; two players both wait for each other and
+  resume; nobody is taken off the lobby list until they have been gone for three seconds.
+- **The lobby is where everyone gets back in step.** Each time the session reaches it, the host
+  starts a new *epoch*: a frame number, a fresh random seed and the whole session state. A late
+  joiner, a tab that was left in the background, or a game that drifted picks it up from there.
+- **Checksums** are compared once a second. If a seated player's picture is not the host's, the
+  host takes everyone back to the lobby (no result) instead of letting the match go on wrong. A
+  watcher whose picture is wrong just rejoins at the next lobby. If the host's own tab falls behind
+  while two others are playing, they finish their match and the host picks the session up from them.
+- Things that used to be able to differ between two computers no longer can online: taps on the
+  picture are ignored (the stick and buttons are not), only costumes everyone has are offered, and
+  your sound, touch layout and debug settings stay your own when the host's settings are copied.
+- Achievements and records count only for the side you are playing, not for a fight you watch.
+
+It was tested with a stand-in for the room that relays between several browser pages and enforces
+the real room's rules (plain data only, 4 KiB per player, read-only data handed back): full matches
+with two, three and four players in every mode, co-op and then Winner Stays in one session, a late
+joiner, a watcher and a host each left in the background, connections that drop for a second or two
+(a watcher, a player, somebody in the lobby), a forced desync, a walk-out, the host leaving, and a
+whole match with lag and one update in five dropped. It has not been played over the real claude.ai
+room by real people yet.
 
 ### Phones and tablets (touch controls)
 

@@ -89,7 +89,7 @@
         if (this.party && this.party.onQuit) return this.party.onQuit(this.game);
         return this.game.setScene(new RF.TitleScene(this.game));
       }
-      if (this.tag && !this.ready[0] && !this.picks[0].length && !this.picks[1].length && kb.justPressed(...RF.CONTROLS.p1.throw, ...RF.CONTROLS.p2.throw)) {
+      if (this.tag && !this.party && !this.ready[0] && !this.picks[0].length && !this.picks[1].length && kb.justPressed(...RF.CONTROLS.p1.throw, ...RF.CONTROLS.p2.throw)) {
         RF.audio.sfx('select'); // tag team: THROW switches between playing the computer and a second player
         return this.game.setScene(new SelectScene(this.game, { tag: true, cpu: !this.cpu }));
       }
@@ -151,7 +151,7 @@
       const p1 = this.slots[this.cursor[0]], p2 = this.slots[this.cursor[1]];
       if (this.tag) { // the first pick leads, the second waits on the bench; player 2's copies of player 1's fighters wear the alternate colours
         const [a, b] = this.picks.map((pk) => pk.map((i) => this.slots[i])), alt = (d) => (a.some((x) => x.id === d.id) ? 1 : 0);
-        return this.game.setScene(new RF.StageSelectScene(this.game, { p1: a[0], p2: b[0], costumes: [0, alt(b[0])], tag: { p1b: a[1], p2b: b[1], costumes: [0, alt(b[1])] }, cpu: this.cpu, stage: this.stage }));
+        return this.game.setScene(new RF.StageSelectScene(this.game, { p1: a[0], p2: b[0], costumes: [0, alt(b[0])], tag: { p1b: a[1], p2b: b[1], costumes: [0, alt(b[1])] }, cpu: this.cpu, stage: this.stage, party: this.party || undefined }));
       }
       this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, costumes: this.costumesFor(), cpu: this.cpu, training: this.training, stage: this.stage, party: this.party || undefined }));
     }
@@ -251,7 +251,7 @@
       if (this.tag && !both) {
         const who = this.cpu && this.ready[0] ? 'THE CPU TEAM' : 'YOUR TEAM', n = this.picks[this.cpu && this.ready[0] ? 1 : 0].length;
         hint = this.cpu ? who + ': PICK FIGHTER ' + (n + 1) + ' OF 2' : 'PICK TWO EACH';
-        if (!this.picks[0].length && !this.picks[1].length && !this.ready[0]) hint += ' - THROW = ' + (this.cpu ? '2 PLAYERS' : 'VS CPU');
+        if (!this.party && !this.picks[0].length && !this.picks[1].length && !this.ready[0]) hint += ' - THROW = ' + (this.cpu ? '2 PLAYERS' : 'VS CPU');
       }
       if (!this.tag && this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY' : 'NOW PICK YOUR OPPONENT';
       if (this.party && this.party.hint && !both) hint = this.party.hint;

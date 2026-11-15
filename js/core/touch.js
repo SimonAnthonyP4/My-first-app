@@ -225,7 +225,8 @@
     tap = { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H, at: performance.now() };
   });
   canvas.addEventListener('pointercancel', (e) => down.delete(e.pointerId));
-  function takeTap() { const t = tap; tap = null; return t && performance.now() - t.at < 500 ? t : null; }
+  // (online, a tap on the picture is not something the other computers can see: the stick and buttons are)
+  function takeTap() { const t = tap; tap = null; if (RF.online && RF.online.active) return null; return t && performance.now() - t.at < 500 ? t : null; }
 
   // ------------------------------------------------------------------ when to show it
   const coarse = window.matchMedia ? window.matchMedia('(pointer: coarse)') : { matches: false };

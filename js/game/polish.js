@@ -120,13 +120,13 @@
     return k ? keyName(k) : '?';
   };
   RF.drawFirstFightHint = function (ctx, scene) {
-    if (hintSeen || scene.training || scene.opts.demo || scene.opts.story || scene.opts.cpuBoth || scene.round !== 1 || scene.phase !== 'fight' || (RF.touch && RF.touch.active)) return;
+    if (hintSeen || (RF.online && RF.online.active && RF.online.mySide() < 0) || scene.training || scene.opts.demo || scene.opts.story || scene.opts.cpuBoth || scene.round !== 1 || scene.phase !== 'fight' || (RF.touch && RF.touch.active)) return;
     if (scene.hintT === undefined) { if (Object.keys(RF.records.data.played || {}).length) { hintSeen = true; return; } scene.hintT = 0; }
     const t = scene.paused ? scene.hintT : scene.hintT++;
     if (t >= HINT_LEN) { hintSeen = true; try { localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ } return; }
     const a = Math.min(1, t / 20, (HINT_LEN - t) / 40), W = RF.CONFIG.WIDTH;
     const pads = (navigator.getGamepads ? [...navigator.getGamepads()] : []).filter((g) => g && g.connected).length;
-    const sides = scene.opts.cpu ? [0] : [0, 1];
+    const sides = scene.opts.cpu || (RF.online && RF.online.active) ? [0] : [0, 1];   // (online you play your side with the first set of keys)
     ctx.save(); ctx.globalAlpha = a;
     ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 36, W, 37); ctx.fillStyle = '#c01010'; ctx.fillRect(0, 36, W, 1); ctx.fillRect(0, 72, W, 1);
     sides.forEach((p) => {

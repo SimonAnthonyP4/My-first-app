@@ -31,7 +31,7 @@
         { label: 'VERSUS', desc: 'TWO PLAYERS, ONE KEYBOARD OR TWO CONTROLLERS', onSelect: go(() => new RF.SelectScene(game)) },
         { label: 'VS CPU', desc: 'YOU AGAINST THE COMPUTER', onSelect: go(() => new RF.SelectScene(game, { cpu: true })) },
         { label: 'TAG TEAM', desc: '2 VS 2 - SWAP FIGHTERS MID-MATCH', onSelect: go(() => new RF.SelectScene(game, { cpu: true, tag: true })) },
-        { label: 'ONLINE', desc: 'PLAY A FRIEND ON ANOTHER COMPUTER', onSelect: () => (RF.online.active ? RF.online.end('LEFT ONLINE MATCH') : RF.online.openMenu(game)) },
+        { label: 'ONLINE', desc: 'UP TO 8 FRIENDS: VERSUS, WINNER STAYS, TAG, CO-OP', onSelect: () => (RF.online.active ? RF.online.end('LEFT ONLINE MATCH') : RF.online.openMenu(game)) },
         { label: 'TRAINING', desc: 'PRACTICE COMBOS AND TRIALS', onSelect: go(() => new RF.SelectScene(game, { cpu: true, training: true })) },
         back,
       ];

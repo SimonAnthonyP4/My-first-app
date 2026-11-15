@@ -36,7 +36,7 @@
     const len = RF.COSTUMES.length;
     for (let i = 1; i <= len; i++) {
       const c = (((n + dir * i) % len) + len) % len, lock = RF.COSTUMES[c].lock;
-      if (!lock || RF.unlocks.has(lock)) return c;
+      if (!lock || (RF.unlocks.has(lock) && !(RF.online && RF.online.active))) return c;   // (online: only the costumes everybody has, so both screens agree)
     }
     return 0;
   };

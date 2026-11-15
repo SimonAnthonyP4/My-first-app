@@ -63,7 +63,7 @@
     const first = !seen.has(f); seen.add(f);
     this.superFreeze = { f, t: 0, len: first ? FULL : SHORT, cine: Object.assign({}, info, { partner, duo, first, title: duo || info.title }) };
     f.superHitShown = false;
-    if (this.isHuman(f)) RF.records.unlock('super');
+    if (this.isMine(f)) RF.records.unlock('super');
     this.game.kb.rumble(f.side, 1, 500);
     this.projectiles = this.projectiles.filter((p) => p.owner === f);
     RF.audio.sfx('super');

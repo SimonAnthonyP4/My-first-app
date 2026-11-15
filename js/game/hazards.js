@@ -123,7 +123,7 @@
       RF.announcer.say(hz.name, { rate: 0.95 });
       scene.game.kb.rumble(f.side, 1, 300);
       att.gainMeter(dmg);
-      if (scene.isHuman(att)) RF.records.unlock('hazard');
+      if (scene.isMine(att)) RF.records.unlock('hazard');
       if (f.health <= 0) f.knockOut(-hz.side);
       break;
     }
