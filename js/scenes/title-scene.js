@@ -39,13 +39,18 @@
         { label: 'ARCADE', desc: 'FIVE OPPONENTS, THEN THE BOSS', onSelect: go(() => new RF.SelectScene(game, { cpu: true, arcade: true })) },
         { label: 'RIFT TOWER', desc: 'BOSS RUSH: 10 FLOORS, NEW RULES EACH ONE', onSelect: go(() => new RF.SelectScene(game, { cpu: true, tower: true })) },
         { label: 'SURVIVAL', desc: 'ONE HEALTH BAR. HOW FAR CAN YOU GO?', onSelect: go(() => new RF.SelectScene(game, { cpu: true, survival: true })) },
-        { label: 'TOURNAMENT', desc: 'A BRACKET FOR 4 OR 8 - PARTY MODE', onSelect: go(() => new RF.TournamentSetupScene(game)) },
+        { label: 'DAILY FIGHT', desc: "TODAY'S MATCHUP - THE SAME ONE FOR EVERYBODY", onSelect: go(() => new RF.DailyScene(game)) },
+        back,
+      ];
+      const PARTY = [
+        { label: 'WINNER STAYS', desc: '3 TO 8 PLAYERS - LOSER PASSES THE CONTROLLER', onSelect: go(() => new RF.WinnerStaysSetupScene(game)) },
+        { label: 'TOURNAMENT', desc: 'A BRACKET FOR 4 OR 8', onSelect: go(() => new RF.TournamentSetupScene(game)) },
+        { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY, ITEM DROPS AND MORE', onSelect: go(() => new RF.ModsScene(game)) },
         back,
       ];
       const EXTRAS = [
         { label: 'UNLOCKS', desc: 'COSTUMES AND MODES YOU HAVE EARNED', onSelect: go(() => new RF.UnlocksScene(game)) },
         { label: 'RECORDS', desc: 'YOUR STATS AND ACHIEVEMENTS', onSelect: go(() => new RF.RecordsScene(game)) },
-        { label: 'PARTY MODS', desc: 'BIG HEADS, LOW GRAVITY, ITEM DROPS AND MORE', onSelect: go(() => new RF.ModsScene(game)) },
         { label: 'HOW TO PLAY', desc: 'CONTROLS, COMBOS AND SPECIALS', onSelect: go(() => new RF.InfoScene(game, 'howto')) },
         { label: 'CREDITS', desc: 'WHO MADE TERRAMANIA', onSelect: go(() => new RF.InfoScene(game, 'credits')) },
         back,
@@ -53,13 +58,14 @@
       this.root = new RF.ListMenu([
         { label: 'STORY', desc: 'THE LAST BELL - A CINEMATIC CAMPAIGN', onSelect: go(() => new RF.StoryMenuScene(game)) },
         { label: 'FIGHT', desc: 'VERSUS, VS CPU, TAG TEAM, ONLINE, TRAINING', onSelect: sub('FIGHT', FIGHT) },
-        { label: 'CHALLENGES', desc: 'ARCADE, RIFT TOWER, SURVIVAL, TOURNAMENT', onSelect: sub('CHALLENGES', CHALLENGES) },
-        { label: 'EXTRAS', desc: 'UNLOCKS, RECORDS, PARTY MODS, HOW TO PLAY', onSelect: sub('EXTRAS', EXTRAS) },
+        { label: 'CHALLENGES', desc: 'ARCADE, RIFT TOWER, SURVIVAL, DAILY FIGHT', onSelect: sub('CHALLENGES', CHALLENGES) },
+        { label: 'PARTY', desc: 'WINNER STAYS, TOURNAMENT, PARTY MODS', onSelect: sub('PARTY', PARTY) },
+        { label: 'EXTRAS', desc: 'UNLOCKS, RECORDS, HOW TO PLAY, CREDITS', onSelect: sub('EXTRAS', EXTRAS) },
         { label: 'SETTINGS', desc: 'DIFFICULTY, SOUND, CONTROLLER', onSelect: go(() => new RF.SettingsScene(game)) },
       ]);
       this.menu = this.root; this.group = null; this.slide = 0;
       if (RF.titleAt) { // come back to where you left the menu
-        const g = { FIGHT, CHALLENGES, EXTRAS }[RF.titleAt.group];
+        const g = { FIGHT, CHALLENGES, PARTY, EXTRAS }[RF.titleAt.group];
         this.root.index = RF.titleAt.root || 0;
         if (g) { this.open(RF.titleAt.group, g, true); this.menu.index = Math.min(g.length - 1, RF.titleAt.index || 0); }
       }
@@ -246,7 +252,7 @@
         const sel = i === this.menu.index, y = ITEM_Y + i * ITEM_GAP, off = Math.max(0, slide * 9 - i * 12), back = item.label === 'BACK';
         if (sel) RF.drawSkull(ctx, sx + 11 - off, y, t);
         T(ctx, item.label, sx + 26 - off + (sel ? 2 : 0), y, { outline: '#000', color: sel ? '#ffffff' : back ? '#8a7470' : '#d8c8c0' });
-        if (this.menu === this.root && i > 0 && i < 4) T(ctx, '>', sx + PW - 16, y, { color: sel ? '#ffffff' : '#7a5a54', outline: '#000' }); // opens a group
+        if (this.menu === this.root && i > 0 && i < 5) T(ctx, '>', sx + PW - 16, y, { color: sel ? '#ffffff' : '#7a5a54', outline: '#000' }); // opens a group
       });
       const dy = ITEM_Y + n * ITEM_GAP, cur = items[this.menu.index], desc = cur.desc || (cur.label === 'BACK' ? 'BACK TO THE MAIN MENU' : '');
       ctx.fillStyle = '#4a1612'; ctx.fillRect(sx + 8, dy - 2, PW - 16, 1);

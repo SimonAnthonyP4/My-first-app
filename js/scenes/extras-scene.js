@@ -52,7 +52,7 @@
       RF.drawPanel(ctx, 10, 30, W - 20, 172);
       if (this.page === 0) {
         RF.ACHIEVEMENTS.forEach((a, i) => { // one row each: trophy, name, how to get it
-          const x = 18, y = 34 + Math.round(i * 9.6), on = !!d.unlocked[a.id];
+          const x = 18, y = 34 + Math.round(i * Math.min(9.6, 164 / RF.ACHIEVEMENTS.length)), on = !!d.unlocked[a.id];
           ctx.fillStyle = on ? '#ffd030' : '#3a2a20'; ctx.fillRect(x, y, 7, 7);
           if (on) { ctx.fillStyle = '#fff6b0'; ctx.fillRect(x + 2, y + 2, 3, 3); }
           T(ctx, a.name, x + 11, y, { color: on ? '#ffd030' : '#806860', outline: '#000' });

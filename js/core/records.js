@@ -21,6 +21,9 @@
     { id: 'survival10', name: 'IRON WILL', desc: 'WIN 10 IN A ROW IN SURVIVAL' },
     { id: 'trials', name: 'TEACHER\'S PET', desc: 'CLEAR ALL 8 COMBO TRIALS' },
     { id: 'roster', name: 'HALL MONITOR', desc: 'WIN A MATCH WITH EVERY FIGHTER' },
+    { id: 'daily', name: 'PERFECT ATTENDANCE', desc: 'WIN A DAILY FIGHT' },
+    { id: 'clutch', name: 'BY A THREAD', desc: 'WIN A ROUND ON 10% HEALTH OR LESS' },
+    { id: 'king', name: 'KING OF THE HILL', desc: '3 IN A ROW IN WINNER STAYS' },
   ];
 
   const blank = () => ({ wins: {}, played: {}, counts: {}, best: { combo: 0, survival: 0 }, unlocked: {}, trials: [] });

@@ -1,4 +1,4 @@
-// THE COMPOSER: story mode's own soundtrack. Twenty-three original themes, written as chords and
+// THE COMPOSER: story mode's own soundtrack. Twenty-six original themes, written as chords and
 // melodies below and played live by a small sequencer (no audio files): a pad, an arpeggio, a
 // bass, a lead melody and drums per theme. Cue one from the script with { score: 'theme' };
 // cues cross-fade, and cueing the theme that is already playing does nothing.
@@ -268,6 +268,35 @@
         'F4 - - - - - A4 - C5 - - - F5 - - -', 'E5 - - - - - - - - - - - . . . .',
       ], vol: 0.06, wave: 'triangle', double: true },
       { drums: ['t . . . . . . . t . . . t . t .', 't . . . . . . . t . . . . . . .'], vol: 0.12 },
+    ] },
+    // THE RIFT - the bell melody with the wrong note in it (the fifth pulled down to a tritone): whatever
+    // came through that door is one of us, bent. For the first sight of anything from outside.
+    rift: { step: 15, bars: ['Dm', 'Ab', 'Dm', 'Ab', 'Dm', 'Ddim', 'Ab', 'A'], parts: [
+      { pad: true, vol: 0.018, wave: 'sawtooth', lp: 420, oct: -12 },
+      { bass: [0, _, _, _, _, _, _, _, _, _, _, _, 6, _, _, _], vol: 0.06, len: 6, wave: 'sine' },
+      { lead: [
+        'D5 - - - Ab4 - - - F4 - - - . . . .', '. . . . . . . . D5 - - - Ab4 - - -',
+        'D5 - - - Ab4 - - - F4 - - - Ab4 - - -', 'Eb5 - - - - - - - D5 - - - . . . .',
+        'F5 - - - D5 - - - Ab4 - - - . . . .', '. . . . F5 - - - D5 - - - Ab4 - - -',
+        'Eb5 - - - - - D5 - Ab4 - - - - - - -', 'C#5 - - - - - - - . . . . . . . .',
+      ], vol: 0.05, wave: 'sine', kind: 'pluck', double: true },
+      { drums: ['k . . k . . . . . . . . . . . .', 'k . . k . . . . . . . . b . . .'], vol: 0.07 },
+    ] },
+    // DREAD - almost nothing: a heartbeat, a floor, and two notes a half-step apart that will not settle.
+    // For the seconds before something is done to someone.
+    dread: { step: 14, bars: ['Dm', 'Dm', 'Ddim', 'Dm'], parts: [
+      { pad: true, vol: 0.022, wave: 'sine', oct: -12 },
+      { lead: ['A5 - - - - - - - - - - - - - - -', 'Bb5 - - - - - - - - - - - - - - -', 'A5 - - - - - - - Ab5 - - - - - - -', '. . . . . . . . . . . . . . . .'], vol: 0.016, wave: 'sine' },
+      { drums: ['k . . k . . . . . . . . . . . .'], vol: 0.1 },
+    ] },
+    // TAKEN - "is this seat taken?" in the minor, on a music box that runs down before its last note.
+    // For the moment the Headmaster keeps someone.
+    taken: { step: 17, bars: ['Cm', 'Ab', 'Fm', 'G'], parts: [
+      { pad: true, vol: 0.012, wave: 'sine', oct: -12 },
+      { lead: [
+        'Eb4 - G4 - C5 - - - Bb4 - G4 - Eb4 - - -', 'Eb4 - Ab4 - C5 - - - Bb4 - Ab4 - Eb4 - - -',
+        'F4 - Ab4 - C5 - - - D5 - C5 - Ab4 - - -', 'G4 - B4 - D5 - - - - - . . . . . .',
+      ], vol: 0.055, wave: 'sine', kind: 'pluck', oct: 12 },
     ] },
   };
 

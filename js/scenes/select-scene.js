@@ -36,7 +36,8 @@
       this.training = !!(prev && prev.training);
       this.tag = !!(prev && prev.tag);   // TAG TEAM: everyone picks two
       this.picks = [[], []];             // tag team: the first pick of each side (slot numbers)
-      this.labels = this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
+      this.party = (prev && prev.party) || null;   // Winner Stays: the two players have names, and ESC goes back to the line
+      this.labels = this.party && this.party.names ? this.party.names : this.cpu ? ['P1', this.training ? 'DUMMY' : 'CPU'] : ['P1', 'P2'];
       RF.announcer.say('CHOOSE YOUR FIGHTER');
       this.ready = [false, false];
       this.costume = (prev && prev.costumes) ? [...prev.costumes] : [0, 0];
@@ -85,6 +86,7 @@
       this.notice = this.notice.map((n) => Math.max(0, n - 1));
       this.flash = this.flash.map((n) => Math.max(0, n - 1));
       if (kb.justPressed('Escape') && !this.ready[0] && !this.ready[1]) {
+        if (this.party && this.party.onQuit) return this.party.onQuit(this.game);
         return this.game.setScene(new RF.TitleScene(this.game));
       }
       if (this.tag && !this.ready[0] && !this.picks[0].length && !this.picks[1].length && kb.justPressed(...RF.CONTROLS.p1.throw, ...RF.CONTROLS.p2.throw)) {
@@ -151,7 +153,7 @@
         const [a, b] = this.picks.map((pk) => pk.map((i) => this.slots[i])), alt = (d) => (a.some((x) => x.id === d.id) ? 1 : 0);
         return this.game.setScene(new RF.StageSelectScene(this.game, { p1: a[0], p2: b[0], costumes: [0, alt(b[0])], tag: { p1b: a[1], p2b: b[1], costumes: [0, alt(b[1])] }, cpu: this.cpu, stage: this.stage }));
       }
-      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, costumes: this.costumesFor(), cpu: this.cpu, training: this.training, stage: this.stage }));
+      this.game.setScene(new RF.StageSelectScene(this.game, { p1, p2, costumes: this.costumesFor(), cpu: this.cpu, training: this.training, stage: this.stage, party: this.party || undefined }));
     }
 
     render(ctx) {
@@ -226,6 +228,8 @@
           if (hov === undefined) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x, y, SLOT, SLOT); } // others dimmed
           ctx.restore();
           ctx.fillStyle = (ARCH[def.archetype] || [0, '#a08878'])[1]; ctx.fillRect(x, y - lift + SLOT - 2, SLOT, 2); // fighter-type stripe
+          const ms = RF.mastery && RF.mastery(def.id);   // how well you know them: a pip in the corner
+          if (ms && ms.tier) { ctx.fillStyle = '#000'; ctx.fillRect(x + SLOT - 5, y - lift, 5, 5); ctx.fillStyle = ms.color; ctx.fillRect(x + SLOT - 4, y - lift + 1, 3, 3); }
         } else T(ctx, '?', x + SLOT / 2, y + SLOT / 2 - 7, { scale: 2, align: 'center', color: hov === undefined ? '#c89a20' : '#ffd030' });
       });
       // cursors: corner brackets that breathe (P1 outside, P2 inside, so both show on one slot)
@@ -250,7 +254,7 @@
         if (!this.picks[0].length && !this.picks[1].length && !this.ready[0]) hint += ' - THROW = ' + (this.cpu ? '2 PLAYERS' : 'VS CPU');
       }
       if (!this.tag && this.cpu && this.ready[0] && !this.ready[1]) hint = this.training ? 'NOW PICK THE TRAINING DUMMY' : 'NOW PICK YOUR OPPONENT';
-      if (this.notice[0] || this.notice[1]) hint = 'THAT FIGHTER IS COMING SOON';
+      if (this.party && this.party.hint && !both) hint = this.party.hint;
       if (both) hint = 'GET READY...';
       if (hint) { const tw = RF.font.textWidth(hint) + 12; ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(W / 2 - tw / 2, 14, tw, 11); T(ctx, hint, W / 2, 16, { align: 'center', color: '#ffd030', outline: '#000' }); }
       if (both && this.readyTime < 8) { ctx.fillStyle = `rgba(255,240,220,${(8 - this.readyTime) / 10})`; ctx.fillRect(0, 0, W, H); }
@@ -289,6 +293,8 @@
       });
       const sp = RF.SPECIALS[def.special];
       T(ctx, sp.name.toUpperCase(), L, y + 31, { color: '#8ff0ff', outline: '#000' });
+      const ms = RF.mastery && RF.mastery(def.id);
+      if (ms && ms.tier && RF.font.textWidth(sp.name) + RF.font.textWidth(ms.tier) + 22 <= w) { T(ctx, ms.tier, x + w - 4, y + 31, { align: 'right', color: ms.color, outline: '#000' }); }
       if (solo) { // room for the whole story
         RF.font.wrap(def.bio.toUpperCase(), 19).slice(0, 3).forEach((l, i) => T(ctx, l, L, y + 44 + i * 9, { color: '#e0d8d0', outline: '#000' }));
         RF.font.wrap(sp.description.toUpperCase(), 19).slice(0, 3).forEach((l, i) => T(ctx, l, L, y + 76 + i * 9, { color: '#a8c0c8', outline: '#000' }));

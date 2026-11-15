@@ -1201,6 +1201,54 @@ and `reword` find a line anywhere in a chapter (inside choices and endings too) 
 there. The last thing story-9.js does is sort the chapters into `ORDER` and renumber every
 "CHAPTER n" title card - to move a chapter, move its name in that list.
 
+## The tone pass, Winner Stays, the Daily Fight
+
+**The story treats its dark moments as dark** (`js/config/story-11.js`; nothing in the plot changes).
+
+- **Three new themes** in `js/scenes/story-score.js` (26 now):
+  - `rift`: the bell melody with the wrong note in it. For the first sight of anything from outside.
+  - `taken`: "is this seat taken?" in the minor, on a music box that stops one note early. For the
+    moment the Headmaster keeps someone.
+  - `dread`: a heartbeat and two notes a half-step apart. For the seconds before something is done
+    to someone.
+- **The visitors from other universes** (Bro Batch, Lockdown, Street Level, Game Day, The King's
+  Chair, The Bell Tower, The Climb) used to walk in on action music with a joke. Each now arrives
+  under `rift` with the picture pulling apart, and says one thing that is not a joke ("NOBODY EVER
+  TOLD ME TO STOP, MISS. NOT ONE TIME."). The hero's comeback is still there. Two of them had no last
+  words; they do now.
+- **Kept:** when Chris, Gabriel, Anthony or the first boy is taken, and when the Headmaster takes
+  attendance backward in the last chapter, `taken` plays; for Chris and Gabriel the colour drains
+  out of the picture too.
+- **Sealed:** the Keeper's polite chime gives way to `dread` when he shows what sealing is (Incident
+  Report, Code Red). The Proctor, the Eraser and the Forgotten arrive under it too.
+- **Two jokes that cut in straight after something cruel** now happen in silence (after "they
+  cheered when you left") or without their sting (the toaster and the gallery, in the trial).
+
+To change any of it: every edit in that file is one line that names the chapter and the line of
+dialogue it is attached to.
+
+**Winner Stays** (title -> PARTY; `js/scenes/party-scene.js`). 3 to 8 players, two controllers or
+one keyboard. Two play; the winner keeps their seat and their controller, the loser hands theirs to
+whoever is next and goes to the back of the line. Everyone picks a fighter each time. Names are four
+letters, arcade style. First to 3, 5, 7 or 10 wins takes the night; the table shows wins and best
+run, and the king wears the crown.
+
+**Daily Fight** (title -> CHALLENGES). One matchup a day, the same for everyone who plays that day:
+who you are, who you fight, where, and one rule (low gravity, turbo, glass jaws...). Hard CPU. Score
+= 100 a round won, -100 a round lost, plus the health you finish on, plus 50 for not dropping a
+round. Your best for the day and your run of days won are kept in this browser.
+
+**Smaller things**
+
+- The title menu has a **PARTY** group (Winner Stays, Tournament, Party Mods).
+- **The CPU answers crazy specials:** it tries to hit you out of one before it commits, and walks
+  out from under a drop once it has locked on. How often depends on the difficulty.
+- **Mastery:** your wins with each fighter make you a ROOKIE (1), REGULAR (5), MAIN (15) or LEGEND
+  (30) with them: a pip on the select screen and a word on their card (`RF.mastery`).
+- **CLUTCH!** Win a round by knockout on a tenth of your health or less: a callout and a quarter bar.
+- **The first fight on a device** shows the buttons for ten seconds. Once.
+- Three more achievements (20): PERFECT ATTENDANCE, BY A THREAD, KING OF THE HILL.
+
 ## Ten more stages, a throw for everyone, and Alejandro in rock
 
 **Ten new stages** (31 now), each with its own hazard and its own song.
@@ -1594,7 +1642,7 @@ also says where each clip plays.
 ## The small things
 
 - **PRESS ANY BUTTON** in front of the title, once per visit.
-- **The title menu is grouped:** STORY, FIGHT, CHALLENGES, EXTRAS, SETTINGS. Three of them open a
+- **The title menu is grouped:** STORY, FIGHT, CHALLENGES, PARTY, EXTRAS, SETTINGS. Four of them open a
   group; BACK or ESC closes it, and the menu remembers where you were when you come back.
 - **A featured fighter** on the title, with their quote, changing every few seconds; a **tip** along
   the bottom, and another on the VS screen (`RF.TIPS` in `js/game/polish.js`).
@@ -1798,7 +1846,7 @@ note is a power chord, `E2*` is a palm-muted chug, `-` holds, `.` rests. Drums:
   (50% faster), Triple Damage, Protein Mode (half the damage you deal heals you) and Random
   Fighters (new random fighters every round). Mix them freely; they apply to every mode and reset
   when the page reloads (`RF.MOD_SETTINGS` in `js/core/settings.js`).
-- **Records + achievements** (title menu -> RECORDS): 17 achievements with an "ACHIEVEMENT
+- **Records + achievements** (title menu -> RECORDS): 20 achievements with an "ACHIEVEMENT
   UNLOCKED" pop-up (first win, flawless rounds, 5- and 10-hit combos, finishers, brutalities,
   stage transitions, hazards, supers, combo breakers, Arcade clear, Survival streaks, all combo
   trials, a win with every fighter...) and lifetime stats: matches, wins per fighter, longest

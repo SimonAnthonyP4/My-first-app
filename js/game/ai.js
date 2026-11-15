@@ -74,6 +74,27 @@
         return;
       }
 
+      // A crazy special on its way. Before it commits, the answer is to hit them out of it; once a drop has
+      // locked on, the answer is to not be standing under it. Better CPUs know both, more often.
+      if (opp.state === 'special' && opp.special && opp.special.kind === 'crazy' && !opp.isKO) {
+        if (this.crazyPlan === undefined || opp.stateTime < this.crazySeen) this.crazyPlan = Math.random() < Math.min(0.92, L.blockChance + 0.12);
+        this.crazySeen = opp.stateTime;
+        if (this.crazyPlan && me.grounded && ACTIONABLE.includes(me.state)) {
+          const d = opp.specialData || {}, gap = Math.abs(opp.x - me.x);
+          if (!opp.crazyCommitted) {
+            if (gap <= me.moves.light.hitbox.x + me.moves.light.hitbox.w + opp.body.width / 2) this.tap('light');
+            else this.holding.add(key(toward));
+            return;
+          }
+          if (d.tx != null && d.sx == null && !d.hooked && Math.abs(me.x - d.tx) < 46) {
+            const b = this.scene.stageDef.bounds; let dir = Math.sign(me.x - d.tx) || -toward;
+            if ((dir < 0 && me.x - b.left < 44) || (dir > 0 && b.right - me.x < 44)) dir = -dir;   // not into the wall
+            this.holding.add(key(dir));
+            return;
+          }
+        }
+      } else this.crazyPlan = undefined;
+
       // 1. Defence: react to attacks we can see coming.
       const threat = this.detectThreat(me, opp, now);
       if (threat && threat.id !== this.lastThreat) {

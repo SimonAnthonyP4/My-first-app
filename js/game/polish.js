@@ -98,4 +98,45 @@
     'ALEJANDRO: DOWN, FORWARD + HEAVY ROLLS A BOULDER STRAIGHT THROUGH THEM.',
   ];
   RF.tip = (n) => RF.TIPS[((n | 0) % RF.TIPS.length + RF.TIPS.length) % RF.TIPS.length];
+
+  // ---------------------------------------------------------------- mastery
+  // How well you know each fighter, from your wins with them: a pip on the select screen and a word on their card.
+  const TIERS = [[30, 'LEGEND', '#ff4030'], [15, 'MAIN', '#ffd030'], [5, 'REGULAR', '#c8d0d8'], [1, 'ROOKIE', '#c8803a']];
+  RF.mastery = function (id) {
+    const wins = ((RF.records.data.wins || {})[id]) || 0, t = TIERS.find((x) => wins >= x[0]), up = TIERS.slice().reverse().find((x) => wins < x[0]);
+    return { wins, tier: t ? t[1] : null, color: t ? t[2] : null, next: up ? up[0] - wins : 0, nextTier: up ? up[1] : null };
+  };
+
+  // ---------------------------------------------------------------- the first fight anybody has on this device
+  // The buttons, on screen, for the first ten seconds of the first round. Never again after that.
+  const HINT_KEY = 'terramania-hint', HINT_LEN = 600;
+  let hintSeen = false; try { hintSeen = !!localStorage.getItem(HINT_KEY); } catch (e) { /* no storage */ }
+  const keyName = (code) => code.replace(/^Key/, '').replace(/^Arrow/, '').replace(/^Numpad/, 'NUM').replace('Comma', ',').replace('Period', '.').replace('Slash', '/').replace('Semicolon', ';').replace('Quote', "'").toUpperCase();
+  const padName = { Square: 'SQUARE', Triangle: 'TRIANGLE', Circle: 'CIRCLE', Cross: 'CROSS', R1: 'R1' };
+  const bind = (p, action, pad) => {
+    const codes = RF.CONTROLS['p' + (p + 1)][action] || [];
+    if (pad) { const c = codes.find((x) => /^Pad\d/.test(x)); return c ? (padName[c.replace(/^Pad\d/, '')] || c.replace(/^Pad\d/, '').toUpperCase()) : '?'; }
+    const k = codes.find((x) => !/^Pad\d|^Numpad/.test(x)) || codes.find((x) => !/^Pad\d/.test(x));
+    return k ? keyName(k) : '?';
+  };
+  RF.drawFirstFightHint = function (ctx, scene) {
+    if (hintSeen || scene.training || scene.opts.demo || scene.opts.story || scene.opts.cpuBoth || scene.round !== 1 || scene.phase !== 'fight' || (RF.touch && RF.touch.active)) return;
+    if (scene.hintT === undefined) { if (Object.keys(RF.records.data.played || {}).length) { hintSeen = true; return; } scene.hintT = 0; }
+    const t = scene.paused ? scene.hintT : scene.hintT++;
+    if (t >= HINT_LEN) { hintSeen = true; try { localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ } return; }
+    const a = Math.min(1, t / 20, (HINT_LEN - t) / 40), W = RF.CONFIG.WIDTH;
+    const pads = (navigator.getGamepads ? [...navigator.getGamepads()] : []).filter((g) => g && g.connected).length;
+    const sides = scene.opts.cpu ? [0] : [0, 1];
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 36, W, 37); ctx.fillStyle = '#c01010'; ctx.fillRect(0, 36, W, 1); ctx.fillRect(0, 72, W, 1);
+    sides.forEach((p) => {
+      const pad = pads > p, x = sides.length === 1 ? W / 2 : (p === 0 ? 8 : W - 8), align = sides.length === 1 ? 'center' : (p === 0 ? 'left' : 'right'), B = (act) => bind(p, act, pad);
+      const arrows = !pad && /^Arrow/.test(RF.CONTROLS['p' + (p + 1)].left[0]);
+      const move = pad ? 'MOVE: D-PAD OR STICK' : arrows ? 'MOVE: ARROWS   JUMP: UP' : 'MOVE ' + B('left') + ' ' + B('right') + '   JUMP ' + B('up') + (sides.length === 1 ? '   DUCK ' + B('down') : '');
+      T(ctx, move, x, 40, { align, color: '#ffffff', outline: '#000' });
+      T(ctx, 'LIGHT ' + B('light') + '   HEAVY ' + B('heavy') + '   BLOCK ' + B('block'), x, 50, { align, color: '#ffd030', outline: '#000' });
+      T(ctx, 'THROW ' + B('throw') + '   DASH ' + B('dash') + (sides.length === 1 ? '   LIGHT + HEAVY = SUPER' : ''), x, 60, { align, color: '#c8b0a0', outline: '#000' });
+    });
+    ctx.restore();
+  };
 })();

@@ -50,7 +50,7 @@
       this.frame = 0;
       this.paused = false;
       this.showHitboxes = RF.CONFIG.SHOW_HITBOXES;
-      const toSelect = () => game.setScene(new RF.SelectScene(game, opts));
+      const toSelect = () => (opts.party && opts.party.onQuit ? opts.party.onQuit(game) : game.setScene(new RF.SelectScene(game, opts)));   // (Winner Stays / the Daily Fight: back to where the fight came from)
       const toTitle = () => game.setScene(new RF.TitleScene(game));
       this.pauseMenu = new RF.ListMenu([
         { label: 'RESUME', onSelect: () => { this.paused = false; } },
@@ -111,7 +111,7 @@
       this.finishVictim = null;  // who is dazed waiting to be finished
       this.finishOffered = false;
       this.firstHit = false;
-      this.flawless = false;
+      this.flawless = false; this.clutch = false;
       this.projectiles = [];
       this.effects.clear();
       this.gore.reset();
@@ -256,7 +256,7 @@
           if (this.phaseTime < 40 && this.phaseTime % 2) return;
           if (this.phaseTime === 70) {
             const w = this.roundWinner !== null && this.fighters[this.roundWinner];
-            RF.announcer.say(!w ? 'DRAW' : w.def.name + ' WINS.' + (this.flawless ? ' FLAWLESS VICTORY!' : ''));
+            RF.announcer.say(!w ? 'DRAW' : w.def.name + ' WINS.' + (this.flawless ? ' FLAWLESS VICTORY!' : this.clutch ? ' CLUTCH!' : ''));
           }
           if (this.phaseTime === 70 && this.roundWinner !== null) {
             const w = this.fighters[this.roundWinner];
@@ -272,6 +272,7 @@
               if (this.opts.survival) this.endMenu = this.survivalMenu();
               if (this.opts.tower) this.endMenu = RF.towerMenu(this);
               if (this.opts.tournament) this.endMenu = new RF.ListMenu([{ label: 'BACK TO THE BRACKET', onSelect: () => RF.tournamentResult(this.game, this.opts.tournament, this.wins[0] > this.wins[1]) }]);
+              if (this.opts.party) this.endMenu = new RF.ListMenu([{ label: this.opts.party.label, onSelect: () => this.opts.party.onEnd(this.game, this.wins[0] > this.wins[1], this) }]);   // Winner Stays, the Daily Fight (scenes/party-scene.js)
               this.setPhase('matchOver');
             }
             else { this.round++; this.startRound(); }
@@ -1140,6 +1141,9 @@
       this.flawless = winner !== null && this.fighters[winner].health >= this.fighters[winner].maxHealth;
       if (this.flawless && this.isHuman(this.fighters[winner])) RF.records.unlock('flawless');
       if (this.flawless) RF.audio.sfx('perfect');
+      // CLUTCH: a knockout landed with a tenth of your own health left (or less)
+      this.clutch = reason === 'ko' && winner !== null && !this.flawless && this.fighters[winner].health <= this.fighters[winner].maxHealth * 0.1;
+      if (this.clutch) { this.fighters[winner].gainMeter(25); if (this.isHuman(this.fighters[winner])) RF.records.unlock('clutch'); }
       this.setPhase('roundOver');
     }
 
@@ -1198,6 +1202,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       this.hud.draw(ctx, this);
+      if (RF.drawFirstFightHint) RF.drawFirstFightHint(ctx, this);   // the buttons, once, for the very first fight (game/polish.js)
       if (this.tag) RF.drawTagHud(ctx, this);
       if (ent) RF.drawEntranceCard(ctx, ent.f, ent.t);
       if (this.training) this.drawTrainingHud(ctx, W);
@@ -1240,6 +1245,7 @@
       } else if (this.phase === 'roundOver') {
         big(this.banner);
         if (this.phaseTime > 70) T(ctx, this.subBanner, W / 2, 118, { scale: 2, align: 'center', color: '#fff', outline: '#000' });
+        if (this.clutch && this.phaseTime > 90) T(ctx, 'CLUTCH!', W / 2, 138, { scale: 2, align: 'center', color: ['#ffffff', '#d0f4ff', '#80e0ff', '#40b0ff', '#2070e0'], outline: '#001020' });
         if (this.flawless && this.phaseTime > 90) {
           T(ctx, 'FLAWLESS VICTORY', W / 2, 138, { scale: 2, align: 'center', color: ['#ffffff', '#fff6b0', '#ffe060', '#ffc030', '#ff9a10', '#ff7000', '#e04000'], outline: '#200000' });
         }
