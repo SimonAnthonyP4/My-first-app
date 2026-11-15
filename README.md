@@ -127,6 +127,14 @@ joiner, a watcher and a host each left in the background, connections that drop 
 whole match with lag and one update in five dropped. It has not been played over the real claude.ai
 room by real people yet.
 
+### Playing outside Claude (GitHub Pages)
+
+The game is plain static files, so it runs from any web host. With GitHub Pages turned on for this
+repo (Settings -> Pages -> Deploy from a branch -> this branch, `/ (root)`), it is playable at
+`https://simonanthonyp4.github.io/My-first-app/`. Everything works there except **online play**, which
+needs the claude.ai page's live room and says so in the menu. Saves, records and unlocks are kept in
+the browser per website, so they do not carry over from the Claude page.
+
 ### Phones and tablets (touch controls)
 
 Open the game on a phone or tablet and an on-screen controller appears by itself (best sideways;
