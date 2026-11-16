@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>Terramania</title>
+  <meta name="description" content="TERRAMANIA: a retro pixel-art fighting game. 37 fighters, 31 stages, a 34-chapter story, and online play with friends.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="TERRAMANIA">
+  <meta property="og:description" content="No rules. No mercy. No lunch. A retro pixel-art fighting game for friends.">
+  <meta property="og:image" content="https://simonanthonyp4.github.io/My-first-app/assets/share.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="apple-mobile-web-app-title" content="TERRAMANIA">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game" width="384" height="224"></canvas>
+  <div id="help">
+    <span><b>P1</b> A/D move · W jump · S crouch · F light · G heavy · H block · T throw · Q dash · E EX · R taunt</span>
+    <span><b>P2</b> ←/→ move · ↑ jump · ↓ crouch · Num1 (or ,) light · Num2 (or .) heavy · Num3 (or /) block · Num4 (or L) throw · Num0 (or ') dash · Num6 (or ;) EX · Num5 (or K) taunt</span>
+    <span><b>PS5 controller</b> □ light · △ heavy · ○/L1 block · ✕ throw · R1 dash · L2 EX · R2 super / combo breaker · L2+R2 last stand (low health) · Create or touchpad taunt · Options pause</span>
+    <span>Menus: W/S or ↑/↓ + Enter · Esc pause/back · M mute · ` hitboxes</span>
+    <span><b>Phone / tablet</b> on-screen stick + buttons appear automatically (Settings → Touch Controls) · tap menu rows and the story to advance</span>
+  </div>
+
+  <!-- Plain scripts (no modules) so the game runs straight from the file system. Order matters. -->
+  <script src="js/core/namespace.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/font.js"></script>
+  <script src="js/core/input.js"></script>
+
+  <script src="js/config/game.js"></script>
+  <script src="js/config/controls.js"></script>
+  <script src="js/config/moves.js"></script>
+  <script src="js/config/specials.js"></script>
+  <script src="js/config/throws.js"></script>
+  <script src="js/config/characters.js"></script>
+  <script src="js/config/commands.js"></script>
+  <script src="js/config/banter.js"></script>
+  <script src="js/config/story.js"></script>
+  <script src="js/config/story-2.js"></script>
+  <script src="js/config/story-3.js"></script>
+  <script src="js/config/story-4.js"></script>
+  <script src="js/config/story-5.js"></script>
+  <script src="js/config/story-6.js"></script>
+<script src="js/config/story-7.js"></script>
+<script src="js/config/story-8.js"></script>
+<script src="js/config/story-9.js"></script>
+<script src="js/config/story-10.js"></script>
+  <script src="js/config/story-11.js"></script>
+  <script src="js/config/story-voice.js"></script>
+  <script src="js/config/ai.js"></script>
+  <script src="js/config/trials.js"></script>
+  <script src="js/config/music.js"></script>
+  <script src="js/core/settings.js"></script>
+  <script src="js/core/audio.js"></script>
+  <script src="js/core/records.js"></script>
+<script src="js/core/unlocks.js"></script>
+  <script src="js/core/announcer.js"></script>
+
+  <script src="js/render/poses.js"></script>
+  <script src="js/render/procedural-sprite.js"></script>
+  <script src="js/render/sheet-sprite.js"></script>
+  <script src="js/render/pixel-puppet-sprite.js"></script>
+  <script src="js/render/sprites.js"></script>
+  <script src="js/render/electric.js"></script>
+  <script src="js/render/fire.js"></script>
+
+  <script src="js/stages/registry.js"></script>
+  <script src="js/stages/cafeteria.js"></script>
+  <script src="js/stages/nyc-street.js"></script>
+  <script src="js/stages/haunted-court.js"></script>
+  <script src="js/stages/sirvens-office.js"></script>
+  <script src="js/stages/home-stages.js"></script>
+<script src="js/stages/regal.js"></script>
+<script src="js/stages/art-stages.js"></script>
+  <script src="js/stages/character-stages.js"></script>
+  <script src="js/stages/spectacle-stages.js"></script>
+<script src="js/stages/throne.js"></script>
+<script src="js/stages/keeper-stages.js"></script>
+
+  <script src="js/game/effects.js"></script>
+  <script src="js/game/special-kinds.js"></script>
+  <script src="js/game/rocks.js"></script>
+  <script src="js/game/fx.js"></script>
+  <script src="js/game/throw-kinds.js"></script>
+  <script src="js/game/throws-unique.js"></script>
+  <script src="js/game/finishers.js"></script>
+  <script src="js/game/gore.js"></script>
+  <script src="js/game/intros.js"></script>
+  <script src="js/game/bandy.js"></script>
+  <script src="js/game/brady.js"></script>
+<script src="js/game/erick.js"></script>
+<script src="js/game/loor.js"></script>
+  <script src="js/game/blocks.js"></script>
+  <script src="js/game/alejandro.js"></script>
+  <script src="js/game/escudero.js"></script>
+  <script src="js/game/david.js"></script>
+<script src="js/game/olu.js"></script>
+<script src="js/game/items.js"></script>
+<script src="js/game/urbanik.js"></script>
+<script src="js/game/headmaster.js"></script>
+<script src="js/game/riley.js"></script>
+<script src="js/game/lieutenants.js"></script>
+<script src="js/game/entrances.js"></script>
+  <script src="js/game/tag-team.js"></script>
+  <script src="js/game/hazards.js"></script>
+  <script src="js/game/fighter.js"></script>
+  <script src="js/game/ai.js"></script>
+  <script src="js/game/hud.js"></script>
+  <script src="js/game/fight-scene.js"></script>
+<script src="js/game/crazy.js"></script>
+<script src="js/game/crazy-all.js"></script>
+<script src="js/game/polish.js"></script>
+  <script src="js/game/super-cinema.js"></script>
+
+  <script src="js/scenes/ui.js"></script>
+  <script src="js/scenes/title-scene.js"></script>
+  <script src="js/scenes/settings-scene.js"></script>
+  <script src="js/scenes/info-scene.js"></script>
+  <script src="js/scenes/select-scene.js"></script>
+  <script src="js/scenes/stage-select-scene.js"></script>
+  <script src="js/scenes/versus-scene.js"></script>
+  <script src="js/scenes/arcade-scene.js"></script>
+  <script src="js/scenes/tower-scene.js"></script>
+  <script src="js/scenes/tournament-scene.js"></script>
+  <script src="js/scenes/party-scene.js"></script>
+  <script src="js/scenes/story-score.js"></script>
+  <script src="js/scenes/story-scene.js"></script>
+  <script src="js/scenes/story-3d.js"></script>
+  <script src="js/scenes/story-play.js"></script>
+<script src="js/scenes/story-fights.js"></script>
+<script src="js/scenes/story-war.js"></script>
+<script src="js/scenes/story-cine.js"></script>
+<script src="js/scenes/story-gl.js"></script>
+<script src="js/scenes/story-clip.js"></script>
+  <script src="js/scenes/extras-scene.js"></script>
+<script src="js/scenes/unlocks-scene.js"></script>
+
+  <script src="js/net/online.js"></script>
+  <script src="js/core/touch.js"></script>
+  <script src="js/main.js"></script>
+  <script async src="js/vendor/three.min.js"></script>
+</body>
+</html>

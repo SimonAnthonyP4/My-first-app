@@ -1,0 +1,740 @@
+// Throw animations/behaviour. Each kind implements:
+//   update(att, def, t, scene) -> true when the throw is finished
+//       runs every frame of the throw; positions the victim (def) relative to
+//       the thrower (att), picks the victim's pose (def.thrownPose) and deals
+//       damage through scene.throwHit(att, def, damage, release?)
+//   anim(att, t) -> [animation, frame] for the thrower
+//   draw(att, def, ctx, floorY, frame)   optional extra effects
+(function () {
+  // Hold the victim just in front of the thrower (`extra` pixels further out).
+  function hold(att, def, extra = 0, y = 0) {
+    const dist = (att.body.width + def.body.width) / 2 + extra;
+    def.x = att.x + att.facing * dist;
+    def.y = y;
+    def.facing = -att.facing;
+  }
+
+  RF.THROW_KINDS = {
+    // Bruiser: lift overhead, carry over, slam down behind.
+    overhead: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        if (t < 8) { hold(att, def); def.thrownPose = ['hit', 0]; return false; }
+        if (t < 28) {
+          const u = (t - 8) / 20, a = Math.PI * u;
+          def.x = att.x + att.facing * Math.cos(a) * 26;
+          def.y = Math.sin(a) * (att.body.height + 6) + 8; // hoisted right over his head
+          def.thrownPose = u < 0.25 || u > 0.75 ? ['ko', 0] : ['ko', 1];
+          return false;
+        }
+        if (t === 28) {
+          def.x = att.x - att.facing * 30;
+          def.y = 0;
+          scene.shake = 12;
+          scene.effects.spawn('dust', def.x, 1);
+          scene.effects.spawn('shock', def.x, 4);
+          scene.throwHit(att, def, T.damage, { vx: -att.facing * 2, vy: 3 });
+        }
+        return t >= 42;
+      },
+      anim(att, t) { return ['throw', t < 8 ? 0 : t < 28 ? 1 : 2]; },
+    },
+
+    // Viper: knee, knee, knee, kick away.
+    flurry: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        const knees = [];
+        for (let i = 0; i < T.hits; i++) knees.push(8 + i * 10);
+        const finish = 8 + T.hits * 10;
+        const sinceKnee = Math.min(...knees.map((k) => (t >= k ? t - k : 99)));
+        hold(att, def, sinceKnee < 3 ? 2 : 0); // jolts back on each knee
+        def.thrownPose = ['hit', 0];
+        if (knees.includes(t)) {
+          if (T.callouts) scene.effects.spawnText(T.callouts[knees.indexOf(t)], att.x, att.body.height + 14, '#ff60a0');
+          scene.effects.spawn('hit', def.x - att.facing * 4, 30);
+          scene.throwHit(att, def, T.damagePerHit);
+        }
+        if (t === finish) {
+          if (T.callouts) scene.effects.spawnText(T.callouts[T.hits], att.x, att.body.height + 22, '#ffd030');
+          scene.effects.spawn('heavy', def.x - att.facing * 6, 40);
+          scene.shake = 6;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 4, vy: 5 });
+        }
+        return t >= finish + 14;
+      },
+      anim(att, t) {
+        const T = att.throwCfg, finish = 8 + T.hits * 10;
+        if (t < 8) return ['throw', 0];
+        if (t >= finish && t < finish + 8) return ['heavy', 1];
+        return (t - 8) % 10 < 4 ? ['heavy', 0] : ['throw', 0]; // knee up
+      },
+    },
+
+    // Nicholas: bench-pressed overhead for three reps, then thrown.
+    // Mikey: TOUCHDOWN SPIKE - tucked under his arm, carried downfield, spiked. TOUCHDOWN!
+    touchdown: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        if (t < 44) {
+          att.x += att.facing * (t < 8 ? 0 : 3.2);           // the run (the stage walls stop him)
+          const b = scene.stageDef.bounds; att.x = Math.max(b.left + 16, Math.min(b.right - 16, att.x));
+          def.x = att.x + att.facing * 8; def.y = 42; def.facing = att.facing; def.thrownPose = ['ko', 1];
+          if (t % 8 === 0 && t > 8) scene.effects.spawn('dust', att.x - att.facing * 10, 1);
+        }
+        if (t === 4) scene.effects.spawnText(T.runText || 'HUT! HUT!', att.x, att.body.height + 20, '#ffffff');
+        if (t === 44) { def.y = 70; scene.effects.spawnText(T.spikeText || 'TOUCHDOWN!', att.x, att.body.height + 30, '#ffd030'); }
+        if (t === 50) { def.y = 0; def.x = att.x + att.facing * 24; scene.throwHit(att, def, T.spikeDamage, { vx: att.facing * 2, vy: 3 }); RF.audio.sfx('boom'); scene.shake = 14; }
+        return t >= 70;
+      },
+      anim(att, t) { return t < 44 ? ['walk', (t >> 2) % 4] : t < 52 ? ['victory', 0] : ['heavy', 1]; },
+    },
+
+    // Alejandro: BELAY DROP - clipped to the rope, hauled up high, then dropped. ROCK!
+    belayDrop: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        def.x = att.x + att.facing * 26; def.facing = -att.facing; def.thrownPose = ['hit', 0];
+        if (t < 50) def.y = Math.min(130, t < 8 ? 0 : (t - 8) * 3.2);
+        if (t === 4) { scene.effects.spawnText('ON BELAY!', att.x, att.body.height + 20, '#ff8030'); RF.audio.sfx('grab'); }
+        if (t === 50) scene.effects.spawnText('ROCK!', def.x, 170, '#ffffff');
+        if (t >= 54 && t < 66) def.y = Math.max(0, 130 - (t - 54) * 12);    // the drop
+        if (t === 66) { def.y = 0; scene.throwHit(att, def, T.dropDamage, { vx: att.facing * 3, vy: 2 }); RF.audio.sfx('boom'); scene.shake = 12; }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 50 ? ['throw', 1] : ['victory', 0]; },
+      draw(att, def, ctx, floorY) {
+        if (att.stateTime > 66) return;
+        ctx.strokeStyle = '#e07030'; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(att.x + att.facing * 6, floorY - 60); ctx.lineTo(def.x, 0); ctx.moveTo(def.x, 0); ctx.lineTo(def.x, floorY - def.y - def.body.height + 6);
+        ctx.stroke(); ctx.lineWidth = 1;
+      },
+    },
+
+    // Lopez Tuero: PROOF BY CONTRADICTION - each line of the proof stings; Q.E.D. slams them.
+    proof: {
+      lines: [[8, 'GIVEN: YOU.'], [26, 'ASSUME YOU CAN WIN.'], [44, '∫ YOU dx = 0'], [58, 'CONTRADICTION.']],
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 6, t > 20 && t < 70 ? Math.min(30, (t - 20) * 1.5) : 0);  // floated up off the floor
+        def.thrownPose = ['hit', 0];
+        for (const [lt, text] of this.lines) if (t === lt) { scene.effects.spawnText(text, att.x, att.body.height + 18, '#00ffd0'); if (lt > 8) { scene.throwHit(att, def, T.lineDamage); RF.audio.sfx('zap'); } }
+        if (t === 72) { scene.effects.spawnText('Q.E.D.', def.x, 130, '#ffffff'); RF.audio.sfx('boom'); scene.shake = 10; scene.throwHit(att, def, T.qedDamage, { vx: att.facing * 6, vy: -6 }); }
+        return t >= 86;
+      },
+      anim(att, t) { return t < 70 ? ['victory', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 10 || t > 70) return;
+        ctx.strokeStyle = 'rgba(0,255,208,0.5)';
+        ctx.beginPath(); ctx.ellipse(def.x, floorY - def.y - def.body.height / 2, def.body.width, def.body.height * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+      },
+    },
+
+    // Wuttke: LUTE SOLO - a blistering solo in their face, then ENCORE! (a bonk with the lute).
+    luteSolo: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 4);
+        def.thrownPose = ['hit', (t >> 2) % 2];
+        if (t === 2) scene.effects.spawnText('A-ONE, A-TWO...', att.x, att.body.height + 20, '#c080ff');
+        if (t >= 14 && t < 54 && t % 8 === 0) { scene.throwHit(att, def, T.noteDamage); RF.audio.sfx('zap'); }
+        if (t === 40) scene.effects.spawnText('SOLO!', att.x, att.body.height + 28, '#ffd040');
+        if (t === 62) scene.effects.spawnText('ENCORE!', att.x, att.body.height + 28, '#ff60a0');
+        if (t === 66) { scene.throwHit(att, def, T.encoreDamage, { vx: att.facing * 7, vy: 4 }); RF.audio.sfx('clang'); }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 60 ? ['light', (t >> 2) % 2 ? 0 : 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 14 || t > 56) return;
+        for (let i = 0; i < 5; i++) { // notes flying off the strings into their face
+          const a = ((t * 3 + i * 9) % 30) / 30, x = att.x + (def.x - att.x) * a, y = floorY - 50 - Math.sin(a * Math.PI) * 14 - i * 3;
+          RF.drawNote(ctx, x, y, i % 2 ? '#ffd040' : '#e0c0ff', 1);
+        }
+      },
+    },
+
+    // Gabriel: MIND SPIN - telekinesis: up over his head, spun around, hurled.
+    tkSpin: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, a = t * 0.35;
+        if (t < 64) {
+          def.x = att.x + Math.cos(a) * 34; def.y = 60 + Math.sin(a) * 12;
+          def.facing = Math.cos(a) > 0 ? -1 : 1; def.thrownPose = ['hit', 0];
+        }
+        if (t === 4) RF.audio.sfx('arcane');
+        if (t === 22 || t === 42) { scene.throwHit(att, def, T.spinDamage); RF.audio.sfx('whoosh'); }
+        if (t === 50) scene.effects.spawnText('WHEEEE!', def.x, 160, '#40e8ff');
+        if (t === 64) { def.x = att.x + att.facing * 30; scene.throwHit(att, def, T.hurlDamage, { vx: att.facing * 9, vy: 4 }); RF.audio.sfx('heavy'); }
+        return t >= 78;
+      },
+      anim(att, t) { return t < 64 ? ['victory', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        ctx.strokeStyle = '#40e8ff'; ctx.globalAlpha = 0.5;
+        ctx.beginPath(); ctx.ellipse(att.x, floorY - 60 - def.body.height / 2, 40, 14, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // Fernando: SMOKE BREAK - three clouds of smoke to the face (COUGH!), a gross line, a boot.
+    smokeBreak: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, -2);
+        def.thrownPose = ['hit', 0];
+        if (t === 14 || t === 30 || t === 46) { scene.throwHit(att, def, T.puffDamage); scene.effects.spawnText('COUGH!', def.x, def.body.height + 6, '#c8c8c8'); RF.audio.sfx('whoosh'); }
+        if (t === 54) { scene.effects.spawnText('THAT IS WHAT SHE SAID.', att.x, att.body.height + 22, '#ff9ac8'); RF.audio.sfx('laugh'); }
+        if (t === 74) { scene.throwHit(att, def, T.kickDamage, { vx: att.facing * 7, vy: 4 }); RF.audio.sfx('heavy'); }
+        return t >= 88;
+      },
+      anim(att, t) { return t < 72 ? ['throw', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        for (const t0 of [14, 30, 46]) { // each puff drifts across into their face and grows
+          const a = t - t0 + 6;
+          if (a < 0 || a > 26) continue;
+          const x = att.x + att.facing * (8 + a * 1.4), y = floorY - att.body.height + 12 - a * 0.3, r = 3 + a * 0.35;
+          ctx.globalAlpha = 0.75 - a / 40;
+          ctx.fillStyle = '#d8d8d8';
+          for (const [dx, dy] of [[0, 0], [r * 0.8, -r * 0.4], [-r * 0.6, -r * 0.5]]) { ctx.beginPath(); ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2); ctx.fill(); }
+          ctx.globalAlpha = 1;
+        }
+      },
+    },
+
+    // Tyler: SAND TRAP - buries them in a bunker, rakes it, "PLAY IT WHERE IT LIES", blasts them out.
+    sandTrap: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        def.x = att.x + att.facing * 30; def.facing = -att.facing;
+        def.y = t < 70 ? -Math.min(1, t / 14) * def.body.height * 0.55 : 0;   // sinking into the sand
+        def.thrownPose = ['hit', 0];
+        if (t === 2) RF.audio.sfx('stomp');
+        if (t === 24 || t === 42) { scene.throwHit(att, def, T.rakeDamage); scene.effects.spawnText('RAKE', def.x, 40, '#e8d090'); RF.audio.sfx('scribble'); }
+        if (t === 54) scene.effects.spawnText('PLAY IT WHERE IT LIES.', att.x, att.body.height + 22, '#ffffff');
+        if (t === 72) { scene.throwHit(att, def, T.blastDamage, { vx: att.facing * 5, vy: 6 }); scene.effects.spawnText('SAND SAVE!', def.x, 60, '#80ffb0'); RF.audio.sfx('heavy'); }
+        return t >= 86;
+      },
+      anim(att, t) { return t < 20 ? ['throw', 0] : t < 70 ? ['lowHeavy', (t >> 3) % 2 ? 1 : 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        // the bunker: a mound of sand around their legs
+        const x = Math.round(def.x);
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x, floorY, 30, 13, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#d8c080'; ctx.beginPath(); ctx.ellipse(x, floorY, 29, 12, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e8d8a0'; for (let i = -3; i <= 3; i++) ctx.fillRect(x + i * 7, floorY - 6 - Math.abs(i), 3, 1);
+      },
+    },
+
+    benchPress: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        const rep = t < 12 ? 0 : Math.min(3, Math.floor((t - 12) / 16)), phase = t < 12 ? t / 12 : ((t - 12) % 16) / 16;
+        const lift = t < 12 ? phase : rep >= 3 ? 1 : 0.6 + 0.4 * Math.abs(Math.cos(phase * Math.PI));
+        def.x = att.x; def.y = att.body.height * 0.55 + lift * 20; def.facing = -att.facing;
+        def.thrownPose = ['ko', 0];
+        if (t >= 12 && t < 60 && (t - 12) % 16 === 0) { scene.throwHit(att, def, T.damagePerRep); scene.effects.spawnText('REP ' + (rep + 1) + '!', att.x, att.body.height + 40, '#ffffff'); RF.audio.sfx('stomp'); }
+        if (t === 62) { scene.effects.spawnText('NEW PR!', att.x, att.body.height + 50, '#ffd030'); RF.audio.sfx('ready'); }
+        if (t === 72) scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 3 });
+        return t >= 86;
+      },
+      anim(att, t) { return t < 72 ? ['throw', 1] : ['throw', 2]; },
+    },
+
+    // Tamayo: cuffs, the rights read out (each line stings), a laugh, a shove.
+    arrest: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, LINES = ['YOU HAVE THE RIGHT TO REMAIN SILENT', 'ANYTHING YOU SAY IS ALSO WRONG', 'HA HA HA!'];
+        hold(att, def, 6);
+        def.thrownPose = ['hit', 0];
+        if (t === 6) RF.audio.sfx('clang');
+        LINES.forEach((l, i) => { if (t === 14 + i * 18) { scene.effects.spawnText(l, att.x, att.body.height + 8 + i * 9, i === 2 ? '#ff9a40' : '#ffffff'); scene.throwHit(att, def, T.damagePerLine); if (i === 2) RF.audio.sfx('laugh'); } });
+        if (t === 70) scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 4 });
+        return t >= 84;
+      },
+      anim(att, t) { return t < 60 ? ['idle', 0] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) { // the handcuffs on their wrists
+        const t = att.stateTime;
+        if (t < 6 || t > 70) return;
+        const x = Math.round(def.x + att.facing * 2), y = Math.round(floorY - def.body.height * 0.5);
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x - 4, y, 4, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(x + 5, y, 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#c8c8d0'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x - 4, y, 4, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(x + 5, y, 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1;
+      },
+    },
+
+    // Ruano: dates from European history, each one a hit, then a wing gust.
+    history: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 4);
+        def.thrownPose = ['hit', 0];
+        T.dates.forEach((d, i) => {
+          if (t === 14 + i * 16) {
+            scene.effects.spawnText(d, def.x + (i - 1) * 14, def.body.height + 6 + i * 6, '#ffe680');
+            scene.throwHit(att, def, T.damagePerDate); RF.audio.sfx('ready');
+          }
+        });
+        const end = 14 + T.dates.length * 16;
+        if (t === end) { RF.audio.sfx('whoosh'); scene.effects.spawnText('CLASS DISMISSED!', att.x, att.body.height + 18, '#ffffff'); scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 }); }
+        return t >= end + 14;
+      },
+      anim(att, t) { return t < 14 ? ['throw', 0] : ['throw', 1]; },
+      draw(att, def, ctx, floorY, frame) { // an open book of history floating between them
+        const t = att.stateTime;
+        if (t < 8 || t > 14 + att.throwCfg.dates.length * 16) return;
+        const x = Math.round((att.x + def.x) / 2), y = floorY - att.body.height - 14 + Math.sin(frame / 8) * 2;
+        ctx.fillStyle = '#111'; ctx.fillRect(x - 15, y - 1, 30, 18);
+        ctx.fillStyle = '#7a1a20'; ctx.fillRect(x - 14, y, 28, 16);
+        ctx.fillStyle = '#f4ead0'; ctx.fillRect(x - 12, y + 1, 11, 14); ctx.fillRect(x + 1, y + 1, 11, 14);
+        ctx.fillStyle = '#8a7a60'; for (let i = 0; i < 4; i++) { ctx.fillRect(x - 11, y + 3 + i * 3, 9, 1); ctx.fillRect(x + 2, y + 3 + i * 3, 9, 1); }
+      },
+    },
+
+    // Chris: a contract, an ACQUIRED stamp, a face full of cash, then a shove.
+    takeover: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 6);
+        def.thrownPose = ['hit', 0];
+        if (t === 6) RF.audio.sfx('paper');
+        if (t === 30) { RF.audio.sfx('heavy'); scene.shake = 6; scene.throwHit(att, def, T.stampDamage); scene.effects.spawnText('ACQUIRED!', def.x, def.body.height + 16, '#e02020'); }
+        if (t === 50) RF.audio.sfx('cash');
+        if (t === 66) { scene.effects.spawnText('SOLD!', def.x, def.body.height + 10, '#ffd030'); scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 4 }); }
+        return t >= 80;
+      },
+      anim(att, t) { return t < 30 ? ['throw', 0] : t < 50 ? ['heavy', 1] : t < 66 ? ['light', 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t >= 6 && t < 46) { // the contract held up in their face
+          const x = Math.round(def.x - att.facing * 2), y = floorY - def.body.height + 4;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 12, y - 1, 24, 30);
+          ctx.fillStyle = '#f4f0e4'; ctx.fillRect(x - 11, y, 22, 28);
+          ctx.fillStyle = '#8a8a8a'; for (let i = 0; i < 5; i++) ctx.fillRect(x - 8, y + 4 + i * 4, 16, 1);
+          if (t >= 30) { ctx.strokeStyle = '#e02020'; ctx.lineWidth = 2; ctx.strokeRect(x - 9, y + 10, 18, 9); ctx.lineWidth = 1; }
+        }
+        if (t >= 50 && t < 70) for (let i = 0; i < 10; i++) { // a wad of cash to the face
+          const u = (t - 50) / 20, bx = att.x + att.facing * (10 + u * 40 + i * 2), by = floorY - def.body.height * 0.7 + Math.sin(i * 1.7 + t / 3) * 10;
+          ctx.fillStyle = '#9ac070'; ctx.fillRect(Math.round(bx), Math.round(by), 6, 3);
+        }
+      },
+    },
+
+    // Anthony: lifted into a magic vortex and shaken like a protein shake.
+    levitate: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 14, Math.min(40, t * 1.2));
+        def.x += Math.sin(t * 1.3) * Math.min(4, t / 8);       // shaking
+        def.thrownPose = ['hit', 0];
+        if (t === 4) RF.audio.sfx('arcane');
+        for (let i = 0; i < T.ticks; i++) if (t === 24 + i * 12) { scene.throwHit(att, def, T.damagePerTick); RF.audio.sfx('drill'); }
+        if (t === 24 + T.ticks * 12) {
+          scene.effects.spawnText('SHAKEN!', def.x, def.y + def.body.height + 10, '#ff80c0');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 4 });
+        }
+        return t >= 24 + T.ticks * 12 + 16;
+      },
+      anim(att, t) { return t < 6 ? ['throw', 0] : ['throw', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t > 24 + att.throwCfg.ticks * 12) return;
+        const cx = def.x, cy = floorY - def.y - def.body.height / 2;
+        for (let i = 0; i < 14; i++) { // the vortex
+          const a = frame / 3 + i * 0.9, r = 18 + (i % 4) * 6;
+          ctx.fillStyle = i % 2 ? 'rgba(255,110,160,0.8)' : 'rgba(255,230,240,0.8)';
+          ctx.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r * 1.4), 3, 3);
+        }
+        ctx.strokeStyle = 'rgba(255,90,140,0.7)'; ctx.beginPath(); ctx.ellipse(cx, floorY - 2, 22, 5, 0, 0, Math.PI * 2); ctx.stroke();
+      },
+    },
+
+    // Holbrook: wrapped around a spinning globe, then flattened into a Mercator map.
+    mercator: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, 10);
+        def.hidden = t >= 10 && t < 96;
+        if (t === 10) RF.audio.sfx('whoosh');
+        if (t === 30 || t === 48 || t === 66) { RF.audio.sfx('hit'); scene.throwHit(att, def, T.spinDamage); def.hidden = true; }
+        if (t === 76) { RF.audio.sfx('stomp'); scene.shake = 8; scene.effects.spawnText('MERCATOR!', def.x, 70, '#80ffe0'); }
+        if (t === 96) {
+          def.hidden = false;
+          scene.effects.spawnText('OFF THE MAP!', def.x, def.body.height + 10, '#ff9a40');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 6 });
+        }
+        return t >= 110;
+      },
+      anim(att, t) { return t < 10 ? ['throw', 0] : t < 76 ? ['throw', 1] : t < 96 ? ['light', 1] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 10 || t >= 96) return;
+        const cx = Math.round(att.x + att.facing * 40), cy = floorY - 60, R = 24;
+        if (t < 76) {
+          // the giant globe, spinning, with them stuck to it
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#335975'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+          ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+          ctx.fillStyle = '#a49238';
+          for (let i = 0; i < 4; i++) { const lx = cx - R + ((t * 2 + i * 22) % (2 * R + 20)) - 10; ctx.fillRect(lx, cy - 14 + i * 7, 12, 8); }
+          ctx.restore();
+          ctx.strokeStyle = '#b8742a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R + 5, -2.4, 1.9); ctx.stroke(); ctx.lineWidth = 1;
+          ctx.fillStyle = '#6a4a20'; ctx.fillRect(cx - 3, cy + R + 4, 6, floorY - cy - R - 4); ctx.fillRect(cx - 12, floorY - 3, 24, 3);
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 0.25 * att.facing);
+          def.sprite.draw(ctx, 'hit', 0, 0, -R + 2, def.facing);
+          ctx.restore();
+        } else {
+          // flattened onto a Mercator map: stretched wide at the "poles"
+          const mw = 120, mh = 64, mx = cx - mw / 2, my = floorY - 90;
+          ctx.fillStyle = '#111'; ctx.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
+          ctx.fillStyle = '#3a6a90'; ctx.fillRect(mx, my, mw, mh);
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(mx + i * mw / 6, my); ctx.lineTo(mx + i * mw / 6, my + mh); ctx.stroke(); }
+          [8, 18, 32, 46, 56].forEach((yy) => { ctx.beginPath(); ctx.moveTo(mx, my + yy); ctx.lineTo(mx + mw, my + yy); ctx.stroke(); });
+          ctx.save(); ctx.translate(cx, my + mh - 6); ctx.scale(2.2, 0.55);
+          def.sprite.draw(ctx, 'ko', 1, 0, 0, def.facing);
+          ctx.restore();
+        }
+      },
+    },
+
+    // King Sirven: their permanent record, opened, written in, slammed shut on them.
+    record: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        hold(att, def, t >= 8 && t < 40 ? (t % 4 < 2 ? 1 : -1) : 0); // trembling
+        def.thrownPose = ['hit', 0];
+        if (t >= 10 && t < 38 && t % 6 === 0) RF.audio.sfx('scribble');
+        if (t === 40 || t === 54) {
+          RF.audio.sfx('heavy'); scene.shake = 8;
+          scene.effects.spawn('hit', def.x, 40);
+          scene.throwHit(att, def, T.slamDamage);
+        }
+        if (t === 68) {
+          scene.shake = 12;
+          scene.effects.spawnText('EXPELLED!', def.x, def.body.height + 10, '#ff4040');
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 });
+        }
+        return t >= 82;
+      },
+      anim(att, t) { return t < 8 ? ['throw', 0] : t < 40 ? ['light', (t >> 2) % 2 ? 1 : 2] : t < 66 ? ['throw', 2] : ['heavy', 1]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime;
+        if (t < 8 || t >= 68) return;
+        const cx = Math.round(def.x), top = Math.round(floorY - def.body.height - 10), h = def.body.height + 6;
+        // folder halves: wide open, then slammed shut over the victim (twice)
+        const closed = (t >= 40 && t < 46) || (t >= 54 && t < 60);
+        const open = closed ? 2 : t < 40 ? 30 : 18;
+        for (const side of [-1, 1]) {
+          const x = side < 0 ? cx - open - 22 : cx + open;
+          ctx.fillStyle = '#111'; ctx.fillRect(x - 1, top - 1, 24, h + 2);
+          ctx.fillStyle = '#e8c878'; ctx.fillRect(x, top, 22, h);
+          ctx.fillStyle = '#c8a050'; ctx.fillRect(x, top, 22, 4);
+        }
+        if (t < 40) { // his pen scribbling on the open page
+          const px = cx + open + 6 + ((frame * 3) % 12), py = top + 16 + ((frame >> 1) % 5) * 6;
+          ctx.fillStyle = '#c01818'; ctx.fillRect(Math.round(px), Math.round(py), 6, 1);
+          ctx.fillStyle = '#111'; ctx.fillRect(Math.round(px) + 5, Math.round(py) - 6, 2, 7);
+        }
+      },
+    },
+
+    // Mr. Dabalsa: a calm line of poetry, then smashes them into the floor side to side.
+    smash: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, start = 40, beat = 14, end = start + T.slams * beat;
+        if (t === 6) scene.effects.spawnText('SHALL I COMPARE THEE', att.x, att.body.height + 16, '#e8dcc0');
+        if (t === 22) scene.effects.spawnText('TO A SUMMER\'S DAY?', att.x, att.body.height + 6, '#e8dcc0');
+        if (t < start) { hold(att, def); def.thrownPose = ['hit', 0]; return false; }
+        if (t < end) {
+          // Swing over his head from one side to the other, slamming down each time.
+          const i = Math.floor((t - start) / beat), u = ((t - start) % beat) / beat;
+          const from = i % 2 ? -1 : 1, to = -from;
+          const side = from + (to - from) * u;
+          def.x = att.x + att.facing * side * 34;
+          def.y = Math.sin(u * Math.PI) * (att.body.height - 10);
+          def.thrownPose = ['ko', u > 0.3 && u < 0.7 ? 1 : 0];
+          if ((t - start) % beat === beat - 1) {
+            def.y = 0;
+            scene.shake = 12;
+            scene.effects.spawn('dust', def.x, 1);
+            scene.effects.spawn('shock', def.x, 4);
+            RF.audio.sfx('boom');
+            scene.throwHit(att, def, T.damagePerSlam);
+          }
+          return false;
+        }
+        if (t === end) {
+          scene.shake = 16;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 6, vy: 6 });
+        }
+        return t >= end + 16;
+      },
+      anim(att, t) {
+        if (t < 40) return ['throw', 0];
+        return ['throw', ((t - 40) % 14) < 8 ? 1 : 2]; // lift, slam, lift, slam
+      },
+    },
+
+    // Lady Landa: screams in their face. Shockwaves, giant words, then the yell blasts them away.
+    scream: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, gap = 14, finish = 10 + T.words.length * gap;
+        const pushed = t >= 10 ? Math.min(10, (t - 10) * 0.4) : 0; // blown back by the yelling
+        hold(att, def, pushed + (t >= 10 && t < finish ? (t % 2 ? 1 : -1) : 0));
+        def.thrownPose = ['hit', 0];
+        T.words.forEach((w, i) => {
+          if (t === 10 + i * gap) {
+            RF.audio.sfx('scream');
+            scene.shake = 6 + i * 3;
+            scene.effects.spawnText(w, def.x, def.body.height + 8 + i * 9, i === T.words.length - 1 ? '#ff2010' : '#ffffff');
+            scene.throwHit(att, def, T.damagePerWord);
+          }
+        });
+        if (t === finish) {
+          scene.shake = 14; scene.flash = 4;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 8, vy: 4 });
+        }
+        return t >= finish + 14;
+      },
+      anim(att, t) { return t < 8 ? ['throw', 0] : ['special', 0]; }, // grabs, then leans in and yells
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 10 + att.throwCfg.words.length * 14;
+        if (t < 8 || t > finish + 4) return;
+        // shockwave rings blasting out of her mouth
+        const mx = att.x + att.facing * 10, my = floorY - att.body.height + 14;
+        for (let i = 0; i < 4; i++) {
+          const r = ((t * 4 + i * 12) % 48) + 4;
+          ctx.strokeStyle = `rgba(255,${120 + i * 30},${120 + i * 30},${0.8 - r / 60})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(mx, my, r, att.facing > 0 ? -0.6 : Math.PI - 0.6, att.facing > 0 ? 0.6 : Math.PI + 0.6);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 1;
+        // big open-mouth "AAAA" streaming out
+        RF.font.drawText(ctx, 'AAAAAH!', mx + att.facing * 30, my - 14 + (frame % 2), { align: 'center', color: '#ffe040', outline: '#000' });
+      },
+    },
+
+    // El Escobedo: a giant robotic claw comes down from above, grabs, drills, hurls.
+    claw: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, finish = 40 + T.ticks * 8;
+        def.thrownPose = t < 20 ? ['hit', 0] : ['ko', 0];
+        if (t < 20) { hold(att, def, 6); return false; }
+        if (t === 20) RF.audio.sfx('grab');
+        if (t < 34) { def.y = (t - 20) * 4.5; return false; }          // hoisted up
+        if (t < finish) {                                                 // drilled and shaken
+          def.y = 63 + (t % 2 ? 3 : -3);
+          def.x += t % 2 ? 2 : -2;
+          if ((t - 34) % 8 === 0) {
+            RF.audio.sfx('drill');
+            scene.effects.spawn('hit', def.x + att.facing * -6, def.y + 30);
+            scene.throwHit(att, def, T.damagePerTick);
+          }
+          return false;
+        }
+        if (t === finish) {
+          scene.shake = 10;
+          scene.effects.spawn('heavy', def.x, def.y + 30);
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 7, vy: 5 });
+        }
+        return t >= finish + 16;
+      },
+      anim(att, t) { return t < 20 ? ['throw', 0] : ['throw', 1]; }, // working the controls
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 40 + att.throwCfg.ticks * 8;
+        if (t > finish + 10) return;
+        const cx = Math.round(def.x);
+        // claw head: comes down to the victim, then rides up with them
+        const headY = t < 20 ? Math.round(-10 + (floorY - def.body.height - 4 + 10) * (t / 20)) : Math.round(floorY - def.y - def.body.height - 4);
+        ctx.fillStyle = '#111'; ctx.fillRect(cx - 3, 0, 6, headY);                    // arm/cable
+        ctx.fillStyle = '#e8b020'; ctx.fillRect(cx - 2, 0, 4, headY);
+        ctx.fillStyle = '#111';
+        for (let y = 6; y < headY; y += 10) ctx.fillRect(cx - 2, y, 4, 2);           // hazard bands
+        ctx.fillStyle = '#111'; ctx.fillRect(cx - 10, headY - 2, 20, 8);
+        ctx.fillStyle = '#7a8088'; ctx.fillRect(cx - 9, headY - 1, 18, 6);           // hub
+        const open = t < 20 ? 6 : 1;                                                   // pincers close on grab
+        ctx.fillStyle = '#5a6068';
+        ctx.fillRect(cx - 10 - open, headY + 4, 4, 14); ctx.fillRect(cx + 6 + open, headY + 4, 4, 14);
+        if (t >= 34 && t < finish) {
+          // power drill grinding with sparks
+          const dx = cx - att.facing * 16, dy = Math.round(floorY - def.y - 30);
+          ctx.fillStyle = '#c02020'; ctx.fillRect(dx - 5, dy - 4, 10, 8);
+          ctx.fillStyle = '#aaa'; ctx.fillRect(att.facing > 0 ? dx + 5 : dx - 11, dy - 1, 6, 2);
+          for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = i % 2 ? '#ffd040' : '#fff';
+            ctx.fillRect(dx + att.facing * (8 + RF.util.hash(frame + i) * 10), dy - 6 + RF.util.hash(frame * 2 + i) * 12, 1, 1);
+          }
+        }
+      },
+    },
+
+    // Dr. Astuto: victim on one pan of a giant balance scale, the AP GOV book
+    // dropped on the other, victim catapulted sky-high and back down.
+    balance: {
+      scaleX(att) { return att.x + att.facing * 46; },
+      update(att, def, t, scene) {
+        const T = att.throwCfg, k = RF.THROW_KINDS.balance, sx = k.scaleX(att);
+        const nearPan = sx - att.facing * 28;
+        if (t < 8) { hold(att, def); def.thrownPose = ['hit', 0]; return false; }
+        if (t < 16) { // set them on the near pan
+          const u = (t - 8) / 8;
+          def.x = def.x + (nearPan - def.x) * u;
+          def.y = 18 * u;
+          def.thrownPose = ['hit', 0];
+          return false;
+        }
+        if (t < 28) { def.x = nearPan; def.y = 18; return false; } // the book falls onto the far pan
+        if (t === 28) {
+          RF.audio.sfx('heavy');
+          scene.shake = 8;
+          scene.throwHit(att, def, 0);
+          def.flash = 0;
+        }
+        if (t < 58) { // catapulted!
+          const u = (t - 28) / 30;
+          def.y = 18 + Math.sin(u * Math.PI) * 120;
+          def.x = nearPan + att.facing * u * 10;
+          def.thrownPose = ['ko', 0];
+          if (t === 30) scene.throwHit(att, def, T.launchDamage);
+          return false;
+        }
+        if (t === 58) {
+          def.y = 0;
+          scene.shake = 14;
+          scene.effects.spawn('dust', def.x, 1);
+          scene.effects.spawn('shock', def.x, 4);
+          scene.throwHit(att, def, T.landDamage, { vx: att.facing * 2, vy: 2 });
+        }
+        return t >= 72;
+      },
+      anim(att, t) { return t < 16 ? ['throw', 0] : t < 28 ? ['throw', 1] : ['throw', 2]; },
+      draw(att, def, ctx, floorY) {
+        const t = att.stateTime;
+        if (t < 8 || t > 66) return;
+        const k = RF.THROW_KINDS.balance, sx = Math.round(k.scaleX(att)), f = att.facing;
+        const tilt = t < 28 ? 0 : 0.35;            // far side sinks once the book lands
+        const cy = floorY - 48;                     // beam pivot
+        // post and base
+        ctx.fillStyle = '#111'; ctx.fillRect(sx - 3, cy, 6, floorY - cy); ctx.fillRect(sx - 14, floorY - 4, 28, 4);
+        ctx.fillStyle = '#c8a040'; ctx.fillRect(sx - 2, cy, 4, floorY - cy); ctx.fillRect(sx - 13, floorY - 3, 26, 2);
+        // beam
+        const ex = Math.cos(tilt) * 30, ey = Math.sin(tilt) * 30;
+        const far = [sx + f * ex, cy + ey], near = [sx - f * ex, cy - ey];
+        RF.electric.line(ctx, near[0], near[1], far[0], far[1], 4, '#111');
+        RF.electric.line(ctx, near[0], near[1], far[0], far[1], 2, '#e0b850');
+        // pans hanging from each end
+        for (const [px, py] of [near, far]) {
+          ctx.fillStyle = '#8a7030'; ctx.fillRect(Math.round(px), Math.round(py), 1, 12);
+          ctx.fillStyle = '#111'; ctx.fillRect(Math.round(px) - 12, Math.round(py) + 12, 24, 4);
+          ctx.fillStyle = '#e0b850'; ctx.fillRect(Math.round(px) - 11, Math.round(py) + 12, 22, 2);
+        }
+        // the textbook falling onto (then sitting on) the far pan
+        const by = t < 28 ? (far[1] + 4) * ((t - 16) / 12) : far[1] + 4;
+        RF.PROJECTILE_ART.textbook(ctx, Math.round(far[0]), Math.round(by), 0, f);
+        RF.font.drawText(ctx, 'CHECKS', sx - 30, cy - 26, { color: '#ffffff', outline: '#000' });
+        RF.font.drawText(ctx, 'BALANCES', sx + 2, cy - 18, { color: '#ffffff', outline: '#000' });
+      },
+    },
+
+    // Jauregui: plot them on a bell curve, pelt them with data points, throw the outlier out.
+    stats: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg, finish = 14 + T.ticks * 9;
+        hold(att, def, t > 10 ? 6 : 0);
+        def.thrownPose = ['hit', 0];
+        for (let i = 0; i < T.ticks; i++) {
+          if (t === 14 + i * 9) {
+            scene.effects.spawn('hit', def.x + (Math.random() - 0.5) * 10, 30 + Math.random() * 40);
+            scene.throwHit(att, def, T.damagePerTick);
+          }
+        }
+        if (t === finish) {
+          scene.effects.spawnText('P < 0.05: REJECTED!', def.x, def.body.height + 18, '#ff6050');
+          scene.shake = 6;
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 5, vy: 5 });
+        }
+        return t >= finish + 16;
+      },
+      anim(att, t) { return t < 10 ? ['throw', 0] : t < 14 + att.throwCfg.ticks * 9 ? ['throw', 1] : ['throw', 2]; },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 14 + att.throwCfg.ticks * 9;
+        if (t < 6 || t > finish + 2) return;
+        // Bell curve chart behind the victim; they're the dot way out on the tail.
+        const grow = Math.min(1, (t - 6) / 8);
+        const cx = att.x + att.facing * 10, base = floorY - 96, w = 90 * grow, h = 34 * grow;
+        ctx.fillStyle = 'rgba(10,20,30,0.75)';
+        ctx.fillRect(Math.round(cx - w / 2 - 4), Math.round(base - h - 6), Math.round(w + 8), Math.round(h + 12));
+        ctx.fillStyle = '#c8d8e8';
+        ctx.fillRect(Math.round(cx - w / 2), base, Math.round(w), 1); // x axis
+        for (let i = 0; i <= w; i++) {
+          const u = (i / Math.max(1, w)) * 6 - 3, y = Math.exp(-u * u / 2) * h;
+          ctx.fillStyle = Math.abs(u) > 2 ? '#ff6050' : '#9fe8ff'; // the tails are red
+          ctx.fillRect(Math.round(cx - w / 2 + i), Math.round(base - y), 1, 2);
+        }
+        if (grow >= 1) {
+          RF.font.drawText(ctx, 'OUTLIER', cx + att.facing * 30, base - 30, { align: 'center', color: '#ff6050', outline: '#000' });
+          const dx = cx + att.facing * 42;
+          ctx.fillStyle = '#ff2a1a'; ctx.fillRect(Math.round(dx) - 2, base - 4, 4, 4);
+          // data points raining down on the victim
+          for (let i = 0; i < 6; i++) {
+            const fy = ((frame * 3 + i * 23) % 60);
+            ctx.fillStyle = i % 2 ? '#9fe8ff' : '#ffffff';
+            ctx.fillRect(Math.round(def.x - 10 + i * 4), Math.round(base + 4 + fy), 2, 2);
+          }
+        }
+      },
+    },
+
+    // Dr. Weissenberg: grab and electrocute, then blast away.
+    shock: {
+      update(att, def, t, scene) {
+        const T = att.throwCfg;
+        const finish = 12 + T.ticks * 7;
+        // Victim convulses while the current runs through them.
+        const shaking = t >= 8 && t < finish;
+        hold(att, def, shaking ? (t % 2 ? 2 : -2) : 0);
+        def.thrownPose = shaking && t % 6 < 3 ? ['ko', 0] : ['hit', 0];
+        if (shaking && t % 8 === 0) def.flash = 2;
+        if (t === 8) RF.audio.sfx('zap');
+        for (let i = 0; i < T.ticks; i++) {
+          if (t === 12 + i * 7) {
+            scene.effects.spawn('zap', def.x + (Math.random() - 0.5) * 16, 20 + Math.random() * 40);
+            scene.throwHit(att, def, T.damagePerTick);
+          }
+        }
+        if (t === finish) {
+          RF.audio.sfx('bolt');
+          scene.flash = 5;
+          scene.shake = 8;
+          for (let i = 0; i < 3; i++) scene.effects.spawn('zap', def.x, 20 + i * 15);
+          scene.throwHit(att, def, T.finisherDamage, { vx: att.facing * 5, vy: 4 });
+        }
+        return t >= finish + 14;
+      },
+      anim(att, t) {
+        const finish = 12 + att.throwCfg.ticks * 7;
+        if (t < finish) return ['throw', 0];
+        return ['special', 1];
+      },
+      draw(att, def, ctx, floorY, frame) {
+        const t = att.stateTime, finish = 12 + att.throwCfg.ticks * 7;
+        if (t < 6 || t >= finish + 4) return;
+        const el = RF.electric;
+        const hx = att.x + att.facing * 18, hy = floorY - att.y - 44;
+        const seed = Math.floor(frame / 2) * 9.3;
+        el.glow(ctx, hx, hy, 14, 0.7);
+        // Arcs from his hands into the victim's body.
+        for (let i = 0; i < 3; i++) {
+          const ty = floorY - 18 - i * 18;
+          el.bolt(ctx, [hx, hy], [def.x, ty], { seed: seed + i * 31, amp: 5, thick: 0.6, forks: 1 });
+        }
+        el.crackle(ctx, def.x, floorY - 40, 18, seed + 5, 4);
+      },
+    },
+  };
+})();

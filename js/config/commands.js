@@ -1,0 +1,147 @@
+// COMMAND SPECIALS: every fighter has two extra moves done with the stick.
+//   DOWN, FORWARD + LIGHT or HEAVY  ("qcf", quarter circle forward)
+//   DOWN, BACK    + LIGHT or HEAVY  ("qcb", quarter circle back)
+// They cost no meter, and a ground attack that connects can cancel straight into
+// one (light, light, DOWN-FORWARD + attack...). The signature special stays the
+// perfect-block / EX / super move.
+//
+// kind picks the behaviour in js/game/special-kinds.js:
+//   rush      dash forward and hit       (startup, speed, duration, reach, recovery, hop?)
+//   teleport  vanish, reappear past them (startup, behind, strikeDelay, reach, recovery, damage?)
+//   rising    anti-air uppercut          (startup, rise, forward, reach, recovery, invuln)
+//   counter   stance that strikes back   (startup, window, recovery)
+//   projectile / slam                    (same as specials.js)
+// color / callout are cosmetic.
+(function () {
+  const hit = (dmg, extra = {}) => Object.assign({ damage: dmg, hitstun: 24, blockstun: 12, pushback: 5, hitstop: 7 }, extra);
+
+  RF.COMMANDS = {
+    // ---- Bruiser ----
+    trayCharge: Object.assign({ name: 'Tray Charge', kind: 'rush', startup: 8, speed: 6.5, duration: 14, reach: 14, recovery: 18, color: '#c8c8d0' }, hit(10, { pushback: 8 })),
+    ladleUppercut: Object.assign({ name: 'Ladle Uppercut', kind: 'rising', startup: 4, rise: 8, forward: 1.5, reach: 18, recovery: 18, invuln: 7, color: '#e8b060' }, hit(10, { launch: 6 })),
+    // ---- Viper ----
+    fangRush: Object.assign({ name: 'Fang Rush', kind: 'rush', startup: 5, speed: 8.5, duration: 10, reach: 12, recovery: 14, color: '#7cff4a' }, hit(8)),
+    smokeStep: Object.assign({ name: 'Smoke Step', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 18, recovery: 14, color: '#6a8a6a', callout: 'BEHIND YOU' }, hit(7)),
+    // ---- Dr. Weissenberg ----
+    ballLightning: Object.assign({ name: 'Ball Lightning', kind: 'projectile', startup: 12, recovery: 22, speed: 2.6, size: 14, height: 0.55, sound: 'zap', colors: ['#ffffff', '#9ff0ff', '#2a8ad8'] }, hit(10)),
+    staticUppercut: Object.assign({ name: 'Static Uppercut', kind: 'rising', startup: 5, rise: 8.5, forward: 1, reach: 16, recovery: 20, invuln: 7, color: '#7ad8ff', sound: 'zap' }, hit(11, { launch: 6 })),
+    // ---- Jauregui ----
+    deltaForce: Object.assign({ name: 'Delta Force', kind: 'projectile', startup: 9, recovery: 18, speed: 5.5, size: 12, height: 0.6, glyphs: ['Δ'], sound: 'whoosh', colors: ['#ffffff', '#fff2a0', '#c8b060'] }, hit(8)),
+    squareRoot: Object.assign({ name: 'Square Root', kind: 'rising', startup: 4, rise: 9, forward: 1.5, reach: 16, recovery: 18, invuln: 6, color: '#f0f0e0' }, hit(9, { launch: 6 })),
+    // ---- Dr. Astuto ----
+    objection: Object.assign({ name: 'Objection', kind: 'counter', startup: 3, window: 22, recovery: 20, color: '#3a6ae0', callout: 'OBJECTION!' }, hit(13, { launch: 4 })),
+    gavelSlam: Object.assign({ name: 'Gavel Slam', kind: 'slam', startup: 8, leapPower: 7, maxLeapSpeed: 4, recovery: 22, radius: 40, height: 24 }, hit(11, { launch: 4 })),
+    // ---- El Escobedo ----
+    rocketBoost: Object.assign({ name: 'Rocket Boost', kind: 'rush', startup: 6, speed: 7.5, duration: 16, hop: 3, reach: 14, recovery: 14, color: '#ff9a30', sound: 'jet' }, hit(9)),
+    droneStrike: Object.assign({ name: 'Drone Strike', kind: 'projectile', startup: 10, recovery: 20, speed: 5, size: 14, height: 0.75, art: 'drone', sound: 'drill', colors: ['#ffffff', '#9ff0ff', '#2a8ad8'] }, hit(9)),
+    // ---- Lady Landa ----
+    hexStep: Object.assign({ name: 'Hex Step', kind: 'teleport', startup: 10, behind: true, strikeDelay: 4, reach: 18, recovery: 14, color: '#9040ff', callout: 'BEHIND YOU', sound: 'hiss' }, hit(9)),
+    cobraRise: Object.assign({ name: 'Cobra Rise', kind: 'rising', startup: 5, rise: 8, forward: 2, reach: 18, recovery: 18, invuln: 6, color: '#b040ff', sound: 'hiss' }, hit(10, { launch: 6 })),
+    // ---- Mr. Dabalsa ----
+    toBeOrNot: Object.assign({ name: 'To Be Or Not To Be', kind: 'counter', startup: 4, window: 24, recovery: 24, color: '#e8b997', callout: 'TO BE...' }, hit(15, { launch: 5 })),
+    sonnetSlam: Object.assign({ name: 'Sonnet Slam', kind: 'slam', startup: 10, leapPower: 6.5, maxLeapSpeed: 3.5, recovery: 26, radius: 56, height: 26 }, hit(12, { launch: 5 })),
+    // ---- King Sirven ----
+    hallPass: Object.assign({ name: 'Hall Pass', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 18, recovery: 14, color: '#ff9ac8', callout: 'HALL PASS' }, hit(8)),
+    suspension: Object.assign({ name: 'Suspension', kind: 'rush', startup: 7, speed: 7, duration: 12, reach: 14, recovery: 16, color: '#ffd030' }, hit(10, { pushback: 7 })),
+    // ---- Holbrook ----
+    tectonicUplift: Object.assign({ name: 'Tectonic Uplift', kind: 'rising', startup: 5, rise: 8, forward: 1, reach: 18, recovery: 20, invuln: 6, color: '#a0e070', sound: 'rumble' }, hit(11, { launch: 6 })),
+    jetStream: Object.assign({ name: 'Jet Stream', kind: 'rush', startup: 7, speed: 7, duration: 14, reach: 14, recovery: 16, color: '#80c0ff' }, hit(9, { pushback: 7 })),
+    // ---- Simon ----
+    spinningElbow: Object.assign({ name: 'Spinning Elbow', kind: 'rush', startup: 4, speed: 6, duration: 8, reach: 12, recovery: 12, color: '#ffb030' }, hit(9)),
+    skipKnee: Object.assign({ name: 'Skip Knee', kind: 'rising', startup: 3, rise: 7.5, forward: 3, reach: 16, recovery: 14, invuln: 5, color: '#ffd060' }, hit(10, { launch: 6 })),
+    // ---- Nicholas ----
+    dashStraight: Object.assign({ name: 'Dash Straight', kind: 'rush', startup: 5, speed: 9, duration: 10, reach: 14, recovery: 14, color: '#ffd030', anim: 'heavy' }, hit(10, { pushback: 7 })),
+    slipCounter: Object.assign({ name: 'Slip Counter', kind: 'counter', startup: 2, window: 18, recovery: 14, color: '#ffd030', callout: 'TOO SLOW!' }, hit(12, { launch: 4 })),
+    // ---- Tamayo ----
+    pocketVeto: Object.assign({ name: 'Pocket Veto', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'VETOED!' }, hit(12, { launch: 4 })),
+    gerrymander: Object.assign({ name: 'Gerrymander', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 18, recovery: 12, color: '#2a5ad0', callout: 'REDISTRICTED' }, hit(8)),
+    // ---- Ruano ----
+    flamencoFan: Object.assign({ name: 'Flamenco Fan', kind: 'projectile', startup: 12, recovery: 22, speed: 4.5, size: 14, height: 0.6, art: 'fan', sound: 'whoosh', colors: ['#ffffff', '#f0c020', '#d01828'] }, hit(11)),
+    ascension: Object.assign({ name: 'Ascension', kind: 'rising', startup: 6, rise: 8.5, forward: 1, reach: 20, recovery: 22, invuln: 8, color: '#fff2c0', sound: 'bell' }, hit(13, { launch: 6 })),
+    // ---- Chris ----
+    coinFlip: Object.assign({ name: 'Coin Flip', kind: 'projectile', startup: 8, recovery: 18, speed: 5.5, size: 12, height: 0.6, art: 'coin', sound: 'cash', colors: ['#ffffff', '#ffd040', '#c8961e'] }, hit(8)),
+    myLawyer: Object.assign({ name: 'My Lawyer', kind: 'counter', startup: 3, window: 22, recovery: 20, color: '#e8e8e8', callout: 'MY LAWYER!' }, hit(12, { launch: 4 })),
+    // ---- Anthony ----
+    blink: Object.assign({ name: 'Blink', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 14, color: '#ff70a8', callout: 'BLINK', sound: 'arcane' }, hit(9)),
+    barToss: Object.assign({ name: 'Bar Toss', kind: 'projectile', startup: 9, recovery: 18, speed: 6, size: 14, height: 0.6, art: 'barToss', sound: 'whoosh', colors: ['#ffffff', '#e8b420', '#1a1a22'] }, hit(9)),
+    // ---- Mikey ----
+    blitz: Object.assign({ name: 'Blitz', kind: 'rush', startup: 7, speed: 9, duration: 18, reach: 18, recovery: 18, color: '#ffffff', callout: 'BLITZ!', anim: 'heavy' }, hit(14, { pushback: 10, launch: 4 })),
+    hulkLeap: Object.assign({ name: 'Hulk Leap', kind: 'slam', startup: 8, leapPower: 9, maxLeapSpeed: 5, recovery: 22, radius: 52, height: 28, color: '#60ff60' }, hit(16, { launch: 5, hitstun: 30 })),
+    // ---- Alejandro ----
+    dyno: Object.assign({ name: 'Dyno', kind: 'rush', startup: 5, speed: 8.5, duration: 16, reach: 18, recovery: 14, hop: 6, color: '#ff8030', callout: 'DYNO!', anim: 'heavy' }, hit(11, { pushback: 7 })),
+    freeSolo: Object.assign({ name: 'Free Solo', kind: 'rising', startup: 4, rise: 10.5, forward: 1.5, reach: 22, recovery: 18, invuln: 10, color: '#ffffff', sound: 'whoosh' }, hit(12, { launch: 7 })),
+    // ---- Lopez Tuero ----
+    taylorSeries: Object.assign({ name: 'Taylor Series', kind: 'volley', startup: 8, interval: 5, recovery: 16, heights: [0.8, 0.55, 0.3, 0.7, 0.45], speed: 5.5, size: 12, glyphs: ['∫', 'Σ', '∞', 'Δ', '√'], colors: ['#ffffff', '#a0fff0', '#00b0a0'], sound: 'zap' }, hit(4, { hitstun: 18, blockstun: 10, pushback: 2.5, hitstop: 4 })),
+    multiverseSwap: Object.assign({ name: 'Multiverse Swap', kind: 'teleport', startup: 6, behind: true, strikeDelay: 4, reach: 22, recovery: 12, color: '#00ffd0', callout: 'WRONG UNIVERSE.', sound: 'arcane' }, hit(11)),
+    // ---- Wuttke ----
+    trebleClef: Object.assign({ name: 'Treble Clef', kind: 'projectile', startup: 9, recovery: 18, speed: 5, size: 14, height: 0.6, art: 'musicNote', sound: 'whoosh', colors: ['#ffffff', '#e0c0ff', '#8040c0'] }, hit(10)),
+    restCounter: Object.assign({ name: 'Rest', kind: 'counter', startup: 2, window: 24, recovery: 18, color: '#c080ff', callout: 'TAKE A REST.' }, hit(13, { launch: 5 })),
+    // ---- Gabriel ----
+    oceanDrive: Object.assign({ name: 'Ocean Drive', kind: 'rush', startup: 6, speed: 9.5, duration: 14, reach: 16, recovery: 14, color: '#ff4fb0', callout: 'OCEAN DRIVE!', anim: 'heavy' }, hit(10, { pushback: 8 })),
+    mindLift: Object.assign({ name: 'Mind Lift', kind: 'rising', startup: 5, rise: 9.5, forward: 1.2, reach: 22, recovery: 20, invuln: 8, color: '#40e8ff', sound: 'arcane' }, hit(12, { launch: 7 })),
+    // ---- Fernando ----
+    smokeScreen: Object.assign({ name: 'Smoke Screen', kind: 'teleport', startup: 8, behind: true, strikeDelay: 4, reach: 20, recovery: 12, color: '#b0b0b0', callout: 'POOF. HEH HEH.' }, hit(11)),
+    wheelie: Object.assign({ name: 'Wheelie', kind: 'rush', startup: 8, speed: 9, duration: 16, reach: 16, recovery: 16, color: '#ff7020', callout: 'VROOOOM!', anim: 'light' }, hit(12, { pushback: 9 })),
+    // ---- Ms. Brady ----
+    writeUp: Object.assign({ name: 'Write-Up', kind: 'projectile', startup: 9, recovery: 16, speed: 6, size: 14, height: 0.6, art: 'detentionSlip', sound: 'paper', hitText: 'WRITTEN UP!', colors: ['#ffffff', '#ff9ac8', '#d0507a'] }, hit(9)),
+    zeroTolerance: Object.assign({ name: 'Zero Tolerance', kind: 'counter', startup: 2, window: 26, recovery: 16, color: '#ff4040', callout: 'NOT IN MY SCHOOL.' }, hit(13, { launch: 5 })),
+    // ---- Urbanik ----
+    mindSpike: Object.assign({ name: 'Mind Spike', kind: 'projectile', startup: 9, recovery: 14, speed: 15, size: 14, height: 0.7, art: 'psyBolt', sound: 'zap', hitText: 'GOT YOU.', colors: ['#ffffff', '#40e8d0', '#b070ff'] }, hit(9)),
+    foresight: Object.assign({ name: 'Foresight', kind: 'counter', startup: 2, window: 30, recovery: 14, color: '#40e8d0', callout: 'I SAW THAT.' }, hit(13, { launch: 5 })),
+    // ---- Erick ----
+    flashlightRush: Object.assign({ name: 'Seats Are This Way', kind: 'rush', startup: 6, speed: 9, duration: 15, reach: 16, recovery: 14, color: '#ffe27a', callout: 'RIGHT THIS WAY!', anim: 'heavy' }, hit(11, { pushback: 8 })),
+    popHadouken: Object.assign({ name: 'Popcorn Hadouken', kind: 'projectile', startup: 14, recovery: 25, speed: 4.4, size: 34, height: 0.5, art: 'popHadouken', sound: 'boom', hitText: 'EXTRA BUTTER!', color: '#ffe27a', colors: ['#ffffff', '#ffe27a', '#e8701c'] }, hit(13, { hitstun: 30, blockstun: 16, pushback: 8, hitstop: 11, launch: 3.5, launchVx: 2 })),
+    wRizz: Object.assign({ name: 'W Rizz', kind: 'counter', startup: 2, window: 28, recovery: 16, color: '#ff7ac8', callout: 'W RIZZ.' }, hit(14, { launch: 5 })),
+    // ---- Javan ----
+    spiral: Object.assign({ name: 'Perfect Spiral', kind: 'projectile', startup: 9, recovery: 16, speed: 7, size: 12, height: 0.62, art: 'football', sound: 'whoosh', hitText: 'FIRST DOWN!', colors: ['#ffffff', '#c06030', '#7a3418'] }, hit(9)),
+    tushPush: Object.assign({ name: 'Tush Push', kind: 'rush', startup: 6, speed: 8.5, duration: 15, reach: 16, recovery: 15, color: '#3ad070', callout: 'TUSH PUSH!', anim: 'heavy' }, hit(11, { pushback: 10 })),
+    // ---- Trump ----
+    theWall: Object.assign({ name: 'The Wall', kind: 'counter', startup: 2, window: 26, recovery: 17, color: '#ff3030', callout: 'I BUILT A WALL.' }, hit(13, { launch: 5 })),
+    rally: Object.assign({ name: 'Rally', kind: 'rush', startup: 8, speed: 8, duration: 16, reach: 16, recovery: 17, color: '#ff3030', callout: 'TREMENDOUS!', anim: 'heavy' }, hit(12, { pushback: 8 })),
+    // ---- Bandy ----
+    kickflip: Object.assign({ name: 'Kickflip', kind: 'rush', startup: 5, speed: 8.5, duration: 16, hop: 4.5, reach: 16, recovery: 14, color: '#ff60a0', callout: 'KICKFLIP!', anim: 'jump', board: true, sound: 'whoosh' }, hit(10, { pushback: 7, launch: 4 })),
+    stageDive: Object.assign({ name: 'Stage Dive', kind: 'slam', startup: 8, leapPower: 8.5, maxLeapSpeed: 5, recovery: 20, radius: 48, height: 26, color: '#ff60a0' }, hit(12, { launch: 5 })),
+    // ---- Tyler ----
+    cartPath: Object.assign({ name: 'Cart Path', kind: 'rush', startup: 10, speed: 7, duration: 16, reach: 16, recovery: 18, color: '#80ffb0', callout: 'BEEP BEEP!', anim: 'heavy' }, hit(10, { pushback: 8 })),
+    caddieCounter: Object.assign({ name: 'Caddie Counter', kind: 'counter', startup: 3, window: 24, recovery: 18, color: '#80ffb0', callout: 'NICE TRY, BRO.' }, hit(12, { launch: 5 })),
+  };
+
+  // Per-fighter: their two command moves, a taunt line, and the pitch of their taunt voice.
+  const EXTRAS = {
+    bruiser: { commands: { qcf: 'trayCharge', qcb: 'ladleUppercut' }, taunt: 'SECONDS? I THINK NOT.', voicePitch: 0.3 },
+    viper: { commands: { qcf: 'fangRush', qcb: 'smokeStep' }, taunt: 'SSSSSO SLOW.', voicePitch: 1.3 },
+    weissenberg: { commands: { qcf: 'ballLightning', qcb: 'staticUppercut' }, taunt: 'FEEL THE VOLTAGE!', voicePitch: 0.8 },
+    jauregui: { commands: { qcf: 'deltaForce', qcb: 'squareRoot' }, taunt: 'SHOW YOUR WORK!', voicePitch: 1.4 },
+    astuto: { commands: { qcf: 'objection', qcb: 'gavelSlam' }, taunt: 'ORDER IN THE COURT!', voicePitch: 0.6 },
+    escobedo: { commands: { qcf: 'rocketBoost', qcb: 'droneStrike' }, taunt: 'DALE! DALE!', voicePitch: 1.0 },
+    landa: { commands: { qcf: 'hexStep', qcb: 'cobraRise' }, taunt: 'INTO THE JAR WITH YOU.', voicePitch: 1.2 },
+    dabalsa: { commands: { qcf: 'toBeOrNot', qcb: 'sonnetSlam' }, taunt: 'ALAS, POOR STUDENT.', voicePitch: 0.4 },
+    sirven: { commands: { qcf: 'hallPass', qcb: 'suspension' }, taunt: 'DETENTION! ALL OF YOU!', voicePitch: 0.7 },
+    holbrook: { commands: { qcf: 'tectonicUplift', qcb: 'jetStream' }, taunt: 'YOU ARE OFF THE MAP.', voicePitch: 0.8 },
+    simon: { commands: { qcf: 'spinningElbow', qcb: 'skipKnee' }, taunt: 'COME ON. COME ON!', voicePitch: 1.1 },
+    anthony: { commands: { qcf: 'blink', qcb: 'barToss' }, taunt: 'WANT A BRO BATCH?', voicePitch: 0.9 },
+    chris: { commands: { qcf: 'coinFlip', qcb: 'myLawyer' }, taunt: 'WHERE THE ZA', voicePitch: 1.1 },
+    ruano: { commands: { qcf: 'flamencoFan', qcb: 'ascension' }, taunt: 'OLE! MUY BIEN.', voicePitch: 1.2 },
+    tamayo: { commands: { qcf: 'pocketVeto', qcb: 'gerrymander' }, taunt: 'HA HA HA!', voicePitch: 0.7 },
+    nicholas: { commands: { qcf: 'dashStraight', qcb: 'slipCounter' }, taunt: 'LIGHT WEIGHT, BABY!', voicePitch: 1.1 },
+    mikey: { commands: { qcf: 'blitz', qcb: 'hulkLeap' }, taunt: 'HUT! HUT! HIKE!', voicePitch: 0.6 },
+    alejandro: { commands: { qcf: 'rockSpike', qcb: 'rockWall' }, commandsHeavy: { qcf: 'boulderRoll', qcb: 'summitPillar' }, taunt: 'SEND IT!', voicePitch: 1.1 },
+    lopez: { commands: { qcf: 'taylorSeries', qcb: 'multiverseSwap' }, taunt: 'SHOW YOUR WORK.', voicePitch: 0.7 },
+    wuttke: { commands: { qcf: 'trebleClef', qcb: 'restCounter' }, taunt: 'FROM THE TOP!', voicePitch: 0.75 },
+    gabriel: { commands: { qcf: 'oceanDrive', qcb: 'mindLift' }, taunt: 'LET\'S GOOOOO!', voicePitch: 1.2 },
+    fernando: { commands: { qcf: 'wheelie', qcb: 'smokeScreen' }, taunt: 'THAT IS WHAT SHE SAID.', voicePitch: 0.85 },
+    brady: { commands: { qcf: 'writeUp', qcb: 'zeroTolerance' }, taunt: 'TUCK IN THAT SHIRT.', voicePitch: 0.85 },
+    bandy: { commands: { qcf: 'kickflip', qcb: 'stageDive' }, taunt: 'TURN IT UP!', voicePitch: 1.05 },
+    urbanik: { commands: { qcf: 'mindSpike', qcb: 'foresight' }, taunt: 'AND HOW DOES THAT MAKE YOU FEEL?', voicePitch: 0.8 },
+    erick: { commands: { qcf: 'popHadouken', qcb: 'wRizz' }, commandsHeavy: { qcf: 'flashlightRush' }, taunt: 'W. THAT IS A W.', voicePitch: 1.05 },
+    javan: { commands: { qcf: 'spiral', qcb: 'tushPush' }, taunt: 'GO BIRDS.', voicePitch: 1.0 },
+    trump: { commands: { qcf: 'rally', qcb: 'theWall' }, taunt: 'TREMENDOUS.', voicePitch: 0.7 },
+    tyler: { commands: { qcf: 'cartPath', qcb: 'caddieCounter' }, taunt: 'NO STRESS, BRO.', voicePitch: 0.95 },
+  };
+  // LAST STAND: the once-a-match comeback strike (below 30% health, EX + HEAVY / L2 + R2).
+  // A lunging blow that, if it connects, plays an X-ray close-up of three bones breaking.
+  RF.LAST_STAND = Object.assign({ name: 'Last Stand', kind: 'rush', startup: 14, speed: 9, duration: 18, reach: 22, recovery: 34, color: '#ff3030', anim: 'heavy', sound: 'whoosh', lastStand: true },
+    hit(30, { hitstun: 50, blockstun: 22, pushback: 6, hitstop: 2, launch: 5, launchVx: 2.5 }));
+
+  for (const [id, extra] of Object.entries(EXTRAS)) { const d = RF.getCharacter(id); if (d) Object.assign(d, extra); }
+})();
