@@ -1,0 +1,103 @@
+name: Backend
+
+on:
+  push:
+    paths:
+      - 'supabase/**'
+      - 'scripts/**'
+      - 'packages/contracts/src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    # Fast job: plain PostgreSQL plus a shim for the Supabase-provided roles
+    # and auth schema. Same script developers run locally.
+    name: Database tests (PostgreSQL + pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Provides Deno, which runs the Edge Function integration test.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install PostgreSQL 16 with pgTAP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16 postgresql-16-pgtap libtap-parser-sourcehandler-pgtap-perl
+          sudo pg_ctlcluster 16 main start || sudo systemctl start postgresql@16-main
+          port="$(pg_lsclusters -h | awk '$1 == "16" { print $3; exit }')"
+          echo "PGPORT=$port" >> "$GITHUB_ENV"
+          sudo -u postgres psql -p "$port" -c "alter user postgres password 'postgres'"
+
+      - name: Migrations, drift check, pgTAP, concurrency and Edge Function integration tests
+        env:
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: scripts/db-test.sh
+
+  functions:
+    # Edge Function handlers with Shopify and the database faked: request
+    # validation, Shopify calls, webhook signatures, ID tokens, error mapping.
+    name: Edge Function tests (Deno)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:functions
+      - run: pnpm test:functions
+
+  supabase:
+    # Slower job: the real Supabase Postgres image, so the migrations are
+    # proven against the same roles, schemas and defaults as a hosted project.
+    name: Database tests (Supabase local stack)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start the Supabase database (applies migrations and seed)
+        run: pnpm exec supabase db start
+
+      - name: Run pgTAP tests
+        run: pnpm exec supabase test db
+
+      - name: Stop
+        if: always()
+        run: pnpm exec supabase stop --no-backup

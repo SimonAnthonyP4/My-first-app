@@ -1,0 +1,72 @@
+# Local development configuration for the Supabase CLI (`supabase start`).
+# Hosted projects are configured in the Supabase dashboard; the settings that
+# must match are listed in docs/RUNBOOK.md. No secrets belong in this file.
+
+project_id = "bro-batch"
+
+[api]
+enabled = true
+port = 54321
+# Only `public` is exposed. Helper functions live in `private`, which the API
+# cannot reach.
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+# Customers sign up themselves. Employees are created by an owner.
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 10
+
+[auth.email]
+enabled = true
+# register_customer() copies the address from auth.users, so it must be verified.
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = true
+
+# Adds the `user_role` claim to access tokens. See migration
+# 20261111000800_functions.sql. On a hosted project this is switched on under
+# Authentication -> Hooks.
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+# Edge Functions. None of them is called with a Supabase JWT, so the gateway
+# check is off and each function authenticates its caller itself:
+#   shopify-webhook   Shopify's HMAC signature over the request body
+#   pos-*             the Shopify ID token of the person signed in to POS
+[functions.shopify-webhook]
+verify_jwt = false
+
+[functions.pos-member]
+verify_jwt = false
+
+[functions.pos-reserve-reward]
+verify_jwt = false
+
+[functions.pos-release-reward]
+verify_jwt = false

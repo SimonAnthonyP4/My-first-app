@@ -1,0 +1,140 @@
+name: Deploy
+
+# Manual only: nothing here runs on a push. Each run does one step, chosen
+# when it is started. docs/RUNBOOK.md, "Connect Shopify", gives the order.
+#
+# Secrets (GitHub > Settings > Secrets and variables > Actions):
+#   SHOPIFY_SERVICE_ACCOUNT_TOKEN  lets Shopify CLI deploy the app (shopify-app)
+#   SUPABASE_ACCESS_TOKEN          lets Supabase CLI deploy (backend)
+#   SUPABASE_DB_PASSWORD           the Supabase project's database password (backend)
+#   SHOPIFY_CLIENT_SECRET          the Shopify app's client secret (backend, verify)
+#
+# NOT YET RUN AGAINST A REAL PROJECT. The commands follow the Shopify CLI 5 and
+# Supabase CLI 3 references; the first real run may need adjustments.
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: What to do
+        type: choice
+        required: true
+        default: check-setup
+        options:
+          - check-setup
+          - shopify-app
+          - backend
+          - verify
+
+permissions:
+  contents: read
+
+# One deploy at a time; a second run waits instead of cancelling the first.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  # Not secret. Filled in once the Supabase project and the store are known;
+  # scripts/deploy-preflight.mjs refuses to deploy while these are placeholders.
+  SUPABASE_PROJECT_REF: REPLACE_WITH_PROJECT_REF
+  SHOPIFY_SHOP_DOMAIN: REPLACE_WITH_SHOP.myshopify.com
+  SHOPIFY_CLI_NO_ANALYTICS: '1'
+
+jobs:
+  deploy:
+    name: ${{ inputs.step }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Preflight (settings filled in, secrets present)
+        env:
+          SHOPIFY_SERVICE_ACCOUNT_TOKEN: ${{ secrets.SHOPIFY_SERVICE_ACCOUNT_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          STEP: ${{ inputs.step }}
+        run: node scripts/deploy-preflight.mjs "$STEP"
+
+      # --- shopify-app: app configuration, webhook subscriptions, POS tile ------
+      - name: Test the POS tile before deploying it
+        if: inputs.step == 'shopify-app'
+        run: |
+          pnpm --filter @brobatch/shopify run typecheck
+          pnpm --filter @brobatch/shopify run test
+
+      - name: Deploy the Shopify app
+        if: inputs.step == 'shopify-app'
+        working-directory: apps/shopify
+        env:
+          SHOPIFY_SERVICE_ACCOUNT_TOKEN: ${{ secrets.SHOPIFY_SERVICE_ACCOUNT_TOKEN }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+        # --allow-updates adds and updates; it never deletes an extension.
+        run: pnpm exec shopify app deploy --path . --allow-updates --no-color --source-control-url "$COMMIT_URL"
+
+      # --- backend: database migrations, Edge Functions, their secrets ----------
+      - name: Link the Supabase project
+        if: inputs.step == 'backend'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF" --yes
+
+      - name: Show which migrations will be applied
+        if: inputs.step == 'backend'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: pnpm exec supabase db push --remote --dry-run --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply database migrations
+        if: inputs.step == 'backend'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        # Migrations only. The seed file is test data and is never pushed.
+        run: pnpm exec supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Set the Edge Functions' secrets
+        if: inputs.step == 'backend'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          umask 077
+          envfile="$RUNNER_TEMP/functions.env"
+          trap 'rm -f "$envfile"' EXIT
+          client_id="$(node -e "
+            const toml = require('node:fs').readFileSync('apps/shopify/shopify.app.toml', 'utf8');
+            process.stdout.write(/^client_id\s*=\s*\"([^\"]*)\"/m.exec(toml)[1]);
+          ")"
+          {
+            printf 'SHOPIFY_SHOP_DOMAIN=%s\n' "$SHOPIFY_SHOP_DOMAIN"
+            printf 'SHOPIFY_CLIENT_ID=%s\n' "$client_id"
+            printf 'SHOPIFY_CLIENT_SECRET=%s\n' "$SHOPIFY_CLIENT_SECRET"
+          } > "$envfile"
+          pnpm exec supabase secrets set --env-file "$envfile" --yes
+
+      - name: Deploy the Edge Functions
+        if: inputs.step == 'backend'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: pnpm exec supabase functions deploy --yes
+
+      # --- verify: the live backend and the store can talk to each other --------
+      - name: Verify (changes nothing)
+        if: inputs.step == 'verify' || inputs.step == 'backend'
+        env:
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: node scripts/deploy-verify.mjs
